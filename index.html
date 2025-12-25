@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>505th Expeditionary Force</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: linear-gradient(180deg, #0A0E12 0%, #050709 100%);
+            color: #E8EEF2;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .coming-soon {
+            max-width: 800px;
+        }
+        
+        .logo {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 2rem;
+            filter: drop-shadow(0 0 30px rgba(0, 217, 255, 0.5));
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        h1 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 3rem;
+            color: #00D9FF;
+            text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #A8B5BF;
+            letter-spacing: 3px;
+            margin-bottom: 3rem;
+        }
+        
+        .status {
+            background: rgba(0, 217, 255, 0.1);
+            border: 2px solid #00D9FF;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .status h2 {
+            font-family: 'Rajdhani', sans-serif;
+            color: #00D9FF;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+        
+        .status p {
+            color: #E8EEF2;
+            line-height: 1.8;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .logo {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="coming-soon">
+        <img src="images/logo.png" alt="505th Logo" class="logo">
+        
+        <h1>505TH EXPEDITIONARY FORCE</h1>
+        <p class="subtitle">FIRST TO FIGHT • LAST TO LEAVE</p>
+        
+        <div class="status">
+            <h2>WEBSITE UNDER CONSTRUCTION</h2>
+            <p>
+                Our tactical operations center is currently being established.<br>
+                Full deployment incoming.<br><br>
+                Stand by for further orders, soldier.
+            </p>
+        </div>
+        
+        <p style="color: #6B7B87; font-size: 0.9rem; margin-top: 2rem;">
+            © 2025 505th Expeditionary Force • All Rights Reserved.
+        </p>
+    </div>
+</body>
+</html>

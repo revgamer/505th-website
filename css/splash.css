@@ -1,0 +1,474 @@
+/* ===== VARIABLES ===== */
+:root {
+    --primary: #4A5D23;
+    --accent: #00D9FF;
+    --accent-glow: rgba(0, 217, 255, 0.5);
+    --bg-dark: #0A0E12;
+    --text-primary: #E8EEF2;
+    --text-secondary: #A8B5BF;
+    --success: #00FF41;
+    --font-heading: 'Rajdhani', sans-serif;
+    --font-body: 'Rajdhani', sans-serif;
+}
+
+/* ===== RESET ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-body);
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+}
+
+/* ===== SPLASH CONTAINER ===== */
+.splash-container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: linear-gradient(180deg, #0A0E12 0%, #050709 100%);
+}
+
+/* Tactical Background Pattern */
+.splash-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        /* Hexagonal grid pattern */
+        radial-gradient(circle at center, transparent 40%, rgba(0, 217, 255, 0.03) 40%, rgba(0, 217, 255, 0.03) 42%, transparent 42%),
+        /* Tactical lines */
+        repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(0, 217, 255, 0.03) 50px, rgba(0, 217, 255, 0.03) 51px),
+        repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(0, 217, 255, 0.03) 50px, rgba(0, 217, 255, 0.03) 51px);
+    background-size: 100px 100px, 100% 100%, 100% 100%;
+    opacity: 0.3;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Radial UNSC emblem watermark */
+.splash-container::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 800px;
+    background: 
+        radial-gradient(circle, transparent 30%, rgba(74, 93, 35, 0.1) 30%, rgba(74, 93, 35, 0.1) 31%, transparent 31%),
+        radial-gradient(circle, transparent 50%, rgba(0, 217, 255, 0.05) 50%, rgba(0, 217, 255, 0.05) 52%, transparent 52%);
+    opacity: 0.4;
+    z-index: 1;
+    pointer-events: none;
+    animation: rotateBackground 60s linear infinite;
+}
+
+@keyframes rotateBackground {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ===== SCANLINE EFFECT ===== */
+.scanlines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* ===== STAGE 1: INITIAL SCREEN ===== */
+.initial-screen {
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    animation: fadeIn 1s ease-out;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Logo Container */
+.logo-container {
+    position: relative;
+    margin-bottom: 4rem;
+}
+
+.boot-logo {
+    width: 350px;
+    height: 350px;
+    margin: 0 auto;
+    display: block;
+    filter: drop-shadow(0 0 40px var(--accent-glow));
+    animation: logoFloat 3s ease-in-out infinite;
+    position: relative;
+    z-index: 2;
+}
+
+@keyframes logoFloat {
+    0%, 100% {
+        transform: translateY(0);
+        filter: drop-shadow(0 0 40px var(--accent-glow));
+    }
+    50% {
+        transform: translateY(-20px);
+        filter: drop-shadow(0 0 60px var(--accent-glow));
+    }
+}
+
+.logo-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+    animation: glowPulse 3s ease-in-out infinite;
+    z-index: 1;
+}
+
+@keyframes glowPulse {
+    0%, 100% { 
+        opacity: 0.4; 
+        transform: translate(-50%, -50%) scale(1); 
+    }
+    50% { 
+        opacity: 0.7; 
+        transform: translate(-50%, -50%) scale(1.3); 
+    }
+}
+
+/* Press Enter Text */
+.press-enter {
+    animation: blink 1.5s step-end infinite;
+}
+
+.press-enter p {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-shadow: 0 0 15px var(--accent-glow);
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* ===== STAGE 2: BOOT SEQUENCE ===== */
+.boot-sequence {
+    text-align: center;
+    max-width: 800px;
+    width: 90%;
+    padding: 2rem;
+    position: relative;
+    z-index: 20;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.boot-sequence.active {
+    opacity: 1;
+    visibility: visible;
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Hide initial screen when boot starts */
+.initial-screen.hidden {
+    animation: fadeOut 0.5s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; visibility: hidden; }
+}
+
+/* ===== TERMINAL LINES ===== */
+.terminal {
+    text-align: left;
+    margin: 2rem 0;
+    font-size: 1rem;
+    letter-spacing: 1.5px;
+    font-weight: 500;
+}
+
+.terminal-line {
+    opacity: 0;
+    margin-bottom: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.terminal-line.show {
+    animation: fadeInLine 0.3s ease-out forwards;
+}
+
+.terminal-line .prompt {
+    color: var(--accent);
+    margin-right: 0.5rem;
+}
+
+.terminal-line .success {
+    color: var(--success);
+    font-weight: 700;
+    text-shadow: 0 0 10px var(--success);
+}
+
+@keyframes fadeInLine {
+    0% {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Typing cursor effect */
+.terminal-line.typing::after {
+    content: '█';
+    animation: cursorBlink 0.8s step-end infinite;
+    margin-left: 5px;
+    color: var(--accent);
+}
+
+@keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* ===== LOADING BAR ===== */
+.loading-container {
+    margin: 3rem 0;
+    opacity: 0;
+}
+
+.loading-container.show {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+.loading-label {
+    color: var(--accent);
+    font-size: 1.1rem;
+    letter-spacing: 4px;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.loading-bar {
+    width: 100%;
+    height: 24px;
+    background: rgba(0, 217, 255, 0.1);
+    border: 2px solid var(--accent);
+    position: relative;
+    overflow: hidden;
+}
+
+.loading-progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    width: 0%;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 20px var(--accent-glow);
+    position: relative;
+}
+
+.loading-progress::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.loading-percentage {
+    margin-top: 1rem;
+    color: var(--accent);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+}
+
+/* ===== STATUS MESSAGE ===== */
+.status-message {
+    margin-top: 2rem;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    letter-spacing: 3px;
+    opacity: 0;
+    font-weight: 600;
+}
+
+.status-message.show {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Tablet */
+@media (max-width: 768px) {
+    .boot-logo {
+        width: 280px;
+        height: 280px;
+    }
+    
+    .logo-glow {
+        width: 400px;
+        height: 400px;
+    }
+    
+    .press-enter p {
+        font-size: 1.2rem;
+        letter-spacing: 3px;
+    }
+    
+    .splash-container::after {
+        width: 600px;
+        height: 600px;
+    }
+    
+    .terminal {
+        font-size: 0.9rem;
+    }
+    
+    .loading-bar {
+        height: 20px;
+    }
+    
+    .loading-percentage {
+        font-size: 1.3rem;
+    }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+    .boot-logo {
+        width: 220px;
+        height: 220px;
+    }
+    
+    .logo-glow {
+        width: 300px;
+        height: 300px;
+    }
+    
+    .press-enter p {
+        font-size: 1rem;
+        letter-spacing: 2px;
+    }
+    
+    .splash-container::before {
+        background-size: 50px 50px, 100% 100%, 100% 100%;
+    }
+    
+    .splash-container::after {
+        width: 400px;
+        height: 400px;
+    }
+    
+    .terminal {
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+    
+    .terminal-line {
+        margin-bottom: 0.5rem;
+    }
+    
+    .loading-label {
+        font-size: 0.9rem;
+        letter-spacing: 3px;
+    }
+    
+    .loading-bar {
+        height: 18px;
+    }
+    
+    .loading-percentage {
+        font-size: 1.1rem;
+    }
+    
+    .status-message {
+        font-size: 0.85rem;
+        letter-spacing: 2px;
+    }
+    
+    .boot-sequence {
+        padding: 1rem;
+    }
+}
+
+/* Landscape Mobile */
+@media (max-height: 600px) and (orientation: landscape) {
+    .boot-logo {
+        width: 180px;
+        height: 180px;
+    }
+    
+    .logo-container {
+        margin-bottom: 2rem;
+    }
+    
+    .press-enter p {
+        font-size: 0.9rem;
+    }
+    
+    .terminal {
+        font-size: 0.75rem;
+        margin: 1rem 0;
+    }
+    
+    .terminal-line {
+        margin-bottom: 0.3rem;
+    }
+    
+    .loading-container {
+        margin: 1.5rem 0;
+    }
+}
