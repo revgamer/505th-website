@@ -3,165 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>505th Expeditionary Force</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>505th EF - Initializing...</title>
+    <link rel="stylesheet" href="css/splash.css">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar" id="navbar">
-        <div class="nav-container">
-            <!-- Logo as Menu Toggle -->
-            <div class="nav-brand" id="logoMenu">
-                <img src="images/logo.png" alt="505th Logo" class="nav-logo">
-                <span class="nav-title">505TH EXPEDITIONARY FORCE</span>
-                <span class="menu-hint">▼ MENU</span>
+    <div class="splash-container">
+        <!-- Scanline Effect -->
+        <div class="scanlines"></div>
+        
+        <!-- STAGE 1: Initial Screen (Logo + Press Enter) -->
+        <div class="initial-screen" id="initialScreen">
+            <div class="logo-container">
+                <img src="images/logo.png" alt="505th Logo" class="boot-logo">
+                <div class="logo-glow"></div>
             </div>
             
-            <!-- Desktop Navigation (Right side) -->
-            <div class="nav-links">
-                <a href="login.html" class="nav-link login-btn">🔒 LOGIN</a>
+            <div class="press-enter">
+                <p>PRESS [ENTER] TO INITIALIZE</p>
             </div>
         </div>
-    </nav>
-
-    <!-- Tactical Dropdown Menu -->
-    <div class="tactical-menu" id="tacticalMenu">
-        <div class="tactical-menu-overlay" id="menuOverlay"></div>
-        <div class="tactical-menu-content">
-            <div class="menu-header">
-                <h2>COMMAND TERMINAL</h2>
-                <button class="menu-close" id="menuClose">✕</button>
+        
+        <!-- STAGE 2: Boot Sequence (Hidden initially) -->
+        <div class="boot-sequence" id="bootSequence">
+            <!-- Terminal Text -->
+            <div class="terminal">
+                <div class="terminal-line">
+                    <span class="prompt">&gt;</span> UNSC TACTICAL NETWORK v4.2.1
+                </div>
+                <div class="terminal-line">
+                    <span class="prompt">&gt;</span> INITIALIZING SECURE CONNECTION...
+                </div>
+                <div class="terminal-line">
+                    <span class="prompt">&gt;</span> LOADING 505TH EXPEDITIONARY FORCE DATABASE...
+                </div>
+                <div class="terminal-line">
+                    <span class="prompt">&gt;</span> VERIFYING CREDENTIALS...
+                </div>
+                <div class="terminal-line">
+                    <span class="prompt">&gt;</span> AUTHENTICATION: <span class="success">VERIFIED</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="prompt">&gt;</span> SECURITY CLEARANCE: <span class="success">GRANTED</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="prompt">&gt;</span> LOADING PERSONNEL DATABASE...
+                </div>
+                <div class="terminal-line">
+                    <span class="prompt">&gt;</span> ACCESSING COMMAND TERMINAL...
+                </div>
             </div>
             
-            <div class="menu-grid">
-                <a href="index.html" class="menu-item active">
-                    <div class="menu-icon">🏠</div>
-                    <div class="menu-text">
-                        <h3>HOME</h3>
-                        <p>Main Hub</p>
-                    </div>
-                </a>
-                
-                <a href="about.html" class="menu-item">
-                    <div class="menu-icon">ℹ️</div>
-                    <div class="menu-text">
-                        <h3>ABOUT US</h3>
-                        <p>Unit Information</p>
-                    </div>
-                </a>
-                
-                <a href="roster.html" class="menu-item">
-                    <div class="menu-icon">👥</div>
-                    <div class="menu-text">
-                        <h3>ROSTER</h3>
-                        <p>Personnel Database</p>
-                    </div>
-                </a>
-                
-                <a href="handbook.html" class="menu-item">
-                    <div class="menu-icon">📋</div>
-                    <div class="menu-text">
-                        <h3>HANDBOOK</h3>
-                        <p>SOPs & Training</p>
-                    </div>
-                </a>
-                
-                <a href="join.html" class="menu-item">
-                    <div class="menu-icon">✓</div>
-                    <div class="menu-text">
-                        <h3>JOIN US</h3>
-                        <p>Recruitment</p>
-                    </div>
-                </a>
-                
-                <a href="media.html" class="menu-item">
-                    <div class="menu-icon">📷</div>
-                    <div class="menu-text">
-                        <h3>MEDIA</h3>
-                        <p>Gallery & Videos</p>
-                    </div>
-                </a>
-                
-                <a href="rules.html" class="menu-item">
-                    <div class="menu-icon">⚖️</div>
-                    <div class="menu-text">
-                        <h3>RULES</h3>
-                        <p>Code of Conduct</p>
-                    </div>
-                </a>
-                
-                <a href="login.html" class="menu-item login">
-                    <div class="menu-icon">🔒</div>
-                    <div class="menu-text">
-                        <h3>LOGIN</h3>
-                        <p>NCO+ Portal</p>
-                    </div>
-                </a>
+            <!-- Loading Bar -->
+            <div class="loading-container">
+                <div class="loading-label">LOADING SYSTEM</div>
+                <div class="loading-bar">
+                    <div class="loading-progress" id="progress"></div>
+                </div>
+                <div class="loading-percentage" id="percentage">0%</div>
             </div>
             
-            <div class="menu-footer">
-                <p>CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY</p>
+            <!-- Status Message -->
+            <div class="status-message" id="status">
+                STAND BY...
             </div>
         </div>
     </div>
-
-    <!-- Under Construction Section -->
-    <section class="construction-page">
-        <div class="construction-content">
-            <div class="logo-display">
-                <img src="images/logo.png" alt="505th Logo" class="construction-logo">
-                <div class="logo-rings">
-                    <div class="ring ring-1"></div>
-                    <div class="ring ring-2"></div>
-                    <div class="ring ring-3"></div>
-                </div>
-            </div>
-            
-            <h1 class="construction-title">
-                <span class="title-line">505TH EXPEDITIONARY FORCE</span>
-                <span class="title-subtitle">UNITED NATIONS SPACE COMMAND</span>
-            </h1>
-            
-            <div class="status-panel">
-                <div class="status-header">
-                    <span class="status-indicator"></span>
-                    <h2>TACTICAL OPERATIONS CENTER</h2>
-                </div>
-                
-                <div class="status-body">
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> FACILITY STATUS: UNDER CONSTRUCTION
-                    </p>
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> ESTIMATED COMPLETION: STAND BY FOR ORDERS
-                    </p>
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> CURRENT PHASE: INFRASTRUCTURE DEPLOYMENT
-                    </p>
-                </div>
-                
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
-                
-                <p class="status-footer">All personnel await further instructions...</p>
-            </div>
-            
-            <div class="quick-actions">
-                <a href="https://discord.gg/yourlink" class="action-btn" target="_blank">
-                    <span class="btn-icon">💬</span>
-                    <span class="btn-text">JOIN OUR DISCORD</span>
-                </a>
-            </div>
-            
-            <div class="construction-footer">
-                <p>FOR MORE INFORMATION, ACCESS THE COMMAND TERMINAL</p>
-                <p class="hint">▲ CLICK LOGO ABOVE ▲</p>
-            </div>
-        </div>
-    </section>
-
-    <script src="js/nav.js"></script>
+    
+    <script src="js/splash.js"></script>
 </body>
 </html>

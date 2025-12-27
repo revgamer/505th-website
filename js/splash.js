@@ -4,7 +4,7 @@ const CONFIG = {
     terminalDelay: 200,      // Delay between terminal lines (ms)
     loadingDuration: 3000,   // Loading bar duration (ms)
     redirectDelay: 1000,     // Delay before redirect (ms)
-    targetPage: 'index.html'
+    targetPage: 'home.html'
 };
 
 // DOM Elements
