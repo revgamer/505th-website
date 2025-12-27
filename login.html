@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>505th Expeditionary Force - System Access</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #a0a0a0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(15, 15, 15, 0.95);
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 30px;
+            background: #2DD4BF;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .shield-icon {
+            width: 50px;
+            height: 50px;
+            fill: #0a0a0a;
+        }
+
+        .title {
+            text-align: center;
+            color: #2DD4BF;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            letter-spacing: 3px;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            color: #2DD4BF;
+            font-size: 16px;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .terminal-prompt {
+            color: #2DD4BF;
+            margin-right: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            color: #888;
+            font-size: 11px;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #2DD4BF;
+            box-shadow: 0 0 10px rgba(45, 212, 191, 0.3);
+        }
+
+        .form-input::placeholder {
+            color: #555;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232DD4BF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+            padding-right: 40px;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #2DD4BF;
+            box-shadow: 0 0 10px rgba(45, 212, 191, 0.3);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            background: #2DD4BF;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #25b8a8;
+            box-shadow: 0 0 20px rgba(45, 212, 191, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .toggle-link {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #2a2a2a;
+        }
+
+        .toggle-link a {
+            color: #888;
+            text-decoration: none;
+            font-size: 12px;
+            letter-spacing: 2px;
+            transition: color 0.3s ease;
+        }
+
+        .toggle-link a:hover {
+            color: #2DD4BF;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #2a2a2a;
+            color: #555;
+            font-size: 11px;
+            letter-spacing: 2px;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: #2DD4BF;
+            border-radius: 50%;
+            margin: 0 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            .title {
+                font-size: 24px;
+                letter-spacing: 2px;
+            }
+
+            .subtitle {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Logo -->
+        <div class="logo">
+            <svg class="shield-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L4 6V12C4 16.55 7.16 20.74 12 22C16.84 20.74 20 16.55 20 12V6L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+
+        <!-- Title -->
+        <h1 class="title">505TH TRACKER_</h1>
+        <p class="subtitle">OPERATION BLACKOUT</p>
+
+        <!-- Login Form -->
+        <div id="loginForm" class="fade-in">
+            <div class="form-section">
+                <div class="section-header">
+                    <span class="terminal-prompt">></span> SYSTEM ACCESS
+                </div>
+
+                <div class="error-message" id="loginError">
+                    ACCESS DENIED • INVALID CREDENTIALS
+                </div>
+
+                <form id="authForm" onsubmit="return handleLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label">CALLSIGN</label>
+                        <input type="text" class="form-input" id="loginCallsign" placeholder="Enter callsign..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">ACCESS CODE</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter access code..." required>
+                    </div>
+
+                    <button type="submit" class="btn">AUTHENTICATE</button>
+                </form>
+            </div>
+
+            <div class="toggle-link">
+                <a href="#" onclick="toggleForm('register'); return false;">NEW OPERATIVE? REGISTER ></a>
+            </div>
+        </div>
+
+        <!-- Registration Form -->
+        <div id="registerForm" class="hidden">
+            <div class="form-section">
+                <div class="section-header">
+                    <span class="terminal-prompt">></span> NEW OPERATIVE REGISTRATION
+                </div>
+
+                <div class="error-message" id="registerError">
+                    REGISTRATION FAILED • CHECK ALL FIELDS
+                </div>
+
+                <form id="regForm" onsubmit="return handleRegister(event)">
+                    <div class="form-group">
+                        <label class="form-label">CALLSIGN</label>
+                        <input type="text" class="form-input" id="regCallsign" placeholder="Enter callsign..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">ACCESS CODE</label>
+                        <input type="password" class="form-input" id="regPassword" placeholder="Enter access code..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">CLEARANCE LEVEL</label>
+                        <select class="form-select" id="clearanceLevel" required>
+                            <option value="">Select clearance level...</option>
+                            <option value="recruit">RECRUIT - BASIC ACCESS</option>
+                            <option value="nco">NCO - LIMITED ACCESS</option>
+                            <option value="officer">OFFICER - ELEVATED ACCESS</option>
+                            <option value="command">COMMAND - FULL ACCESS</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn">REGISTER OPERATIVE</button>
+                </form>
+            </div>
+
+            <div class="toggle-link">
+                <a href="#" onclick="toggleForm('login'); return false;">< RETURN TO LOGIN</a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            SECURE CONNECTION ESTABLISHED<span class="status-dot"></span>ENCRYPTED
+        </div>
+    </div>
+
+    <script>
+        function toggleForm(formType) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            
+            if (formType === 'register') {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                registerForm.classList.add('fade-in');
+            } else {
+                registerForm.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+                loginForm.classList.add('fade-in');
+            }
+
+            // Clear error messages
+            document.getElementById('loginError').classList.remove('show');
+            document.getElementById('registerError').classList.remove('show');
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const callsign = document.getElementById('loginCallsign').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            // Example validation - replace with your actual authentication logic
+            if (callsign && password) {
+                // Successful login - redirect or perform action
+                console.log('Login attempt:', { callsign, password });
+                
+                // Example: redirect to dashboard
+                // window.location.href = '/dashboard';
+                
+                alert('AUTHENTICATION SUCCESSFUL\n\nWelcome, ' + callsign);
+            } else {
+                // Show error
+                const errorMsg = document.getElementById('loginError');
+                errorMsg.classList.add('show');
+                setTimeout(() => errorMsg.classList.remove('show'), 3000);
+            }
+            
+            return false;
+        }
+
+        function handleRegister(event) {
+            event.preventDefault();
+            
+            const callsign = document.getElementById('regCallsign').value;
+            const password = document.getElementById('regPassword').value;
+            const clearance = document.getElementById('clearanceLevel').value;
+            
+            // Example validation - replace with your actual registration logic
+            if (callsign && password && clearance) {
+                // Successful registration
+                console.log('Registration attempt:', { callsign, password, clearance });
+                
+                alert('OPERATIVE REGISTERED\n\nCallsign: ' + callsign + '\nClearance: ' + clearance);
+                
+                // Switch back to login form
+                toggleForm('login');
+            } else {
+                // Show error
+                const errorMsg = document.getElementById('registerError');
+                errorMsg.classList.add('show');
+                setTimeout(() => errorMsg.classList.remove('show'), 3000);
+            }
+            
+            return false;
+        }
+
+        // Add typing sound effect (optional)
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('keypress', function() {
+                // You can add sound effects here if desired
+            });
+        });
+    </script>
+</body>
+</html>
