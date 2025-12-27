@@ -29,62 +29,95 @@
                 <button class="menu-close" id="menuClose">✕</button>
             </div>
             
-            <div class="menu-grid">
-                <a href="home.html" class="menu-item active">
-                    <div class="menu-icon">🏠</div>
-                    <div class="menu-text">
-                        <h3>HOME</h3>
-                        <p>Main Hub</p>
+            <div class="menu-sections">
+                <!-- HOME -->
+                <div class="menu-section">
+                    <a href="home.html" class="section-title active">
+                        <span class="section-icon">🏠</span>
+                        <span>HOME</span>
+                    </a>
+                </div>
+
+                <!-- ABOUT US (with dropdown) -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="about">
+                        <span class="section-icon">ℹ️</span>
+                        <span>ABOUT US</span>
+                        <span class="submenu-arrow">▼</span>
                     </div>
-                </a>
-                
-                <a href="about.html" class="menu-item">
-                    <div class="menu-icon">ℹ️</div>
-                    <div class="menu-text">
-                        <h3>ABOUT US</h3>
-                        <p>Unit Information</p>
+                    <div class="submenu" id="submenu-about">
+                        <a href="about-505th.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            505th Expeditionary Force
+                        </a>
+                        <a href="about-killjoy.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Killjoy
+                        </a>
+                        <a href="about-stalker.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            JTF-23 Stalker
+                        </a>
+                        <a href="about-corpsman.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Hospital Corpsman
+                        </a>
+                        <a href="about-pilots.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Pilots
+                        </a>
                     </div>
-                </a>
-                
-                <a href="roster.html" class="menu-item">
-                    <div class="menu-icon">👥</div>
-                    <div class="menu-text">
-                        <h3>ROSTER</h3>
-                        <p>Personnel Database</p>
+                </div>
+
+                <!-- MEDIA (with dropdown) -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="media">
+                        <span class="section-icon">📷</span>
+                        <span>MEDIA</span>
+                        <span class="submenu-arrow">▼</span>
                     </div>
-                </a>
-                
-                <a href="handbook.html" class="menu-item">
-                    <div class="menu-icon">📋</div>
-                    <div class="menu-text">
-                        <h3>HANDBOOK</h3>
-                        <p>SOPs & Training</p>
+                    <div class="submenu" id="submenu-media">
+                        <a href="media-gallery.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Gallery
+                        </a>
+                        <a href="media-videos.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Videos
+                        </a>
                     </div>
-                </a>
-                
-                <a href="join.html" class="menu-item">
-                    <div class="menu-icon">✓</div>
-                    <div class="menu-text">
-                        <h3>JOIN US</h3>
-                        <p>Recruitment Info</p>
+                </div>
+
+                <!-- RESOURCES (with dropdown) -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="resources">
+                        <span class="section-icon">📋</span>
+                        <span>RESOURCES</span>
+                        <span class="submenu-arrow">▼</span>
                     </div>
-                </a>
-                
-                <a href="media.html" class="menu-item">
-                    <div class="menu-icon">📷</div>
-                    <div class="menu-text">
-                        <h3>MEDIA</h3>
-                        <p>Gallery & Videos</p>
+                    <div class="submenu" id="submenu-resources">
+                        <a href="resources-discord-rules.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Discord Rules
+                        </a>
+                        <a href="resources-handbook.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            General Handbook
+                        </a>
+                        <a href="resources-roster.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Roster
+                        </a>
                     </div>
-                </a>
-                
-                <a href="rules.html" class="menu-item">
-                    <div class="menu-icon">⚖️</div>
-                    <div class="menu-text">
-                        <h3>RULES</h3>
-                        <p>Code of Conduct</p>
-                    </div>
-                </a>
+                </div>
+
+                <!-- JOIN US (Direct Discord Link) -->
+                <div class="menu-section">
+                    <a href="https://discord.gg/yourlink" class="section-title join-btn" target="_blank">
+                        <span class="section-icon">💬</span>
+                        <span>JOIN US</span>
+                    </a>
+                </div>
             </div>
             
             <div class="menu-footer">
@@ -136,7 +169,7 @@
             </div>
             
             <div class="quick-actions">
-                <a href="https://discord.gg/pNkbaUtcw6" class="action-btn" target="_blank">
+                <a href="https://discord.gg/yourlink" class="action-btn" target="_blank">
                     <span class="btn-icon">💬</span>
                     <span class="btn-text">JOIN OUR DISCORD</span>
                 </a>

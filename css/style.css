@@ -551,6 +551,117 @@ a {
     50% { transform: translateY(-5px); }
 }
 
+/* ===== SUBMENU STYLES ===== */
+.menu-sections {
+    padding: 0;
+}
+
+.menu-section {
+    border-bottom: 1px solid var(--primary);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+    background: var(--bg-card);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+}
+
+.section-title:hover {
+    background: var(--bg-elevated);
+    border-left: 4px solid var(--accent);
+    padding-left: calc(2rem - 4px);
+}
+
+.section-title.active {
+    background: var(--primary-dark);
+    border-left: 4px solid var(--accent);
+    padding-left: calc(2rem - 4px);
+}
+
+.section-icon {
+    font-size: 1.8rem;
+}
+
+.submenu-arrow {
+    margin-left: auto;
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+    color: var(--accent);
+}
+
+.section-title.open .submenu-arrow {
+    transform: rotate(180deg);
+}
+
+/* Submenu Items */
+.submenu {
+    max-height: 0;
+    overflow: hidden;
+    background: var(--bg-elevated);
+    transition: max-height 0.3s ease;
+}
+
+.submenu.open {
+    max-height: 500px;
+}
+
+.submenu-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 2rem 1rem 4rem;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+}
+
+.submenu-item:hover {
+    background: var(--bg-card);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    padding-left: calc(4rem - 3px);
+}
+
+.submenu-bullet {
+    color: var(--accent);
+    font-size: 0.8rem;
+}
+
+/* Join Button Special Style */
+.join-btn {
+    background: var(--primary-dark);
+}
+
+.join-btn:hover {
+    background: var(--primary);
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* Responsive Submenu */
+@media (max-width: 768px) {
+    .section-title {
+        font-size: 1rem;
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .section-icon {
+        font-size: 1.5rem;
+    }
+    
+    .submenu-item {
+        padding: 0.75rem 1.5rem 0.75rem 3rem;
+        font-size: 0.9rem;
+    }
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .nav-title {

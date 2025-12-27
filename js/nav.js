@@ -9,7 +9,7 @@ const menuOverlay = document.getElementById('menuOverlay');
 logoMenu.addEventListener('click', (e) => {
     e.preventDefault();
     tacticalMenu.classList.add('active');
-    document.body.style.overflow = 'hidden'; // Prevent scrolling
+    document.body.style.overflow = 'hidden';
 });
 
 // Close menu when clicking X button
@@ -30,6 +30,35 @@ document.addEventListener('keydown', (e) => {
         tacticalMenu.classList.remove('active');
         document.body.style.overflow = 'auto';
     }
+});
+
+// ===== SUBMENU TOGGLE =====
+const sectionTitles = document.querySelectorAll('.section-title[data-submenu]');
+
+sectionTitles.forEach(title => {
+    title.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        const submenuId = title.getAttribute('data-submenu');
+        const submenu = document.getElementById('submenu-' + submenuId);
+        
+        // Close all other submenus
+        document.querySelectorAll('.submenu').forEach(menu => {
+            if (menu !== submenu) {
+                menu.classList.remove('open');
+            }
+        });
+        
+        document.querySelectorAll('.section-title').forEach(t => {
+            if (t !== title) {
+                t.classList.remove('open');
+            }
+        });
+        
+        // Toggle current submenu
+        submenu.classList.toggle('open');
+        title.classList.toggle('open');
+    });
 });
 
 // Smooth scroll for anchor links
