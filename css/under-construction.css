@@ -43,8 +43,7 @@ a {
 
 /* ===== NAVIGATION ===== */
 .navbar {
-    background: rgba(10, 14, 18, 0.95);
-    backdrop-filter: blur(10px);
+    background: transparent;
     position: sticky;
     top: 0;
     z-index: 1000;
