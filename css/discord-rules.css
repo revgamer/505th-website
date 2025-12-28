@@ -1,0 +1,293 @@
+/* Discord Rules Page Styles */
+
+.intro-box {
+    background: var(--bg-elevated);
+    border: 2px solid var(--accent);
+    padding: 1.5rem 2rem;
+    margin-bottom: 3rem;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* Rules Grid */
+.rules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 4rem;
+}
+
+.rule-card {
+    background: var(--bg-card);
+    border: 2px solid var(--primary);
+    padding: 2rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.rule-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--accent);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.rule-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px var(--accent-glow);
+    transform: translateY(-3px);
+}
+
+.rule-card:hover::before {
+    transform: scaleY(1);
+}
+
+.rule-card.warning {
+    border-color: #FF6B00;
+    background: rgba(255, 107, 0, 0.05);
+}
+
+.rule-card.warning:hover {
+    border-color: #FF6B00;
+    box-shadow: 0 0 20px rgba(255, 107, 0, 0.3);
+}
+
+.rule-card.warning .rule-number {
+    background: #FF6B00;
+    color: var(--bg-dark);
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.5);
+}
+
+.rule-number {
+    background: var(--primary);
+    color: var(--accent);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    border: 2px solid var(--accent);
+    flex-shrink: 0;
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.rule-content h3 {
+    color: var(--accent);
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 1px;
+}
+
+.rule-content p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* Additional Info Section */
+.additional-info {
+    margin-bottom: 3rem;
+}
+
+.additional-info h2 {
+    color: var(--accent);
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    letter-spacing: 3px;
+}
+
+.info-section {
+    background: var(--bg-card);
+    border: 2px solid var(--primary);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid var(--accent);
+}
+
+.info-section h3 {
+    color: var(--accent);
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    letter-spacing: 2px;
+}
+
+.info-section p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    line-height: 1.8;
+}
+
+.consequence-list,
+.zero-tolerance-list,
+.appeal-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.consequence-list li,
+.zero-tolerance-list li,
+.appeal-list li {
+    padding: 0.75rem 0;
+    padding-left: 2rem;
+    position: relative;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--primary);
+}
+
+.consequence-list li:before,
+.zero-tolerance-list li:before,
+.appeal-list li:before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 1.2rem;
+}
+
+.zero-tolerance-list li {
+    border-bottom-color: #FF6B00;
+}
+
+.zero-tolerance-list li:before {
+    content: '⚠';
+    color: #FF6B00;
+}
+
+.note {
+    background: rgba(255, 184, 0, 0.1);
+    border-left: 3px solid #FFB800;
+    padding: 1rem;
+    margin-top: 1rem;
+    font-size: 0.95rem;
+}
+
+/* Discord CTA */
+.discord-cta {
+    background: linear-gradient(135deg, var(--primary-dark), var(--bg-elevated));
+    border: 2px solid var(--accent);
+    padding: 3rem 2rem;
+    text-align: center;
+    margin-bottom: 3rem;
+    box-shadow: 0 0 30px var(--accent-glow);
+}
+
+.discord-cta h2 {
+    color: var(--accent);
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    letter-spacing: 3px;
+}
+
+.discord-cta p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+.discord-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--primary);
+    border: 2px solid var(--accent);
+    padding: 1.25rem 3rem;
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.discord-btn:hover {
+    background: var(--accent);
+    color: var(--bg-dark);
+    box-shadow: 0 0 30px var(--accent-glow);
+    transform: translateY(-3px);
+}
+
+.discord-btn .btn-icon {
+    font-size: 2rem;
+}
+
+/* Rules Footer */
+.rules-footer {
+    background: var(--bg-elevated);
+    border: 2px solid var(--primary);
+    padding: 2rem;
+    text-align: center;
+}
+
+.rules-footer p {
+    color: var(--text-secondary);
+    margin: 0.5rem 0;
+    font-size: 1rem;
+}
+
+.last-updated {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .rules-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .rule-card {
+        padding: 1.5rem;
+    }
+    
+    .rule-number {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .rule-content h3 {
+        font-size: 1.1rem;
+    }
+    
+    .info-section {
+        padding: 1.5rem;
+    }
+    
+    .discord-cta {
+        padding: 2rem 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .intro-box {
+        padding: 1rem;
+        font-size: 1rem;
+    }
+    
+    .rule-card {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .discord-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
