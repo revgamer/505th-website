@@ -81,8 +81,8 @@ a {
 }
 
 .nav-logo {
-    width: 100px;
-    height: 100px;
+    width: 140px;
+    height: 140px;
     filter: drop-shadow(0 0 10px var(--accent-glow));
     transition: all 0.3s ease;
     animation: logoBreathing 3s ease-in-out infinite;
