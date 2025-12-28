@@ -57,10 +57,11 @@ a {
 .nav-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 1.5rem 2rem;
+    padding: 1.5rem 2rem 3rem 2rem;
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
 }
 
 /* Logo as Menu Toggle (LOGO ONLY) */
@@ -69,6 +70,8 @@ a {
     align-items: center;
     cursor: pointer;
     transition: all 0.3s ease;
+    position: relative;
+    z-index: 10;
 }
 
 .nav-brand:hover {
@@ -80,11 +83,13 @@ a {
 }
 
 .nav-logo {
-    width: 140px;
-    height: 140px;
+    width: 100px;
+    height: 100px;
     filter: drop-shadow(0 0 10px var(--accent-glow));
     transition: all 0.3s ease;
     animation: logoBreathing 3s ease-in-out infinite;
+    position: relative;
+    top: 50px;
 }
 
 @keyframes logoBreathing {
@@ -540,9 +545,14 @@ a {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
+    .nav-container {
+        padding: 1rem 2rem 2.5rem 2rem;
+    }
+    
     .nav-logo {
-        width: 60px;
-        height: 60px;
+        width: 80px;
+        height: 80px;
+        top: 40px;
     }
     
     .menu-header {
@@ -605,13 +615,14 @@ a {
 }
 
 @media (max-width: 480px) {
-    .nav-logo {
-        width: 50px;
-        height: 50px;
+    .nav-container {
+        padding: 0.75rem 1rem 2rem 1rem;
     }
     
-    .nav-container {
-        padding: 1rem;
+    .nav-logo {
+        width: 70px;
+        height: 70px;
+        top: 35px;
     }
     
     .construction-page::before {
@@ -644,8 +655,9 @@ a {
 /* Landscape Mobile */
 @media (max-height: 600px) and (orientation: landscape) {
     .nav-logo {
-        width: 50px;
-        height: 50px;
+        width: 60px;
+        height: 60px;
+        top: 30px;
     }
     
     .construction-page {
