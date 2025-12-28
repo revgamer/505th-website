@@ -1,0 +1,344 @@
+/* Handbook-specific styles */
+
+.version {
+    color: var(--text-muted);
+    font-size: 1rem;
+    margin-top: 0.5rem;
+}
+
+/* Introduction */
+.intro-section {
+    background: var(--bg-card);
+    padding: 2rem;
+    border-left: 4px solid var(--accent);
+    margin-bottom: 3rem;
+    font-size: 1.05rem;
+    line-height: 1.8;
+}
+
+/* Table of Contents */
+.toc-section {
+    background: var(--bg-elevated);
+    padding: 2rem;
+    border: 2px solid var(--primary);
+    margin-bottom: 3rem;
+}
+
+.toc-section h2 {
+    color: var(--accent);
+    font-size: 1.5rem;
+    letter-spacing: 3px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.toc-item {
+    background: var(--bg-card);
+    padding: 1rem;
+    border: 1px solid var(--primary);
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    text-align: center;
+    font-weight: 600;
+}
+
+.toc-item:hover {
+    background: var(--primary-dark);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-2px);
+}
+
+/* Handbook Sections */
+.handbook-section {
+    margin-bottom: 4rem;
+    scroll-margin-top: 100px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 2rem;
+    color: var(--accent);
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 3px solid var(--accent);
+}
+
+.section-number {
+    background: var(--primary);
+    color: var(--accent);
+    padding: 0.5rem 1rem;
+    font-size: 1.5rem;
+    border: 2px solid var(--accent);
+}
+
+/* Subsections */
+.subsection {
+    background: var(--bg-card);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-left: 3px solid var(--primary);
+}
+
+.subsection h3 {
+    color: var(--accent);
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    letter-spacing: 2px;
+}
+
+.subsection h4 {
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    margin: 1.5rem 0 1rem;
+}
+
+/* Lists */
+.rule-list {
+    list-style: none;
+    counter-reset: rule-counter;
+    padding-left: 0;
+}
+
+.rule-list li {
+    counter-increment: rule-counter;
+    padding: 0.75rem 0;
+    padding-left: 3rem;
+    position: relative;
+    border-bottom: 1px solid var(--primary);
+}
+
+.rule-list li:before {
+    content: counter(rule-counter);
+    position: absolute;
+    left: 0;
+    top: 0.75rem;
+    background: var(--primary);
+    color: var(--accent);
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--accent);
+    font-weight: 700;
+}
+
+.bullet-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.bullet-list li {
+    padding: 0.5rem 0;
+    padding-left: 2rem;
+    position: relative;
+}
+
+.bullet-list li:before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 1.2rem;
+}
+
+/* Info Boxes */
+.info-box {
+    background: var(--bg-elevated);
+    border: 2px solid var(--accent);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.info-box.warning {
+    border-color: #FFB800;
+}
+
+.info-box strong {
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.warning-box {
+    background: rgba(255, 184, 0, 0.1);
+    border: 2px solid #FFB800;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.warning-box strong {
+    color: #FFB800;
+}
+
+.example-box {
+    background: var(--bg-dark);
+    padding: 1rem;
+    margin-top: 1rem;
+    border-left: 3px solid var(--accent);
+}
+
+/* Quote Blocks */
+.quote-block {
+    background: var(--primary-dark);
+    border-left: 4px solid var(--accent);
+    padding: 1.5rem 2rem;
+    margin: 2rem 0;
+    font-style: italic;
+    font-size: 1.1rem;
+}
+
+.quote-block.small {
+    font-size: 1rem;
+    padding: 1rem 1.5rem;
+}
+
+.closing-quote {
+    background: var(--primary-dark);
+    border: 3px solid var(--accent);
+    padding: 2rem;
+    margin: 4rem 0 2rem;
+    text-align: center;
+    font-style: italic;
+    font-size: 1.1rem;
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* Event Cards */
+.event-card {
+    background: var(--bg-elevated);
+    border: 2px solid var(--primary);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.event-card h4 {
+    color: var(--accent);
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+}
+
+.event-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.event-details span {
+    color: var(--text-secondary);
+}
+
+/* Rank Cards */
+.rank-card {
+    background: var(--bg-card);
+    border: 2px solid var(--primary);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.rank-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid var(--primary);
+}
+
+.rank-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    letter-spacing: 2px;
+}
+
+.rank-header.enlisted {
+    background: #2F3A1B;
+    color: #6B8235;
+}
+
+.rank-header.nco {
+    background: #1B2F3A;
+    color: #00D9FF;
+}
+
+.rank-header.senior-nco {
+    background: #3A1B2F;
+    color: #FF00D9;
+}
+
+.rank-header.officer {
+    background: #3A2F1B;
+    color: #FFB800;
+}
+
+.rank-header.senior-officer {
+    background: #3A1B1B;
+    color: #FF6B00;
+}
+
+.rank-header.general {
+    background: #1B1B3A;
+    color: #00FFFF;
+}
+
+.rank-body {
+    padding: 1.5rem;
+}
+
+.rank-body p {
+    margin-bottom: 0.75rem;
+}
+
+.rank-body strong {
+    color: var(--accent);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .section-title {
+        flex-direction: column;
+        align-items: flex-start;
+        font-size: 1.5rem;
+    }
+    
+    .section-number {
+        font-size: 1.2rem;
+    }
+    
+    .subsection {
+        padding: 1.5rem;
+    }
+    
+    .toc-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .event-card {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .rule-list li {
+        padding-left: 2.5rem;
+    }
+    
+    .rule-list li:before {
+        width: 1.5rem;
+        height: 1.5rem;
+        font-size: 0.85rem;
+    }
+    
+    .quote-block {
+        padding: 1rem;
+        font-size: 0.95rem;
+    }
+}
