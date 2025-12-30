@@ -1,149 +1,190 @@
-/* Handbook-specific styles */
+/* Handbook specific styles */
+/* Import base styles from pages.css */
 
-.version {
-    color: var(--text-muted);
-    font-size: 1rem;
-    margin-top: 0.5rem;
+/* ===== FADED LOGO BACKGROUND ===== */
+.page-content {
+    position: relative;
+    overflow: hidden;
 }
 
-/* Introduction */
+.page-content::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background-image: url('../images/logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.05;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.page-content .container {
+    position: relative;
+    z-index: 1;
+}
+
+/* Introduction Section */
 .intro-section {
     background: var(--bg-card);
+    border: 2px solid var(--accent);
     padding: 2rem;
-    border-left: 4px solid var(--accent);
     margin-bottom: 3rem;
-    font-size: 1.05rem;
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.intro-section p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
     line-height: 1.8;
+    letter-spacing: 0.5px;
 }
 
 /* Table of Contents */
 .toc-section {
     background: var(--bg-elevated);
-    padding: 2rem;
-    border: 2px solid var(--primary);
+    border: 2px solid var(--accent);
+    padding: 2.5rem;
     margin-bottom: 3rem;
+    box-shadow: 0 0 30px var(--accent-glow);
 }
 
 .toc-section h2 {
     color: var(--accent);
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     letter-spacing: 3px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     text-align: center;
+    text-shadow: 0 0 10px var(--accent-glow);
 }
 
 .toc-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
 }
 
 .toc-item {
     background: var(--bg-card);
-    padding: 1rem;
-    border: 1px solid var(--primary);
+    border: 2px solid var(--accent);
+    padding: 1.5rem;
     color: var(--text-secondary);
-    transition: all 0.3s ease;
-    text-align: center;
     font-weight: 600;
+    letter-spacing: 1px;
+    text-align: center;
+    transition: all 0.3s ease;
 }
 
 .toc-item:hover {
-    background: var(--primary-dark);
-    border-color: var(--accent);
-    color: var(--accent);
-    transform: translateY(-2px);
+    background: var(--accent);
+    color: var(--bg-dark);
+    transform: translateY(-3px);
+    box-shadow: 0 0 20px var(--accent-glow);
 }
 
 /* Handbook Sections */
 .handbook-section {
     margin-bottom: 4rem;
-    scroll-margin-top: 100px;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+.handbook-section:last-of-type {
+    border-bottom: none;
 }
 
 .section-title {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    font-size: 2rem;
+    gap: 2rem;
     color: var(--accent);
+    font-size: 2.5rem;
+    letter-spacing: 4px;
     margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 3px solid var(--accent);
+    text-shadow: 0 0 15px var(--accent-glow);
 }
 
 .section-number {
     background: var(--primary);
-    color: var(--accent);
-    padding: 0.5rem 1rem;
-    font-size: 1.5rem;
     border: 2px solid var(--accent);
+    padding: 0.5rem 1.5rem;
+    font-size: 1.5rem;
 }
 
 /* Subsections */
 .subsection {
-    background: var(--bg-card);
-    padding: 2rem;
-    margin-bottom: 2rem;
-    border-left: 3px solid var(--primary);
+    margin-bottom: 2.5rem;
 }
 
 .subsection h3 {
     color: var(--accent);
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
+    font-size: 1.8rem;
     letter-spacing: 2px;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 1rem;
 }
 
 .subsection h4 {
     color: var(--text-primary);
-    font-size: 1.2rem;
-    margin: 1.5rem 0 1rem;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    margin-top: 1.5rem;
+}
+
+.subsection p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 1rem;
 }
 
 /* Lists */
-.rule-list {
+.rule-list,
+.bullet-list {
     list-style: none;
-    counter-reset: rule-counter;
-    padding-left: 0;
+    padding: 0;
+    margin-bottom: 1.5rem;
 }
 
 .rule-list li {
-    counter-increment: rule-counter;
-    padding: 0.75rem 0;
-    padding-left: 3rem;
+    color: var(--text-secondary);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--bg-card);
+    border-left: 4px solid var(--accent);
     position: relative;
-    border-bottom: 1px solid var(--primary);
+    padding-left: 3rem;
 }
 
-.rule-list li:before {
-    content: counter(rule-counter);
+.rule-list li::before {
+    content: counter(list-item);
+    counter-increment: list-item;
     position: absolute;
-    left: 0;
-    top: 0.75rem;
-    background: var(--primary);
+    left: 1rem;
     color: var(--accent);
-    width: 2rem;
-    height: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid var(--accent);
     font-weight: 700;
-}
-
-.bullet-list {
-    list-style: none;
-    padding-left: 0;
+    font-size: 1.2rem;
 }
 
 .bullet-list li {
-    padding: 0.5rem 0;
+    color: var(--text-secondary);
+    padding: 0.75rem 0;
     padding-left: 2rem;
     position: relative;
+    border-bottom: 1px solid rgba(0, 217, 255, 0.1);
 }
 
-.bullet-list li:before {
+.bullet-list li:last-child {
+    border-bottom: none;
+}
+
+.bullet-list li::before {
     content: '▸';
     position: absolute;
     left: 0;
@@ -153,140 +194,185 @@
 
 /* Info Boxes */
 .info-box {
-    background: var(--bg-elevated);
+    background: var(--bg-card);
     border: 2px solid var(--accent);
     padding: 1.5rem;
-    margin: 1.5rem 0;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0 15px var(--accent-glow);
 }
 
 .info-box.warning {
     border-color: #FFB800;
+    box-shadow: 0 0 15px rgba(255, 184, 0, 0.3);
 }
 
 .info-box strong {
     color: var(--accent);
+    font-size: 1.2rem;
     display: block;
     margin-bottom: 0.5rem;
-    font-size: 1.1rem;
 }
 
+.info-box p {
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.example-box {
+    background: rgba(0, 217, 255, 0.05);
+    border-left: 4px solid var(--accent);
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.example-box p {
+    font-family: monospace;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+/* Warning Box */
 .warning-box {
     background: rgba(255, 184, 0, 0.1);
     border: 2px solid #FFB800;
     padding: 1.5rem;
     margin: 1.5rem 0;
+    box-shadow: 0 0 15px rgba(255, 184, 0, 0.3);
 }
 
-.warning-box strong {
+.warning-box p {
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.warning-box ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.warning-box li {
+    color: var(--text-secondary);
+    padding: 0.5rem 0;
+    padding-left: 2rem;
+    position: relative;
+}
+
+.warning-box li::before {
+    content: '⚠';
+    position: absolute;
+    left: 0;
     color: #FFB800;
-}
-
-.example-box {
-    background: var(--bg-dark);
-    padding: 1rem;
-    margin-top: 1rem;
-    border-left: 3px solid var(--accent);
 }
 
 /* Quote Blocks */
 .quote-block {
-    background: var(--primary-dark);
-    border-left: 4px solid var(--accent);
-    padding: 1.5rem 2rem;
+    background: var(--bg-elevated);
+    border-left: 6px solid var(--accent);
+    padding: 2rem;
     margin: 2rem 0;
     font-style: italic;
-    font-size: 1.1rem;
-}
-
-.quote-block.small {
-    font-size: 1rem;
-    padding: 1rem 1.5rem;
-}
-
-.closing-quote {
-    background: var(--primary-dark);
-    border: 3px solid var(--accent);
-    padding: 2rem;
-    margin: 4rem 0 2rem;
-    text-align: center;
-    font-style: italic;
-    font-size: 1.1rem;
     box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.quote-block p {
+    color: var(--text-primary);
+    font-size: 1.3rem;
+    line-height: 1.8;
+    margin: 0;
+}
+
+.quote-block.small p {
+    font-size: 1.1rem;
 }
 
 /* Event Cards */
 .event-card {
-    background: var(--bg-elevated);
-    border: 2px solid var(--primary);
-    padding: 1.5rem;
+    background: var(--bg-card);
+    border: 2px solid var(--accent);
+    padding: 2rem;
     margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.event-card:hover {
+    box-shadow: 0 0 30px var(--accent-glow);
+    transform: translateX(10px);
 }
 
 .event-card h4 {
     color: var(--accent);
-    font-size: 1.3rem;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    letter-spacing: 2px;
+}
+
+.event-card p {
+    color: var(--text-secondary);
     margin-bottom: 1rem;
 }
 
 .event-details {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    gap: 1.5rem;
     margin-top: 1rem;
-    font-size: 0.9rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 217, 255, 0.2);
 }
 
 .event-details span {
     color: var(--text-secondary);
+    font-size: 0.9rem;
 }
 
 /* Rank Cards */
 .rank-card {
     background: var(--bg-card);
-    border: 2px solid var(--primary);
+    border: 2px solid var(--accent);
     margin-bottom: 1.5rem;
     overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.rank-card:hover {
+    box-shadow: 0 0 30px var(--accent-glow);
+    transform: translateX(10px);
 }
 
 .rank-header {
-    padding: 1rem 1.5rem;
-    border-bottom: 2px solid var(--primary);
-}
-
-.rank-header h3 {
-    margin: 0;
-    font-size: 1.3rem;
-    letter-spacing: 2px;
+    padding: 1.5rem;
+    border-bottom: 2px solid var(--accent);
 }
 
 .rank-header.enlisted {
-    background: #2F3A1B;
-    color: #6B8235;
+    background: linear-gradient(90deg, var(--bg-elevated), var(--bg-card));
 }
 
 .rank-header.nco {
-    background: #1B2F3A;
-    color: #00D9FF;
+    background: linear-gradient(90deg, var(--primary-dark), var(--bg-card));
 }
 
 .rank-header.senior-nco {
-    background: #3A1B2F;
-    color: #FF00D9;
+    background: linear-gradient(90deg, var(--primary), var(--bg-card));
 }
 
 .rank-header.officer {
-    background: #3A2F1B;
-    color: #FFB800;
+    background: linear-gradient(90deg, #1a3d5c, var(--bg-card));
 }
 
 .rank-header.senior-officer {
-    background: #3A1B1B;
-    color: #FF6B00;
+    background: linear-gradient(90deg, #2a4d6c, var(--bg-card));
 }
 
 .rank-header.general {
-    background: #1B1B3A;
-    color: #00FFFF;
+    background: linear-gradient(90deg, #3a5d7c, var(--bg-card));
+}
+
+.rank-header h3 {
+    color: var(--accent);
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+    margin: 0;
 }
 
 .rank-body {
@@ -294,6 +380,7 @@
 }
 
 .rank-body p {
+    color: var(--text-secondary);
     margin-bottom: 0.75rem;
 }
 
@@ -301,44 +388,86 @@
     color: var(--accent);
 }
 
-/* Responsive */
+/* Closing Quote */
+.closing-quote {
+    background: var(--bg-elevated);
+    border: 3px solid var(--accent);
+    padding: 3rem;
+    margin-top: 4rem;
+    text-align: center;
+    box-shadow: 0 0 40px var(--accent-glow);
+}
+
+.closing-quote p {
+    color: var(--text-primary);
+    font-size: 1.4rem;
+    font-style: italic;
+    line-height: 1.8;
+    letter-spacing: 0.5px;
+}
+
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
+    .page-content::before {
+        width: 400px;
+        height: 400px;
+        opacity: 0.03;
+    }
+    
     .section-title {
         flex-direction: column;
-        align-items: flex-start;
-        font-size: 1.5rem;
+        gap: 1rem;
+        font-size: 1.8rem;
     }
     
     .section-number {
+        padding: 0.4rem 1rem;
         font-size: 1.2rem;
-    }
-    
-    .subsection {
-        padding: 1.5rem;
     }
     
     .toc-grid {
         grid-template-columns: 1fr;
     }
     
-    .event-card {
-        padding: 1rem;
+    .event-details {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .quote-block p {
+        font-size: 1.1rem;
+    }
+    
+    .closing-quote {
+        padding: 2rem;
+    }
+    
+    .closing-quote p {
+        font-size: 1.1rem;
     }
 }
 
 @media (max-width: 480px) {
-    .rule-list li {
-        padding-left: 2.5rem;
+    .page-content::before {
+        width: 300px;
+        height: 300px;
     }
     
-    .rule-list li:before {
-        width: 1.5rem;
-        height: 1.5rem;
-        font-size: 0.85rem;
+    .intro-section,
+    .toc-section {
+        padding: 1.5rem;
     }
     
-    .quote-block {
-        padding: 1rem;
-        font-size: 0.95rem;
+    .section-title {
+        font-size: 1.5rem;
+        letter-spacing: 2px;
+    }
+    
+    .subsection h3 {
+        font-size: 1.4rem;
+    }
+    
+    .rank-header h3 {
+        font-size: 1.4rem;
     }
 }

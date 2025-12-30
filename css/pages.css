@@ -65,7 +65,7 @@ a {
     margin: 0 auto;
     padding: 1.5rem 2rem;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
 }
 
@@ -315,6 +315,31 @@ a {
 .page-content {
     min-height: calc(100vh - 200px);
     padding: 3rem 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Faded Logo Background */
+.page-content::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background-image: url('../images/logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.05;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.page-content .container {
+    position: relative;
+    z-index: 1;
 }
 
 .container {
@@ -430,6 +455,12 @@ a {
         padding: 2rem 1rem;
     }
     
+    .page-content::before {
+        width: 400px;
+        height: 400px;
+        opacity: 0.03;
+    }
+    
     .page-header h1 {
         font-size: 2rem;
         letter-spacing: 3px;
@@ -448,6 +479,11 @@ a {
     
     .nav-title {
         font-size: 0.85rem;
+    }
+    
+    .page-content::before {
+        width: 300px;
+        height: 300px;
     }
     
     .page-header h1 {
