@@ -17,15 +17,120 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar">
+    <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="home.html" class="nav-brand">
+            <div class="nav-brand" id="logoMenu">
                 <img src="images/logo.png" alt="505th Logo" class="nav-logo">
                 <span class="nav-title">505TH EXPEDITIONARY FORCE</span>
-            </a>
-            <a href="home.html" class="back-btn">← BACK TO MENU</a>
+            </div>
         </div>
     </nav>
+
+    <!-- Tactical Dropdown Menu -->
+    <div class="tactical-menu" id="tacticalMenu">
+        <div class="tactical-menu-overlay" id="menuOverlay"></div>
+        <div class="tactical-menu-content">
+            <div class="menu-header">
+                <h2>COMMAND TERMINAL</h2>
+                <button class="menu-close" id="menuClose">✕</button>
+            </div>
+            
+            <div class="menu-sections">
+                <!-- HOME -->
+                <div class="menu-section">
+                    <a href="home.html" class="section-title">
+                        <span class="section-icon">🏠</span>
+                        <span>HOME</span>
+                    </a>
+                </div>
+
+                <!-- ABOUT US (with dropdown) -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="about">
+                        <span class="section-icon">ℹ️</span>
+                        <span>ABOUT US</span>
+                        <span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu" id="submenu-about">
+                        <a href="about-505th.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            505th Expeditionary Force
+                        </a>
+                        <a href="about-alpha-company.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Alpha Company
+                        </a>
+                        <a href="about-stalker.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            JTF-23 Stalker
+                        </a>
+                        <a href="about-corpsman.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Hospital Corpsman
+                        </a>
+                        <a href="about-54th-air-wing.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            54th Air Wing
+                        </a>
+                    </div>
+                </div>
+
+                <!-- MEDIA (with dropdown) -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="media">
+                        <span class="section-icon">📷</span>
+                        <span>MEDIA</span>
+                        <span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu" id="submenu-media">
+                        <a href="media-gallery.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Gallery
+                        </a>
+                        <a href="media-videos.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Videos
+                        </a>
+                    </div>
+                </div>
+
+                <!-- RESOURCES (with dropdown) -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="resources">
+                        <span class="section-icon">📋</span>
+                        <span>RESOURCES</span>
+                        <span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu" id="submenu-resources">
+                        <a href="resources-discord-rules.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Discord Rules
+                        </a>
+                        <a href="resources-handbook.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            General Handbook
+                        </a>
+                        <a href="resources-roster.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Roster
+                        </a>
+                    </div>
+                </div>
+
+                <!-- JOIN US (Direct Discord Link) -->
+                <div class="menu-section">
+                    <a href="https://discord.gg/pNkbaUtcw6" class="section-title join-btn" target="_blank">
+                        <span class="section-icon">💬</span>
+                        <span>JOIN US</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="menu-footer">
+                <p>CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY</p>
+            </div>
+        </div>
+    </div>
 
     <!-- Page Content -->
     <main class="page-content">
@@ -531,6 +636,8 @@
         <p>Handbook Version 2.0 • Last Updated: December 2024</p>
     </footer>
 
+    <script src="js/nav.js"></script>
     <script src="js/handbook.js"></script>
+    <script src="js/scroll.js"></script>
 </body>
 </html>

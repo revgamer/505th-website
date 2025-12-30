@@ -43,46 +43,51 @@ a {
 
 /* ===== NAVIGATION ===== */
 .navbar {
-    background: transparent;
+    background: rgba(10, 14, 18, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid var(--accent);
     position: sticky;
     top: 0;
     z-index: 1000;
+    box-shadow: 0 4px 20px var(--accent-glow);
+    transition: transform 0.3s ease;
+}
+
+/* Hide navbar on scroll down */
+.navbar.hidden {
+    transform: translateY(-100%);
 }
 
 .nav-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0.75rem 2rem 2.5rem 2rem;
+    padding: 1.5rem 2rem;
     display: flex;
     justify-content: center;
     align-items: center;
-    position: relative;
 }
 
-.nav-logo-link {
+.nav-brand {
     display: flex;
     align-items: center;
+    cursor: pointer;
     transition: all 0.3s ease;
-    position: relative;
-    z-index: 10;
 }
 
-.nav-logo-link:hover {
-    transform: scale(1.05);
+.nav-brand:hover {
+    transform: scale(1.1);
 }
 
-.nav-logo-link:hover .nav-logo {
+.nav-brand:hover .nav-logo {
     filter: drop-shadow(0 0 20px var(--accent-glow));
 }
 
 .nav-logo {
-    width: 140px;
-    height: 140px;
+    width: 70px;
+    height: 70px;
     filter: drop-shadow(0 0 10px var(--accent-glow));
     transition: all 0.3s ease;
     animation: logoBreathing 3s ease-in-out infinite;
-    position: relative;
-    top: 60px;
 }
 
 @keyframes logoBreathing {
@@ -92,6 +97,192 @@ a {
     50% {
         filter: drop-shadow(0 0 20px var(--accent-glow));
     }
+}
+
+/* ===== TACTICAL DROPDOWN MENU ===== */
+.tactical-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.tactical-menu.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tactical-menu-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 14, 18, 0.95);
+    backdrop-filter: blur(10px);
+}
+
+.tactical-menu-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    background: var(--bg-dark);
+    border-bottom: 3px solid var(--accent);
+    box-shadow: 0 10px 50px rgba(0, 217, 255, 0.3);
+    transform: translateY(-100%);
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.tactical-menu.active .tactical-menu-content {
+    transform: translateY(0);
+}
+
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+    border-bottom: 2px solid var(--primary);
+    background: var(--bg-elevated);
+}
+
+.menu-header h2 {
+    color: var(--accent);
+    font-size: 1.8rem;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.menu-close {
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    font-size: 1.5rem;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: var(--font-heading);
+}
+
+.menu-close:hover {
+    background: var(--accent);
+    color: var(--bg-dark);
+    transform: rotate(90deg);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.menu-sections {
+    padding: 0;
+}
+
+.menu-section {
+    border-bottom: 1px solid var(--primary);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+    background: var(--bg-card);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+}
+
+.section-title:hover {
+    background: var(--bg-elevated);
+    border-left: 4px solid var(--accent);
+    padding-left: calc(2rem - 4px);
+}
+
+.section-title.active {
+    background: var(--primary-dark);
+    border-left: 4px solid var(--accent);
+    padding-left: calc(2rem - 4px);
+}
+
+.section-icon {
+    font-size: 1.8rem;
+}
+
+.submenu-arrow {
+    margin-left: auto;
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+    color: var(--accent);
+}
+
+.section-title.open .submenu-arrow {
+    transform: rotate(180deg);
+}
+
+.submenu {
+    max-height: 0;
+    overflow: hidden;
+    background: var(--bg-elevated);
+    transition: max-height 0.3s ease;
+}
+
+.submenu.open {
+    max-height: 500px;
+}
+
+.submenu-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 2rem 1rem 4rem;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+}
+
+.submenu-item:hover {
+    background: var(--bg-card);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    padding-left: calc(4rem - 3px);
+}
+
+.submenu-bullet {
+    color: var(--accent);
+    font-size: 0.8rem;
+}
+
+.join-btn {
+    background: var(--primary-dark);
+}
+
+.join-btn:hover {
+    background: var(--primary);
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.menu-footer {
+    padding: 1.5rem 2rem;
+    background: var(--bg-elevated);
+    border-top: 2px solid var(--primary);
+    text-align: center;
+}
+
+.menu-footer p {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    letter-spacing: 2px;
 }
 
 /* ===== UNDER CONSTRUCTION PAGE ===== */
@@ -306,14 +497,37 @@ a {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-    .nav-container {
-        padding: 0.5rem 1.5rem 2rem 1.5rem;
+    .nav-logo {
+        width: 60px;
+        height: 60px;
     }
     
-    .nav-logo {
-        width: 110px;
-        height: 110px;
-        top: 50px;
+    .menu-header {
+        padding: 1.5rem;
+    }
+    
+    .menu-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .menu-close {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .section-title {
+        font-size: 1rem;
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .section-icon {
+        font-size: 1.5rem;
+    }
+    
+    .submenu-item {
+        padding: 0.75rem 1.5rem 0.75rem 3rem;
+        font-size: 0.9rem;
     }
     
     .error-code {
@@ -349,13 +563,12 @@ a {
 
 @media (max-width: 480px) {
     .nav-container {
-        padding: 0.5rem 1rem 1.5rem 1rem;
+        padding: 1rem;
     }
     
     .nav-logo {
-        width: 90px;
-        height: 90px;
-        top: 40px;
+        width: 50px;
+        height: 50px;
     }
     
     .error-code {

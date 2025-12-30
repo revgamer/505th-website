@@ -45,26 +45,39 @@ a {
 
 /* ===== NAVIGATION ===== */
 .navbar {
-    background: transparent;
+    background: rgba(10, 14, 18, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid var(--accent);
     position: sticky;
     top: 0;
     z-index: 1000;
+    box-shadow: 0 4px 20px var(--accent-glow);
+    transition: transform 0.3s ease;
+}
+
+/* Hide navbar on scroll down */
+.navbar.hidden {
+    transform: translateY(-100%);
 }
 
 .nav-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 1rem 2rem;
+    padding: 1.5rem 2rem;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* Logo as Menu Toggle - COMPLETELY LOCKED IN PLACE */
 .nav-brand {
     display: flex;
     align-items: center;
     cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.nav-brand:hover {
+    transform: scale(1.1);
 }
 
 .nav-brand:hover .nav-logo {
@@ -72,23 +85,31 @@ a {
 }
 
 .nav-logo {
-    width: 140px !important;
-    height: 140px !important;
+    width: 70px;
+    height: 70px;
     filter: drop-shadow(0 0 10px var(--accent-glow));
-    transition: filter 0.3s ease;
-    position: static !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    transform: none !important;
-    animation: none !important;
+    transition: all 0.3s ease;
+    animation: logoBreathing 3s ease-in-out infinite;
+}
+
+@keyframes logoBreathing {
+    0%, 100% {
+        filter: drop-shadow(0 0 10px var(--accent-glow));
+    }
+    50% {
+        filter: drop-shadow(0 0 20px var(--accent-glow));
+    }
 }
 
 /* Hide text and menu hint */
 .nav-title,
 .menu-hint {
     display: none;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
 }
 
 .nav-links {
@@ -311,7 +332,7 @@ a {
 
 /* ===== UNDER CONSTRUCTION PAGE ===== */
 .construction-page {
-    min-height: calc(100vh - 180px);
+    min-height: calc(100vh - 110px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -524,13 +545,9 @@ a {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-    .nav-container {
-        padding: 0.75rem 1.5rem;
-    }
-    
     .nav-logo {
-        width: 110px !important;
-        height: 110px !important;
+        width: 60px;
+        height: 60px;
     }
     
     .menu-header {
@@ -593,13 +610,13 @@ a {
 }
 
 @media (max-width: 480px) {
-    .nav-container {
-        padding: 0.75rem 1rem;
+    .nav-logo {
+        width: 50px;
+        height: 50px;
     }
     
-    .nav-logo {
-        width: 90px !important;
-        height: 90px !important;
+    .nav-container {
+        padding: 1rem;
     }
     
     .construction-page::before {
@@ -632,8 +649,8 @@ a {
 /* Landscape Mobile */
 @media (max-height: 600px) and (orientation: landscape) {
     .nav-logo {
-        width: 80px !important;
-        height: 80px !important;
+        width: 50px;
+        height: 50px;
     }
     
     .construction-page {
