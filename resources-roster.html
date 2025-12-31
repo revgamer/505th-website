@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Under Construction - 505th EF</title>
+    <title>Unit Roster - 505th EF</title>
     
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
@@ -11,7 +11,8 @@
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
     <link rel="manifest" href="images/site.webmanifest">
     
-    <link rel="stylesheet" href="css/under-construction.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <link rel="stylesheet" href="css/roster.css">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -20,6 +21,7 @@
         <div class="nav-container">
             <div class="nav-brand" id="logoMenu">
                 <img src="images/logo.png" alt="505th Logo" class="nav-logo">
+                <span class="nav-title">505TH EXPEDITIONARY FORCE</span>
             </div>
         </div>
     </nav>
@@ -130,56 +132,46 @@
         </div>
     </div>
 
-    <!-- Under Construction Section -->
-    <section class="construction-page">
-        <div class="construction-content">
-            <div class="error-code">404</div>
-            
-            <h1 class="construction-title">
-                <span class="title-line">PAGE UNDER CONSTRUCTION</span>
-                <span class="title-subtitle">TACTICAL DATABASE UNAVAILABLE</span>
-            </h1>
-            
-            <div class="status-panel">
-                <div class="status-header">
-                    <span class="status-indicator"></span>
-                    <h2>SYSTEM STATUS</h2>
-                </div>
-                
-                <div class="status-body">
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> ERROR CODE: 404 - RESOURCE NOT FOUND
-                    </p>
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> STATUS: PAGE UNDER DEVELOPMENT
-                    </p>
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> CLEARANCE LEVEL: RESTRICTED ACCESS
-                    </p>
-                </div>
-                
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
-                
-                <p class="status-footer">This section is currently being constructed. Check back soon.</p>
+    <!-- Page Content -->
+    <main class="page-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <span class="page-tag">CLASSIFIED: LEVEL 3</span>
+                <h1>UNIT ROSTER</h1>
+                <p class="roster-subtitle">Live Personnel Database</p>
+                <div class="header-line"></div>
             </div>
-            
-            <div class="quick-actions">
-                <a href="home.html" class="action-btn">
-                    <span class="btn-icon">🏠</span>
-                    <span class="btn-text">RETURN HOME</span>
+
+            <!-- Roster Info -->
+            <div class="roster-info">
+                <p>This roster is automatically updated. Changes made to the Google Sheet will reflect here immediately.</p>
+                <a href="https://docs.google.com/spreadsheets/d/1_9YoQXvLVIwrbbLuNHmu8rwH2UNUeM1RyNsXpAtPN3Y/edit?gid=0#gid=0" class="sheet-link" target="_blank">
+                    <span class="link-icon">📊</span>
+                    <span>Open Full Sheet</span>
                 </a>
-                <a href="https://discord.gg/pNkbaUtcw6" class="action-btn" target="_blank">
-                    <span class="btn-icon">💬</span>
-                    <span class="btn-text">JOIN DISCORD</span>
-                </a>
+            </div>
+
+            <!-- Embedded Google Sheet -->
+            <div class="roster-embed">
+                <iframe 
+                    src="https://docs.google.com/spreadsheets/d/1_9YoQXvLVIwrbbLuNHmu8rwH2UNUeM1RyNsXpAtPN3Y/edit?gid=0&rm=minimal&single=true&widget=true&headers=false" 
+                    class="roster-iframe">
+                </iframe>
+            </div>
+
+            <!-- Footer Notice -->
+            <div class="roster-notice">
+                <p>⚠️ This roster is for official unit use only. Personnel information is confidential.</p>
+                <p class="notice-footer">For roster updates or corrections, contact your NCO or Unit Administration.</p>
             </div>
         </div>
-    </section>
+    </main>
 
+    <!-- Footer -->
     <footer class="page-footer">
         <p>© 2025 505th Expeditionary Force • UNSC</p>
+        <p>Unit Roster • Personnel Database</p>
     </footer>
 
     <script src="js/nav.js"></script>
