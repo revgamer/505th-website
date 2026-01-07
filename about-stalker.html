@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Under Construction - 505th EF</title>
+    <title>JTF-23 Stalker - 505th</title>
     
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
@@ -11,8 +11,327 @@
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
     <link rel="manifest" href="images/site.webmanifest">
     
-    <link rel="stylesheet" href="css/under-construction.css">
+    <link rel="stylesheet" href="css/pages.css">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Additional styling for Stalker page */
+        .patch-container {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: var(--bg-card);
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.2);
+        }
+
+        .stalker-patch {
+            width: 300px;
+            height: auto;
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.3));
+            transition: all 0.3s ease;
+        }
+
+        .stalker-patch:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.5));
+        }
+
+        .gallery-section {
+            margin: 3rem 0;
+        }
+
+        .gallery-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .gallery-item {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .gallery-item:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .gallery-placeholder {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--primary-dark) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .gallery-placeholder .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .gallery-placeholder .text {
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .gallery-caption {
+            padding: 1.5rem;
+            background: var(--bg-elevated);
+        }
+
+        .gallery-caption h4 {
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .gallery-caption p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .stalker-patch {
+                width: 200px;
+            }
+
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .unit-intro {
+            background: var(--bg-card);
+            border-left: 4px solid var(--accent);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.1);
+        }
+
+        .unit-intro h2 {
+            color: var(--accent);
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .unit-intro p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .specializations-section {
+            margin: 3rem 0;
+        }
+
+        .specializations-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .spec-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border: 1px solid var(--primary);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spec-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--accent);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .spec-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .spec-card:hover {
+            background: var(--bg-elevated);
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .spec-card h4 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .spec-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .motto-section {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--bg-elevated) 100%);
+            border: 2px solid var(--accent);
+            padding: 3rem 2rem;
+            margin: 3rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .motto-section::before {
+            content: '⚔️';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 15rem;
+            opacity: 0.05;
+            z-index: 0;
+        }
+
+        .motto-section .content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .motto-section h3 {
+            color: var(--accent);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 15px var(--accent-glow);
+            letter-spacing: 4px;
+        }
+
+        .motto-section p {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        .tagline {
+            color: var(--accent);
+            font-size: 1.5rem;
+            font-style: italic;
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .philosophy-section {
+            background: var(--bg-card);
+            padding: 2rem;
+            margin: 3rem 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .philosophy-section h3 {
+            color: var(--primary-light);
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .philosophy-section p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+
+        .cta-box {
+            background: var(--bg-elevated);
+            border: 2px solid var(--accent);
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+
+        .cta-box h3 {
+            color: var(--accent);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta-box p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--primary);
+            color: var(--text-primary);
+            padding: 1rem 2rem;
+            border: 2px solid var(--accent);
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            box-shadow: 0 0 20px var(--accent-glow);
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 768px) {
+            .spec-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .motto-section h3 {
+                font-size: 1.5rem;
+            }
+
+            .motto-section p {
+                font-size: 1.1rem;
+            }
+
+            .tagline {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -20,6 +339,7 @@
         <div class="nav-container">
             <div class="nav-brand" id="logoMenu">
                 <img src="images/logo.png" alt="505th Logo" class="nav-logo">
+                <span class="nav-title">505TH EXPEDITIONARY FORCE</span>
             </div>
         </div>
     </nav>
@@ -130,56 +450,132 @@
         </div>
     </div>
 
-    <!-- Under Construction Section -->
-    <section class="construction-page">
-        <div class="construction-content">
-            <div class="error-code">404</div>
-            
-            <h1 class="construction-title">
-                <span class="title-line">PAGE UNDER CONSTRUCTION</span>
-                <span class="title-subtitle">TACTICAL DATABASE UNAVAILABLE</span>
-            </h1>
-            
-            <div class="status-panel">
-                <div class="status-header">
-                    <span class="status-indicator"></span>
-                    <h2>SYSTEM STATUS</h2>
-                </div>
-                
-                <div class="status-body">
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> ERROR CODE: 404 - RESOURCE NOT FOUND
-                    </p>
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> STATUS: PAGE UNDER DEVELOPMENT
-                    </p>
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> CLEARANCE LEVEL: RESTRICTED ACCESS
-                    </p>
-                </div>
-                
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
-                
-                <p class="status-footer">This section is currently being constructed. Check back soon.</p>
+    <!-- Page Content -->
+    <main class="page-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <span class="page-tag">SPECIAL OPERATIONS</span>
+                <h1>JTF-23 STALKER</h1>
+                <p class="version">1st Platoon - Marine Recon</p>
+                <div class="header-line"></div>
             </div>
-            
-            <div class="quick-actions">
-                <a href="home.html" class="action-btn">
-                    <span class="btn-icon">🏠</span>
-                    <span class="btn-text">RETURN HOME</span>
-                </a>
-                <a href="https://discord.gg/pNkbaUtcw6" class="action-btn" target="_blank">
-                    <span class="btn-icon">💬</span>
-                    <span class="btn-text">JOIN DISCORD</span>
+
+            <!-- Stalker Patch -->
+            <div class="patch-container">
+                <img src="images/Stalker_Patch.png" alt="JTF-23 Stalker Patch" class="stalker-patch">
+            </div>
+
+            <!-- Unit Introduction -->
+            <div class="unit-intro">
+                <h2>Force Reconnaissance & Direct Action</h2>
+                <p>Forged for the unseen fight, Stalker operates where information is muddied and consequences are dire. We are a force reconnaissance and direct-action element built on discretion, patience, and sustained effort. Our strength is not in our firepower, but in our preparation: intelligence first, movement second, and decisive action only when the moment is right. We prefer to shape the fight on our liking before engaging, rather than chase combat at first sight.</p>
+            </div>
+
+            <!-- Philosophy Section -->
+            <div class="philosophy-section">
+                <h3>Operational Philosophy</h3>
+                <p>We specialize in deep reconnaissance, sniper-spotter teams, drone operations, air support coordination, precision fire, and amphibious abilities to dominate the map before the silence is broken. Every marine recon is trained to think independently, act deliberately, and adapt under pressure.</p>
+            </div>
+
+            <!-- Specializations -->
+            <section class="specializations-section">
+                <h3>CORE SPECIALIZATIONS</h3>
+                <div class="spec-grid">
+                    <div class="spec-card">
+                        <h4>🔍 Deep Reconnaissance</h4>
+                        <p>Advanced intelligence gathering operations behind enemy lines, providing critical battlefield awareness.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>🎯 Sniper-Spotter Teams</h4>
+                        <p>Elite marksman pairs conducting precision elimination and overwatch operations.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>🚁 Drone Operations</h4>
+                        <p>UAV deployment for real-time reconnaissance, targeting, and battlefield coordination.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>✈️ Air Support Coordination</h4>
+                        <p>Joint terminal attack control for close air support and precision strike operations.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>⚡ Precision Fire</h4>
+                        <p>Surgical strikes with minimum collateral damage, maximum tactical effect.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>🌊 Amphibious Operations</h4>
+                        <p>Water-based infiltration and exfiltration capabilities for maritime environments.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Operations Gallery -->
+            <section class="gallery-section">
+                <h3>OPERATIONS IN THE FIELD</h3>
+                <div class="gallery-grid">
+                    <!-- Gallery Item 1 -->
+                    <div class="gallery-item">
+                        <div class="gallery-placeholder">
+                            <div class="icon">📷</div>
+                            <div class="text">Operation Photo</div>
+                        </div>
+                        <div class="gallery-caption">
+                            <h4>Deep Reconnaissance</h4>
+                            <p>Stalker team conducting long-range surveillance operations in hostile territory.</p>
+                        </div>
+                    </div>
+
+                    <!-- Gallery Item 2 -->
+                    <div class="gallery-item">
+                        <div class="gallery-placeholder">
+                            <div class="icon">🎯</div>
+                            <div class="text">Operation Photo</div>
+                        </div>
+                        <div class="gallery-caption">
+                            <h4>Precision Strike</h4>
+                            <p>Coordinated sniper-spotter team neutralizing high-value targets with surgical precision.</p>
+                        </div>
+                    </div>
+
+                    <!-- Gallery Item 3 -->
+                    <div class="gallery-item">
+                        <div class="gallery-placeholder">
+                            <div class="icon">🚁</div>
+                            <div class="text">Operation Photo</div>
+                        </div>
+                        <div class="gallery-caption">
+                            <h4>Air-Ground Coordination</h4>
+                            <p>Stalker elements directing close air support during joint operations.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Motto Section -->
+            <div class="motto-section">
+                <div class="content">
+                    <h3>UNIT MOTTO</h3>
+                    <p>Silent by design. Relentless in execution.</p>
+                    <div class="tagline">This is Stalker — first in, last out.</div>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div class="cta-box">
+                <h3>INTERESTED IN JOINING STALKER?</h3>
+                <p>JTF-23 Stalker accepts only the most dedicated and skilled operators. Join our Discord to learn about selection requirements and training pipelines.</p>
+                <a href="https://discord.gg/pNkbaUtcw6" class="cta-button" target="_blank">
+                    <span>💬</span>
+                    <span>JOIN DISCORD</span>
                 </a>
             </div>
         </div>
-    </section>
+    </main>
 
+    <!-- Footer -->
     <footer class="page-footer">
         <p>© 2026 505th Expeditionary Force • 505th Dev Team</p>
+        <p>JTF-23 Stalker • Marine Force Reconnaissance</p>
     </footer>
 
     <script src="js/nav.js"></script>
