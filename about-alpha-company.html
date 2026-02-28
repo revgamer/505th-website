@@ -3,16 +3,336 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Under Construction - 505th EF</title>
-    
+    <title>Alpha Company - 505th</title>
+
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
     <link rel="manifest" href="images/site.webmanifest">
-    
-    <link rel="stylesheet" href="css/under-construction.css">
+
+    <link rel="stylesheet" href="css/pages.css">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .logo-container {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: var(--bg-card);
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.2);
+        }
+
+        .alpha-logo {
+            width: 300px;
+            height: auto;
+            filter: drop-shadow(0 0 20px rgba(0, 217, 255, 0.3));
+            transition: all 0.3s ease;
+        }
+
+        .alpha-logo:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 30px rgba(0, 217, 255, 0.5));
+        }
+
+        .unit-intro {
+            background: var(--bg-card);
+            border-left: 4px solid var(--accent);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.1);
+        }
+
+        .unit-intro h2 {
+            color: var(--accent);
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .unit-intro p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .unit-intro p:last-child {
+            margin-bottom: 0;
+        }
+
+        .philosophy-section {
+            background: var(--bg-card);
+            padding: 2rem;
+            margin: 3rem 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .philosophy-section h3 {
+            color: var(--primary-light);
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .philosophy-section p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+
+        .specializations-section {
+            margin: 3rem 0;
+        }
+
+        .specializations-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .spec-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border: 1px solid var(--primary);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spec-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--accent);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .spec-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .spec-card:hover {
+            background: var(--bg-elevated);
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .spec-card h4 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .spec-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .gallery-section {
+            margin: 3rem 0;
+        }
+
+        .gallery-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .gallery-item {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .gallery-item:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .gallery-placeholder {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--primary-dark) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .gallery-placeholder .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .gallery-placeholder .text {
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .gallery-caption {
+            padding: 1.5rem;
+            background: var(--bg-elevated);
+        }
+
+        .gallery-caption h4 {
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .gallery-caption p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .motto-section {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--bg-elevated) 100%);
+            border: 2px solid var(--accent);
+            padding: 3rem 2rem;
+            margin: 3rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .motto-section::before {
+            content: '⚔️';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 15rem;
+            opacity: 0.05;
+            z-index: 0;
+        }
+
+        .motto-section .content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .motto-section h3 {
+            color: var(--accent);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 15px var(--accent-glow);
+            letter-spacing: 4px;
+        }
+
+        .motto-section p {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        .tagline {
+            color: var(--accent);
+            font-size: 1.5rem;
+            font-style: italic;
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .cta-box {
+            background: var(--bg-elevated);
+            border: 2px solid var(--accent);
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+
+        .cta-box h3 {
+            color: var(--accent);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta-box p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--primary);
+            color: var(--text-primary);
+            padding: 1rem 2rem;
+            border: 2px solid var(--accent);
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            box-shadow: 0 0 20px var(--accent-glow);
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 768px) {
+            .alpha-logo {
+                width: 200px;
+            }
+
+            .spec-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .motto-section h3 {
+                font-size: 1.5rem;
+            }
+
+            .motto-section p {
+                font-size: 1.1rem;
+            }
+
+            .tagline {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -20,6 +340,7 @@
         <div class="nav-container">
             <div class="nav-brand" id="logoMenu">
                 <img src="images/logo.png" alt="505th Logo" class="nav-logo">
+                <span class="nav-title">505TH EXPEDITIONARY FORCE</span>
             </div>
         </div>
     </nav>
@@ -32,7 +353,7 @@
                 <h2>COMMAND TERMINAL</h2>
                 <button class="menu-close" id="menuClose">✕</button>
             </div>
-            
+
             <div class="menu-sections">
                 <!-- HOME -->
                 <div class="menu-section">
@@ -123,63 +444,137 @@
                     </a>
                 </div>
             </div>
-            
+
             <div class="menu-footer">
                 <p>CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY</p>
             </div>
         </div>
     </div>
 
-    <!-- Under Construction Section -->
-    <section class="construction-page">
-        <div class="construction-content">
-            <div class="error-code">404</div>
-            
-            <h1 class="construction-title">
-                <span class="title-line">PAGE UNDER CONSTRUCTION</span>
-                <span class="title-subtitle">TACTICAL DATABASE UNAVAILABLE</span>
-            </h1>
-            
-            <div class="status-panel">
-                <div class="status-header">
-                    <span class="status-indicator"></span>
-                    <h2>SYSTEM STATUS</h2>
-                </div>
-                
-                <div class="status-body">
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> ERROR CODE: 404 - RESOURCE NOT FOUND
-                    </p>
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> STATUS: PAGE UNDER DEVELOPMENT
-                    </p>
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> CLEARANCE LEVEL: RESTRICTED ACCESS
-                    </p>
-                </div>
-                
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
-                
-                <p class="status-footer">This section is currently being constructed. Check back soon.</p>
+    <!-- Page Content -->
+    <main class="page-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <span class="page-tag">COMBINED ARMS</span>
+                <h1>ALPHA COMPANY</h1>
+                <p class="version">1st Battalion · 505th Expeditionary Force</p>
+                <div class="header-line"></div>
             </div>
-            
-            <div class="quick-actions">
-                <a href="home.html" class="action-btn">
-                    <span class="btn-icon">🏠</span>
-                    <span class="btn-text">RETURN HOME</span>
-                </a>
-                <a href="https://discord.gg/pNkbaUtcw6" class="action-btn" target="_blank">
-                    <span class="btn-icon">💬</span>
-                    <span class="btn-text">JOIN DISCORD</span>
+
+            <!-- Alpha Company Logo -->
+            <div class="logo-container">
+                <img src="images/Alpha Company.png" alt="Alpha Company Logo" class="alpha-logo">
+            </div>
+
+            <!-- Unit Introduction -->
+            <div class="unit-intro">
+                <h2>Premier Fighting Force of the 505th</h2>
+                <p>Alpha Company is the premier fighting force of the 505th Battalion. Comprised of three platoons of the finest Marines the UNSC has to offer, Alpha Company is deployed where the fighting is heaviest and the margin for error is nonexistent. We do not halt at resistance, and we do not withdraw without orders. We advance until the objective is secured and victory is absolute.</p>
+                <p>Alpha Company stands among the most decorated Marine companies in the UNSC, having fought across the deserts of Mars and the jungles of the Amazon. Our record is written in completed missions and secured ground.</p>
+            </div>
+
+            <!-- Philosophy Section -->
+            <div class="philosophy-section">
+                <h3>Operational Philosophy</h3>
+                <p>Alpha Company operates on a foundation of aggression, discipline, and combined arms integration. We bring every asset to bear — infantry, armour, fire support, and air coordination — to overwhelm the enemy and hold what we take. Every Marine in Alpha understands their role within the larger machine, and every platoon is trained to fight independently or as part of the whole.</p>
+            </div>
+
+            <!-- Specializations -->
+            <section class="specializations-section">
+                <h3>CORE SPECIALIZATIONS</h3>
+                <div class="spec-grid">
+                    <div class="spec-card">
+                        <h4>🎖️ Fire & Maneuver</h4>
+                        <p>Coordinated assault tactics using suppressive fire and bounding movement to overwhelm fortified enemy positions.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>🛡️ Armored Support</h4>
+                        <p>Integration of armored vehicles to provide direct fire support, breaching capability, and force protection in contested zones.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>💥 Fire Support</h4>
+                        <p>Organic mortars and coordinated artillery assets providing sustained indirect fire to shape the battlefield before and during assaults.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>✈️ Close Air Support</h4>
+                        <p>Joint terminal attack control coordinating rotary and fixed-wing assets for precision strikes in direct support of ground forces.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>⚡ Assault Operations</h4>
+                        <p>Deliberate and hasty assaults on enemy-held objectives, executed with speed and violence of action to deny the enemy time to react.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>🔒 Objective Seizure & Hold</h4>
+                        <p>Rapid consolidation and defense of seized terrain, preventing enemy counterattacks and enabling follow-on forces to exploit success.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Operations Gallery -->
+            <section class="gallery-section">
+                <h3>OPERATIONS IN THE FIELD</h3>
+                <div class="gallery-grid">
+                    <div class="gallery-item">
+                        <div class="gallery-placeholder">
+                            <div class="icon">📷</div>
+                            <div class="text">Operation Photo</div>
+                        </div>
+                        <div class="gallery-caption">
+                            <h4>Mars Desert Campaign</h4>
+                            <p>Alpha Company advancing through open desert terrain under fire, maintaining formation cohesion against entrenched enemy forces.</p>
+                        </div>
+                    </div>
+
+                    <div class="gallery-item">
+                        <div class="gallery-placeholder">
+                            <div class="icon">🛡️</div>
+                            <div class="text">Operation Photo</div>
+                        </div>
+                        <div class="gallery-caption">
+                            <h4>Amazon Jungle Assault</h4>
+                            <p>Combined arms push through dense jungle terrain, coordinating armour and infantry in a close-quarters objective seizure.</p>
+                        </div>
+                    </div>
+
+                    <div class="gallery-item">
+                        <div class="gallery-placeholder">
+                            <div class="icon">🎯</div>
+                            <div class="text">Operation Photo</div>
+                        </div>
+                        <div class="gallery-caption">
+                            <h4>Objective Assault</h4>
+                            <p>Alpha platoons coordinating a multi-axis assault, fixing the enemy with fire while a flanking element secures the objective.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Motto Section -->
+            <div class="motto-section">
+                <div class="content">
+                    <h3>UNIT MOTTO</h3>
+                    <p>No halt. No retreat. No hesitation.</p>
+                    <div class="tagline">Alpha Company — We advance until victory is absolute.</div>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div class="cta-box">
+                <h3>INTERESTED IN JOINING ALPHA COMPANY?</h3>
+                <p>Alpha Company demands the best. If you have the discipline to hold the line and the drive to push through it, join our Discord and find out what it takes to earn your place in the 505th.</p>
+                <a href="https://discord.gg/pNkbaUtcw6" class="cta-button" target="_blank">
+                    <span>💬</span>
+                    <span>JOIN DISCORD</span>
                 </a>
             </div>
         </div>
-    </section>
+    </main>
 
+    <!-- Footer -->
     <footer class="page-footer">
         <p>© 2026 505th Expeditionary Force • 505th Dev Team</p>
+        <p>Alpha Company • 1st Battalion • Combined Arms</p>
     </footer>
 
     <script src="js/nav.js"></script>
