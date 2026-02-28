@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Development Roadmap - 505th</title>
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/site.webmanifest">
+    
+    <link rel="stylesheet" href="css/pages.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Roadmap-specific styles */
+        .roadmap-intro {
+            background: var(--bg-card);
+            border-left: 4px solid var(--accent);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .roadmap-intro p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .roadmap-section {
+            margin-bottom: 4rem;
+        }
+
+        .section-header-roadmap {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .section-header-roadmap h2 {
+            color: var(--accent);
+            font-size: 2rem;
+            letter-spacing: 3px;
+            margin: 0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border-radius: 4px;
+            margin-left: auto;
+        }
+
+        .status-completed {
+            background: rgba(0, 255, 100, 0.2);
+            color: #00FF64;
+            border: 1px solid #00FF64;
+        }
+
+        .status-progress {
+            background: rgba(255, 193, 7, 0.2);
+            color: #FFC107;
+            border: 1px solid #FFC107;
+        }
+
+        .status-planned {
+            background: rgba(0, 217, 255, 0.2);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+        }
+
+        .status-future {
+            background: rgba(168, 181, 191, 0.2);
+            color: var(--text-secondary);
+            border: 1px solid var(--text-secondary);
+        }
+
+        .roadmap-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .roadmap-card {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .roadmap-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .roadmap-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .roadmap-card:hover {
+            background: var(--bg-elevated);
+            border-color: var(--accent);
+            transform: translateX(5px);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.2);
+        }
+
+        .roadmap-card h3 {
+            color: var(--accent);
+            font-size: 1.3rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .roadmap-card .icon {
+            font-size: 1.5rem;
+        }
+
+        .roadmap-card p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .priority-tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+
+        .priority-high {
+            background: rgba(255, 82, 82, 0.2);
+            color: #FF5252;
+            border: 1px solid #FF5252;
+        }
+
+        .priority-medium {
+            background: rgba(255, 193, 7, 0.2);
+            color: #FFC107;
+            border: 1px solid #FFC107;
+        }
+
+        .priority-low {
+            background: rgba(66, 165, 245, 0.2);
+            color: #42A5F5;
+            border: 1px solid #42A5F5;
+        }
+
+        .dev-team {
+            background: var(--bg-elevated);
+            border: 2px solid var(--primary);
+            padding: 2rem;
+            margin-top: 3rem;
+            text-align: center;
+        }
+
+        .dev-team h3 {
+            color: var(--accent);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .dev-team p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        .progress-bar-container {
+            background: var(--bg-elevated);
+            border: 2px solid var(--accent);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border-radius: 8px;
+        }
+
+        .progress-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: var(--bg-dark);
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-light), var(--accent));
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        @media (max-width: 768px) {
+            .roadmap-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-header-roadmap {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .status-badge {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand" id="logoMenu">
+                <img src="images/logo.png" alt="505th Logo" class="nav-logo">
+                <span class="nav-title">505TH EXPEDITIONARY FORCE</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tactical Dropdown Menu -->
+    <div class="tactical-menu" id="tacticalMenu">
+        <div class="tactical-menu-overlay" id="menuOverlay"></div>
+        <div class="tactical-menu-content">
+            <div class="menu-header">
+                <h2>COMMAND TERMINAL</h2>
+                <button class="menu-close" id="menuClose">✕</button>
+            </div>
+            
+            <div class="menu-sections">
+                <!-- HOME -->
+                <div class="menu-section">
+                    <a href="home.html" class="section-title">
+                        <span class="section-icon">🏠</span>
+                        <span>HOME</span>
+                    </a>
+                </div>
+
+                <!-- ABOUT US (with dropdown) -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="about">
+                        <span class="section-icon">ℹ️</span>
+                        <span>ABOUT US</span>
+                        <span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu" id="submenu-about">
+                        <a href="about-505th.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            505th Expeditionary Force
+                        </a>
+                        <a href="about-alpha-company.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Alpha Company
+                        </a>
+                        <a href="about-stalker.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            JTF-23 Stalker
+                        </a>
+                        <a href="about-corpsman.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Hospital Corpsman
+                        </a>
+                        <a href="about-54th-air-wing.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            54th Air Wing
+                        </a>
+                    </div>
+                </div>
+
+                <!-- MEDIA (with dropdown) -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="media">
+                        <span class="section-icon">📷</span>
+                        <span>MEDIA</span>
+                        <span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu" id="submenu-media">
+                        <a href="media-gallery.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Gallery
+                        </a>
+                        <a href="media-videos.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Videos
+                        </a>
+                    </div>
+                </div>
+
+                <!-- RESOURCES (with dropdown) -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="resources">
+                        <span class="section-icon">📋</span>
+                        <span>RESOURCES</span>
+                        <span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu" id="submenu-resources">
+                        <a href="resources-discord-rules.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Discord Rules
+                        </a>
+                        <a href="resources-handbook.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            General Handbook
+                        </a>
+                        <a href="resources-roster.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Roster
+                        </a>
+                        <a href="resources-roadmap.html" class="submenu-item">
+                            <span class="submenu-bullet">▸</span>
+                            Development Roadmap
+                        </a>
+                    </div>
+                </div>
+
+                <!-- JOIN US (Direct Discord Link) -->
+                <div class="menu-section">
+                    <a href="https://discord.gg/pNkbaUtcw6" class="section-title join-btn" target="_blank">
+                        <span class="section-icon">💬</span>
+                        <span>JOIN US</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="menu-footer">
+                <p>CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Content -->
+    <main class="page-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <span class="page-tag">DEVELOPMENT STATUS</span>
+                <h1>505TH DEVELOPMENT ROADMAP</h1>
+                <p class="version">Arma 3 Mod Development • Website Development • Last Updated: January 2026</p>
+                <div class="header-line"></div>
+            </div>
+
+            <!-- Introduction -->
+            <div class="roadmap-intro">
+                <p>Comprehensive development roadmap for the 505th Expeditionary Force. This includes both Arma 3 auxiliary mod development and official website features. Additional items will be submitted for review and added pending High Command approval.</p>
+                <p style="margin-top: 1rem; font-style: italic; color: var(--text-muted);">Created by Simba 'Davy' Jones (RevGamer) • 505th Dev Team</p>
+            </div>
+
+            <!-- Overall Progress -->
+            <div class="progress-bar-container">
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Weapons Development</span>
+                        <span>100%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 100%;"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Attachments & Gear</span>
+                        <span>95%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 95%;"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Systems & Mods</span>
+                        <span>76%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 76%;"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Engineering Tools</span>
+                        <span>50%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 50%;"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Website Development</span>
+                        <span>35%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 35%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WEAPONS DEVELOPMENT -->
+            <section class="roadmap-section">
+                <div class="section-header-roadmap">
+                    <h2>🔫 WEAPONS</h2>
+                    <span class="status-badge status-completed">100% COMPLETE</span>
+                </div>
+                
+                <h3 style="color: var(--accent); margin-bottom: 1rem; font-size: 1.3rem;">▸ Assault Weapons</h3>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">⚔️</span> MA5C</h3>
+                        <p>UNSC standard assault rifle with modular attachment support.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">⚔️</span> BR45B</h3>
+                        <p>Battle rifle with precision optics and GL variant.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">⚔️</span> MA37K</h3>
+                        <p>Compact assault rifle variant for CQB operations.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">⚔️</span> VK Commando</h3>
+                        <p>Specialized commando rifle for tactical operations.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--accent); margin: 2rem 0 1rem; font-size: 1.3rem;">▸ Marksman Rifles</h3>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🎯</span> LMR-11 Shortbow</h3>
+                        <p>Designated marksman rifle for medium-range engagements.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🎯</span> MR-10 Longbow</h3>
+                        <p>Long-range precision rifle for advanced marksmanship.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--accent); margin: 2rem 0 1rem; font-size: 1.3rem;">▸ Pistols</h3>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔫</span> M6C</h3>
+                        <p>Standard issue UNSC sidearm with smart-link targeting.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔫</span> Puma</h3>
+                        <p>High-capacity tactical pistol for secondary operations.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔫</span> MHG-16</h3>
+                        <p>Heavy pistol variant with enhanced stopping power.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔫</span> M6G</h3>
+                        <p>Advanced combat pistol with integrated targeting system.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--accent); margin: 2rem 0 1rem; font-size: 1.3rem;">▸ Sniper Rifles</h3>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🎯</span> VTR-93 Vindicta</h3>
+                        <p>Long-range anti-materiel rifle with custom optics system.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba / Weaver</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🎯</span> M98 Harvester</h3>
+                        <p>Heavy anti-materiel rifle with APFSDS, HVAP, and HEDP ammunition.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--accent); margin: 2rem 0 1rem; font-size: 1.3rem;">▸ GL Variants</h3>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">💥</span> BR45B-GL</h3>
+                        <p>Battle rifle with integrated grenade launcher attachment.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">💥</span> MA5C-GL</h3>
+                        <p>Assault rifle with underbarrel grenade launcher system.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--accent); margin: 2rem 0 1rem; font-size: 1.3rem;">▸ SMG Variants</h3>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔫</span> CPW</h3>
+                        <p>Close protection weapon for vehicle crews and specialists.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔫</span> M6D Carbine</h3>
+                        <p>Compact carbine variant for close-quarters combat.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔫</span> M7 Caseless</h3>
+                        <p>High-rate caseless submachine gun for suppression.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔫</span> MPK5</h3>
+                        <p>Tactical submachine gun with modular configuration.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--accent); margin: 2rem 0 1rem; font-size: 1.3rem;">▸ Machine Guns</h3>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">⚡</span> M73</h3>
+                        <p>Light machine gun for squad automatic fire support.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">⚡</span> M247</h3>
+                        <p>General purpose machine gun for sustained fire operations.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ATTACHMENTS & GEAR -->
+            <section class="roadmap-section">
+                <div class="section-header-roadmap">
+                    <h2>🔧 ATTACHMENTS & GEAR</h2>
+                    <span class="status-badge status-completed">95% COMPLETE</span>
+                </div>
+                
+                <h3 style="color: var(--accent); margin-bottom: 1rem; font-size: 1.3rem;">Weapon Attachments</h3>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔭</span> MEQ7</h3>
+                        <p>Advanced optic system with integrated targeting solutions.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔭</span> VTR-93 Scope</h3>
+                        <p>Custom long-range scope for Vindicta sniper rifle.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba / Weaver</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔭</span> M98 Harvester Scope</h3>
+                        <p>Specialized scope system for anti-materiel operations.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔇</span> M98 Suppressor</h3>
+                        <p>Suppressor system for covert sniper operations.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--accent); margin: 2rem 0 1rem; font-size: 1.3rem;">Gear Items</h3>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🥽</span> Stealth Mask + Goggles</h3>
+                        <p>OPTRE HUD-integrated stealth equipment for reconnaissance.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🥽</span> Stealth Mask (OPTRE HUD)</h3>
+                        <p>Standalone stealth mask with integrated tactical display.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🏥</span> Medical Scanner Glasses</h3>
+                        <p>Advanced medical triage scanner for corpsmen with five-tier classification.</p>
+                        <span class="priority-tag priority-medium" style="background: rgba(255, 193, 7, 0.2); color: #FFC107; border-color: #FFC107;">90% COMPLETE</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SYSTEMS AND MODS -->
+            <section class="roadmap-section">
+                <div class="section-header-roadmap">
+                    <h2>⚙️ SYSTEMS & MODS</h2>
+                    <span class="status-badge status-progress">76% COMPLETE</span>
+                </div>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">💬</span> Chat Wheel Mod</h3>
+                        <p>Accessibility-focused chat wheel system for deaf players with tactical callouts.</p>
+                        <span class="priority-tag priority-medium" style="background: rgba(255, 193, 7, 0.2); color: #FFC107; border-color: #FFC107;">80% COMPLETE</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🎨</span> 505th Branding</h3>
+                        <p>Custom loading screens and main menu branding for unit identity.</p>
+                        <span class="priority-tag priority-medium" style="background: rgba(255, 193, 7, 0.2); color: #FFC107; border-color: #FFC107;">50% COMPLETE</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🪢</span> Advanced Urban Rappelling</h3>
+                        <p>Integrated rappelling system for building infiltration and tactical insertions.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba / Weaver</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">💣</span> Minesweeper - Zeus Modules</h3>
+                        <p>IED detection and disposal system with Zeus integration.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba / Weaver</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔊</span> Weapons Sound System Rework</h3>
+                        <p>Enhanced weapon audio with realistic ballistics and environmental effects.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba / Weaver</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ENGINEERING TOOLS -->
+            <section class="roadmap-section">
+                <div class="section-header-roadmap">
+                    <h2>🔨 ENGINEERING TOOLS</h2>
+                    <span class="status-badge status-progress">50% COMPLETE</span>
+                </div>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🛠️</span> Combat Engineering Tool</h3>
+                        <p>Fortification placement system with Zeus modules for defensive operations.</p>
+                        <span class="priority-tag priority-medium" style="background: rgba(255, 193, 7, 0.2); color: #FFC107; border-color: #FFC107;">90% COMPLETE</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🏥</span> Medical Engineering Tool</h3>
+                        <p>Medical facility setup and advanced triage management system.</p>
+                        <span class="priority-tag priority-low" style="background: rgba(168, 181, 191, 0.2); color: var(--text-secondary); border-color: var(--text-secondary);">TBC</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">✈️</span> Air Force Engineering Tool</h3>
+                        <p>Aircraft maintenance and forward operating base setup utilities.</p>
+                        <span class="priority-tag priority-low" style="background: rgba(168, 181, 191, 0.2); color: var(--text-secondary); border-color: var(--text-secondary);">TBC</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- EDEN / ZEUS PLACEMENTS -->
+            <section class="roadmap-section">
+                <div class="section-header-roadmap">
+                    <h2>🎮 EDEN / ZEUS OBJECT PLACEMENTS</h2>
+                    <span class="status-badge status-completed">100% COMPLETE</span>
+                </div>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🎖️</span> CE Loadout</h3>
+                        <p>Combat Engineer pre-configured loadout (future updates planned).</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">⚔️</span> FR Loadout</h3>
+                        <p>Force Recon pre-configured loadout (future updates planned).</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🏥</span> HM Loadout</h3>
+                        <p>Hospital Corpsman pre-configured loadout (future updates planned).</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">✈️</span> AF Loadout</h3>
+                        <p>Air Force pre-configured loadout (future updates planned).</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">📦</span> Custom Arsenal Access</h3>
+                        <p>Unified arsenal system with role-based equipment access.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- WEBSITE DEVELOPMENT -->
+            <section class="roadmap-section">
+                <div class="section-header-roadmap">
+                    <h2>🌐 WEBSITE DEVELOPMENT</h2>
+                    <span class="status-badge status-progress">35% COMPLETE</span>
+                </div>
+                
+                <div style="background: var(--bg-elevated); border: 2px solid #FF5252; padding: 2rem; margin-bottom: 2rem; text-align: center;">
+                    <h3 style="color: #FF5252; font-size: 1.5rem; margin-bottom: 1rem; letter-spacing: 3px;">⛔ SECTION RESTRICTED ⛔</h3>
+                    <p style="color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 1rem;">Detailed website development information withheld intentionally</p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">CLASSIFICATION: FOR OFFICIAL USE ONLY // DEV TEAM ACCESS REQUIRED</p>
+                </div>
+
+                <h3 style="color: var(--accent); margin-bottom: 1rem; font-size: 1.3rem;">Completed Features</h3>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🎨</span> Splash Screen</h3>
+                        <p>UNSC-themed boot sequence with loading animation and auto-redirect.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🏠</span> Home Page</h3>
+                        <p>Landing page with hero section, unit careers, stats, and recruitment CTA.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🎯</span> Navigation System</h3>
+                        <p>Tactical dropdown menu with mobile support and smooth animations.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">⚔️</span> JTF-23 Stalker Page</h3>
+                        <p>Unit page with patch, specializations, motto, and operations gallery.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">📊</span> Roster Integration</h3>
+                        <p>Live Google Sheets integration for personnel tracking.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">📖</span> General Handbook</h3>
+                        <p>Unit policies and procedures with table of contents navigation.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">📋</span> Development Roadmap</h3>
+                        <p>This page - comprehensive tracking of all development efforts.</p>
+                        <span class="priority-tag priority-high" style="background: rgba(0, 255, 100, 0.2); color: #00FF64; border-color: #00FF64;">✓ COMPLETED</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--accent); margin: 2rem 0 1rem; font-size: 1.3rem;">In Progress</h3>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🎖️</span> Unit Pages</h3>
+                        <p>Alpha Company, Hospital Corpsman, and 54th Air Wing detail pages.</p>
+                        <span class="priority-tag priority-high">HIGH PRIORITY</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">ℹ️</span> About 505th Page</h3>
+                        <p>Main unit page with history, mission, and chain of command.</p>
+                        <span class="priority-tag priority-high">HIGH PRIORITY</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">📷</span> Media Gallery</h3>
+                        <p>Photo gallery with lightbox and operation documentation.</p>
+                        <span class="priority-tag priority-medium">MEDIUM PRIORITY</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--accent); margin: 2rem 0 1rem; font-size: 1.3rem;">Planned Features</h3>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🤖</span> Discord Bot Integration</h3>
+                        <p>Cortana bot sync for events, announcements, and roster updates.</p>
+                        <span class="priority-tag priority-high">HIGH PRIORITY</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🎥</span> Video Gallery</h3>
+                        <p>YouTube integration for ops highlights and training content.</p>
+                        <span class="priority-tag priority-medium">MEDIUM PRIORITY</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔐</span> Login System</h3>
+                        <p>Member authentication for classified content access.</p>
+                        <span class="priority-tag priority-medium">MEDIUM PRIORITY</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">📡</span> API Backend</h3>
+                        <p>Node.js backend with Google Sheets API integration.</p>
+                        <span class="priority-tag priority-medium">MEDIUM PRIORITY</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">📝</span> Discord Rules Page</h3>
+                        <p>Server rules and community guidelines page.</p>
+                        <span class="priority-tag priority-low">LOW PRIORITY</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                    <div class="roadmap-card">
+                        <h3><span class="icon">🔍</span> Search Functionality</h3>
+                        <p>Site-wide search for handbook and documentation.</p>
+                        <span class="priority-tag priority-low">LOW PRIORITY</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Dev: Simba 'Davy' Jones</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Development Team -->
+            <div class="dev-team">
+                <h3>DEVELOPMENT TEAM</h3>
+                <p><strong>Lead Developer:</strong> Simba 'Davy' Jones (RevGamer)</p>
+                <p><strong>Contributing Developer:</strong> Weaver</p>
+                <p><strong>Contact:</strong> Discord - 505th Expeditionary Force Server</p>
+                <p><strong>Repository:</strong> Private (Unit Members Only)</p>
+                <p style="margin-top: 1.5rem; font-style: italic; color: var(--text-muted);">
+                    Additional items will be submitted for review and added pending High Command approval.
+                </p>
+                <p style="margin-top: 1rem; font-style: italic; color: var(--text-muted);">
+                    Have suggestions or want to contribute? Reach out in the #development channel on Discord!
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+        <p>© 2026 505th Expeditionary Force • 505th Dev Team</p>
+        <p>Development Roadmap • Mod Development • Website Development</p>
+    </footer>
+
+    <script src="js/nav.js"></script>
+    <script src="js/scroll.js"></script>
+</body>
+</html>
