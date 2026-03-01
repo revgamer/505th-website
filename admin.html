@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>505th - Command Terminal</title>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/site.webmanifest">
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, getDocs, updateDoc, deleteDoc, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
+            authDomain: "th-website-91533.firebaseapp.com",
+            projectId: "th-website-91533",
+            storageBucket: "th-website-91533.firebasestorage.app",
+            messagingSenderId: "1046139150142",
+            appId: "1:1046139150142:web:01f409ae4a38c4f79d966f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let currentUserData = null;
+
+        // ==========================================
+        // AUTH GUARD - Only commanders/admins allowed
+        // ==========================================
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (!userDoc.exists()) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const userData = userDoc.data();
+            if (userData.role !== 'commander' && userData.role !== 'admin') {
+                window.location.href = 'home.html';
+                return;
+            }
+
+            currentUser = user;
+            currentUserData = userData;
+
+            document.getElementById('commanderName').textContent = userData.callsign;
+            document.getElementById('commanderRole').textContent = userData.role.toUpperCase();
+            document.getElementById('loadingScreen').classList.add('hidden');
+            document.getElementById('adminContent').classList.remove('hidden');
+
+            loadUsers();
+        });
+
+        // ==========================================
+        // LOAD ALL USERS
+        // ==========================================
+        async function loadUsers() {
+            const usersQuery = query(collection(db, "users"), orderBy("registeredAt", "desc"));
+            const snapshot = await getDocs(usersQuery);
+
+            const pending = [];
+            const approved = [];
+            const denied = [];
+
+            snapshot.forEach(docSnap => {
+                const data = { ...docSnap.data(), uid: docSnap.id };
+                if (data.status === 'pending') pending.push(data);
+                else if (data.status === 'approved') approved.push(data);
+                else if (data.status === 'denied') denied.push(data);
+            });
+
+            // Update counters
+            document.getElementById('pendingCount').textContent = pending.length;
+            document.getElementById('approvedCount').textContent = approved.length;
+            document.getElementById('totalCount').textContent = snapshot.size;
+
+            // Render pending
+            renderPendingUsers(pending);
+            // Render all users
+            renderAllUsers([...pending, ...approved, ...denied]);
+        }
+
+        function renderPendingUsers(users) {
+            const container = document.getElementById('pendingList');
+            if (users.length === 0) {
+                container.innerHTML = '<div class="empty-state">NO PENDING REGISTRATIONS</div>';
+                return;
+            }
+
+            container.innerHTML = users.map(user => `
+                <div class="user-card pending-card">
+                    <div class="user-info">
+                        <div class="user-callsign">${escapeHtml(user.callsign)}</div>
+                        <div class="user-email">${escapeHtml(user.email)}</div>
+                        <div class="user-date">Registered: ${new Date(user.registeredAt).toLocaleDateString()}</div>
+                    </div>
+                    <div class="user-actions">
+                        <button class="action-btn approve-btn" onclick="approveUser('${user.uid}', '${escapeHtml(user.callsign)}')">
+                            APPROVE
+                        </button>
+                        <button class="action-btn deny-btn" onclick="denyUser('${user.uid}', '${escapeHtml(user.callsign)}')">
+                            DENY
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAllUsers(users) {
+            const container = document.getElementById('allUsersList');
+            if (users.length === 0) {
+                container.innerHTML = '<div class="empty-state">NO REGISTERED USERS</div>';
+                return;
+            }
+
+            container.innerHTML = users.map(user => `
+                <div class="user-card ${user.status === 'pending' ? 'status-pending' : user.status === 'approved' ? 'status-approved' : 'status-denied'}">
+                    <div class="user-info">
+                        <div class="user-callsign">
+                            ${escapeHtml(user.callsign)}
+                            <span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span>
+                        </div>
+                        <div class="user-email">${escapeHtml(user.email)}</div>
+                        <div class="user-meta">
+                            <span class="status-badge status-${user.status}">${user.status.toUpperCase()}</span>
+                            <span class="user-date">${new Date(user.registeredAt).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                    <div class="user-actions">
+                        ${user.role !== 'commander' ? `
+                            <select class="role-select" onchange="changeRole('${user.uid}', this.value)">
+                                <option value="recruit" ${user.role === 'recruit' ? 'selected' : ''}>RECRUIT</option>
+                                <option value="nco" ${user.role === 'nco' ? 'selected' : ''}>NCO</option>
+                                <option value="officer" ${user.role === 'officer' ? 'selected' : ''}>OFFICER</option>
+                                <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>ADMIN</option>
+                            </select>
+                            ${user.status !== 'approved' ? `<button class="action-btn approve-btn small" onclick="approveUser('${user.uid}', '${escapeHtml(user.callsign)}')">APPROVE</button>` : ''}
+                            <button class="action-btn remove-btn small" onclick="removeUser('${user.uid}', '${escapeHtml(user.callsign)}')">REMOVE</button>
+                        ` : '<span class="commander-tag">COMMANDING OFFICER</span>'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==========================================
+        // USER MANAGEMENT ACTIONS
+        // ==========================================
+        window.approveUser = async function(uid, callsign) {
+            if (!confirm(`APPROVE operative ${callsign}?`)) return;
+            try {
+                await updateDoc(doc(db, "users", uid), {
+                    status: "approved",
+                    approvedBy: currentUserData.callsign,
+                    approvedAt: new Date().toISOString()
+                });
+                showNotification(`${callsign} APPROVED`);
+                loadUsers();
+            } catch (err) {
+                showNotification('ERROR: ' + err.message, true);
+            }
+        };
+
+        window.denyUser = async function(uid, callsign) {
+            if (!confirm(`DENY access to ${callsign}?`)) return;
+            try {
+                await updateDoc(doc(db, "users", uid), {
+                    status: "denied"
+                });
+                showNotification(`${callsign} DENIED`);
+                loadUsers();
+            } catch (err) {
+                showNotification('ERROR: ' + err.message, true);
+            }
+        };
+
+        window.changeRole = async function(uid, newRole) {
+            try {
+                await updateDoc(doc(db, "users", uid), { role: newRole });
+                showNotification(`ROLE UPDATED TO ${newRole.toUpperCase()}`);
+                loadUsers();
+            } catch (err) {
+                showNotification('ERROR: ' + err.message, true);
+            }
+        };
+
+        window.removeUser = async function(uid, callsign) {
+            if (!confirm(`REMOVE ${callsign}? This deletes their profile (they can re-register).`)) return;
+            try {
+                await deleteDoc(doc(db, "users", uid));
+                showNotification(`${callsign} REMOVED`);
+                loadUsers();
+            } catch (err) {
+                showNotification('ERROR: ' + err.message, true);
+            }
+        };
+
+        window.handleLogout = async function() {
+            await signOut(auth);
+            window.location.href = 'login.html';
+        };
+
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+            document.getElementById(`panel-${tab}`).classList.remove('hidden');
+        };
+
+        // ==========================================
+        // HELPERS
+        // ==========================================
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showNotification(message, isError = false) {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.className = 'notification show' + (isError ? ' error' : '');
+            setTimeout(() => notif.classList.remove('show'), 3000);
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: #0a0a0a;
+            color: #a0a0a0;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(45,212,191,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(45,212,191,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #2DD4BF;
+            font-size: 14px;
+            letter-spacing: 4px;
+        }
+
+        .loading-screen.hidden { display: none; }
+
+        /* Top Bar */
+        .top-bar {
+            background: rgba(12,12,12,0.98);
+            border-bottom: 1px solid #1a1a1a;
+            padding: 16px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .top-bar-left img {
+            width: 36px; height: 36px;
+            filter: drop-shadow(0 0 6px rgba(45,212,191,0.3));
+        }
+
+        .top-bar-title {
+            font-family: 'Rajdhani', sans-serif;
+            color: #2DD4BF;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 4px;
+        }
+
+        .top-bar-user {
+            text-align: right;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-identity { text-align: right; }
+
+        #commanderName {
+            color: #ccc;
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+
+        #commanderRole {
+            color: #f59e0b;
+            font-size: 10px;
+            letter-spacing: 3px;
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid #333;
+            color: #666;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 2px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        /* Main Layout */
+        .admin-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .hidden { display: none; }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(15,15,15,0.9);
+            border: 1px solid #1a1a1a;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #2DD4BF;
+            line-height: 1;
+        }
+
+        .stat-number.warning { color: #f59e0b; }
+
+        .stat-label {
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: #555;
+            margin-top: 6px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #555;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 2px;
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover { color: #888; }
+
+        .tab-btn.active {
+            color: #2DD4BF;
+            border-bottom-color: #2DD4BF;
+        }
+
+        /* User Cards */
+        .user-card {
+            background: rgba(15,15,15,0.9);
+            border: 1px solid #1a1a1a;
+            border-left: 3px solid #333;
+            padding: 18px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+
+        .user-card:hover {
+            background: rgba(20,20,20,0.95);
+            border-left-color: #2DD4BF;
+        }
+
+        .pending-card { border-left-color: #f59e0b; }
+        .status-approved { border-left-color: #22c55e; }
+        .status-denied { border-left-color: #ef4444; }
+        .status-pending { border-left-color: #f59e0b; }
+
+        .user-callsign {
+            color: #ccc;
+            font-size: 14px;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-email {
+            color: #555;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .user-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+        }
+
+        .user-date {
+            color: #444;
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        .role-badge {
+            font-size: 9px;
+            letter-spacing: 2px;
+            padding: 2px 8px;
+            border: 1px solid #333;
+            color: #888;
+        }
+
+        .role-commander { color: #f59e0b; border-color: #f59e0b; }
+        .role-admin { color: #a78bfa; border-color: #a78bfa; }
+        .role-officer { color: #60a5fa; border-color: #60a5fa; }
+        .role-nco { color: #34d399; border-color: #34d399; }
+
+        .status-badge {
+            font-size: 9px;
+            letter-spacing: 2px;
+            padding: 2px 8px;
+        }
+
+        .status-badge.status-pending { color: #f59e0b; border: 1px solid #f59e0b; }
+        .status-badge.status-approved { color: #22c55e; border: 1px solid #22c55e; }
+        .status-badge.status-denied { color: #ef4444; border: 1px solid #ef4444; }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            padding: 10px 20px;
+            border: 1px solid;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn.small { padding: 6px 12px; font-size: 10px; }
+
+        .approve-btn {
+            color: #22c55e;
+            border-color: #22c55e;
+        }
+
+        .approve-btn:hover {
+            background: rgba(34,197,94,0.15);
+            box-shadow: 0 0 15px rgba(34,197,94,0.2);
+        }
+
+        .deny-btn {
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .deny-btn:hover {
+            background: rgba(239,68,68,0.15);
+            box-shadow: 0 0 15px rgba(239,68,68,0.2);
+        }
+
+        .remove-btn {
+            color: #666;
+            border-color: #333;
+        }
+
+        .remove-btn:hover {
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .role-select {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #333;
+            color: #ccc;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            padding: 6px 10px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .role-select:focus { border-color: #2DD4BF; }
+
+        .commander-tag {
+            color: #f59e0b;
+            font-size: 10px;
+            letter-spacing: 2px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #333;
+            font-size: 12px;
+            letter-spacing: 3px;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(12,12,12,0.97);
+            border: 1px solid #2DD4BF;
+            border-left: 3px solid #2DD4BF;
+            color: #2DD4BF;
+            padding: 14px 24px;
+            font-size: 12px;
+            letter-spacing: 2px;
+            z-index: 200;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        @media (max-width: 640px) {
+            .stats-row { grid-template-columns: 1fr; }
+            .top-bar { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
+            .user-card { flex-direction: column; align-items: flex-start; }
+            .admin-container { padding: 20px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading -->
+    <div class="loading-screen" id="loadingScreen">
+        AUTHENTICATING<span style="animation: blink 1s infinite">_</span>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="notification" id="notification"></div>
+
+    <!-- Admin Content -->
+    <div id="adminContent" class="hidden">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <img src="images/logo.png" alt="505th">
+                <span class="top-bar-title">COMMAND TERMINAL_</span>
+            </div>
+            <div class="top-bar-user">
+                <div class="user-identity">
+                    <div id="commanderName">---</div>
+                    <div id="commanderRole">---</div>
+                </div>
+                <button class="logout-btn" onclick="handleLogout()">LOGOUT</button>
+            </div>
+        </div>
+
+        <div class="admin-container">
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-number warning" id="pendingCount">0</div>
+                    <div class="stat-label">PENDING APPROVAL</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="approvedCount">0</div>
+                    <div class="stat-label">ACTIVE OPERATIVES</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalCount">0</div>
+                    <div class="stat-label">TOTAL REGISTERED</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="pending" onclick="switchTab('pending')">PENDING REQUESTS</button>
+                <button class="tab-btn" data-tab="all" onclick="switchTab('all')">ALL PERSONNEL</button>
+            </div>
+
+            <!-- Tab Panels -->
+            <div id="panel-pending" class="tab-panel">
+                <div id="pendingList">
+                    <div class="empty-state">LOADING...</div>
+                </div>
+            </div>
+
+            <div id="panel-all" class="tab-panel hidden">
+                <div id="allUsersList">
+                    <div class="empty-state">LOADING...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

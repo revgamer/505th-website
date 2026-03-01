@@ -4,358 +4,501 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>505th Expeditionary Force - System Access</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/site.webmanifest">
+
+    <!-- Firebase SDK (CDN) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
+            authDomain: "th-website-91533.firebaseapp.com",
+            projectId: "th-website-91533",
+            storageBucket: "th-website-91533.firebasestorage.app",
+            messagingSenderId: "1046139150142",
+            appId: "1:1046139150142:web:01f409ae4a38c4f79d966f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // ==========================================
+        // REGISTRATION
+        // ==========================================
+        window.handleRegister = async function(event) {
+            event.preventDefault();
+            const btn = document.querySelector('#registerForm .btn');
+            const errorMsg = document.getElementById('registerError');
+            const successMsg = document.getElementById('registerSuccess');
+
+            const callsign = document.getElementById('regCallsign').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regPasswordConfirm').value;
+
+            if (password !== confirmPassword) {
+                showError(errorMsg, 'ACCESS CODES DO NOT MATCH');
+                return false;
+            }
+            if (password.length < 6) {
+                showError(errorMsg, 'ACCESS CODE MUST BE 6+ CHARACTERS');
+                return false;
+            }
+            if (!callsign) {
+                showError(errorMsg, 'CALLSIGN REQUIRED');
+                return false;
+            }
+
+            btn.textContent = 'PROCESSING...';
+            btn.disabled = true;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                await setDoc(doc(db, "users", user.uid), {
+                    callsign: callsign,
+                    email: email,
+                    role: "recruit",
+                    status: "pending",
+                    registeredAt: new Date().toISOString(),
+                    approvedBy: null,
+                    approvedAt: null
+                });
+
+                await signOut(auth);
+
+                successMsg.textContent = 'REGISTRATION COMPLETE \u2022 AWAITING COMMANDER APPROVAL';
+                successMsg.classList.add('show');
+                errorMsg.classList.remove('show');
+                document.getElementById('regForm').reset();
+
+                setTimeout(() => {
+                    successMsg.classList.remove('show');
+                    toggleForm('login');
+                }, 3000);
+
+            } catch (error) {
+                let message = 'REGISTRATION FAILED';
+                if (error.code === 'auth/email-already-in-use') message = 'EMAIL ALREADY REGISTERED';
+                else if (error.code === 'auth/invalid-email') message = 'INVALID EMAIL FORMAT';
+                else if (error.code === 'auth/weak-password') message = 'ACCESS CODE TOO WEAK - 6+ CHARACTERS';
+                showError(errorMsg, message);
+            } finally {
+                btn.textContent = 'REGISTER OPERATIVE';
+                btn.disabled = false;
+            }
+            return false;
+        };
+
+        // ==========================================
+        // LOGIN
+        // ==========================================
+        window.handleLogin = async function(event) {
+            event.preventDefault();
+            const btn = document.querySelector('#loginForm .btn');
+            const errorMsg = document.getElementById('loginError');
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            btn.textContent = 'AUTHENTICATING...';
+            btn.disabled = true;
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+
+                if (!userDoc.exists()) {
+                    await signOut(auth);
+                    showError(errorMsg, 'USER PROFILE NOT FOUND \u2022 CONTACT ADMIN');
+                    return false;
+                }
+
+                const userData = userDoc.data();
+
+                if (userData.status === 'pending') {
+                    await signOut(auth);
+                    showError(errorMsg, 'AWAITING COMMANDER APPROVAL');
+                    return false;
+                }
+
+                if (userData.status === 'denied') {
+                    await signOut(auth);
+                    showError(errorMsg, 'ACCESS DENIED BY COMMAND');
+                    return false;
+                }
+
+                if (userData.role === 'commander' || userData.role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'home.html';
+                }
+
+            } catch (error) {
+                let message = 'AUTHENTICATION FAILED';
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') message = 'INVALID CREDENTIALS';
+                else if (error.code === 'auth/wrong-password') message = 'INVALID ACCESS CODE';
+                else if (error.code === 'auth/too-many-requests') message = 'TOO MANY ATTEMPTS \u2022 TRY AGAIN LATER';
+                showError(errorMsg, message);
+            } finally {
+                btn.textContent = 'AUTHENTICATE';
+                btn.disabled = false;
+            }
+            return false;
+        };
+
+        // Auto-redirect if already logged in
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    if (userData.status === 'approved') {
+                        if (userData.role === 'commander' || userData.role === 'admin') {
+                            window.location.href = 'admin.html';
+                        } else {
+                            window.location.href = 'home.html';
+                        }
+                    }
+                }
+            }
+        });
+
+        function showError(element, message) {
+            element.textContent = message;
+            element.classList.add('show');
+            setTimeout(() => element.classList.remove('show'), 4000);
         }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            background: #0a0a0a;
             color: #a0a0a0;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(45, 212, 191, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(45, 212, 191, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
         }
 
         .container {
             width: 100%;
-            max-width: 600px;
-            background: rgba(15, 15, 15, 0.95);
-            border: 1px solid #2a2a2a;
-            border-radius: 8px;
+            max-width: 520px;
+            background: rgba(12, 12, 12, 0.97);
+            border: 1px solid #1a1a1a;
+            border-top: 2px solid #2DD4BF;
             padding: 40px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 0 40px rgba(0,0,0,0.6), 0 0 80px rgba(45,212,191,0.05), inset 0 1px 0 rgba(45,212,191,0.1);
         }
 
-        .logo {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 30px;
-            background: #2DD4BF;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .container::before, .container::after {
+            content: '';
+            position: absolute;
+            width: 12px; height: 12px;
+            border-color: #2DD4BF;
+            border-style: solid;
         }
+        .container::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .container::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
 
-        .shield-icon {
-            width: 50px;
-            height: 50px;
-            fill: #0a0a0a;
+        .logo-section { text-align: center; margin-bottom: 32px; }
+        .logo-section img {
+            width: 70px; height: 70px;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 0 12px rgba(45,212,191,0.3));
         }
 
         .title {
             text-align: center;
             color: #2DD4BF;
-            font-size: 32px;
-            font-weight: bold;
-            letter-spacing: 4px;
-            margin-bottom: 10px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            margin-bottom: 6px;
             text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(45,212,191,0.3);
         }
 
         .subtitle {
             text-align: center;
-            color: #666;
-            font-size: 14px;
-            letter-spacing: 3px;
-            margin-bottom: 40px;
+            color: #444;
+            font-size: 11px;
+            letter-spacing: 4px;
+            margin-bottom: 36px;
             text-transform: uppercase;
-        }
-
-        .form-section {
-            margin-bottom: 30px;
         }
 
         .section-header {
             color: #2DD4BF;
-            font-size: 16px;
+            font-size: 13px;
             margin-bottom: 20px;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #1a1a1a;
         }
 
         .terminal-prompt {
             color: #2DD4BF;
-            margin-right: 10px;
+            margin-right: 8px;
+            animation: blink 1.2s infinite;
         }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .form-group { margin-bottom: 18px; }
 
         .form-label {
             display: block;
-            color: #888;
-            font-size: 11px;
-            letter-spacing: 2px;
-            margin-bottom: 8px;
+            color: #555;
+            font-size: 10px;
+            letter-spacing: 3px;
+            margin-bottom: 6px;
             text-transform: uppercase;
         }
 
         .form-input {
             width: 100%;
-            padding: 16px;
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid #333;
-            border-radius: 4px;
+            padding: 14px 16px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #222;
+            border-left: 2px solid #333;
             color: #ccc;
-            font-family: 'Courier New', monospace;
+            font-family: 'Share Tech Mono', monospace;
             font-size: 14px;
             transition: all 0.3s ease;
+            outline: none;
         }
 
         .form-input:focus {
-            outline: none;
             border-color: #2DD4BF;
-            box-shadow: 0 0 10px rgba(45, 212, 191, 0.3);
+            border-left-color: #2DD4BF;
+            box-shadow: 0 0 15px rgba(45,212,191,0.15);
+            background: rgba(0,0,0,0.7);
         }
 
-        .form-input::placeholder {
-            color: #555;
-        }
-
-        .form-select {
-            width: 100%;
-            padding: 16px;
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid #333;
-            border-radius: 4px;
-            color: #ccc;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232DD4BF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 20px;
-            padding-right: 40px;
-        }
-
-        .form-select:focus {
-            outline: none;
-            border-color: #2DD4BF;
-            box-shadow: 0 0 10px rgba(45, 212, 191, 0.3);
-        }
+        .form-input::placeholder { color: #333; font-size: 12px; }
 
         .btn {
             width: 100%;
-            padding: 18px;
-            background: #2DD4BF;
-            color: #0a0a0a;
-            border: none;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
+            padding: 16px;
+            background: transparent;
+            color: #2DD4BF;
+            border: 1px solid #2DD4BF;
+            font-family: 'Rajdhani', sans-serif;
             font-size: 14px;
-            font-weight: bold;
-            letter-spacing: 3px;
+            font-weight: 700;
+            letter-spacing: 4px;
             text-transform: uppercase;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         .btn:hover {
-            background: #25b8a8;
-            box-shadow: 0 0 20px rgba(45, 212, 191, 0.5);
-            transform: translateY(-2px);
+            background: rgba(45,212,191,0.1);
+            box-shadow: 0 0 25px rgba(45,212,191,0.2);
         }
 
-        .btn:active {
-            transform: translateY(0);
-        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .toggle-link {
             text-align: center;
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 1px solid #2a2a2a;
+            margin-top: 28px;
+            padding-top: 24px;
+            border-top: 1px solid #1a1a1a;
         }
 
         .toggle-link a {
-            color: #888;
+            color: #555;
             text-decoration: none;
-            font-size: 12px;
+            font-size: 11px;
             letter-spacing: 2px;
             transition: color 0.3s ease;
         }
 
-        .toggle-link a:hover {
-            color: #2DD4BF;
-        }
+        .toggle-link a:hover { color: #2DD4BF; }
 
         .footer {
             text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #2a2a2a;
-            color: #555;
-            font-size: 11px;
-            letter-spacing: 2px;
+            margin-top: 28px;
+            padding-top: 16px;
+            border-top: 1px solid #1a1a1a;
+            color: #333;
+            font-size: 10px;
+            letter-spacing: 3px;
         }
 
         .status-dot {
             display: inline-block;
-            width: 6px;
-            height: 6px;
+            width: 5px; height: 5px;
             background: #2DD4BF;
             border-radius: 50%;
             margin: 0 8px;
             animation: pulse 2s infinite;
+            vertical-align: middle;
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% { opacity: 1; box-shadow: 0 0 4px #2DD4BF; }
+            50% { opacity: 0.4; box-shadow: none; }
         }
 
-        .hidden {
-            display: none;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease;
-        }
+        .hidden { display: none; }
+        .fade-in { animation: fadeIn 0.4s ease; }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid #ef4444;
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.4);
+            border-left: 2px solid #ef4444;
             color: #ef4444;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 12px;
+            padding: 12px 16px;
+            margin-bottom: 18px;
+            font-size: 11px;
+            letter-spacing: 1px;
             text-align: center;
             display: none;
         }
 
-        .error-message.show {
-            display: block;
-            animation: shake 0.5s ease;
+        .error-message.show { display: block; animation: slideIn 0.3s ease; }
+
+        .success-message {
+            background: rgba(45,212,191,0.08);
+            border: 1px solid rgba(45,212,191,0.4);
+            border-left: 2px solid #2DD4BF;
+            color: #2DD4BF;
+            padding: 12px 16px;
+            margin-bottom: 18px;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-align: center;
+            display: none;
         }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
+        .success-message.show { display: block; animation: slideIn 0.3s ease; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .info-note {
+            color: #444;
+            font-size: 10px;
+            letter-spacing: 1px;
+            margin-top: 12px;
+            text-align: center;
         }
 
         @media (max-width: 640px) {
-            .container {
-                padding: 30px 20px;
-            }
-
-            .title {
-                font-size: 24px;
-                letter-spacing: 2px;
-            }
-
-            .subtitle {
-                font-size: 12px;
-            }
+            .container { padding: 28px 20px; }
+            .title { font-size: 22px; letter-spacing: 3px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Logo -->
-        <div class="logo">
-            <svg class="shield-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L4 6V12C4 16.55 7.16 20.74 12 22C16.84 20.74 20 16.55 20 12V6L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+        <div class="logo-section">
+            <img src="images/logo.png" alt="505th Logo">
         </div>
 
-        <!-- Title -->
         <h1 class="title">505TH TRACKER_</h1>
-        <p class="subtitle">OPERATION BLACKOUT</p>
+        <p class="subtitle">SECURE AUTHENTICATION SYSTEM</p>
 
-        <!-- Login Form -->
+        <!-- LOGIN FORM -->
         <div id="loginForm" class="fade-in">
-            <div class="form-section">
-                <div class="section-header">
-                    <span class="terminal-prompt">></span> SYSTEM ACCESS
-                </div>
-
-                <div class="error-message" id="loginError">
-                    ACCESS DENIED • INVALID CREDENTIALS
-                </div>
-
-                <form id="authForm" onsubmit="return handleLogin(event)">
-                    <div class="form-group">
-                        <label class="form-label">CALLSIGN</label>
-                        <input type="text" class="form-input" id="loginCallsign" placeholder="Enter callsign..." required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">ACCESS CODE</label>
-                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter access code..." required>
-                    </div>
-
-                    <button type="submit" class="btn">AUTHENTICATE</button>
-                </form>
+            <div class="section-header">
+                <span class="terminal-prompt">></span> SYSTEM ACCESS
             </div>
-
+            <div class="error-message" id="loginError">ACCESS DENIED</div>
+            <form onsubmit="return handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">EMAIL</label>
+                    <input type="email" class="form-input" id="loginEmail" placeholder="operative@email.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ACCESS CODE</label>
+                    <input type="password" class="form-input" id="loginPassword" placeholder="Enter access code..." required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn">AUTHENTICATE</button>
+            </form>
             <div class="toggle-link">
-                <a href="#" onclick="toggleForm('register'); return false;">NEW OPERATIVE? REGISTER ></a>
+                <a href="#" onclick="toggleForm('register'); return false;">NEW OPERATIVE? REQUEST ACCESS ></a>
             </div>
         </div>
 
-        <!-- Registration Form -->
+        <!-- REGISTRATION FORM -->
         <div id="registerForm" class="hidden">
-            <div class="form-section">
-                <div class="section-header">
-                    <span class="terminal-prompt">></span> NEW OPERATIVE REGISTRATION
-                </div>
-
-                <div class="error-message" id="registerError">
-                    REGISTRATION FAILED • CHECK ALL FIELDS
-                </div>
-
-                <form id="regForm" onsubmit="return handleRegister(event)">
-                    <div class="form-group">
-                        <label class="form-label">CALLSIGN</label>
-                        <input type="text" class="form-input" id="regCallsign" placeholder="Enter callsign..." required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">ACCESS CODE</label>
-                        <input type="password" class="form-input" id="regPassword" placeholder="Enter access code..." required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">CLEARANCE LEVEL</label>
-                        <select class="form-select" id="clearanceLevel" required>
-                            <option value="">Select clearance level...</option>
-                            <option value="recruit">RECRUIT - BASIC ACCESS</option>
-                            <option value="nco">NCO - LIMITED ACCESS</option>
-                            <option value="officer">OFFICER - ELEVATED ACCESS</option>
-                            <option value="command">COMMAND - FULL ACCESS</option>
-                        </select>
-                    </div>
-
-                    <button type="submit" class="btn">REGISTER OPERATIVE</button>
-                </form>
+            <div class="section-header">
+                <span class="terminal-prompt">></span> NEW OPERATIVE REGISTRATION
             </div>
-
+            <div class="error-message" id="registerError">REGISTRATION FAILED</div>
+            <div class="success-message" id="registerSuccess">REGISTRATION COMPLETE</div>
+            <form id="regForm" onsubmit="return handleRegister(event)">
+                <div class="form-group">
+                    <label class="form-label">CALLSIGN</label>
+                    <input type="text" class="form-input" id="regCallsign" placeholder="Your in-game callsign..." required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">EMAIL</label>
+                    <input type="email" class="form-input" id="regEmail" placeholder="your@email.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ACCESS CODE</label>
+                    <input type="password" class="form-input" id="regPassword" placeholder="Min 6 characters..." required autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">CONFIRM ACCESS CODE</label>
+                    <input type="password" class="form-input" id="regPasswordConfirm" placeholder="Confirm access code..." required autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn">REGISTER OPERATIVE</button>
+                <p class="info-note">* Registration requires Commander approval before access is granted</p>
+            </form>
             <div class="toggle-link">
                 <a href="#" onclick="toggleForm('login'); return false;">< RETURN TO LOGIN</a>
             </div>
         </div>
 
-        <!-- Footer -->
         <div class="footer">
-            SECURE CONNECTION ESTABLISHED<span class="status-dot"></span>ENCRYPTED
+            SECURE CONNECTION<span class="status-dot"></span>ENCRYPTED
         </div>
     </div>
 
@@ -363,7 +506,6 @@
         function toggleForm(formType) {
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
-            
             if (formType === 'register') {
                 loginForm.classList.add('hidden');
                 registerForm.classList.remove('hidden');
@@ -373,69 +515,8 @@
                 loginForm.classList.remove('hidden');
                 loginForm.classList.add('fade-in');
             }
-
-            // Clear error messages
-            document.getElementById('loginError').classList.remove('show');
-            document.getElementById('registerError').classList.remove('show');
+            document.querySelectorAll('.error-message, .success-message').forEach(el => el.classList.remove('show'));
         }
-
-        function handleLogin(event) {
-            event.preventDefault();
-            
-            const callsign = document.getElementById('loginCallsign').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            // Example validation - replace with your actual authentication logic
-            if (callsign && password) {
-                // Successful login - redirect or perform action
-                console.log('Login attempt:', { callsign, password });
-                
-                // Example: redirect to dashboard
-                // window.location.href = '/dashboard';
-                
-                alert('AUTHENTICATION SUCCESSFUL\n\nWelcome, ' + callsign);
-            } else {
-                // Show error
-                const errorMsg = document.getElementById('loginError');
-                errorMsg.classList.add('show');
-                setTimeout(() => errorMsg.classList.remove('show'), 3000);
-            }
-            
-            return false;
-        }
-
-        function handleRegister(event) {
-            event.preventDefault();
-            
-            const callsign = document.getElementById('regCallsign').value;
-            const password = document.getElementById('regPassword').value;
-            const clearance = document.getElementById('clearanceLevel').value;
-            
-            // Example validation - replace with your actual registration logic
-            if (callsign && password && clearance) {
-                // Successful registration
-                console.log('Registration attempt:', { callsign, password, clearance });
-                
-                alert('OPERATIVE REGISTERED\n\nCallsign: ' + callsign + '\nClearance: ' + clearance);
-                
-                // Switch back to login form
-                toggleForm('login');
-            } else {
-                // Show error
-                const errorMsg = document.getElementById('registerError');
-                errorMsg.classList.add('show');
-                setTimeout(() => errorMsg.classList.remove('show'), 3000);
-            }
-            
-            return false;
-        }
-
-        // Add typing sound effect (optional)
-        document.querySelectorAll('.form-input').forEach(input => {
-            input.addEventListener('keypress', function() {
-                // You can add sound effects here if desired
-            });
-        });
     </script>
 </body>
 </html>

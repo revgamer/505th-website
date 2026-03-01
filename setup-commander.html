@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>505th - Commander Account Setup (ONE TIME USE)</title>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
+            authDomain: "th-website-91533.firebaseapp.com",
+            projectId: "th-website-91533",
+            storageBucket: "th-website-91533.firebasestorage.app",
+            messagingSenderId: "1046139150142",
+            appId: "1:1046139150142:web:01f409ae4a38c4f79d966f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.createCommander = async function(event) {
+            event.preventDefault();
+            const status = document.getElementById('status');
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const callsign = document.getElementById('callsign').value.trim();
+
+            status.textContent = 'CREATING COMMANDER ACCOUNT...';
+            status.style.color = '#f59e0b';
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+                await setDoc(doc(db, "users", userCredential.user.uid), {
+                    callsign: callsign,
+                    email: email,
+                    role: "commander",
+                    status: "approved",
+                    registeredAt: new Date().toISOString(),
+                    approvedBy: "SYSTEM",
+                    approvedAt: new Date().toISOString()
+                });
+
+                status.textContent = 'COMMANDER ACCOUNT CREATED SUCCESSFULLY! You can now log in at login.html. DELETE THIS FILE AFTER USE.';
+                status.style.color = '#22c55e';
+
+            } catch (error) {
+                status.textContent = 'ERROR: ' + error.message;
+                status.style.color = '#ef4444';
+            }
+
+            return false;
+        };
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #ccc;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: #111;
+            border: 2px solid #ef4444;
+            padding: 40px;
+        }
+        h1 { color: #ef4444; font-size: 18px; letter-spacing: 3px; margin-bottom: 8px; }
+        .warning { color: #f59e0b; font-size: 12px; margin-bottom: 30px; letter-spacing: 1px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; color: #888; font-size: 11px; letter-spacing: 2px; margin-bottom: 4px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            border: 1px solid #333;
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        input:focus { outline: none; border-color: #2DD4BF; }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #ef4444;
+            color: #000;
+            border: none;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover { background: #dc2626; }
+        #status { margin-top: 20px; font-size: 12px; letter-spacing: 1px; min-height: 40px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>COMMANDER SETUP</h1>
+        <div class="warning">ONE TIME USE ONLY - DELETE THIS FILE AFTER CREATING THE COMMANDER ACCOUNT</div>
+
+        <form onsubmit="return createCommander(event)">
+            <div class="form-group">
+                <label>COMMANDER CALLSIGN</label>
+                <input type="text" id="callsign" placeholder="e.g. Actual" required>
+            </div>
+            <div class="form-group">
+                <label>COMMANDER EMAIL</label>
+                <input type="email" id="email" placeholder="commander@email.com" required>
+            </div>
+            <div class="form-group">
+                <label>ACCESS CODE (PASSWORD)</label>
+                <input type="password" id="password" placeholder="Min 6 characters" required minlength="6">
+            </div>
+            <button type="submit">CREATE COMMANDER ACCOUNT</button>
+        </form>
+
+        <div id="status"></div>
+    </div>
+</body>
+</html>

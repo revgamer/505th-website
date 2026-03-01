@@ -72,12 +72,13 @@ a {
 .nav-brand {
     display: flex;
     align-items: center;
+    gap: 1rem;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .nav-brand:hover {
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 .nav-brand:hover .nav-logo {
