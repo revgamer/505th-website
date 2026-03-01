@@ -149,7 +149,7 @@
                             </select>
                             ${user.status !== 'approved' ? `<button class="action-btn approve-btn small" onclick="approveUser('${user.uid}', '${escapeHtml(user.callsign)}')">APPROVE</button>` : ''}
                             <button class="action-btn remove-btn small" onclick="removeUser('${user.uid}', '${escapeHtml(user.callsign)}')">REMOVE</button>
-                        ` : '<span class="commander-tag">COMMANDING OFFICER</span>'}
+                        ` : `<span class="commander-tag ${user.role === 'developer' ? 'dev-tag' : ''}">${user.role === 'commander' ? 'COMMANDING OFFICER' : 'DEVELOPER'}</span>`}
                     </div>
                 </div>
             `).join('');
@@ -556,6 +556,10 @@
             color: #f59e0b;
             font-size: 10px;
             letter-spacing: 2px;
+        }
+
+        .commander-tag.dev-tag {
+            color: #a78bfa;
         }
 
         .empty-state {
