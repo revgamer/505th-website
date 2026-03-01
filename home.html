@@ -12,6 +12,7 @@
     <link rel="manifest" href="images/site.webmanifest">
     
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -20,7 +21,9 @@
         <div class="nav-container">
             <div class="nav-brand" id="logoMenu">
                 <img src="images/logo.png" alt="505th Logo" class="nav-logo">
-                <span class="nav-title">505TH EXPEDITIONARY FORCE</span>
+            </div>
+            <div class="nav-auth-wrapper">
+                <a href="login.html" class="nav-auth-btn" id="navAuthBtn">LOGIN</a>
             </div>
         </div>
     </nav>
@@ -126,6 +129,21 @@
                         <span class="section-icon">💬</span>
                         <span>JOIN US</span>
                     </a>
+                </div>
+            </div>
+            
+                <!-- AUTH SECTION -->
+                <div class="menu-section menu-auth-section">
+                    <div class="section-title" style="cursor:default;">
+                        <span class="section-icon">&#x1F512;</span>
+                        <span>ACCOUNT</span>
+                    </div>
+                    <div id="menuAuthSection">
+                        <a href="login.html" class="submenu-item">
+                            <span class="submenu-bullet">&#x25B8;</span>
+                            System Login
+                        </a>
+                    </div>
                 </div>
             </div>
             
@@ -334,5 +352,6 @@
 
     <script src="js/nav.js"></script>
     <script src="js/scroll.js"></script>
+    <script type="module" src="js/auth.js"></script>
 </body>
 </html>
