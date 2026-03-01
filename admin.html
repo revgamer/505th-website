@@ -27,6 +27,7 @@
         // Cloudinary config
         const CLOUD_NAME = 'dwugtsdx';
         const UPLOAD_PRESET = '505th_uploads';
+        const CLOUDINARY_API_KEY = '143672934239445';
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -221,6 +222,7 @@
                     const formData = new FormData();
                     formData.append('file', file);
                     formData.append('upload_preset', UPLOAD_PRESET);
+                    formData.append('api_key', CLOUDINARY_API_KEY);
 
                     const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
                     const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
