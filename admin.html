@@ -221,16 +221,20 @@
                     const formData = new FormData();
                     formData.append('file', file);
                     formData.append('upload_preset', UPLOAD_PRESET);
-                    formData.append('folder', `505th/${category}`);
 
                     const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
-                    const resp = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`, {
+                    const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+                    console.log('Uploading to:', uploadUrl, 'Preset:', UPLOAD_PRESET, 'File:', file.name, 'Type:', file.type);
+
+                    const resp = await fetch(uploadUrl, {
                         method: 'POST',
                         body: formData
                     });
                     const result = await resp.json();
+                    console.log('Cloudinary response:', result);
 
                     if (result.error) throw new Error(result.error.message);
+                    if (!result.secure_url) throw new Error('No URL returned - check preset name and cloud name');
 
                     // Save to Firestore
                     const docId = `media_${Date.now()}_${Math.random().toString(36).substr(2,5)}`;
@@ -249,7 +253,9 @@
                     });
                     uploaded++;
                 } catch (err) {
+                    console.error('Upload error:', err);
                     notify(`FAILED: ${file.name} - ${err.message}`, true);
+                    progress.textContent = `ERROR: ${err.message}`;
                 }
             }
 
@@ -510,7 +516,7 @@
             const n = document.getElementById('notification');
             n.textContent = msg;
             n.className = 'notification show' + (err ? ' error' : '');
-            setTimeout(() => n.classList.remove('show'), 3000);
+            setTimeout(() => n.classList.remove('show'), err ? 8000 : 3000);
         }
     </script>
 
