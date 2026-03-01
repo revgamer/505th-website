@@ -58,8 +58,9 @@
             'about-alpha': {
                 name: 'Alpha Company',
                 slots: [
-                    { id: 'photo_1', label: 'Company Photo 1', type: 'image', description: 'Alpha Company operation photo' },
-                    { id: 'photo_2', label: 'Company Photo 2', type: 'image', description: 'Alpha Company operation photo' }
+                    { id: 'photo_1', label: 'Mars Desert Campaign Photo', type: 'image', description: 'Operation photo 1' },
+                    { id: 'photo_2', label: 'Amazon Jungle Assault Photo', type: 'image', description: 'Operation photo 2' },
+                    { id: 'photo_3', label: 'Objective Assault Photo', type: 'image', description: 'Operation photo 3' }
                 ]
             },
             'about-corpsman': {
@@ -101,6 +102,7 @@
             loadMediaLibrary();
             loadPages();
             loadPageContent();
+            loadSiteSettings();
         });
 
         // ==========================================
@@ -239,9 +241,11 @@
                     if (!result.secure_url) throw new Error('No URL returned - check preset name and cloud name');
 
                     // Save to Firestore
+                    const desc = document.getElementById('mediaDescription').value.trim();
                     const docId = `media_${Date.now()}_${Math.random().toString(36).substr(2,5)}`;
                     await setDoc(doc(db, "media", docId), {
                         name: file.name,
+                        description: desc,
                         url: result.secure_url,
                         publicId: result.public_id,
                         type: resourceType,
@@ -264,6 +268,7 @@
             btn.disabled = false;
             btn.textContent = 'UPLOAD';
             fileInput.value = '';
+            document.getElementById('mediaDescription').value = '';
             progress.classList.add('hidden');
             notify(`${uploaded} FILE(S) UPLOADED`);
             loadMediaLibrary();
@@ -298,6 +303,7 @@
                     }
                     <div class="media-info">
                         <div class="media-name" title="${esc(m.name)}">${esc(m.name)}</div>
+                        ${m.description ? `<div class="media-desc" style="color:#888;font-size:9px;margin-top:2px;letter-spacing:0.5px;">${esc(m.description)}</div>` : ''}
                         <div class="media-meta">${m.category.toUpperCase()} &bull; ${m.type.toUpperCase()}</div>
                     </div>
                     <div class="media-actions">
@@ -453,6 +459,39 @@
                 await setDoc(doc(db, "settings", "page_content"), pageContentData);
                 notify('SLOT CLEARED');
                 renderPageEditor();
+            } catch (err) { notify('ERROR: ' + err.message, true); }
+        };
+
+        // ==========================================
+        // SITE SETTINGS (Discord link etc)
+        // ==========================================
+        async function loadSiteSettings() {
+            try {
+                const d = await getDoc(doc(db, "settings", "site"));
+                const settings = d.exists() ? d.data() : {};
+                const discordInput = document.getElementById('discordLinkInput');
+                if (discordInput && settings.discord_invite) {
+                    discordInput.value = settings.discord_invite;
+                }
+                const currentLink = document.getElementById('currentDiscordLink');
+                if (currentLink) {
+                    currentLink.textContent = settings.discord_invite || 'NOT SET';
+                    currentLink.href = settings.discord_invite || '#';
+                }
+            } catch (err) { console.error('Settings load error:', err); }
+        }
+
+        window.saveDiscordLink = async function() {
+            const url = document.getElementById('discordLinkInput').value.trim();
+            if (!url) { notify('ENTER A DISCORD LINK', true); return; }
+            if (!url.includes('discord')) { notify('INVALID DISCORD URL', true); return; }
+            try {
+                const d = await getDoc(doc(db, "settings", "site"));
+                let settings = d.exists() ? d.data() : {};
+                settings.discord_invite = url;
+                await setDoc(doc(db, "settings", "site"), settings);
+                notify('DISCORD LINK UPDATED - ALL PAGES WILL USE NEW LINK');
+                loadSiteSettings();
             } catch (err) { notify('ERROR: ' + err.message, true); }
         };
 
@@ -748,6 +787,9 @@
                     <div class="sidebar-link" data-panel="pages" onclick="switchPanel('pages')">
                         <span class="sidebar-icon">&#9783;</span> PAGE MANAGER
                     </div>
+                    <div class="sidebar-link" data-panel="settings" onclick="switchPanel('settings')">
+                        <span class="sidebar-icon">&#9881;</span> SITE SETTINGS
+                    </div>
                 </div>
                 <div class="sidebar-section">
                     <div class="sidebar-label">QUICK LINKS</div>
@@ -784,6 +826,10 @@
                             </div>
                             <button class="upload-btn" id="mediaUploadBtn" onclick="handleFileUpload()">UPLOAD</button>
                         </div>
+                        <div style="margin-top:10px;">
+                            <label style="color:#555;font-size:9px;letter-spacing:2px;display:block;margin-bottom:4px;">DESCRIPTION (OPTIONAL)</label>
+                            <input type="text" id="mediaDescription" placeholder="Describe this media..." style="width:100%;padding:9px;background:rgba(0,0,0,0.5);border:1px solid #222;color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;">
+                        </div>
                         <div class="upload-progress hidden" id="mediaProgress">UPLOADING...</div>
                     </div>
                     <div class="filter-bar">
@@ -809,6 +855,34 @@
                     <div class="panel-title">PAGE MANAGER</div>
                     <p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px;">ENABLE OR DISABLE SITE PAGES</p>
                     <div id="pagesList"><div class="empty-state">LOADING...</div></div>
+                </div>
+
+                <!-- SITE SETTINGS -->
+                <div class="panel hidden" id="panel-settings">
+                    <div class="panel-title">SITE SETTINGS</div>
+
+                    <!-- Discord Link -->
+                    <div style="background:rgba(15,15,15,0.9);border:1px solid #1a1a1a;padding:20px;margin-bottom:16px;">
+                        <div style="color:#ccc;font-size:13px;letter-spacing:2px;margin-bottom:4px;">DISCORD INVITE LINK</div>
+                        <p style="color:#555;font-size:9px;letter-spacing:1px;margin-bottom:12px;">CHANGE THIS ONCE AND ALL PAGES UPDATE AUTOMATICALLY — NO NEED TO EDIT EACH PAGE</p>
+                        <div style="color:#444;font-size:9px;letter-spacing:2px;margin-bottom:8px;">CURRENT: <a id="currentDiscordLink" href="#" target="_blank" style="color:#2DD4BF;text-decoration:none;">NOT SET</a></div>
+                        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+                            <div style="flex:1;min-width:200px;">
+                                <input type="url" id="discordLinkInput" placeholder="https://discord.gg/XXXXXXXX" style="width:100%;padding:10px;background:rgba(0,0,0,0.5);border:1px solid #222;color:#ccc;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none;">
+                            </div>
+                            <button class="upload-btn" onclick="saveDiscordLink()">SAVE LINK</button>
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(15,15,15,0.9);border:1px solid #1a1a1a;padding:16px;">
+                        <div style="color:#555;font-size:9px;letter-spacing:2px;">
+                            <p style="margin-bottom:6px;">HOW IT WORKS:</p>
+                            <p style="margin-bottom:4px;">&#8226; Every page loads <code style="color:#2DD4BF;">cms.js</code> which reads this link from Firestore</p>
+                            <p style="margin-bottom:4px;">&#8226; ALL Discord links on ALL pages are replaced automatically</p>
+                            <p style="margin-bottom:4px;">&#8226; If the invite expires, just paste the new one here</p>
+                            <p>&#8226; No code changes needed — instant site-wide update</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

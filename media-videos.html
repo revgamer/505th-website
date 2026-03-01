@@ -3,24 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Under Construction - 505th EF</title>
-    
-    <!-- Favicon -->
+    <title>Videos - 505th EF</title>
     <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
     <link rel="manifest" href="images/site.webmanifest">
-    
-    <link rel="stylesheet" href="css/under-construction.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .media-page-content { min-height: calc(100vh - 110px); position: relative; }
+        .media-page-content .container { max-width: 1400px; margin: 0 auto; padding: 3rem 2rem; }
+        .page-intro { text-align: center; margin-bottom: 3rem; }
+        .page-intro h1 { font-family: 'Rajdhani', sans-serif; color: var(--accent); font-size: 2.5rem; letter-spacing: 6px; text-shadow: 0 0 20px var(--accent-glow); margin-bottom: 0.5rem; }
+        .page-intro p { color: var(--text-secondary); font-size: 1.1rem; letter-spacing: 2px; }
+        .media-count { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; margin-bottom: 1.5rem; }
+        .media-count span { color: var(--accent); }
+
+        .dyn-video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 2rem; }
+        .dyn-video-item { background: var(--bg-card); border: 2px solid transparent; overflow: hidden; transition: all 0.3s ease; }
+        .dyn-video-item:hover { border-color: var(--accent); box-shadow: 0 0 25px var(--accent-glow); }
+        .dyn-video-embed { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: var(--bg-elevated); }
+        .dyn-video-embed iframe, .dyn-video-embed video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .dyn-gallery-info { padding: 12px 16px; border-top: 1px solid rgba(0,217,255,0.1); }
+        .dyn-gallery-name { color: var(--text-primary); font-size: 1rem; font-weight: 600; letter-spacing: 1px; }
+        .dyn-gallery-meta { color: var(--text-muted); font-size: 0.75rem; letter-spacing: 2px; margin-top: 4px; }
+        .dyn-gallery-desc { color: var(--text-secondary, #999); font-size: 0.85rem; margin-top: 4px; line-height: 1.4; letter-spacing: 0.5px; }
+        .no-media-msg { text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-size: 1rem; letter-spacing: 3px; }
+
+        @media (max-width: 768px) {
+            .dyn-video-grid { grid-template-columns: 1fr; }
+            .page-intro h1 { font-size: 1.8rem; letter-spacing: 3px; }
+        }
+    </style>
 </head>
-<body>
+<body data-cms-media="video">
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <div class="nav-brand" id="logoMenu">
                 <img src="images/logo.png" alt="505th Logo" class="nav-logo">
-                <span class="nav-title">505TH EXPEDITIONARY FORCE</span>
+            </div>
+            <div class="nav-auth-wrapper">
+                <a href="login.html" class="nav-auth-btn" id="navAuthBtn">LOGIN</a>
             </div>
         </div>
     </nav>
@@ -33,161 +58,60 @@
                 <h2>COMMAND TERMINAL</h2>
                 <button class="menu-close" id="menuClose">✕</button>
             </div>
-            
             <div class="menu-sections">
-                <!-- HOME -->
+                <div class="menu-section"><a href="home.html" class="section-title"><span class="section-icon">🏠</span><span>HOME</span></a></div>
                 <div class="menu-section">
-                    <a href="home.html" class="section-title">
-                        <span class="section-icon">🏠</span>
-                        <span>HOME</span>
-                    </a>
-                </div>
-
-                <!-- ABOUT US (with dropdown) -->
-                <div class="menu-section">
-                    <div class="section-title" data-submenu="about">
-                        <span class="section-icon">ℹ️</span>
-                        <span>ABOUT US</span>
-                        <span class="submenu-arrow">▼</span>
-                    </div>
+                    <div class="section-title" data-submenu="about"><span class="section-icon">ℹ️</span><span>ABOUT US</span><span class="submenu-arrow">▼</span></div>
                     <div class="submenu" id="submenu-about">
-                        <a href="about-505th.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            505th Expeditionary Force
-                        </a>
-                        <a href="about-alpha-company.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Alpha Company
-                        </a>
-                        <a href="about-stalker.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            JTF-23 Stalker
-                        </a>
-                        <a href="about-corpsman.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Hospital Corpsman
-                        </a>
-                        <a href="about-54th-air-wing.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            54th Air Wing
-                        </a>
+                        <a href="about-505th.html" class="submenu-item"><span class="submenu-bullet">▸</span>505th Expeditionary Force</a>
+                        <a href="about-alpha-company.html" class="submenu-item"><span class="submenu-bullet">▸</span>Alpha Company</a>
+                        <a href="about-stalker.html" class="submenu-item"><span class="submenu-bullet">▸</span>JTF-23 Stalker</a>
+                        <a href="about-corpsman.html" class="submenu-item"><span class="submenu-bullet">▸</span>Hospital Corpsman</a>
+                        <a href="about-54th-air-wing.html" class="submenu-item"><span class="submenu-bullet">▸</span>54th Air Wing</a>
                     </div>
                 </div>
-
-                <!-- MEDIA (with dropdown) -->
                 <div class="menu-section">
-                    <div class="section-title" data-submenu="media">
-                        <span class="section-icon">📷</span>
-                        <span>MEDIA</span>
-                        <span class="submenu-arrow">▼</span>
-                    </div>
+                    <div class="section-title" data-submenu="media"><span class="section-icon">📷</span><span>MEDIA</span><span class="submenu-arrow">▼</span></div>
                     <div class="submenu" id="submenu-media">
-                        <a href="media-gallery.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Gallery
-                        </a>
-                        <a href="media-videos.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Videos
-                        </a>
+                        <a href="media-gallery.html" class="submenu-item"><span class="submenu-bullet">▸</span>Gallery</a>
+                        <a href="media-videos.html" class="submenu-item"><span class="submenu-bullet">▸</span>Videos</a>
                     </div>
                 </div>
-
-                <!-- RESOURCES (with dropdown) -->
                 <div class="menu-section">
-                    <div class="section-title" data-submenu="resources">
-                        <span class="section-icon">📋</span>
-                        <span>RESOURCES</span>
-                        <span class="submenu-arrow">▼</span>
-                    </div>
+                    <div class="section-title" data-submenu="resources"><span class="section-icon">📋</span><span>RESOURCES</span><span class="submenu-arrow">▼</span></div>
                     <div class="submenu" id="submenu-resources">
-                        <a href="resources-discord-rules.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Discord Rules
-                        </a>
-                        <a href="resources-handbook.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            General Handbook
-                        </a>
-                        <a href="resources-roster.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Roster
-                        </a>
-                        <a href="resources-roadmap.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Development Roadmap
-                        </a>
+                        <a href="resources-discord-rules.html" class="submenu-item"><span class="submenu-bullet">▸</span>Discord Rules</a>
+                        <a href="resources-handbook.html" class="submenu-item"><span class="submenu-bullet">▸</span>General Handbook</a>
+                        <a href="resources-roster.html" class="submenu-item"><span class="submenu-bullet">▸</span>Roster</a>
+                        <a href="resources-roadmap.html" class="submenu-item"><span class="submenu-bullet">▸</span>Development Roadmap</a>
                     </div>
                 </div>
-
-                <!-- JOIN US (Direct Discord Link) -->
-                <div class="menu-section">
-                    <a href="https://discord.gg/JE5pwbgBVp" class="section-title join-btn" target="_blank">
-                        <span class="section-icon">💬</span>
-                        <span>JOIN US</span>
-                    </a>
-                </div>
+                <div class="menu-section"><a href="https://discord.gg/pNkbaUtcw6" class="section-title join-btn" target="_blank"><span class="section-icon">💬</span><span>JOIN US</span></a></div>
             </div>
-            
-            <div class="menu-footer">
-                <p>CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY</p>
-            </div>
+            <div class="menu-footer"><p>CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY</p></div>
         </div>
     </div>
 
-    <!-- Under Construction Section -->
-    <section class="construction-page">
-        <div class="construction-content">
-            <div class="error-code">404</div>
-            
-            <h1 class="construction-title">
-                <span class="title-line">PAGE UNDER CONSTRUCTION</span>
-                <span class="title-subtitle">TACTICAL DATABASE UNAVAILABLE</span>
-            </h1>
-            
-            <div class="status-panel">
-                <div class="status-header">
-                    <span class="status-indicator"></span>
-                    <h2>SYSTEM STATUS</h2>
-                </div>
-                
-                <div class="status-body">
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> ERROR CODE: 404 - RESOURCE NOT FOUND
-                    </p>
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> STATUS: PAGE UNDER DEVELOPMENT
-                    </p>
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> CLEARANCE LEVEL: RESTRICTED ACCESS
-                    </p>
-                </div>
-                
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
-                
-                <p class="status-footer">This section is currently being constructed. Check back soon.</p>
+    <main class="media-page-content">
+        <div class="container">
+            <div class="page-intro">
+                <h1>VIDEOS</h1>
+                <p>505TH EXPEDITIONARY FORCE — GAMEPLAY & OPERATIONS FOOTAGE</p>
             </div>
-            
-            <div class="quick-actions">
-                <a href="home.html" class="action-btn">
-                    <span class="btn-icon">🏠</span>
-                    <span class="btn-text">RETURN HOME</span>
-                </a>
-                <a href="https://discord.gg/pNkbaUtcw6" class="action-btn" target="_blank">
-                    <span class="btn-icon">💬</span>
-                    <span class="btn-text">JOIN DISCORD</span>
-                </a>
+            <div class="media-count">VIDEOS: <span id="mediaItemCount">0</span></div>
+            <div class="dyn-video-grid" id="dynamicMediaGrid">
+                <div class="no-media-msg">LOADING...</div>
             </div>
         </div>
-    </section>
+    </main>
 
     <footer class="page-footer">
-        <p>© 2026 505th Expeditionary Force • 505th Dev Team</p>
+        <p>&copy; 2026 505th Expeditionary Force &bull; 505th Dev Team</p>
     </footer>
 
     <script src="js/nav.js"></script>
     <script src="js/scroll.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/cms.js"></script>
 </body>
 </html>
