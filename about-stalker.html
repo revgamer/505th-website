@@ -333,7 +333,7 @@
         }
     </style>
 </head>
-<body>
+<body data-cms-page="about-stalker">
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
@@ -519,7 +519,7 @@
                 <div class="gallery-grid">
                     <!-- Gallery Item 1 -->
                     <div class="gallery-item">
-                        <div class="gallery-placeholder">
+                        <div class="gallery-placeholder" data-cms-slot="photo_recon" data-cms-type="image">
                             <div class="icon">📷</div>
                             <div class="text">Operation Photo</div>
                         </div>
@@ -531,7 +531,7 @@
 
                     <!-- Gallery Item 2 -->
                     <div class="gallery-item">
-                        <div class="gallery-placeholder">
+                        <div class="gallery-placeholder" data-cms-slot="photo_strike" data-cms-type="image">
                             <div class="icon">🎯</div>
                             <div class="text">Operation Photo</div>
                         </div>
@@ -543,7 +543,7 @@
 
                     <!-- Gallery Item 3 -->
                     <div class="gallery-item">
-                        <div class="gallery-placeholder">
+                        <div class="gallery-placeholder" data-cms-slot="photo_airground" data-cms-type="image">
                             <div class="icon">🚁</div>
                             <div class="text">Operation Photo</div>
                         </div>
@@ -568,7 +568,7 @@
             <div class="cta-box">
                 <h3>INTERESTED IN JOINING STALKER?</h3>
                 <p>JTF-23 Stalker accepts only the most dedicated and skilled operators. Join our Discord to learn about selection requirements and training pipelines.</p>
-                <a href="https://discord.gg/JE5pwbgBVp" class="cta-button" target="_blank">
+                <a href="https://discord.gg/pNkbaUtcw6" class="cta-button" target="_blank">
                     <span>💬</span>
                     <span>JOIN DISCORD</span>
                 </a>
@@ -584,5 +584,6 @@
 
     <script src="js/nav.js"></script>
     <script src="js/scroll.js"></script>
+    <script type="module" src="js/cms.js"></script>
 </body>
 </html>

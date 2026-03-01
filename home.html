@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="css/auth.css">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body data-cms-page="home">
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
@@ -203,14 +203,14 @@
                 </h2>
                 <div class="video-container">
                     <!-- Placeholder for video embed -->
-                    <div class="video-placeholder">
+                    <div class="video-placeholder" data-cms-slot="hero_video" data-cms-type="video">
                         <div class="video-icon">▶</div>
                         <p>Gameplay Video Placeholder</p>
                         <p class="video-note">[Embed YouTube/Twitch video here]</p>
                     </div>
                 </div>
                 <div class="video-description">
-                    <p>xxxxxxxxxxxxxxxxxxxxxxx</p>
+                    <p data-cms-slot="hero_video_description" data-cms-type="text">xxxxxxxxxxxxxxxxxxxxxxx</p>
                 </div>
             </section>
 
@@ -334,7 +334,7 @@
                 <div class="cta-box">
                     <h2>READY TO ENLIST?</h2>
                     <p>Join our Discord to begin your journey with the 505th Expeditionary Force</p>
-                    <a href="https://discord.gg/JE5pwbgBVp" class="cta-button" target="_blank">
+                    <a href="https://discord.gg/pNkbaUtcw6" class="cta-button" target="_blank">
                         <span class="btn-icon">💬</span>
                         <span class="btn-text">JOIN DISCORD</span>
                     </a>
@@ -353,5 +353,6 @@
     <script src="js/nav.js"></script>
     <script src="js/scroll.js"></script>
     <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/cms.js"></script>
 </body>
 </html>
