@@ -101,8 +101,13 @@ a {
     }
 }
 
-/* Hide text and menu hint */
-.nav-title,
+.nav-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+}
+
 .menu-hint {
     display: none;
 }
