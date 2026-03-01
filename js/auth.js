@@ -62,7 +62,7 @@ onAuthStateChanged(auth, async (user) => {
                         </div>`;
 
                 // Admin/Commander gets admin panel link
-                if (userData.role === 'commander' || userData.role === 'admin') {
+                if (userData.role === 'commander' || userData.role === 'admin' || userData.role === 'developer') {
                     dropdownHTML += `
                         <a href="admin.html" class="auth-dropdown-item">
                             <span>⚙</span> COMMAND PANEL
@@ -94,7 +94,7 @@ onAuthStateChanged(auth, async (user) => {
                             <span class="menu-auth-role">${userData.role.toUpperCase()}</span>
                         </div>`;
 
-                    if (userData.role === 'commander' || userData.role === 'admin') {
+                    if (userData.role === 'commander' || userData.role === 'admin' || userData.role === 'developer') {
                         menuHTML += `
                         <a href="admin.html" class="submenu-item">
                             <span class="submenu-bullet">▸</span>

@@ -47,7 +47,7 @@
             }
 
             const userData = userDoc.data();
-            if (userData.role !== 'commander' && userData.role !== 'admin') {
+            if (userData.role !== 'commander' && userData.role !== 'admin' && userData.role !== 'developer') {
                 window.location.href = 'home.html';
                 return;
             }
@@ -139,12 +139,13 @@
                         </div>
                     </div>
                     <div class="user-actions">
-                        ${user.role !== 'commander' ? `
+                        ${user.role !== 'commander' && user.role !== 'developer' ? `
                             <select class="role-select" onchange="changeRole('${user.uid}', this.value)">
                                 <option value="recruit" ${user.role === 'recruit' ? 'selected' : ''}>RECRUIT</option>
                                 <option value="nco" ${user.role === 'nco' ? 'selected' : ''}>NCO</option>
                                 <option value="officer" ${user.role === 'officer' ? 'selected' : ''}>OFFICER</option>
                                 <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>ADMIN</option>
+                                <option value="developer" ${user.role === 'developer' ? 'selected' : ''}>DEVELOPER</option>
                             </select>
                             ${user.status !== 'approved' ? `<button class="action-btn approve-btn small" onclick="approveUser('${user.uid}', '${escapeHtml(user.callsign)}')">APPROVE</button>` : ''}
                             <button class="action-btn remove-btn small" onclick="removeUser('${user.uid}', '${escapeHtml(user.callsign)}')">REMOVE</button>
@@ -475,6 +476,7 @@
         .role-admin { color: #a78bfa; border-color: #a78bfa; }
         .role-officer { color: #60a5fa; border-color: #60a5fa; }
         .role-nco { color: #34d399; border-color: #34d399; }
+        .role-developer { color: #a78bfa; border-color: #a78bfa; }
 
         .status-badge {
             font-size: 9px;

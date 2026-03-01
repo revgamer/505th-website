@@ -138,7 +138,7 @@
                     return false;
                 }
 
-                if (userData.role === 'commander' || userData.role === 'admin') {
+                if (userData.role === 'commander' || userData.role === 'admin' || userData.role === 'developer') {
                     window.location.href = 'admin.html';
                 } else {
                     window.location.href = 'home.html';
@@ -164,7 +164,7 @@
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
                     if (userData.status === 'approved') {
-                        if (userData.role === 'commander' || userData.role === 'admin') {
+                        if (userData.role === 'commander' || userData.role === 'admin' || userData.role === 'developer') {
                             window.location.href = 'admin.html';
                         } else {
                             window.location.href = 'home.html';
