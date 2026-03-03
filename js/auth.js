@@ -83,7 +83,7 @@ onAuthStateChanged(auth, async (user) => {
                 // Logout handler
                 document.getElementById('navLogoutBtn').addEventListener('click', async () => {
                     await signOut(auth);
-                    window.location.href = 'login.html';
+                    window.location.href = 'home.html';
                 });
 
                 // Update tactical menu auth section
@@ -114,7 +114,7 @@ onAuthStateChanged(auth, async (user) => {
                     document.getElementById('menuLogoutBtn')?.addEventListener('click', async (e) => {
                         e.preventDefault();
                         await signOut(auth);
-                        window.location.href = 'login.html';
+                        window.location.href = 'home.html';
                     });
                 }
             }
