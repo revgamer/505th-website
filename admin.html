@@ -99,7 +99,7 @@
             // Show/hide sidebar links and panels
             document.querySelector('[data-panel="personnel"]').style.display = p.personnel ? '' : 'none';
             document.querySelector('[data-panel="media"]').style.display = p.media ? '' : 'none';
-            document.querySelector('[data-panel="content"]').style.display = p.content ? '' : 'none';
+            document.querySelector('[data-panel="editor"]').style.display = p.content ? '' : 'none';
             document.querySelector('[data-panel="pages"]').style.display = p.pages ? '' : 'none';
             document.querySelector('[data-panel="settings"]').style.display = p.settings ? '' : 'none';
             // Default to first visible panel
@@ -153,24 +153,29 @@
         // PERSONNEL
         // ==========================================
         async function loadUsers() {
-            const snapshot = await getDocs(query(collection(db, "users"), orderBy("registeredAt", "desc")));
-            const pending = [], approved = [], denied = [];
-            snapshot.forEach(d => {
-                const data = { ...d.data(), uid: d.id };
-                if (data.status === 'pending') pending.push(data);
-                else if (data.status === 'approved') approved.push(data);
-                else denied.push(data);
-            });
-            document.getElementById('pendingCount').textContent = pending.length;
-            document.getElementById('approvedCount').textContent = approved.length;
-            document.getElementById('totalCount').textContent = snapshot.size;
+            try {
+                const snapshot = await getDocs(query(collection(db, "users"), orderBy("registeredAt", "desc")));
+                const pending = [], approved = [], denied = [];
+                snapshot.forEach(d => {
+                    const data = { ...d.data(), uid: d.id };
+                    if (data.status === 'pending') pending.push(data);
+                    else if (data.status === 'approved') approved.push(data);
+                    else denied.push(data);
+                });
+                document.getElementById('pendingCount').textContent = pending.length;
+                document.getElementById('approvedCount').textContent = approved.length;
+                document.getElementById('totalCount').textContent = snapshot.size;
 
-            const pendingBadge = document.getElementById('sidebarPendingBadge');
-            if (pending.length > 0) { pendingBadge.textContent = pending.length; pendingBadge.style.display = ''; }
-            else { pendingBadge.style.display = 'none'; }
+                const pendingBadge = document.getElementById('sidebarPendingBadge');
+                if (pending.length > 0) { pendingBadge.textContent = pending.length; pendingBadge.style.display = ''; }
+                else { pendingBadge.style.display = 'none'; }
 
-            renderPendingUsers(pending);
-            renderAllUsers([...pending, ...approved, ...denied]);
+                renderPendingUsers(pending);
+                renderAllUsers([...pending, ...approved, ...denied]);
+            } catch (err) {
+                console.error('loadUsers error:', err);
+                notify('FAILED TO LOAD PERSONNEL — CHECK FIRESTORE RULES', true);
+            }
         }
 
         function renderPendingUsers(users) {
