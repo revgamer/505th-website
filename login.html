@@ -27,7 +27,6 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        let bootInProgress = false;
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -38,26 +37,66 @@
             const errorMsg = document.getElementById('registerError');
             const successMsg = document.getElementById('registerSuccess');
 
-            const callsign = document.getElementById('regCallsign').value.trim();
+            const firstName = document.getElementById('regFirstName').value.trim();
+            const lastName = document.getElementById('regLastName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
+            const callsign = firstName + ' ' + lastName;
             const password = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regPasswordConfirm').value;
 
             if (password !== confirmPassword) { showError(errorMsg, 'ACCESS CODES DO NOT MATCH'); return false; }
             if (password.length < 6) { showError(errorMsg, 'ACCESS CODE MUST BE 6+ CHARACTERS'); return false; }
-            if (!callsign) { showError(errorMsg, 'CALLSIGN REQUIRED'); return false; }
+            if (!firstName || !lastName) { showError(errorMsg, 'FIRST AND LAST NAME REQUIRED'); return false; }
 
             btn.textContent = 'PROCESSING...'; btn.disabled = true;
 
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 await setDoc(doc(db, "users", userCredential.user.uid), {
-                    callsign, email, role: "recruit", status: "pending",
+                    callsign, firstName, lastName, email, role: "marine", status: "pending",
+                    rank: "", joinedAt: new Date().toISOString(),
                     registeredAt: new Date().toISOString(), approvedBy: null, approvedAt: null
                 });
                 await signOut(auth);
                 document.getElementById('regForm').reset();
-                startRegisterBoot();
+                // Show register boot animation
+                document.getElementById('loginContainer').classList.add('hidden');
+                var regBoot = document.getElementById('registerBoot');
+                regBoot.classList.add('active');
+                var regLines = regBoot.querySelectorAll('.terminal-line');
+                var ri = 0;
+                function regNextLine() {
+                    if (ri < regLines.length) {
+                        regLines[ri].classList.add('show');
+                        if (ri > 0) regLines[ri-1].classList.remove('typing');
+                        if (ri < regLines.length - 1) regLines[ri].classList.add('typing');
+                        ri++;
+                        setTimeout(regNextLine, 300);
+                    } else {
+                        if (regLines.length > 0) regLines[regLines.length-1].classList.remove('typing');
+                        setTimeout(function() {
+                            document.getElementById('regEnterPrompt').classList.add('show');
+                            function regEnter(e) {
+                                if (e.type === 'click' || e.key === 'Enter') {
+                                    document.removeEventListener('keydown', regEnter);
+                                    document.removeEventListener('click', regEnter);
+                                    regBoot.style.animation = 'fadeOut 0.8s ease forwards';
+                                    setTimeout(function() {
+                                        regBoot.classList.remove('active');
+                                        regBoot.style.animation = '';
+                                        regLines.forEach(function(l) { l.classList.remove('show','typing'); });
+                                        document.getElementById('regEnterPrompt').classList.remove('show');
+                                        document.getElementById('loginContainer').classList.remove('hidden');
+                                        toggleForm('login');
+                                    }, 800);
+                                }
+                            }
+                            document.addEventListener('keydown', regEnter);
+                            document.addEventListener('click', regEnter);
+                        }, 500);
+                    }
+                }
+                regNextLine();
             } catch (error) {
                 let message = 'REGISTRATION FAILED';
                 if (error.code === 'auth/email-already-in-use') message = 'EMAIL ALREADY REGISTERED';
@@ -79,17 +118,16 @@
             btn.textContent = 'AUTHENTICATING...'; btn.disabled = true;
 
             try {
-                bootInProgress = true;
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
 
-                if (!userDoc.exists()) { bootInProgress = false; await signOut(auth); showError(errorMsg, 'USER PROFILE NOT FOUND \u2022 CONTACT ADMIN'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
+                if (!userDoc.exists()) { await signOut(auth); showError(errorMsg, 'USER PROFILE NOT FOUND \u2022 CONTACT ADMIN'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
                 const userData = userDoc.data();
-                if (userData.status === 'pending') { bootInProgress = false; await signOut(auth); showError(errorMsg, 'AWAITING COMMANDER APPROVAL'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
-                if (userData.status === 'denied') { bootInProgress = false; await signOut(auth); showError(errorMsg, 'ACCESS DENIED BY COMMAND'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
+                if (userData.status === 'pending') { await signOut(auth); showError(errorMsg, 'AWAITING COMMANDER APPROVAL'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
+                if (userData.status === 'denied') { await signOut(auth); showError(errorMsg, 'ACCESS DENIED BY COMMAND'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
 
-                // Boot sequence before redirect
-                startAuthBoot(userData);
+                // Redirect to boot animation page
+                window.location.href = 'boot.html';
 
             } catch (error) {
                 let message = 'AUTHENTICATION FAILED';
@@ -98,140 +136,20 @@
                 else if (error.code === 'auth/too-many-requests') message = 'TOO MANY ATTEMPTS \u2022 TRY AGAIN LATER';
                 showError(errorMsg, message);
                 btn.textContent = 'AUTHENTICATE'; btn.disabled = false;
-                bootInProgress = false;
             }
             return false;
         };
 
         // Boot animation after successful login
-        window.startAuthBoot = function(userData) {
-            bootInProgress = true;
-            document.getElementById('loginContainer').classList.add('hidden');
-            const boot = document.getElementById('authBoot');
-            boot.classList.add('active');
 
-            const lines = boot.querySelectorAll('.terminal-line');
-            const callsignEl = boot.querySelector('.boot-callsign');
-            const roleEl = boot.querySelector('.boot-role');
-            if (callsignEl) callsignEl.textContent = userData.callsign;
-            if (roleEl) roleEl.textContent = userData.role.toUpperCase();
-
-            let i = 0;
-            function nextLine() {
-                if (i < lines.length) {
-                    lines[i].classList.add('show');
-                    if (i > 0) lines[i-1].classList.remove('typing');
-                    if (i < lines.length - 1) lines[i].classList.add('typing');
-                    i++;
-                    setTimeout(nextLine, 250);
-                } else {
-                    if (lines.length > 0) lines[lines.length-1].classList.remove('typing');
-                    const lc = boot.querySelector('.loading-container');
-                    const bar = document.getElementById('bootProgress');
-                    const pct = document.getElementById('bootPercent');
-                    const status = document.getElementById('bootStatus');
-                    const enterPrompt = document.getElementById('bootEnterPrompt');
-                    lc.classList.add('show');
-                    status.classList.add('show');
-
-                    let progress = 0;
-                    function tick() {
-                        progress += 1.2;
-                        if (progress > 100) progress = 100;
-                        bar.style.width = progress + '%';
-                        pct.textContent = Math.floor(progress) + '%';
-                        if (progress >= 95) { status.textContent = 'ACCESS GRANTED'; status.style.color = '#00FF41'; status.style.textShadow = '0 0 10px #00FF41'; }
-                        else if (progress >= 70) status.textContent = 'LOADING COMMAND TERMINAL...';
-                        else if (progress >= 45) status.textContent = 'LOADING PROFILE...';
-                        else if (progress >= 20) status.textContent = 'AUTHENTICATING...';
-                        else status.textContent = 'STAND BY...';
-                        if (progress < 100) setTimeout(tick, 40);
-                        else {
-                            setTimeout(function() {
-                                enterPrompt.classList.add('show');
-                                function handleEnterLogin(e) {
-                                    if (e.type === 'click' || e.key === 'Enter') {
-                                        document.removeEventListener('keydown', handleEnterLogin);
-                                        document.removeEventListener('click', handleEnterLogin);
-                                        enterPrompt.classList.remove('show');
-                                        boot.style.animation = 'fadeOut 0.8s ease forwards';
-                                        setTimeout(function() {
-                                            if (userData.role === 'commander' || userData.role === 'admin' || userData.role === 'developer') {
-                                                window.location.href = 'admin.html';
-                                            } else {
-                                                window.location.href = 'home.html';
-                                            }
-                                        }, 800);
-                                    }
-                                }
-                                document.addEventListener('keydown', handleEnterLogin);
-                                document.addEventListener('click', handleEnterLogin);
-                            }, 600);
-                        }
-                    }
-                    tick();
-                }
-            }
-            nextLine();
-        };
-
-        // Registration boot sequence
-        window.startRegisterBoot = function() {
-            document.getElementById('loginContainer').classList.add('hidden');
-            const boot = document.getElementById('registerBoot');
-            boot.classList.add('active');
-
-            const lines = boot.querySelectorAll('.terminal-line');
-            let i = 0;
-            function nextLine() {
-                if (i < lines.length) {
-                    lines[i].classList.add('show');
-                    if (i > 0) lines[i-1].classList.remove('typing');
-                    if (i < lines.length - 1) lines[i].classList.add('typing');
-                    i++;
-                    setTimeout(nextLine, 300);
-                } else {
-                    if (lines.length > 0) lines[lines.length-1].classList.remove('typing');
-                    const enterPrompt = document.getElementById('regEnterPrompt');
-                    setTimeout(function() {
-                        enterPrompt.classList.add('show');
-                        function handleEnterReg(e) {
-                            if (e.type === 'click' || e.key === 'Enter') {
-                                document.removeEventListener('keydown', handleEnterReg);
-                                document.removeEventListener('click', handleEnterReg);
-                                boot.style.animation = 'fadeOut 0.8s ease forwards';
-                                setTimeout(function() {
-                                    boot.classList.remove('active');
-                                    boot.style.animation = '';
-                                    lines.forEach(function(l) { l.classList.remove('show','typing'); });
-                                    enterPrompt.classList.remove('show');
-                                    document.getElementById('loginContainer').classList.remove('hidden');
-                                    toggleForm('login');
-                                }, 800);
-                            }
-                        }
-                        document.addEventListener('keydown', handleEnterReg);
-                        document.addEventListener('click', handleEnterReg);
-                    }, 500);
-                }
-            }
-            nextLine();
-        };
+        
 
                 // Auto-redirect if already logged in
         onAuthStateChanged(auth, async (user) => {
-            if (bootInProgress) return;
             if (user) {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    if (userData.status === 'approved') {
-                        if (userData.role === 'commander' || userData.role === 'admin' || userData.role === 'developer') {
-                            window.location.href = 'admin.html';
-                        } else {
-                            window.location.href = 'home.html';
-                        }
-                    }
+                if (userDoc.exists() && userDoc.data().status === 'approved') {
+                    window.location.href = 'boot.html';
                 }
             }
         });
@@ -602,7 +520,11 @@
             to { opacity: 0; visibility: hidden; }
         }
 
+        .form-row { display:flex; gap:10px; }
+        .form-group.half { flex:1; }
+
         @media (max-width: 640px) {
+            .form-row { flex-direction:column; gap:0; }
             .container { padding: 28px 20px; }
             .title { font-size: 22px; letter-spacing: 3px; }
             .logo-section img { width: 70px; height: 70px; }
@@ -653,9 +575,15 @@
                 <div class="error-message" id="registerError">REGISTRATION FAILED</div>
                 <div class="success-message" id="registerSuccess">REGISTRATION COMPLETE</div>
                 <form id="regForm" onsubmit="return handleRegister(event)">
-                    <div class="form-group">
-                        <label class="form-label">CALLSIGN</label>
-                        <input type="text" class="form-input" id="regCallsign" placeholder="Your in-game callsign..." required>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label class="form-label">FIRST NAME</label>
+                            <input type="text" class="form-input" id="regFirstName" placeholder="First name..." required>
+                        </div>
+                        <div class="form-group half">
+                            <label class="form-label">LAST NAME</label>
+                            <input type="text" class="form-input" id="regLastName" placeholder="Last name..." required>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">EMAIL</label>
@@ -682,30 +610,6 @@
     </div>
 
     <!-- AUTH BOOT SEQUENCE (shows after successful login) -->
-    <div class="auth-boot" id="authBoot">
-        <div class="boot-inner">
-            <div class="boot-header">
-                <img src="images/logo.png" alt="505th">
-                <h2>UNSC TACTICAL NETWORK</h2>
-            </div>
-            <div class="terminal">
-                <div class="terminal-line"><span class="prompt">></span> CREDENTIALS ACCEPTED</div>
-                <div class="terminal-line"><span class="prompt">></span> OPERATOR: <span class="success boot-callsign">---</span></div>
-                <div class="terminal-line"><span class="prompt">></span> CLEARANCE: <span class="success boot-role">---</span></div>
-                <div class="terminal-line"><span class="prompt">></span> ESTABLISHING SECURE SESSION...</div>
-                <div class="terminal-line"><span class="prompt">></span> LOADING COMMAND TERMINAL...</div>
-                <div class="terminal-line"><span class="prompt">></span> SESSION ACTIVE: <span class="success">CONNECTED</span></div>
-            </div>
-            <div class="loading-container">
-                <div class="loading-label">INITIALIZING SYSTEM</div>
-                <div class="loading-bar"><div class="loading-progress" id="bootProgress"></div></div>
-                <div class="loading-percentage" id="bootPercent">0%</div>
-            </div>
-            <div class="boot-status" id="bootStatus">STAND BY...</div>
-            <div class="boot-enter-prompt" id="bootEnterPrompt">PRESS [ENTER] TO CONTINUE</div>
-        </div>
-    </div>
-
     <!-- REGISTRATION BOOT SEQUENCE -->
     <div class="auth-boot" id="registerBoot">
         <div class="boot-inner">

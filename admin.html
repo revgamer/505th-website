@@ -86,10 +86,10 @@
         // ==========================================
         const ADMIN_ROLES = ['commander', 'developer', 'staff_nco', 'recruiter'];
         const ROLE_PERMISSIONS = {
-            'commander':  { personnel: true, media: true, content: true, pages: true, settings: true, canChangeRoles: true, canApprove: true },
-            'developer':  { personnel: true, media: true, content: true, pages: true, settings: true, canChangeRoles: true, canApprove: true },
-            'staff_nco':  { personnel: true, media: true, content: true, pages: false, settings: false, canChangeRoles: false, canApprove: true },
-            'recruiter':  { personnel: true, media: false, content: false, pages: false, settings: false, canChangeRoles: false, canApprove: true }
+            'commander':  { personnel: true, media: true, content: true, pages: true, settings: true, canChangeRoles: true, canApprove: true, canEditProfiles: true },
+            'developer':  { personnel: true, media: true, content: true, pages: true, settings: true, canChangeRoles: true, canApprove: true, canEditProfiles: true },
+            'staff_nco':  { personnel: true, media: true, content: true, pages: false, settings: false, canChangeRoles: false, canApprove: true, canEditProfiles: true },
+            'recruiter':  { personnel: true, media: false, content: false, pages: false, settings: false, canChangeRoles: false, canApprove: true, canEditProfiles: false }
         };
 
         function getPerms() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
@@ -135,6 +135,36 @@
         // ==========================================
         // SIDEBAR
         // ==========================================
+        // Edit user modal
+        window.openEditModal = function(uid, callsign, firstName, lastName, rank, joinedAt) {
+            document.getElementById('editUserId').value = uid;
+            document.getElementById('editCallsign').value = callsign;
+            document.getElementById('editFirstName').value = firstName;
+            document.getElementById('editLastName').value = lastName;
+            document.getElementById('editRank').value = rank;
+            document.getElementById('editJoinedAt').value = joinedAt ? joinedAt.split('T')[0] : '';
+            document.getElementById('editUserModal').classList.add('active');
+        };
+        window.closeEditModal = function() {
+            document.getElementById('editUserModal').classList.remove('active');
+        };
+        window.saveUserEdit = async function() {
+            const uid = document.getElementById('editUserId').value;
+            const updates = {
+                callsign: document.getElementById('editCallsign').value.trim(),
+                firstName: document.getElementById('editFirstName').value.trim(),
+                lastName: document.getElementById('editLastName').value.trim(),
+                rank: document.getElementById('editRank').value.trim(),
+                joinedAt: document.getElementById('editJoinedAt').value ? new Date(document.getElementById('editJoinedAt').value).toISOString() : null
+            };
+            try {
+                await updateDoc(doc(db, "users", uid), updates);
+                notify('OPERATIVE UPDATED');
+                closeEditModal();
+                loadUsers();
+            } catch (err) { notify('ERROR: ' + err.message, true); }
+        };
+
         window.switchPanel = function(panel) {
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
@@ -202,16 +232,20 @@
                 <div class="user-card status-${u.status}">
                     <div class="user-info">
                         <div class="user-callsign">${esc(u.callsign)} <span class="role-badge role-${u.role}">${u.role.toUpperCase().replace('_',' ')}</span></div>
-                        <div class="user-email">${esc(u.email)}</div>
+                        <div class="user-email">${u.firstName ? esc(u.firstName) + ' ' + esc(u.lastName || '') : ''} ${u.email ? '&bull; ' + esc(u.email) : ''}</div>
+                        <div class="user-details">
+                            <div class="user-detail">RANK: <span>${u.rank || 'N/A'}</span></div>
+                            <div class="user-detail">JOINED: <span>${u.joinedAt ? new Date(u.joinedAt).toLocaleDateString() : 'N/A'}</span></div>
+                            <div class="user-detail">REGISTERED: <span>${new Date(u.registeredAt).toLocaleDateString()}</span></div>
+                        </div>
                         <div class="user-meta">
                             <span class="status-badge status-${u.status}">${u.status.toUpperCase()}</span>
-                            <span class="user-date">${new Date(u.registeredAt).toLocaleDateString()}</span>
                         </div>
                     </div>
                     <div class="user-actions">
                         ${u.role !== 'commander' && u.role !== 'developer' && getPerms().canChangeRoles ? `
                             <select class="role-select" onchange="changeRole('${u.uid}',this.value)">
-                                ${['marine','nco','officer','recruiter','staff_nco'].map(r => `<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase().replace('_',' ')}</option>`).join('')}
+                                ${['marine','nco','recruiter','staff_nco'].map(r => `<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase().replace('_',' ')}</option>`).join('')}
                             </select>
                         ` : ''}
                         ${u.role === 'commander' ? '<span class="commander-tag">COMMANDING OFFICER</span>' : ''}
@@ -219,6 +253,7 @@
                         ${u.status !== 'approved' && getPerms().canApprove ? `<button class="action-btn approve-btn small" onclick="approveUser('${u.uid}','${esc(u.callsign)}')">APPROVE</button>` : ''}
                         ${u.status !== 'approved' && getPerms().canApprove ? `<button class="action-btn deny-btn small" onclick="denyUser('${u.uid}','${esc(u.callsign)}')">DENY</button>` : ''}
                         ${u.role !== 'commander' && u.role !== 'developer' && getPerms().canChangeRoles ? `<button class="action-btn remove-btn small" onclick="removeUser('${u.uid}','${esc(u.callsign)}')">REMOVE</button>` : ''}
+                        ${getPerms().canEditProfiles ? `<button class="action-btn small" style="color:var(--accent);border-color:rgba(0,217,255,0.3);" onclick="openEditModal('${u.uid}','${esc(u.callsign)}','${esc(u.firstName||'')}','${esc(u.lastName||'')}','${esc(u.rank||'')}','${u.joinedAt||''}')">EDIT</button>` : ''}
                     </div>
                 </div>`).join('');
         }
@@ -694,13 +729,72 @@
         .sidebar-badge { margin-left:auto; background:#f59e0b; color:#000; font-size:9px; font-weight:bold; padding:1px 6px; border-radius:2px; min-width:18px; text-align:center; }
 
         /* MAIN */
-        .main-content { flex:1; padding:24px; max-width:960px; overflow-y:auto; }
+        .main-content { flex:1; padding:24px; overflow-y:auto; display:flex; gap:24px; }
         .panel-title {
             font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:20px;
             font-weight:700; letter-spacing:3px; margin-bottom:20px; padding-bottom:10px;
             border-bottom:1px solid rgba(0,217,255,0.12);
             text-shadow:0 0 10px var(--accent-glow);
         }
+
+        /* TWO COLUMN LAYOUT */
+        .content-left { flex:1; min-width:0; }
+        .content-right { width:320px; flex-shrink:0; }
+        .info-panel {
+            background:rgba(8,10,14,0.8); border:1px solid rgba(0,217,255,0.1);
+            padding:20px; backdrop-filter:blur(4px); position:sticky; top:82px;
+        }
+        .info-panel-title {
+            font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:14px;
+            font-weight:700; letter-spacing:3px; margin-bottom:16px; padding-bottom:8px;
+            border-bottom:1px solid rgba(0,217,255,0.12); text-shadow:0 0 10px var(--accent-glow);
+        }
+        .role-info-item { margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.03); }
+        .role-info-item:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
+        .role-info-name { font-size:11px; letter-spacing:2px; font-weight:700; margin-bottom:6px; }
+        .role-info-perms { font-size:9px; letter-spacing:1px; color:#555; line-height:1.8; }
+        .role-info-perms .perm-yes { color:var(--success); }
+        .role-info-perms .perm-no { color:#ef4444; }
+
+        /* USER DETAIL FIELDS */
+        .user-details { display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:6px; }
+        .user-detail { font-size:9px; letter-spacing:1px; color:#555; }
+        .user-detail span { color:#888; }
+        .user-detail-edit {
+            background:none; border:none; color:var(--accent); cursor:pointer;
+            font-size:9px; letter-spacing:2px; font-family:'Share Tech Mono',monospace;
+            padding:2px 6px; margin-left:4px; opacity:0.5; transition:all 0.2s;
+        }
+        .user-detail-edit:hover { opacity:1; text-shadow:0 0 8px var(--accent-glow); }
+
+        /* EDIT MODAL */
+        .edit-modal {
+            position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.88);
+            z-index:300; display:flex; align-items:center; justify-content:center;
+            opacity:0; visibility:hidden; transition:all 0.3s;
+        }
+        .edit-modal.active { opacity:1; visibility:visible; }
+        .edit-modal-content {
+            background:rgba(8,10,14,0.97); border:1px solid var(--accent);
+            max-width:500px; width:95%; padding:24px; box-shadow:0 0 40px var(--accent-glow);
+        }
+        .edit-modal-title {
+            font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:16px;
+            font-weight:700; letter-spacing:3px; margin-bottom:20px;
+        }
+        .edit-field { margin-bottom:12px; }
+        .edit-field label {
+            display:block; color:#555; font-size:9px; letter-spacing:2px; margin-bottom:4px;
+        }
+        .edit-field input, .edit-field select {
+            width:100%; padding:9px; background:rgba(0,0,0,0.6);
+            border:1px solid rgba(0,217,255,0.1); color:#ccc;
+            font-family:'Share Tech Mono',monospace; font-size:11px; outline:none;
+        }
+        .edit-field input:focus, .edit-field select:focus {
+            border-color:var(--accent); box-shadow:0 0 10px rgba(0,217,255,0.1);
+        }
+        .edit-modal-actions { display:flex; gap:10px; margin-top:20px; }
 
         /* STATS */
         .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
@@ -749,7 +843,6 @@
         .role-developer { color:#a78bfa; border-color:#a78bfa; }
         .role-staff_nco { color:#2DD4BF; border-color:#2DD4BF; }
         .role-recruiter { color:#fb923c; border-color:#fb923c; }
-        .role-officer { color:#60a5fa; border-color:#60a5fa; }
         .role-nco { color:#34d399; border-color:#34d399; }
         .role-marine { color:#94a3b8; border-color:#94a3b8; }
         .status-badge { font-size:8px; letter-spacing:2px; padding:1px 6px; }
@@ -918,7 +1011,8 @@
             .sidebar { position:fixed; top:0; left:-240px; width:240px; height:100vh; z-index:50; transition:left 0.3s; padding-top:70px; }
             .sidebar.open { left:0; }
             .sidebar-overlay.open { display:block; }
-            .main-content { padding:16px; }
+            .main-content { padding:16px; flex-direction:column; }
+            .content-right { width:100%; }
             .stats-row { grid-template-columns:1fr; }
             .media-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); }
             .upload-row { flex-direction:column; }
@@ -989,6 +1083,7 @@
             </div>
 
             <div class="main-content">
+                <div class="content-left">
                 <!-- PERSONNEL -->
                 <div class="panel" id="panel-personnel">
                     <div class="panel-title">PERSONNEL MANAGEMENT</div>
@@ -1075,6 +1170,105 @@
                         </div>
                     </div>
                 </div>
+                </div><!-- /content-left -->
+
+                <div class="content-right">
+                    <div class="info-panel">
+                        <div class="info-panel-title">ROLE PERMISSIONS</div>
+
+                        <div class="role-info-item">
+                            <div class="role-info-name" style="color:#f59e0b;">COMMANDER</div>
+                            <div class="role-info-perms">
+                                <span class="perm-yes">&#10003;</span> Personnel &bull;
+                                <span class="perm-yes">&#10003;</span> Media &bull;
+                                <span class="perm-yes">&#10003;</span> Page Content<br>
+                                <span class="perm-yes">&#10003;</span> Page Manager &bull;
+                                <span class="perm-yes">&#10003;</span> Site Settings<br>
+                                <span class="perm-yes">&#10003;</span> Change Roles &bull;
+                                <span class="perm-yes">&#10003;</span> Edit Profiles
+                            </div>
+                        </div>
+
+                        <div class="role-info-item">
+                            <div class="role-info-name" style="color:#a78bfa;">DEVELOPER</div>
+                            <div class="role-info-perms">
+                                <span class="perm-yes">&#10003;</span> Personnel &bull;
+                                <span class="perm-yes">&#10003;</span> Media &bull;
+                                <span class="perm-yes">&#10003;</span> Page Content<br>
+                                <span class="perm-yes">&#10003;</span> Page Manager &bull;
+                                <span class="perm-yes">&#10003;</span> Site Settings<br>
+                                <span class="perm-yes">&#10003;</span> Change Roles &bull;
+                                <span class="perm-yes">&#10003;</span> Edit Profiles
+                            </div>
+                        </div>
+
+                        <div class="role-info-item">
+                            <div class="role-info-name" style="color:#2DD4BF;">STAFF NCO</div>
+                            <div class="role-info-perms">
+                                <span class="perm-yes">&#10003;</span> Personnel &bull;
+                                <span class="perm-yes">&#10003;</span> Media &bull;
+                                <span class="perm-yes">&#10003;</span> Page Content<br>
+                                <span class="perm-no">&#10007;</span> Page Manager &bull;
+                                <span class="perm-no">&#10007;</span> Site Settings<br>
+                                <span class="perm-no">&#10007;</span> Change Roles &bull;
+                                <span class="perm-yes">&#10003;</span> Edit Profiles
+                            </div>
+                        </div>
+
+                        <div class="role-info-item">
+                            <div class="role-info-name" style="color:#fb923c;">RECRUITER</div>
+                            <div class="role-info-perms">
+                                <span class="perm-yes">&#10003;</span> Personnel (Approve/Deny)<br>
+                                <span class="perm-no">&#10007;</span> Media &bull;
+                                <span class="perm-no">&#10007;</span> Page Content<br>
+                                <span class="perm-no">&#10007;</span> Page Manager &bull;
+                                <span class="perm-no">&#10007;</span> Site Settings<br>
+                                <span class="perm-no">&#10007;</span> Change Roles &bull;
+                                <span class="perm-no">&#10007;</span> Edit Profiles
+                            </div>
+                        </div>
+
+                        <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(0,217,255,0.08);">
+                            <div class="info-panel-title" style="font-size:12px;">NO ADMIN ACCESS</div>
+                            <div class="role-info-perms" style="line-height:2.2;">
+                                <span style="color:#34d399;">&#9679;</span> NCO<br>
+                                <span style="color:#94a3b8;">&#9679;</span> MARINE / ENLISTED
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- /content-right -->
+            </div><!-- /main-content -->
+        </div><!-- /app-layout -->
+    </div><!-- /adminContent -->
+
+    <!-- EDIT USER MODAL -->
+    <div class="edit-modal" id="editUserModal">
+        <div class="edit-modal-content">
+            <div class="edit-modal-title">EDIT OPERATIVE</div>
+            <input type="hidden" id="editUserId">
+            <div class="edit-field">
+                <label>CALLSIGN</label>
+                <input type="text" id="editCallsign">
+            </div>
+            <div class="edit-field">
+                <label>FIRST NAME</label>
+                <input type="text" id="editFirstName">
+            </div>
+            <div class="edit-field">
+                <label>LAST NAME</label>
+                <input type="text" id="editLastName">
+            </div>
+            <div class="edit-field">
+                <label>RANK</label>
+                <input type="text" id="editRank" placeholder="e.g. Private, Corporal, Sergeant...">
+            </div>
+            <div class="edit-field">
+                <label>DATE JOINED UNIT</label>
+                <input type="date" id="editJoinedAt">
+            </div>
+            <div class="edit-modal-actions">
+                <button class="action-btn approve-btn" onclick="saveUserEdit()">SAVE CHANGES</button>
+                <button class="action-btn remove-btn" onclick="closeEditModal()">CANCEL</button>
             </div>
         </div>
     </div>
