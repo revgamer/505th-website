@@ -79,13 +79,14 @@
             btn.textContent = 'AUTHENTICATING...'; btn.disabled = true;
 
             try {
+                bootInProgress = true;
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
 
-                if (!userDoc.exists()) { await signOut(auth); showError(errorMsg, 'USER PROFILE NOT FOUND \u2022 CONTACT ADMIN'); return false; }
+                if (!userDoc.exists()) { bootInProgress = false; await signOut(auth); showError(errorMsg, 'USER PROFILE NOT FOUND \u2022 CONTACT ADMIN'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
                 const userData = userDoc.data();
-                if (userData.status === 'pending') { await signOut(auth); showError(errorMsg, 'AWAITING COMMANDER APPROVAL'); return false; }
-                if (userData.status === 'denied') { await signOut(auth); showError(errorMsg, 'ACCESS DENIED BY COMMAND'); return false; }
+                if (userData.status === 'pending') { bootInProgress = false; await signOut(auth); showError(errorMsg, 'AWAITING COMMANDER APPROVAL'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
+                if (userData.status === 'denied') { bootInProgress = false; await signOut(auth); showError(errorMsg, 'ACCESS DENIED BY COMMAND'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
 
                 // Boot sequence before redirect
                 startAuthBoot(userData);
@@ -97,6 +98,7 @@
                 else if (error.code === 'auth/too-many-requests') message = 'TOO MANY ATTEMPTS \u2022 TRY AGAIN LATER';
                 showError(errorMsg, message);
                 btn.textContent = 'AUTHENTICATE'; btn.disabled = false;
+                bootInProgress = false;
             }
             return false;
         };
