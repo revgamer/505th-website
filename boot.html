@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>505th - Initializing</title>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/site.webmanifest">
+
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --accent: #00D9FF;
+            --accent-glow: rgba(0, 217, 255, 0.5);
+            --bg-dark: #0A0E12;
+            --primary: #4A5D23;
+            --success: #00FF41;
+            --text-primary: #E8EEF2;
+            --text-secondary: #A8B5BF;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        .hidden { display:none !important; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: linear-gradient(180deg, #0A0E12 0%, #050709 100%);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Tactical grid */
+        body::before {
+            content: '';
+            position: fixed; top:0;left:0;right:0;bottom:0;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(0,217,255,0.03) 50px, rgba(0,217,255,0.03) 51px),
+                repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(0,217,255,0.03) 50px, rgba(0,217,255,0.03) 51px);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Rotating radial watermark */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px; height: 800px;
+            background:
+                radial-gradient(circle, transparent 30%, rgba(74,93,35,0.1) 30%, rgba(74,93,35,0.1) 31%, transparent 31%),
+                radial-gradient(circle, transparent 50%, rgba(0,217,255,0.05) 50%, rgba(0,217,255,0.05) 52%, transparent 52%);
+            opacity: 0.4;
+            pointer-events: none;
+            animation: rotateWatermark 60s linear infinite;
+        }
+
+        @keyframes rotateWatermark {
+            from { transform: translate(-50%,-50%) rotate(0deg); }
+            to { transform: translate(-50%,-50%) rotate(360deg); }
+        }
+
+        /* Scanlines */
+        .scanlines {
+            position: fixed; top:0;left:0; width:100%;height:100%;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Boot container */
+        .boot-container {
+            position: relative;
+            z-index: 20;
+            max-width: 750px;
+            width: 90%;
+            padding: 2rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes fadeOut { from { opacity:1; } to { opacity:0; visibility:hidden; } }
+
+        /* Header */
+        .boot-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .boot-header img {
+            width: 100px; height: 100px;
+            filter: drop-shadow(0 0 35px var(--accent-glow));
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+        .boot-header h2 {
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--accent);
+            font-size: 1.5rem;
+            letter-spacing: 5px;
+            margin-top: 1rem;
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 35px var(--accent-glow)); }
+            50% { transform: translateY(-10px); filter: drop-shadow(0 0 50px var(--accent-glow)); }
+        }
+
+        /* Terminal */
+        .terminal {
+            text-align: left;
+            margin: 2rem 0;
+            font-size: 1rem;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+        }
+        .terminal-line {
+            opacity: 0;
+            margin-bottom: 0.7rem;
+            color: var(--text-secondary);
+        }
+        .terminal-line.show {
+            animation: fadeInLine 0.3s ease forwards;
+        }
+        .terminal-line .prompt {
+            color: var(--accent);
+            margin-right: 0.5rem;
+        }
+        .terminal-line .success {
+            color: var(--success);
+            font-weight: 700;
+            text-shadow: 0 0 10px var(--success);
+        }
+        .terminal-line .warning {
+            color: #f59e0b;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(245,158,11,0.5);
+        }
+        .terminal-line.typing::after {
+            content: '\2588';
+            animation: cursorBlink 0.8s step-end infinite;
+            margin-left: 5px;
+            color: var(--accent);
+        }
+
+        @keyframes fadeInLine {
+            0% { opacity:0; transform:translateX(-10px); }
+            100% { opacity:1; transform:translateX(0); }
+        }
+        @keyframes cursorBlink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+
+        /* Loading bar */
+        .loading-container { margin: 2.5rem 0; opacity: 0; }
+        .loading-container.show { animation: fadeIn 0.5s ease forwards; }
+        .loading-label {
+            color: var(--accent);
+            font-size: 1.1rem;
+            letter-spacing: 4px;
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+        }
+        .loading-bar {
+            width: 100%; height: 24px;
+            background: rgba(0,217,255,0.1);
+            border: 2px solid var(--accent);
+            position: relative;
+            overflow: hidden;
+        }
+        .loading-progress {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transition: width 0.1s;
+            box-shadow: 0 0 20px var(--accent-glow);
+            position: relative;
+        }
+        .loading-progress::after {
+            content: '';
+            position: absolute; top:0;left:0; width:100%;height:100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer { 0% { transform:translateX(-100%); } 100% { transform:translateX(100%); } }
+
+        .loading-percentage {
+            margin-top: 0.8rem;
+            color: var(--accent);
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-align: center;
+        }
+
+        /* Status */
+        .boot-status {
+            margin-top: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            letter-spacing: 3px;
+            text-align: center;
+            opacity: 0;
+            font-weight: 600;
+        }
+        .boot-status.show { animation: fadeIn 0.5s ease forwards; }
+
+        /* Enter prompt */
+        .enter-prompt {
+            text-align: center;
+            margin-top: 2.5rem;
+            color: var(--accent);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: 5px;
+            text-shadow: 0 0 20px var(--accent-glow);
+            opacity: 0;
+            visibility: hidden;
+        }
+        .enter-prompt.show {
+            opacity: 1;
+            visibility: visible;
+            animation: blinkPrompt 1.5s step-end infinite;
+        }
+        @keyframes blinkPrompt { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+        /* Loading state */
+        .auth-check {
+            text-align: center;
+            color: var(--accent);
+            font-size: 13px;
+            letter-spacing: 4px;
+        }
+        .auth-check span {
+            animation: cursorBlink 0.8s step-end infinite;
+        }
+
+        @media (max-width: 640px) {
+            .boot-header img { width: 70px; height: 70px; }
+            .boot-header h2 { font-size: 1.1rem; letter-spacing: 3px; }
+            .terminal { font-size: 0.85rem; }
+            .loading-bar { height: 20px; }
+            .enter-prompt { font-size: 1rem; letter-spacing: 3px; }
+            body::after { width: 400px; height: 400px; }
+        }
+
+        @media (max-height: 600px) and (orientation: landscape) {
+            .boot-header img { width: 50px; height: 50px; }
+            .boot-header { margin-bottom: 1rem; }
+            .terminal { margin: 1rem 0; font-size: 0.8rem; }
+            .terminal-line { margin-bottom: 0.4rem; }
+            .loading-container { margin: 1rem 0; }
+        }
+    </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
+            authDomain: "th-website-91533.firebaseapp.com",
+            projectId: "th-website-91533",
+            storageBucket: "th-website-91533.firebasestorage.app",
+            messagingSenderId: "1046139150142",
+            appId: "1:1046139150142:web:01f409ae4a38c4f79d966f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (!userDoc.exists()) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const userData = userDoc.data();
+            const destination = (userData.role === 'commander' || userData.role === 'admin' || userData.role === 'developer')
+                ? 'admin.html' : 'home.html';
+
+            // Hide auth check, show boot
+            document.getElementById('authCheck').classList.add('hidden');
+            document.getElementById('bootScreen').classList.remove('hidden');
+
+            // Fill in operator info
+            document.getElementById('operatorName').textContent = userData.callsign;
+            document.getElementById('operatorRole').textContent = userData.role.toUpperCase();
+
+            // Run boot sequence
+            runBootSequence(destination);
+        });
+
+        function runBootSequence(destination) {
+            const lines = document.querySelectorAll('.terminal-line');
+            const loadingContainer = document.querySelector('.loading-container');
+            const bar = document.getElementById('bootProgress');
+            const pct = document.getElementById('bootPercent');
+            const status = document.getElementById('bootStatus');
+            const enterPrompt = document.getElementById('enterPrompt');
+
+            let i = 0;
+
+            function showNextLine() {
+                if (i < lines.length) {
+                    lines[i].classList.add('show');
+                    if (i > 0) lines[i - 1].classList.remove('typing');
+                    if (i < lines.length - 1) lines[i].classList.add('typing');
+                    i++;
+                    setTimeout(showNextLine, 280);
+                } else {
+                    if (lines.length > 0) lines[lines.length - 1].classList.remove('typing');
+                    setTimeout(startLoading, 400);
+                }
+            }
+
+            function startLoading() {
+                loadingContainer.classList.add('show');
+                status.classList.add('show');
+
+                let progress = 0;
+                function tick() {
+                    progress += 1.0;
+                    if (progress > 100) progress = 100;
+                    bar.style.width = progress + '%';
+                    pct.textContent = Math.floor(progress) + '%';
+
+                    if (progress >= 95) {
+                        status.textContent = 'ACCESS GRANTED';
+                        status.style.color = '#00FF41';
+                        status.style.textShadow = '0 0 15px #00FF41';
+                    } else if (progress >= 75) {
+                        status.textContent = 'LOADING COMMAND TERMINAL...';
+                    } else if (progress >= 50) {
+                        status.textContent = 'LOADING PROFILE...';
+                    } else if (progress >= 25) {
+                        status.textContent = 'ESTABLISHING CONNECTION...';
+                    } else {
+                        status.textContent = 'STAND BY...';
+                    }
+
+                    if (progress < 100) {
+                        setTimeout(tick, 40);
+                    } else {
+                        // Bar complete — show ENTER prompt
+                        setTimeout(function() {
+                            enterPrompt.classList.add('show');
+                            waitForEnter(destination);
+                        }, 600);
+                    }
+                }
+                tick();
+            }
+
+            showNextLine();
+        }
+
+        function waitForEnter(destination) {
+            function handleInput(e) {
+                if (e.type === 'click' || e.key === 'Enter') {
+                    document.removeEventListener('keydown', handleInput);
+                    document.removeEventListener('click', handleInput);
+
+                    const boot = document.getElementById('bootScreen');
+                    boot.style.animation = 'fadeOut 0.8s ease forwards';
+
+                    setTimeout(function() {
+                        window.location.href = destination;
+                    }, 800);
+                }
+            }
+            document.addEventListener('keydown', handleInput);
+            document.addEventListener('click', handleInput);
+        }
+    </script>
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <!-- Auth check (brief flash while verifying) -->
+    <div class="auth-check" id="authCheck">
+        VERIFYING CREDENTIALS<span>_</span>
+    </div>
+
+    <!-- Boot sequence -->
+    <div class="boot-container hidden" id="bootScreen">
+        <div class="boot-header">
+            <img src="images/logo.png" alt="505th Expeditionary Force">
+            <h2>UNSC TACTICAL NETWORK</h2>
+        </div>
+
+        <div class="terminal">
+            <div class="terminal-line"><span class="prompt">&gt;</span> CREDENTIALS ACCEPTED</div>
+            <div class="terminal-line"><span class="prompt">&gt;</span> OPERATOR: <span class="success" id="operatorName">---</span></div>
+            <div class="terminal-line"><span class="prompt">&gt;</span> CLEARANCE: <span class="success" id="operatorRole">---</span></div>
+            <div class="terminal-line"><span class="prompt">&gt;</span> SECURITY PROTOCOL: <span class="success">VERIFIED</span></div>
+            <div class="terminal-line"><span class="prompt">&gt;</span> ESTABLISHING SECURE SESSION...</div>
+            <div class="terminal-line"><span class="prompt">&gt;</span> LOADING COMMAND TERMINAL...</div>
+            <div class="terminal-line"><span class="prompt">&gt;</span> SESSION ACTIVE: <span class="success">CONNECTED</span></div>
+        </div>
+
+        <div class="loading-container">
+            <div class="loading-label">INITIALIZING SYSTEM</div>
+            <div class="loading-bar">
+                <div class="loading-progress" id="bootProgress"></div>
+            </div>
+            <div class="loading-percentage" id="bootPercent">0%</div>
+        </div>
+
+        <div class="boot-status" id="bootStatus">STAND BY...</div>
+
+        <div class="enter-prompt" id="enterPrompt">PRESS [ENTER] TO CONTINUE</div>
+    </div>
+
+    <noscript>
+        <meta http-equiv="refresh" content="0;url=login.html">
+    </noscript>
+</body>
+</html>
