@@ -82,6 +82,32 @@
         };
 
         // ==========================================
+        // PERMISSIONS
+        // ==========================================
+        const ADMIN_ROLES = ['commander', 'developer', 'staff_nco', 'recruiter'];
+        const ROLE_PERMISSIONS = {
+            'commander':  { personnel: true, media: true, content: true, pages: true, settings: true, canChangeRoles: true, canApprove: true },
+            'developer':  { personnel: true, media: true, content: true, pages: true, settings: true, canChangeRoles: true, canApprove: true },
+            'staff_nco':  { personnel: true, media: true, content: true, pages: false, settings: false, canChangeRoles: false, canApprove: true },
+            'recruiter':  { personnel: true, media: false, content: false, pages: false, settings: false, canChangeRoles: false, canApprove: true }
+        };
+
+        function getPerms() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
+
+        function applyPermissions() {
+            const p = getPerms();
+            // Show/hide sidebar links and panels
+            document.querySelector('[data-panel="personnel"]').style.display = p.personnel ? '' : 'none';
+            document.querySelector('[data-panel="media"]').style.display = p.media ? '' : 'none';
+            document.querySelector('[data-panel="content"]').style.display = p.content ? '' : 'none';
+            document.querySelector('[data-panel="pages"]').style.display = p.pages ? '' : 'none';
+            document.querySelector('[data-panel="settings"]').style.display = p.settings ? '' : 'none';
+            // Default to first visible panel
+            const firstPanel = p.personnel ? 'personnel' : p.media ? 'media' : 'personnel';
+            switchPanel(firstPanel);
+        }
+
+        // ==========================================
         // AUTH GUARD
         // ==========================================
         onAuthStateChanged(auth, async (user) => {
@@ -89,20 +115,21 @@
             const userDoc = await getDoc(doc(db, "users", user.uid));
             if (!userDoc.exists()) { window.location.href = 'login.html'; return; }
             const userData = userDoc.data();
-            if (userData.role !== 'commander' && userData.role !== 'admin' && userData.role !== 'developer') {
+            if (!ADMIN_ROLES.includes(userData.role)) {
                 window.location.href = 'home.html'; return;
             }
             currentUser = user;
             currentUserData = userData;
             document.getElementById('commanderName').textContent = userData.callsign;
-            document.getElementById('commanderRole').textContent = userData.role.toUpperCase();
+            document.getElementById('commanderRole').textContent = userData.role.toUpperCase().replace('_', ' ');
             document.getElementById('loadingScreen').classList.add('hidden');
             document.getElementById('adminContent').classList.remove('hidden');
-            loadUsers();
-            loadMediaLibrary();
-            loadPages();
-            loadPageContent();
-            loadSiteSettings();
+            applyPermissions();
+            if (getPerms().personnel) loadUsers();
+            if (getPerms().media) loadMediaLibrary();
+            if (getPerms().pages) loadPages();
+            if (getPerms().content) loadPageContent();
+            if (getPerms().settings) loadSiteSettings();
         });
 
         // ==========================================
@@ -169,7 +196,7 @@
             c.innerHTML = users.map(u => `
                 <div class="user-card status-${u.status}">
                     <div class="user-info">
-                        <div class="user-callsign">${esc(u.callsign)} <span class="role-badge role-${u.role}">${u.role.toUpperCase()}</span></div>
+                        <div class="user-callsign">${esc(u.callsign)} <span class="role-badge role-${u.role}">${u.role.toUpperCase().replace('_',' ')}</span></div>
                         <div class="user-email">${esc(u.email)}</div>
                         <div class="user-meta">
                             <span class="status-badge status-${u.status}">${u.status.toUpperCase()}</span>
@@ -177,13 +204,16 @@
                         </div>
                     </div>
                     <div class="user-actions">
-                        ${u.role !== 'commander' && u.role !== 'developer' ? `
+                        ${u.role !== 'commander' && u.role !== 'developer' && getPerms().canChangeRoles ? `
                             <select class="role-select" onchange="changeRole('${u.uid}',this.value)">
-                                ${['recruit','nco','officer','admin','developer'].map(r => `<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+                                ${['marine','nco','officer','recruiter','staff_nco'].map(r => `<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase().replace('_',' ')}</option>`).join('')}
                             </select>
-                            ${u.status !== 'approved' ? `<button class="action-btn approve-btn small" onclick="approveUser('${u.uid}','${esc(u.callsign)}')">APPROVE</button>` : ''}
-                            <button class="action-btn remove-btn small" onclick="removeUser('${u.uid}','${esc(u.callsign)}')">REMOVE</button>
-                        ` : `<span class="commander-tag ${u.role==='developer'?'dev-tag':''}">${u.role==='commander'?'COMMANDING OFFICER':'DEVELOPER'}</span>`}
+                        ` : ''}
+                        ${u.role === 'commander' ? '<span class="commander-tag">COMMANDING OFFICER</span>' : ''}
+                        ${u.role === 'developer' ? '<span class="commander-tag dev-tag">DEVELOPER</span>' : ''}
+                        ${u.status !== 'approved' && getPerms().canApprove ? `<button class="action-btn approve-btn small" onclick="approveUser('${u.uid}','${esc(u.callsign)}')">APPROVE</button>` : ''}
+                        ${u.status !== 'approved' && getPerms().canApprove ? `<button class="action-btn deny-btn small" onclick="denyUser('${u.uid}','${esc(u.callsign)}')">DENY</button>` : ''}
+                        ${u.role !== 'commander' && u.role !== 'developer' && getPerms().canChangeRoles ? `<button class="action-btn remove-btn small" onclick="removeUser('${u.uid}','${esc(u.callsign)}')">REMOVE</button>` : ''}
                     </div>
                 </div>`).join('');
         }
@@ -711,9 +741,12 @@
         .user-date { color:#444; font-size:9px; letter-spacing:1px; }
         .role-badge { font-size:8px; letter-spacing:2px; padding:1px 6px; border:1px solid #333; color:#888; }
         .role-commander { color:#f59e0b; border-color:#f59e0b; }
-        .role-admin,.role-developer { color:#a78bfa; border-color:#a78bfa; }
+        .role-developer { color:#a78bfa; border-color:#a78bfa; }
+        .role-staff_nco { color:#2DD4BF; border-color:#2DD4BF; }
+        .role-recruiter { color:#fb923c; border-color:#fb923c; }
         .role-officer { color:#60a5fa; border-color:#60a5fa; }
         .role-nco { color:#34d399; border-color:#34d399; }
+        .role-marine { color:#94a3b8; border-color:#94a3b8; }
         .status-badge { font-size:8px; letter-spacing:2px; padding:1px 6px; }
         .status-badge.status-pending { color:#f59e0b; border:1px solid #f59e0b; }
         .status-badge.status-approved { color:var(--success); border:1px solid var(--success); }
