@@ -134,15 +134,16 @@
 
                     let progress = 0;
                     function tick() {
-                        progress += 2;
+                        progress += 1.2;
                         if (progress > 100) progress = 100;
                         bar.style.width = progress + '%';
                         pct.textContent = Math.floor(progress) + '%';
                         if (progress >= 95) { status.textContent = 'ACCESS GRANTED'; status.style.color = '#00FF41'; status.style.textShadow = '0 0 10px #00FF41'; }
-                        else if (progress >= 60) status.textContent = 'LOADING PROFILE...';
-                        else if (progress >= 30) status.textContent = 'AUTHENTICATING...';
+                        else if (progress >= 70) status.textContent = 'LOADING COMMAND TERMINAL...';
+                        else if (progress >= 45) status.textContent = 'LOADING PROFILE...';
+                        else if (progress >= 20) status.textContent = 'AUTHENTICATING...';
                         else status.textContent = 'STAND BY...';
-                        if (progress < 100) setTimeout(tick, 30);
+                        if (progress < 100) setTimeout(tick, 40);
                         else {
                             setTimeout(() => {
                                 if (userData.role === 'commander' || userData.role === 'admin' || userData.role === 'developer') {
