@@ -27,6 +27,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        let bootInProgress = false;
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -102,6 +103,7 @@
 
         // Boot animation after successful login
         window.startAuthBoot = function(userData) {
+            bootInProgress = true;
             document.getElementById('loginContainer').classList.add('hidden');
             const boot = document.getElementById('authBoot');
             boot.classList.add('active');
@@ -216,6 +218,7 @@
 
                 // Auto-redirect if already logged in
         onAuthStateChanged(auth, async (user) => {
+            if (bootInProgress) return;
             if (user) {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 if (userDoc.exists()) {
