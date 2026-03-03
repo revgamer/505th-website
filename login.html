@@ -55,10 +55,8 @@
                     registeredAt: new Date().toISOString(), approvedBy: null, approvedAt: null
                 });
                 await signOut(auth);
-                successMsg.textContent = 'REGISTRATION COMPLETE \u2022 AWAITING COMMANDER APPROVAL';
-                successMsg.classList.add('show'); errorMsg.classList.remove('show');
                 document.getElementById('regForm').reset();
-                setTimeout(() => { successMsg.classList.remove('show'); toggleForm('login'); }, 3000);
+                startRegisterBoot();
             } catch (error) {
                 let message = 'REGISTRATION FAILED';
                 if (error.code === 'auth/email-already-in-use') message = 'EMAIL ALREADY REGISTERED';
@@ -124,11 +122,11 @@
                     setTimeout(nextLine, 250);
                 } else {
                     if (lines.length > 0) lines[lines.length-1].classList.remove('typing');
-                    // Start loading bar
                     const lc = boot.querySelector('.loading-container');
                     const bar = document.getElementById('bootProgress');
                     const pct = document.getElementById('bootPercent');
                     const status = document.getElementById('bootStatus');
+                    const enterPrompt = document.getElementById('bootEnterPrompt');
                     lc.classList.add('show');
                     status.classList.add('show');
 
@@ -145,13 +143,26 @@
                         else status.textContent = 'STAND BY...';
                         if (progress < 100) setTimeout(tick, 40);
                         else {
-                            setTimeout(() => {
-                                if (userData.role === 'commander' || userData.role === 'admin' || userData.role === 'developer') {
-                                    window.location.href = 'admin.html';
-                                } else {
-                                    window.location.href = 'home.html';
+                            setTimeout(function() {
+                                enterPrompt.classList.add('show');
+                                function handleEnterLogin(e) {
+                                    if (e.type === 'click' || e.key === 'Enter') {
+                                        document.removeEventListener('keydown', handleEnterLogin);
+                                        document.removeEventListener('click', handleEnterLogin);
+                                        enterPrompt.classList.remove('show');
+                                        boot.style.animation = 'fadeOut 0.8s ease forwards';
+                                        setTimeout(function() {
+                                            if (userData.role === 'commander' || userData.role === 'admin' || userData.role === 'developer') {
+                                                window.location.href = 'admin.html';
+                                            } else {
+                                                window.location.href = 'home.html';
+                                            }
+                                        }, 800);
+                                    }
                                 }
-                            }, 800);
+                                document.addEventListener('keydown', handleEnterLogin);
+                                document.addEventListener('click', handleEnterLogin);
+                            }, 600);
                         }
                     }
                     tick();
@@ -160,7 +171,50 @@
             nextLine();
         };
 
-        // Auto-redirect if already logged in
+        // Registration boot sequence
+        window.startRegisterBoot = function() {
+            document.getElementById('loginContainer').classList.add('hidden');
+            const boot = document.getElementById('registerBoot');
+            boot.classList.add('active');
+
+            const lines = boot.querySelectorAll('.terminal-line');
+            let i = 0;
+            function nextLine() {
+                if (i < lines.length) {
+                    lines[i].classList.add('show');
+                    if (i > 0) lines[i-1].classList.remove('typing');
+                    if (i < lines.length - 1) lines[i].classList.add('typing');
+                    i++;
+                    setTimeout(nextLine, 300);
+                } else {
+                    if (lines.length > 0) lines[lines.length-1].classList.remove('typing');
+                    const enterPrompt = document.getElementById('regEnterPrompt');
+                    setTimeout(function() {
+                        enterPrompt.classList.add('show');
+                        function handleEnterReg(e) {
+                            if (e.type === 'click' || e.key === 'Enter') {
+                                document.removeEventListener('keydown', handleEnterReg);
+                                document.removeEventListener('click', handleEnterReg);
+                                boot.style.animation = 'fadeOut 0.8s ease forwards';
+                                setTimeout(function() {
+                                    boot.classList.remove('active');
+                                    boot.style.animation = '';
+                                    lines.forEach(function(l) { l.classList.remove('show','typing'); });
+                                    enterPrompt.classList.remove('show');
+                                    document.getElementById('loginContainer').classList.remove('hidden');
+                                    toggleForm('login');
+                                }, 800);
+                            }
+                        }
+                        document.addEventListener('keydown', handleEnterReg);
+                        document.addEventListener('click', handleEnterReg);
+                    }, 500);
+                }
+            }
+            nextLine();
+        };
+
+                // Auto-redirect if already logged in
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -516,6 +570,33 @@
         }
         .boot-status.show { animation: fadeIn 0.5s ease forwards; }
 
+        /* PRESS ENTER PROMPT */
+        .boot-enter-prompt {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--accent);
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-shadow: 0 0 15px var(--accent-glow);
+            opacity: 0;
+            visibility: hidden;
+            animation: none;
+        }
+        .boot-enter-prompt.show {
+            opacity: 1;
+            visibility: visible;
+            animation: blinkPrompt 1.5s step-end infinite;
+        }
+        @keyframes blinkPrompt {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; visibility: hidden; }
+        }
+
         @media (max-width: 640px) {
             .container { padding: 28px 20px; }
             .title { font-size: 22px; letter-spacing: 3px; }
@@ -616,6 +697,26 @@
                 <div class="loading-percentage" id="bootPercent">0%</div>
             </div>
             <div class="boot-status" id="bootStatus">STAND BY...</div>
+            <div class="boot-enter-prompt" id="bootEnterPrompt">PRESS [ENTER] TO CONTINUE</div>
+        </div>
+    </div>
+
+    <!-- REGISTRATION BOOT SEQUENCE -->
+    <div class="auth-boot" id="registerBoot">
+        <div class="boot-inner">
+            <div class="boot-header">
+                <img src="images/logo.png" alt="505th">
+                <h2>UNSC TACTICAL NETWORK</h2>
+            </div>
+            <div class="terminal">
+                <div class="terminal-line"><span class="prompt">></span> NEW OPERATIVE REGISTERED</div>
+                <div class="terminal-line"><span class="prompt">></span> STATUS: <span style="color:#f59e0b;text-shadow:0 0 10px rgba(245,158,11,0.5);">PENDING APPROVAL</span></div>
+                <div class="terminal-line"><span class="prompt">></span> YOUR REGISTRATION HAS BEEN SUBMITTED</div>
+                <div class="terminal-line"><span class="prompt">></span> A COMMANDING OFFICER MUST APPROVE YOUR ACCESS</div>
+                <div class="terminal-line"><span class="prompt">></span> YOU WILL BE NOTIFIED ONCE APPROVED</div>
+                <div class="terminal-line"><span class="prompt">></span> REGISTRATION: <span class="success">COMPLETE</span></div>
+            </div>
+            <div class="boot-enter-prompt" id="regEnterPrompt">PRESS [ENTER] TO RETURN</div>
         </div>
     </div>
 
