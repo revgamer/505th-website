@@ -36,9 +36,87 @@
             filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.5));
         }
 
+        .gallery-section {
+            margin: 3rem 0;
+        }
+
+        .gallery-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .gallery-item {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .gallery-item:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .gallery-placeholder {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--primary-dark) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .gallery-placeholder .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .gallery-placeholder .text {
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .gallery-caption {
+            padding: 1.5rem;
+            background: var(--bg-elevated);
+        }
+
+        .gallery-caption h4 {
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .gallery-caption p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
         @media (max-width: 768px) {
             .stalker-patch {
                 width: 200px;
+            }
+
+            .gallery-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -63,6 +141,79 @@
             font-size: 1.1rem;
             line-height: 1.8;
             margin-bottom: 1rem;
+        }
+
+        .specializations-section {
+            margin: 3rem 0;
+        }
+
+        .specializations-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .spec-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border: 1px solid var(--primary);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spec-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--accent);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .spec-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .spec-card:hover {
+            background: var(--bg-elevated);
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .spec-card h4 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .spec-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .motto-section {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--bg-elevated) 100%);
+            border: 2px solid var(--accent);
+            padding: 3rem 2rem;
+            margin: 3rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
         }
 
         /* ===== PHOTO SLIDER ===== */
@@ -192,70 +343,6 @@
             background: rgba(0, 217, 255, 0.4);
         }
 
-        /* ===== SPECIALIZATIONS ===== */
-        .specializations-section {
-            margin: 3rem 0;
-        }
-
-        .specializations-section h3 {
-            color: var(--accent);
-            font-size: 1.6rem;
-            margin-bottom: 2rem;
-            text-align: center;
-            letter-spacing: 2px;
-        }
-
-        .spec-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-        }
-
-        .spec-card {
-            background: var(--bg-card);
-            padding: 1.5rem;
-            border: 1px solid var(--primary);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .spec-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: var(--accent);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
-        }
-
-        .spec-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .spec-card:hover {
-            background: var(--bg-elevated);
-            border-color: var(--accent);
-            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.2);
-            transform: translateY(-5px);
-        }
-
-        .spec-card h4 {
-            color: var(--accent);
-            margin-bottom: 0.5rem;
-            font-size: 1.1rem;
-        }
-
-        .spec-card p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-
         /* ===== EQUIPMENT CARDS ===== */
         .equipment-section {
             margin: 3rem 0;
@@ -329,15 +416,14 @@
             line-height: 1.6;
         }
 
-        /* ===== MOTTO ===== */
-        .motto-section {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--bg-elevated) 100%);
-            border: 2px solid var(--accent);
-            padding: 3rem 2rem;
-            margin: 3rem 0;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+        @media (max-width: 768px) {
+            .slider-image-wrapper {
+                height: 250px;
+            }
+
+            .equipment-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .motto-section::before {
@@ -439,14 +525,6 @@
         }
 
         @media (max-width: 768px) {
-            .slider-image-wrapper {
-                height: 250px;
-            }
-
-            .equipment-grid {
-                grid-template-columns: 1fr;
-            }
-
             .spec-grid {
                 grid-template-columns: 1fr;
             }
@@ -463,7 +541,6 @@
                 font-size: 1.2rem;
             }
         }
-
         /* ===== LIGHTBOX ===== */
         .lightbox-overlay {
             position: fixed;
@@ -576,7 +653,7 @@
         <div class="tactical-menu-content">
             <div class="menu-header">
                 <h2>COMMAND TERMINAL</h2>
-                <button class="menu-close" id="menuClose">&times;</button>
+                <button class="menu-close" id="menuClose">✕</button>
             </div>
             
             <div class="menu-sections">
@@ -593,27 +670,27 @@
                     <div class="section-title" data-submenu="about">
                         <span class="section-icon">&gt;</span>
                         <span>ABOUT US</span>
-                        <span class="submenu-arrow">&#9660;</span>
+                        <span class="submenu-arrow">▼</span>
                     </div>
                     <div class="submenu" id="submenu-about">
                         <a href="about-505th.html" class="submenu-item">
-                            <span class="submenu-bullet">&#9656;</span>
+                            <span class="submenu-bullet">▸</span>
                             505th Expeditionary Force
                         </a>
                         <a href="about-alpha-company.html" class="submenu-item">
-                            <span class="submenu-bullet">&#9656;</span>
+                            <span class="submenu-bullet">▸</span>
                             Alpha Company
                         </a>
                         <a href="about-stalker.html" class="submenu-item">
-                            <span class="submenu-bullet">&#9656;</span>
+                            <span class="submenu-bullet">▸</span>
                             JTF-23 Force Recon
                         </a>
                         <a href="about-corpsman.html" class="submenu-item">
-                            <span class="submenu-bullet">&#9656;</span>
+                            <span class="submenu-bullet">▸</span>
                             Hospital Corpsman
                         </a>
                         <a href="about-54th-air-wing.html" class="submenu-item">
-                            <span class="submenu-bullet">&#9656;</span>
+                            <span class="submenu-bullet">▸</span>
                             54th Air Wing
                         </a>
                     </div>
@@ -624,15 +701,15 @@
                     <div class="section-title" data-submenu="media">
                         <span class="section-icon">&gt;</span>
                         <span>MEDIA</span>
-                        <span class="submenu-arrow">&#9660;</span>
+                        <span class="submenu-arrow">▼</span>
                     </div>
                     <div class="submenu" id="submenu-media">
                         <a href="media-gallery.html" class="submenu-item">
-                            <span class="submenu-bullet">&#9656;</span>
+                            <span class="submenu-bullet">▸</span>
                             Gallery
                         </a>
                         <a href="media-videos.html" class="submenu-item">
-                            <span class="submenu-bullet">&#9656;</span>
+                            <span class="submenu-bullet">▸</span>
                             Videos
                         </a>
                     </div>
@@ -643,23 +720,23 @@
                     <div class="section-title" data-submenu="resources">
                         <span class="section-icon">&gt;</span>
                         <span>RESOURCES</span>
-                        <span class="submenu-arrow">&#9660;</span>
+                        <span class="submenu-arrow">▼</span>
                     </div>
                     <div class="submenu" id="submenu-resources">
                         <a href="resources-discord-rules.html" class="submenu-item">
-                            <span class="submenu-bullet">&#9656;</span>
+                            <span class="submenu-bullet">▸</span>
                             Discord Rules
                         </a>
                         <a href="resources-handbook.html" class="submenu-item">
-                            <span class="submenu-bullet">&#9656;</span>
+                            <span class="submenu-bullet">▸</span>
                             General Handbook
                         </a>
                         <a href="resources-roster.html" class="submenu-item">
-                            <span class="submenu-bullet">&#9656;</span>
+                            <span class="submenu-bullet">▸</span>
                             Roster
                         </a>
                         <a href="resources-roadmap.html" class="submenu-item">
-                            <span class="submenu-bullet">&#9656;</span>
+                            <span class="submenu-bullet">▸</span>
                             Development Roadmap
                         </a>
                     </div>
@@ -830,8 +907,8 @@
 
             <!-- Call to Action -->
             <div class="cta-box">
-                <h3>INTERESTED IN JOINING Force Recon?</h3>
-                <p>JTF-23 Force Recon accepts only the most dedicated and skilled operators. Join our Discord to learn about selection requirements and training pipelines.</p>
+                <h3>INTERESTED IN JOINING STALKER?</h3>
+                <p>JTF-23 Stalker accepts only the most dedicated and skilled operators. Join our Discord to learn about selection requirements and training pipelines.</p>
                 <a href="https://discord.gg/pNkbaUtcw6" class="cta-button" target="_blank">
                     <span>JOIN DISCORD</span>
                 </a>
