@@ -444,7 +444,968 @@
                     <a href="https://discord.gg/pNkbaUtcw6" class="section-title join-btn" target="_blank">
                         <span class="section-icon">💬</span>
                         <span>JOIN US</span>
+                    </a><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JTF-23 Stalker - 505th</title>
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/site.webmanifest">
+    
+    <link rel="stylesheet" href="css/pages.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Additional styling for Stalker page */
+        .patch-container {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: var(--bg-card);
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.2);
+        }
+
+        .stalker-patch {
+            width: 300px;
+            height: auto;
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.3));
+            transition: all 0.3s ease;
+        }
+
+        .stalker-patch:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.5));
+        }
+
+        @media (max-width: 768px) {
+            .stalker-patch {
+                width: 200px;
+            }
+        }
+
+        .unit-intro {
+            background: var(--bg-card);
+            border-left: 4px solid var(--accent);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.1);
+        }
+
+        .unit-intro h2 {
+            color: var(--accent);
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .unit-intro p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        /* ===== PHOTO SLIDER ===== */
+        .photo-slider-section {
+            margin: 3rem 0;
+        }
+
+        .photo-slider-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .slider-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+        }
+
+        .slider-track {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+
+        .slider-slide {
+            min-width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slider-image-wrapper {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .slider-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slider-image-wrapper .placeholder-text {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .slider-description {
+            padding: 1.5rem 2rem;
+            background: var(--bg-elevated);
+        }
+
+        .slider-description h4 {
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .slider-description p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .slider-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem 0;
+        }
+
+        .slider-btn {
+            background: var(--bg-elevated);
+            color: var(--accent);
+            border: 2px solid var(--accent);
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slider-btn:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .slider-dots {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .slider-dot {
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--accent);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slider-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .slider-dot:hover {
+            background: rgba(0, 217, 255, 0.4);
+        }
+
+        /* ===== SPECIALIZATIONS ===== */
+        .specializations-section {
+            margin: 3rem 0;
+        }
+
+        .specializations-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .spec-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border: 1px solid var(--primary);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spec-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--accent);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .spec-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .spec-card:hover {
+            background: var(--bg-elevated);
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .spec-card h4 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .spec-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* ===== EQUIPMENT CARDS ===== */
+        .equipment-section {
+            margin: 3rem 0;
+        }
+
+        .equipment-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .equipment-card {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .equipment-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .equipment-image {
+            width: 100%;
+            height: 220px;
+            background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .equipment-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .equipment-image .placeholder-text {
+            color: var(--text-muted);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .equipment-info {
+            padding: 1.5rem;
+            background: var(--bg-elevated);
+        }
+
+        .equipment-info h4 {
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .equipment-info p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* ===== MOTTO ===== */
+        .motto-section {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--bg-elevated) 100%);
+            border: 2px solid var(--accent);
+            padding: 3rem 2rem;
+            margin: 3rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .motto-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(0, 217, 255, 0.05) 0%, transparent 70%);
+            z-index: 0;
+        }
+
+        .motto-section .content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .motto-section h3 {
+            color: var(--accent);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 15px var(--accent-glow);
+            letter-spacing: 4px;
+        }
+
+        .motto-section p {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        .tagline {
+            color: var(--accent);
+            font-size: 1.5rem;
+            font-style: italic;
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .philosophy-section {
+            background: var(--bg-card);
+            padding: 2rem;
+            margin: 3rem 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .philosophy-section h3 {
+            color: var(--primary-light);
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .philosophy-section p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+
+        .cta-box {
+            background: var(--bg-elevated);
+            border: 2px solid var(--accent);
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+
+        .cta-box h3 {
+            color: var(--accent);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta-box p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--primary);
+            color: var(--text-primary);
+            padding: 1rem 2rem;
+            border: 2px solid var(--accent);
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            box-shadow: 0 0 20px var(--accent-glow);
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 768px) {
+            .slider-image-wrapper {
+                height: 250px;
+            }
+
+            .equipment-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .spec-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .motto-section h3 {
+                font-size: 1.5rem;
+            }
+
+            .motto-section p {
+                font-size: 1.1rem;
+            }
+
+            .tagline {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 7, 9, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 5000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            cursor: zoom-out;
+        }
+
+        .lightbox-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .lightbox-content img {
+            max-width: 100%;
+            max-height: 75vh;
+            object-fit: contain;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 40px var(--accent-glow);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .lightbox-overlay.active .lightbox-content img {
+            transform: scale(1);
+        }
+
+        .lightbox-caption {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .lightbox-caption h4 {
+            color: var(--accent);
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+
+        .lightbox-caption p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            width: 36px;
+            height: 36px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: var(--font-heading);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-close:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .slider-image-wrapper img,
+        .equipment-image img {
+            cursor: zoom-in;
+        }
+
+    </style>
+</head>
+<body data-cms-page="about-stalker">
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand" id="logoMenu">
+                <img src="images/logo.png" alt="505th Logo" class="nav-logo">
+                <span class="nav-title">505TH EXPEDITIONARY FORCE</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tactical Dropdown Menu -->
+    <div class="tactical-menu" id="tacticalMenu">
+        <div class="tactical-menu-overlay" id="menuOverlay"></div>
+        <div class="tactical-menu-content">
+            <div class="menu-header">
+                <h2>COMMAND TERMINAL</h2>
+                <button class="menu-close" id="menuClose">&times;</button>
+            </div>
+            
+            <div class="menu-sections">
+                <!-- HOME -->
+                <div class="menu-section">
+                    <a href="home.html" class="section-title">
+                        <span class="section-icon">&gt;</span>
+                        <span>HOME</span>
                     </a>
+                </div>
+
+                <!-- ABOUT US (with dropdown) -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="about">
+                        <span class="section-icon">&gt;</span>
+                        <span>ABOUT US</span>
+                        <span class="submenu-arrow">&#9660;</span>
+                    </div>
+                    <div class="submenu" id="submenu-about">
+                        <a href="about-505th.html" class="submenu-item">
+                            <span class="submenu-bullet">&#9656;</span>
+                            505th Expeditionary Force
+                        </a>
+                        <a href="about-alpha-company.html" class="submenu-item">
+                            <span class="submenu-bullet">&#9656;</span>
+                            Alpha Company
+                        </a>
+                        <a href="about-stalker.html" class="submenu-item">
+                            <span class="submenu-bullet">&#9656;</span>
+                            JTF-23 Force Recon
+                        </a>
+                        <a href="about-corpsman.html" class="submenu-item">
+                            <span class="submenu-bullet">&#9656;</span>
+                            Hospital Corpsman
+                        </a>
+                        <a href="about-54th-air-wing.html" class="submenu-item">
+                            <span class="submenu-bullet">&#9656;</span>
+                            54th Air Wing
+                        </a>
+                    </div>
+                </div>
+
+                <!-- MEDIA (with dropdown) -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="media">
+                        <span class="section-icon">&gt;</span>
+                        <span>MEDIA</span>
+                        <span class="submenu-arrow">&#9660;</span>
+                    </div>
+                    <div class="submenu" id="submenu-media">
+                        <a href="media-gallery.html" class="submenu-item">
+                            <span class="submenu-bullet">&#9656;</span>
+                            Gallery
+                        </a>
+                        <a href="media-videos.html" class="submenu-item">
+                            <span class="submenu-bullet">&#9656;</span>
+                            Videos
+                        </a>
+                    </div>
+                </div>
+
+                <!-- RESOURCES (with dropdown) -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="resources">
+                        <span class="section-icon">&gt;</span>
+                        <span>RESOURCES</span>
+                        <span class="submenu-arrow">&#9660;</span>
+                    </div>
+                    <div class="submenu" id="submenu-resources">
+                        <a href="resources-discord-rules.html" class="submenu-item">
+                            <span class="submenu-bullet">&#9656;</span>
+                            Discord Rules
+                        </a>
+                        <a href="resources-handbook.html" class="submenu-item">
+                            <span class="submenu-bullet">&#9656;</span>
+                            General Handbook
+                        </a>
+                        <a href="resources-roster.html" class="submenu-item">
+                            <span class="submenu-bullet">&#9656;</span>
+                            Roster
+                        </a>
+                        <a href="resources-roadmap.html" class="submenu-item">
+                            <span class="submenu-bullet">&#9656;</span>
+                            Development Roadmap
+                        </a>
+                    </div>
+                </div>
+
+                <!-- JOIN US (Direct Discord Link) -->
+                <div class="menu-section">
+                    <a href="https://discord.gg/pNkbaUtcw6" class="section-title join-btn" target="_blank">
+                        <span class="section-icon">&gt;</span>
+                        <span>JOIN US</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="menu-footer">
+                <p>CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Content -->
+    <main class="page-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <span class="page-tag">SPECIAL OPERATIONS</span>
+                <h1>JTF-23 FORCE RECON</h1>
+                <p class="version">1st Platoon - Stalker</p>
+                <div class="header-line"></div>
+            </div>
+
+            <!-- Stalker Patch -->
+            <div class="patch-container">
+                <img src="images/logos/Stalker_Patch.png" alt="JTF-23 Stalker Patch" class="stalker-patch">
+            </div>
+
+            <!-- Unit Introduction -->
+            <div class="unit-intro">
+                <h2>Mission Statement</h2>
+                <p>Forged for the unseen fight, Stalker operates where information is muddied and consequences are dire. We are a force reconnaissance and direct-action element built on discretion, patience, and sustained effort. Our strength is not in our firepower, but in our preparation: intelligence first, movement second, and decisive action only when the moment is right. We prefer to shape the fight on our liking before engaging, rather than chase combat at first sight.</p>
+            </div>
+
+            <!-- Photo Slider -->
+            <section class="photo-slider-section">
+                <h3>STALKER IN ACTION</h3>
+                <div class="slider-container">
+                    <div class="slider-track" id="sliderTrack">
+                        <!-- Slide 1 -->
+                        <div class="slider-slide">
+                            <div class="slider-image-wrapper" data-cms-slot="slider_1" data-cms-type="image">
+                                <span class="placeholder-text">SLIDE 1 - Set via Admin Panel</span>
+                            </div>
+                            <div class="slider-description">
+                                <h4 data-cms-slot="slider_1_title" data-cms-type="text">Reconnaissance Operations</h4>
+                                <p data-cms-slot="slider_1_desc" data-cms-type="text">Stalker teams conducting long-range surveillance and intelligence gathering deep behind enemy lines.</p>
+                            </div>
+                        </div>
+                        <!-- Slide 2 -->
+                        <div class="slider-slide">
+                            <div class="slider-image-wrapper" data-cms-slot="slider_2" data-cms-type="image">
+                                <span class="placeholder-text">SLIDE 2 - Set via Admin Panel</span>
+                            </div>
+                            <div class="slider-description">
+                                <h4 data-cms-slot="slider_2_title" data-cms-type="text">Direct Action</h4>
+                                <p data-cms-slot="slider_2_desc" data-cms-type="text">Precision strikes against high-value targets with surgical efficiency and minimal signature.</p>
+                            </div>
+                        </div>
+                        <!-- Slide 3 -->
+                        <div class="slider-slide">
+                            <div class="slider-image-wrapper" data-cms-slot="slider_3" data-cms-type="image">
+                                <span class="placeholder-text">SLIDE 3 - Set via Admin Panel</span>
+                            </div>
+                            <div class="slider-description">
+                                <h4 data-cms-slot="slider_3_title" data-cms-type="text">Joint Operations</h4>
+                                <p data-cms-slot="slider_3_desc" data-cms-type="text">Coordinated multi-element operations alongside air and ground assets for mission success.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slider-controls">
+                    <button class="slider-btn" id="sliderPrev" aria-label="Previous slide">&lt;</button>
+                    <div class="slider-dots" id="sliderDots">
+                        <div class="slider-dot active" data-slide="0"></div>
+                        <div class="slider-dot" data-slide="1"></div>
+                        <div class="slider-dot" data-slide="2"></div>
+                    </div>
+                    <button class="slider-btn" id="sliderNext" aria-label="Next slide">&gt;</button>
+                </div>
+            </section>
+
+            <!-- Specializations -->
+            <section class="specializations-section">
+                <h3>STANDARD OPERATING PRODEDURES</h3>
+                <div class="spec-grid">
+                    <div class="spec-card">
+                        <h4>Deep Reconnaissance</h4>
+                        <p>Advanced intelligence gathering operations behind enemy lines, providing critical battlefield awareness.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>Sniper-Spotter Teams</h4>
+                        <p>Elite marksman pairs conducting precision elimination and overwatch operations.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>Drone Operations</h4>
+                        <p>UAV deployment for real-time reconnaissance, targeting, and battlefield coordination.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>Air Support Coordination</h4>
+                        <p>Joint terminal attack control for close air support and precision strike operations.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>Precision Fire</h4>
+                        <p>Surgical strikes with minimum collateral damage, maximum tactical effect.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>Amphibious Operations</h4>
+                        <p>Water-based infiltration and exfiltration capabilities for maritime environments.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Equipment -->
+            <section class="equipment-section">
+                <h3>EQUIPMENT</h3>
+                <div class="equipment-grid">
+                    <!-- Equipment Card 1 -->
+                    <div class="equipment-card">
+                        <div class="equipment-image" data-cms-slot="equip_1" data-cms-type="image">
+                            <span class="placeholder-text">Equipment Photo - Set via Admin Panel</span>
+                        </div>
+                        <div class="equipment-info">
+                            <h4 data-cms-slot="equip_1_title" data-cms-type="text">Primary Weapons</h4>
+                            <p data-cms-slot="equip_1_desc" data-cms-type="text">Mission-configured weapon systems optimized for force reconnaissance and direct action operations.</p>
+                        </div>
+                    </div>
+
+                    <!-- Equipment Card 2 -->
+                    <div class="equipment-card">
+                        <div class="equipment-image" data-cms-slot="equip_2" data-cms-type="image">
+                            <span class="placeholder-text">Equipment Photo - Set via Admin Panel</span>
+                        </div>
+                        <div class="equipment-info">
+                            <h4 data-cms-slot="equip_2_title" data-cms-type="text">Surveillance Gear</h4>
+                            <p data-cms-slot="equip_2_desc" data-cms-type="text">Advanced optics, drones, and electronic warfare systems for battlefield intelligence gathering.</p>
+                        </div>
+                    </div>
+
+                    <!-- Equipment Card 3 -->
+                    <div class="equipment-card">
+                        <div class="equipment-image" data-cms-slot="equip_3" data-cms-type="image">
+                            <span class="placeholder-text">Equipment Photo - Set via Admin Panel</span>
+                        </div>
+                        <div class="equipment-info">
+                            <h4 data-cms-slot="equip_3_title" data-cms-type="text">Tactical Vehicles</h4>
+                            <p data-cms-slot="equip_3_desc" data-cms-type="text">Purpose-built transport and infiltration platforms for rapid deployment across any terrain.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Motto Section -->
+            <div class="motto-section">
+                <div class="content">
+                    <h3>UNIT MOTTO</h3>
+                    <p>Silent by design. Relentless in execution.</p>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div class="cta-box">
+                <h3>INTERESTED IN JOINING Force Recon?</h3>
+                <p>JTF-23 Force Recon accepts only the most dedicated and skilled operators. Join our Discord to learn about selection requirements and training pipelines.</p>
+                <a href="https://discord.gg/pNkbaUtcw6" class="cta-button" target="_blank">
+                    <span>JOIN DISCORD</span>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Lightbox -->
+    <div class="lightbox-overlay" id="lightbox">
+        <div class="lightbox-content">
+            <button class="lightbox-close" id="lightboxClose">&times;</button>
+            <img id="lightboxImg" src="" alt="">
+            <div class="lightbox-caption">
+                <h4 id="lightboxTitle"></h4>
+                <p id="lightboxDesc"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+        <p>&copy; 2026 505th Expeditionary Force &bull; 505th Dev Team</p>
+        <p>JTF-23 Stalker &bull; Marine Force Reconnaissance</p>
+    </footer>
+
+    <script src="js/nav.js"></script>
+    <script src="js/scroll.js"></script>
+    <script type="module" src="js/cms.js"></script>
+    <script>
+        // ===== Photo Slider =====
+        (function() {
+            const track = document.getElementById('sliderTrack');
+            const dots = document.querySelectorAll('.slider-dot');
+            const prevBtn = document.getElementById('sliderPrev');
+            const nextBtn = document.getElementById('sliderNext');
+            let current = 0;
+            const total = dots.length;
+
+            function goToSlide(index) {
+                if (index < 0) index = total - 1;
+                if (index >= total) index = 0;
+                current = index;
+                track.style.transform = 'translateX(-' + (current * 100) + '%)';
+                dots.forEach(function(d, i) {
+                    d.classList.toggle('active', i === current);
+                });
+            }
+
+            prevBtn.addEventListener('click', function() { goToSlide(current - 1); });
+            nextBtn.addEventListener('click', function() { goToSlide(current + 1); });
+            dots.forEach(function(dot) {
+                dot.addEventListener('click', function() {
+                    goToSlide(parseInt(this.getAttribute('data-slide')));
+                });
+            });
+
+            // Auto-advance every 6 seconds
+            let autoSlide = setInterval(function() { goToSlide(current + 1); }, 6000);
+            var sliderContainer = document.querySelector('.slider-container');
+            if (sliderContainer) {
+                sliderContainer.addEventListener('mouseenter', function() { clearInterval(autoSlide); });
+                sliderContainer.addEventListener('mouseleave', function() {
+                    autoSlide = setInterval(function() { goToSlide(current + 1); }, 6000);
+                });
+            }
+        })();
+
+        // ===== Lightbox =====
+        (function() {
+            var overlay = document.getElementById('lightbox');
+            var lbImg = document.getElementById('lightboxImg');
+            var lbTitle = document.getElementById('lightboxTitle');
+            var lbDesc = document.getElementById('lightboxDesc');
+            var lbClose = document.getElementById('lightboxClose');
+
+            function openLightbox(imgSrc, title, desc) {
+                if (!imgSrc) return;
+                lbImg.src = imgSrc;
+                lbTitle.textContent = title || '';
+                lbDesc.textContent = desc || '';
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeLightbox() {
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            lbClose.addEventListener('click', function(e) { e.stopPropagation(); closeLightbox(); });
+            overlay.addEventListener('click', closeLightbox);
+            document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
+
+            // Slider images
+            document.querySelectorAll('.slider-image-wrapper').forEach(function(wrapper) {
+                wrapper.addEventListener('click', function() {
+                    var img = this.querySelector('img');
+                    if (!img) return;
+                    var slide = this.closest('.slider-slide');
+                    var title = slide ? slide.querySelector('.slider-description h4') : null;
+                    var desc = slide ? slide.querySelector('.slider-description p') : null;
+                    openLightbox(img.src, title ? title.textContent : '', desc ? desc.textContent : '');
+                });
+            });
+
+            // Equipment images
+            document.querySelectorAll('.equipment-image').forEach(function(wrapper) {
+                wrapper.addEventListener('click', function() {
+                    var img = this.querySelector('img');
+                    if (!img) return;
+                    var card = this.closest('.equipment-card');
+                    var title = card ? card.querySelector('.equipment-info h4') : null;
+                    var desc = card ? card.querySelector('.equipment-info p') : null;
+                    openLightbox(img.src, title ? title.textContent : '', desc ? desc.textContent : '');
+                });
+            });
+
+            // Re-bind after CMS loads images (slight delay for Firestore)
+            setTimeout(function() {
+                document.querySelectorAll('.slider-image-wrapper, .equipment-image').forEach(function(el) {
+                    var img = el.querySelector('img');
+                    if (img) img.style.cursor = 'zoom-in';
+                });
+            }, 3000);
+        })();
+    </script>
+</body>
+</html>
                 </div>
             </div>
             
