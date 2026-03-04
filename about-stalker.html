@@ -216,14 +216,224 @@
             overflow: hidden;
         }
 
+        /* ===== PHOTO SLIDER ===== */
+        .photo-slider-section {
+            margin: 3rem 0;
+        }
+
+        .photo-slider-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .slider-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+        }
+
+        .slider-track {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+
+        .slider-slide {
+            min-width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slider-image-wrapper {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .slider-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slider-image-wrapper .placeholder-text {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .slider-description {
+            padding: 1.5rem 2rem;
+            background: var(--bg-elevated);
+        }
+
+        .slider-description h4 {
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .slider-description p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .slider-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem 0;
+        }
+
+        .slider-btn {
+            background: var(--bg-elevated);
+            color: var(--accent);
+            border: 2px solid var(--accent);
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slider-btn:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .slider-dots {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .slider-dot {
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--accent);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slider-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .slider-dot:hover {
+            background: rgba(0, 217, 255, 0.4);
+        }
+
+        /* ===== EQUIPMENT CARDS ===== */
+        .equipment-section {
+            margin: 3rem 0;
+        }
+
+        .equipment-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .equipment-card {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .equipment-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .equipment-image {
+            width: 100%;
+            height: 220px;
+            background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .equipment-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .equipment-image .placeholder-text {
+            color: var(--text-muted);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .equipment-info {
+            padding: 1.5rem;
+            background: var(--bg-elevated);
+        }
+
+        .equipment-info h4 {
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .equipment-info p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .slider-image-wrapper {
+                height: 250px;
+            }
+
+            .equipment-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .motto-section::before {
-            content: '⚔️';
+            content: '';
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 15rem;
-            opacity: 0.05;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(0, 217, 255, 0.05) 0%, transparent 70%);
             z-index: 0;
         }
 
@@ -357,7 +567,7 @@
                 <!-- HOME -->
                 <div class="menu-section">
                     <a href="home.html" class="section-title">
-                        <span class="section-icon">🏠</span>
+                        <span class="section-icon">&gt;</span>
                         <span>HOME</span>
                     </a>
                 </div>
@@ -365,7 +575,7 @@
                 <!-- ABOUT US (with dropdown) -->
                 <div class="menu-section">
                     <div class="section-title" data-submenu="about">
-                        <span class="section-icon">ℹ️</span>
+                        <span class="section-icon">&gt;</span>
                         <span>ABOUT US</span>
                         <span class="submenu-arrow">▼</span>
                     </div>
@@ -380,7 +590,7 @@
                         </a>
                         <a href="about-stalker.html" class="submenu-item">
                             <span class="submenu-bullet">▸</span>
-                            JTF-23 Stalker
+                            JTF-23 Force Recon
                         </a>
                         <a href="about-corpsman.html" class="submenu-item">
                             <span class="submenu-bullet">▸</span>
@@ -396,7 +606,7 @@
                 <!-- MEDIA (with dropdown) -->
                 <div class="menu-section">
                     <div class="section-title" data-submenu="media">
-                        <span class="section-icon">📷</span>
+                        <span class="section-icon">&gt;</span>
                         <span>MEDIA</span>
                         <span class="submenu-arrow">▼</span>
                     </div>
@@ -415,7 +625,7 @@
                 <!-- RESOURCES (with dropdown) -->
                 <div class="menu-section">
                     <div class="section-title" data-submenu="resources">
-                        <span class="section-icon">📋</span>
+                        <span class="section-icon">&gt;</span>
                         <span>RESOURCES</span>
                         <span class="submenu-arrow">▼</span>
                     </div>
@@ -442,7 +652,7 @@
                 <!-- JOIN US (Direct Discord Link) -->
                 <div class="menu-section">
                     <a href="https://discord.gg/pNkbaUtcw6" class="section-title join-btn" target="_blank">
-                        <span class="section-icon">💬</span>
+                        <span class="section-icon">&gt;</span>
                         <span>JOIN US</span>
                     </a>
                 </div>
@@ -460,8 +670,8 @@
             <!-- Page Header -->
             <div class="page-header">
                 <span class="page-tag">SPECIAL OPERATIONS</span>
-                <h1>JTF-23 STALKER</h1>
-                <p class="version">1st Platoon - Marine Recon</p>
+                <h1>JTF-23 FORCE RECON</h1>
+                <p class="version">1st Platoon - Stalker</p>
                 <div class="header-line"></div>
             </div>
 
@@ -472,84 +682,123 @@
 
             <!-- Unit Introduction -->
             <div class="unit-intro">
-                <h2>Force Reconnaissance & Direct Action</h2>
+                <h2>Mission Statement</h2>
                 <p>Forged for the unseen fight, Stalker operates where information is muddied and consequences are dire. We are a force reconnaissance and direct-action element built on discretion, patience, and sustained effort. Our strength is not in our firepower, but in our preparation: intelligence first, movement second, and decisive action only when the moment is right. We prefer to shape the fight on our liking before engaging, rather than chase combat at first sight.</p>
             </div>
 
-            <!-- Philosophy Section -->
-            <div class="philosophy-section">
-                <h3>Operational Philosophy</h3>
-                <p>We specialize in deep reconnaissance, sniper-spotter teams, drone operations, air support coordination, precision fire, and amphibious abilities to dominate the map before the silence is broken. Every marine recon is trained to think independently, act deliberately, and adapt under pressure.</p>
-            </div>
+            <!-- Photo Slider -->
+            <section class="photo-slider-section">
+                <h3>STALKER IN ACTION</h3>
+                <div class="slider-container">
+                    <div class="slider-track" id="sliderTrack">
+                        <!-- Slide 1 -->
+                        <div class="slider-slide">
+                            <div class="slider-image-wrapper" data-cms-slot="slider_1" data-cms-type="image">
+                                <span class="placeholder-text">SLIDE 1 - Set via Admin Panel</span>
+                            </div>
+                            <div class="slider-description">
+                                <h4 data-cms-slot="slider_1_title" data-cms-type="text">Reconnaissance Operations</h4>
+                                <p data-cms-slot="slider_1_desc" data-cms-type="text">Stalker teams conducting long-range surveillance and intelligence gathering deep behind enemy lines.</p>
+                            </div>
+                        </div>
+                        <!-- Slide 2 -->
+                        <div class="slider-slide">
+                            <div class="slider-image-wrapper" data-cms-slot="slider_2" data-cms-type="image">
+                                <span class="placeholder-text">SLIDE 2 - Set via Admin Panel</span>
+                            </div>
+                            <div class="slider-description">
+                                <h4 data-cms-slot="slider_2_title" data-cms-type="text">Direct Action</h4>
+                                <p data-cms-slot="slider_2_desc" data-cms-type="text">Precision strikes against high-value targets with surgical efficiency and minimal signature.</p>
+                            </div>
+                        </div>
+                        <!-- Slide 3 -->
+                        <div class="slider-slide">
+                            <div class="slider-image-wrapper" data-cms-slot="slider_3" data-cms-type="image">
+                                <span class="placeholder-text">SLIDE 3 - Set via Admin Panel</span>
+                            </div>
+                            <div class="slider-description">
+                                <h4 data-cms-slot="slider_3_title" data-cms-type="text">Joint Operations</h4>
+                                <p data-cms-slot="slider_3_desc" data-cms-type="text">Coordinated multi-element operations alongside air and ground assets for mission success.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slider-controls">
+                    <button class="slider-btn" id="sliderPrev" aria-label="Previous slide">&lt;</button>
+                    <div class="slider-dots" id="sliderDots">
+                        <div class="slider-dot active" data-slide="0"></div>
+                        <div class="slider-dot" data-slide="1"></div>
+                        <div class="slider-dot" data-slide="2"></div>
+                    </div>
+                    <button class="slider-btn" id="sliderNext" aria-label="Next slide">&gt;</button>
+                </div>
+            </section>
 
             <!-- Specializations -->
             <section class="specializations-section">
-                <h3>CORE SPECIALIZATIONS</h3>
+                <h3>STANDARD OPERATING PRODEDURES</h3>
                 <div class="spec-grid">
                     <div class="spec-card">
-                        <h4>🔍 Deep Reconnaissance</h4>
+                        <h4>Deep Reconnaissance</h4>
                         <p>Advanced intelligence gathering operations behind enemy lines, providing critical battlefield awareness.</p>
                     </div>
                     <div class="spec-card">
-                        <h4>🎯 Sniper-Spotter Teams</h4>
+                        <h4>Sniper-Spotter Teams</h4>
                         <p>Elite marksman pairs conducting precision elimination and overwatch operations.</p>
                     </div>
                     <div class="spec-card">
-                        <h4>🚁 Drone Operations</h4>
+                        <h4>Drone Operations</h4>
                         <p>UAV deployment for real-time reconnaissance, targeting, and battlefield coordination.</p>
                     </div>
                     <div class="spec-card">
-                        <h4>✈️ Air Support Coordination</h4>
+                        <h4>Air Support Coordination</h4>
                         <p>Joint terminal attack control for close air support and precision strike operations.</p>
                     </div>
                     <div class="spec-card">
-                        <h4>⚡ Precision Fire</h4>
+                        <h4>Precision Fire</h4>
                         <p>Surgical strikes with minimum collateral damage, maximum tactical effect.</p>
                     </div>
                     <div class="spec-card">
-                        <h4>🌊 Amphibious Operations</h4>
+                        <h4>Amphibious Operations</h4>
                         <p>Water-based infiltration and exfiltration capabilities for maritime environments.</p>
                     </div>
                 </div>
             </section>
 
-            <!-- Operations Gallery -->
-            <section class="gallery-section">
-                <h3>OPERATIONS IN THE FIELD</h3>
-                <div class="gallery-grid">
-                    <!-- Gallery Item 1 -->
-                    <div class="gallery-item">
-                        <div class="gallery-placeholder" data-cms-slot="photo_recon" data-cms-type="image">
-                            <div class="icon">📷</div>
-                            <div class="text">Operation Photo</div>
+            <!-- Equipment -->
+            <section class="equipment-section">
+                <h3>EQUIPMENT</h3>
+                <div class="equipment-grid">
+                    <!-- Equipment Card 1 -->
+                    <div class="equipment-card">
+                        <div class="equipment-image" data-cms-slot="equip_1" data-cms-type="image">
+                            <span class="placeholder-text">Equipment Photo - Set via Admin Panel</span>
                         </div>
-                        <div class="gallery-caption">
-                            <h4>Deep Reconnaissance</h4>
-                            <p>Stalker team conducting long-range surveillance operations in hostile territory.</p>
-                        </div>
-                    </div>
-
-                    <!-- Gallery Item 2 -->
-                    <div class="gallery-item">
-                        <div class="gallery-placeholder" data-cms-slot="photo_strike" data-cms-type="image">
-                            <div class="icon">🎯</div>
-                            <div class="text">Operation Photo</div>
-                        </div>
-                        <div class="gallery-caption">
-                            <h4>Precision Strike</h4>
-                            <p>Coordinated sniper-spotter team neutralizing high-value targets with surgical precision.</p>
+                        <div class="equipment-info">
+                            <h4 data-cms-slot="equip_1_title" data-cms-type="text">Primary Weapons</h4>
+                            <p data-cms-slot="equip_1_desc" data-cms-type="text">Mission-configured weapon systems optimized for force reconnaissance and direct action operations.</p>
                         </div>
                     </div>
 
-                    <!-- Gallery Item 3 -->
-                    <div class="gallery-item">
-                        <div class="gallery-placeholder" data-cms-slot="photo_airground" data-cms-type="image">
-                            <div class="icon">🚁</div>
-                            <div class="text">Operation Photo</div>
+                    <!-- Equipment Card 2 -->
+                    <div class="equipment-card">
+                        <div class="equipment-image" data-cms-slot="equip_2" data-cms-type="image">
+                            <span class="placeholder-text">Equipment Photo - Set via Admin Panel</span>
                         </div>
-                        <div class="gallery-caption">
-                            <h4>Air-Ground Coordination</h4>
-                            <p>Stalker elements directing close air support during joint operations.</p>
+                        <div class="equipment-info">
+                            <h4 data-cms-slot="equip_2_title" data-cms-type="text">Surveillance Gear</h4>
+                            <p data-cms-slot="equip_2_desc" data-cms-type="text">Advanced optics, drones, and electronic warfare systems for battlefield intelligence gathering.</p>
+                        </div>
+                    </div>
+
+                    <!-- Equipment Card 3 -->
+                    <div class="equipment-card">
+                        <div class="equipment-image" data-cms-slot="equip_3" data-cms-type="image">
+                            <span class="placeholder-text">Equipment Photo - Set via Admin Panel</span>
+                        </div>
+                        <div class="equipment-info">
+                            <h4 data-cms-slot="equip_3_title" data-cms-type="text">Tactical Vehicles</h4>
+                            <p data-cms-slot="equip_3_desc" data-cms-type="text">Purpose-built transport and infiltration platforms for rapid deployment across any terrain.</p>
                         </div>
                     </div>
                 </div>
@@ -560,7 +809,6 @@
                 <div class="content">
                     <h3>UNIT MOTTO</h3>
                     <p>Silent by design. Relentless in execution.</p>
-                    <div class="tagline">This is Stalker — first in, last out.</div>
                 </div>
             </div>
 
@@ -569,7 +817,6 @@
                 <h3>INTERESTED IN JOINING STALKER?</h3>
                 <p>JTF-23 Stalker accepts only the most dedicated and skilled operators. Join our Discord to learn about selection requirements and training pipelines.</p>
                 <a href="https://discord.gg/pNkbaUtcw6" class="cta-button" target="_blank">
-                    <span>💬</span>
                     <span>JOIN DISCORD</span>
                 </a>
             </div>
@@ -585,5 +832,44 @@
     <script src="js/nav.js"></script>
     <script src="js/scroll.js"></script>
     <script type="module" src="js/cms.js"></script>
+    <script>
+        // ===== Photo Slider =====
+        (function() {
+            const track = document.getElementById('sliderTrack');
+            const dots = document.querySelectorAll('.slider-dot');
+            const prevBtn = document.getElementById('sliderPrev');
+            const nextBtn = document.getElementById('sliderNext');
+            let current = 0;
+            const total = dots.length;
+
+            function goToSlide(index) {
+                if (index < 0) index = total - 1;
+                if (index >= total) index = 0;
+                current = index;
+                track.style.transform = 'translateX(-' + (current * 100) + '%)';
+                dots.forEach(function(d, i) {
+                    d.classList.toggle('active', i === current);
+                });
+            }
+
+            prevBtn.addEventListener('click', function() { goToSlide(current - 1); });
+            nextBtn.addEventListener('click', function() { goToSlide(current + 1); });
+            dots.forEach(function(dot) {
+                dot.addEventListener('click', function() {
+                    goToSlide(parseInt(this.getAttribute('data-slide')));
+                });
+            });
+
+            // Auto-advance every 6 seconds
+            let autoSlide = setInterval(function() { goToSlide(current + 1); }, 6000);
+            var sliderContainer = document.querySelector('.slider-container');
+            if (sliderContainer) {
+                sliderContainer.addEventListener('mouseenter', function() { clearInterval(autoSlide); });
+                sliderContainer.addEventListener('mouseleave', function() {
+                    autoSlide = setInterval(function() { goToSlide(current + 1); }, 6000);
+                });
+            }
+        })();
+    </script>
 </body>
 </html>
