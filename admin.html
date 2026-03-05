@@ -339,7 +339,7 @@
                 <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> PERSONNEL <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">Active Personnel</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')">Register Panel</div><div class="sub-link" data-panel="panel-promote" onclick="showPanel('panel-promote')">Promote Ranks</div></div></div>
                 <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> MEDIA LIBRARY <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
                 <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PAGE CONTENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div></div></div>
-                <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> SITE SETTINGS <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div class="sub-link" data-panel="panel-pagemanager" onclick="showPanel('panel-pagemanager')">Page Manager</div><div class="sub-link" data-panel="panel-auditlog" onclick="showPanel('panel-auditlog')">Admin Audit Log</div></div></div>
+                <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> SITE SETTINGS <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div class="sub-link" data-panel="panel-pagemanager" onclick="showPanel('panel-pagemanager')">Page Manager</div><div class="sub-link" data-panel="panel-auditlog" onclick="showPanel('panel-auditlog')">Admin Audit Log</div><div class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Discord Tracking</div></div></div>
                 <hr class="sidebar-divider">
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
             </div>
@@ -359,6 +359,30 @@
                 <div class="panel hidden" id="panel-discord"><div class="panel-title">DISCORD INVITE LINK</div><div class="upload-area"><p style="color:#555;font-size:9px;letter-spacing:1px;margin-bottom:12px">CHANGE ONCE - ALL PAGES UPDATE AUTOMATICALLY</p><div style="color:#444;font-size:9px;letter-spacing:2px;margin-bottom:8px">CURRENT: <a id="currentDiscordLink" href="#" target="_blank" style="color:var(--accent);text-decoration:none">NOT SET</a></div><div class="upload-row"><div class="upload-field"><input type="url" id="discordLinkInput" placeholder="https://discord.gg/XXXXXXXX"></div><button class="upload-btn" onclick="saveDiscordLink()">SAVE LINK</button></div></div></div>
                 <div class="panel hidden" id="panel-pagemanager"><div class="panel-title">PAGE MANAGER</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">ENABLE OR DISABLE SITE PAGES</p><div id="pagesList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-auditlog"><div class="panel-title">ADMIN AUDIT LOG</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">TRACKS ALL ADMIN ACTIONS &bull; CANNOT BE DELETED</p><div class="audit-header"><span>TIMESTAMP</span><span>USER</span><span>ACTION</span><span>DETAILS</span></div><div id="auditList"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-discord-tracking">
+                    <div class="panel-title">DISCORD TRACKING</div>
+                    <div style="text-align:center;padding:60px 20px;">
+                        <div style="font-size:80px;margin-bottom:20px;opacity:0.3;">&#128679;</div>
+                        <div style="font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:24px;font-weight:700;letter-spacing:4px;margin-bottom:16px;text-shadow:0 0 15px var(--accent-glow);">UNDER CONSTRUCTION</div>
+                        <div style="color:#555;font-size:12px;letter-spacing:2px;max-width:500px;margin:0 auto;line-height:2;">
+                            <p style="margin-bottom:12px;">Discord integration tracking is currently in development.</p>
+                            <p style="margin-bottom:12px;">Planned features:</p>
+                            <div style="text-align:left;display:inline-block;color:#666;">
+                                <div style="margin-bottom:6px;">&#9679; Member join/leave tracking</div>
+                                <div style="margin-bottom:6px;">&#9679; Voice channel activity logs</div>
+                                <div style="margin-bottom:6px;">&#9679; Role assignment history</div>
+                                <div style="margin-bottom:6px;">&#9679; Attendance tracking integration</div>
+                                <div style="margin-bottom:6px;">&#9679; Bot command usage analytics</div>
+                                <div>&#9679; Event participation metrics</div>
+                            </div>
+                            <p style="margin-top:20px;color:var(--accent);font-size:10px;letter-spacing:3px;">REQUIRES CORTANA BOT INTEGRATION</p>
+                        </div>
+                        <div style="margin-top:30px;padding:16px;background:rgba(0,217,255,0.05);border:1px dashed rgba(0,217,255,0.2);max-width:400px;margin-left:auto;margin-right:auto;">
+                            <div style="color:#444;font-size:9px;letter-spacing:2px;">ESTIMATED COMPLETION</div>
+                            <div style="color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;letter-spacing:3px;margin-top:4px;">TBD</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

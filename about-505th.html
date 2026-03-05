@@ -3,18 +3,638 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Under Construction - 505th EF</title>
-    
-    <!-- Favicon -->
+    <title>505th Expeditionary Force - 505th</title>
     <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
     <link rel="manifest" href="images/site.webmanifest">
-    
-    <link rel="stylesheet" href="css/under-construction.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <link rel="stylesheet" href="css/auth.css">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Page styling for 505th Expeditionary Force */
+        .patch-container {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: var(--bg-card);
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.2);
+        }
+
+        .stalker-patch {
+            width: 300px;
+            height: auto;
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.3));
+            transition: all 0.3s ease;
+        }
+
+        .stalker-patch:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.5));
+        }
+
+        .gallery-section {
+            margin: 3rem 0;
+        }
+
+        .gallery-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .gallery-item {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .gallery-item:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .gallery-placeholder {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--primary-dark) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .gallery-placeholder .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .gallery-placeholder .text {
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .gallery-caption {
+            padding: 1.5rem;
+            background: var(--bg-elevated);
+        }
+
+        .gallery-caption h4 {
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .gallery-caption p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .stalker-patch {
+                width: 200px;
+            }
+
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .unit-intro {
+            background: var(--bg-card);
+            border-left: 4px solid var(--accent);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.1);
+        }
+
+        .unit-intro h2 {
+            color: var(--accent);
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .unit-intro p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .specializations-section {
+            margin: 3rem 0;
+        }
+
+        .specializations-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .spec-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border: 1px solid var(--primary);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spec-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--accent);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .spec-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .spec-card:hover {
+            background: var(--bg-elevated);
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .spec-card h4 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .spec-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .motto-section {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--bg-elevated) 100%);
+            border: 2px solid var(--accent);
+            padding: 3rem 2rem;
+            margin: 3rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ===== PHOTO SLIDER ===== */
+        .photo-slider-section {
+            margin: 3rem 0;
+        }
+
+        .photo-slider-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .slider-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+        }
+
+        .slider-track {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+
+        .slider-slide {
+            min-width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slider-image-wrapper {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .slider-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slider-image-wrapper .placeholder-text {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .slider-description {
+            padding: 1.5rem 2rem;
+            background: var(--bg-elevated);
+        }
+
+        .slider-description h4 {
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .slider-description p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .slider-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem 0;
+        }
+
+        .slider-btn {
+            background: var(--bg-elevated);
+            color: var(--accent);
+            border: 2px solid var(--accent);
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slider-btn:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .slider-dots {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .slider-dot {
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--accent);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slider-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .slider-dot:hover {
+            background: rgba(0, 217, 255, 0.4);
+        }
+
+        /* ===== EQUIPMENT CARDS ===== */
+        .equipment-section {
+            margin: 3rem 0;
+        }
+
+        .equipment-section h3 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .equipment-card {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .equipment-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .equipment-image {
+            width: 100%;
+            height: 220px;
+            background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .equipment-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .equipment-image .placeholder-text {
+            color: var(--text-muted);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .equipment-info {
+            padding: 1.5rem;
+            background: var(--bg-elevated);
+        }
+
+        .equipment-info h4 {
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .equipment-info p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .slider-image-wrapper {
+                height: 250px;
+            }
+
+            .equipment-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .motto-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(0, 217, 255, 0.05) 0%, transparent 70%);
+            z-index: 0;
+        }
+
+        .motto-section .content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .motto-section h3 {
+            color: var(--accent);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 15px var(--accent-glow);
+            letter-spacing: 4px;
+        }
+
+        .motto-section p {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        .tagline {
+            color: var(--accent);
+            font-size: 1.5rem;
+            font-style: italic;
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .philosophy-section {
+            background: var(--bg-card);
+            padding: 2rem;
+            margin: 3rem 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .philosophy-section h3 {
+            color: var(--primary-light);
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .philosophy-section p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+
+        .cta-box {
+            background: var(--bg-elevated);
+            border: 2px solid var(--accent);
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+
+        .cta-box h3 {
+            color: var(--accent);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta-box p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--primary);
+            color: var(--text-primary);
+            padding: 1rem 2rem;
+            border: 2px solid var(--accent);
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            box-shadow: 0 0 20px var(--accent-glow);
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 768px) {
+            .spec-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .motto-section h3 {
+                font-size: 1.5rem;
+            }
+
+            .motto-section p {
+                font-size: 1.1rem;
+            }
+
+            .tagline {
+                font-size: 1.2rem;
+            }
+        }
+        /* ===== LIGHTBOX ===== */
+        .lightbox-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 7, 9, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 5000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            cursor: zoom-out;
+        }
+
+        .lightbox-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .lightbox-content img {
+            max-width: 100%;
+            max-height: 75vh;
+            object-fit: contain;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 40px var(--accent-glow);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .lightbox-overlay.active .lightbox-content img {
+            transform: scale(1);
+        }
+
+        .lightbox-caption {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .lightbox-caption h4 {
+            color: var(--accent);
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+
+        .lightbox-caption p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            width: 36px;
+            height: 36px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: var(--font-heading);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-close:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .slider-image-wrapper img,
+        .equipment-image img {
+            cursor: zoom-in;
+        }
+
+    </style>
 </head>
-<body>
+<body data-cms-page="about-505th">
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
@@ -36,7 +656,7 @@
                 <h2>COMMAND TERMINAL</h2>
                 <button class="menu-close" id="menuClose">✕</button>
             </div>
-            
+
             <div class="menu-sections">
                 <!-- HOME -->
                 <div class="menu-section">
@@ -132,67 +752,299 @@
                 </div>
             </div>
             
+
+                <!-- ACCOUNT -->
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="account">
+                        <span class="section-icon"><img src="images/icons/Account.png" alt="" style="width:24px;height:24px;"></span>
+                        <span>ACCOUNT</span>
+                    </div>
+                    <div id="menuAuthSection">
+                        <a href="login.html" class="submenu-item">
+                            <span class="submenu-bullet">&#x25B8;</span>
+                            System Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
             <div class="menu-footer">
                 <p>CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY</p>
             </div>
         </div>
     </div>
 
-    <!-- Under Construction Section -->
-    <section class="construction-page">
-        <div class="construction-content">
-            <div class="error-code">404</div>
-            
-            <h1 class="construction-title">
-                <span class="title-line">PAGE UNDER CONSTRUCTION</span>
-                <span class="title-subtitle">TACTICAL DATABASE UNAVAILABLE</span>
-            </h1>
-            
-            <div class="status-panel">
-                <div class="status-header">
-                    <span class="status-indicator"></span>
-                    <h2>SYSTEM STATUS</h2>
-                </div>
-                
-                <div class="status-body">
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> ERROR CODE: 404 - RESOURCE NOT FOUND
-                    </p>
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> STATUS: PAGE UNDER DEVELOPMENT
-                    </p>
-                    <p class="status-message">
-                        <span class="prompt">&gt;</span> CLEARANCE LEVEL: RESTRICTED ACCESS
-                    </p>
-                </div>
-                
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
-                
-                <p class="status-footer">This section is currently being constructed. Check back soon.</p>
+
+    <!-- Page Content -->
+    <main class="page-content">
+        <div class="container">
+            <div class="page-header">
+                <span class="page-tag">UNITED NATIONS SPACE COMMAND</span>
+                <h1>505TH EXPEDITIONARY FORCE</h1>
+                <p class="version">Established 2025 &bull; Combined Arms Warfare</p>
+                <div class="header-line"></div>
             </div>
-            
-            <div class="quick-actions">
-                <a href="home.html" class="action-btn">
-                    <span class="btn-icon">🏠</span>
-                    <span class="btn-text">RETURN HOME</span>
-                </a>
-                <a href="https://discord.gg/pNkbaUtcw6" class="action-btn" target="_blank">
-                    <span class="btn-icon">💬</span>
-                    <span class="btn-text">JOIN DISCORD</span>
+
+            <div class="unit-intro">
+                <h2>Our Legacy</h2>
+                <p>The 505th Expeditionary Force was established in 2025 under the command of Lt. General Drake P. Oliver with a singular mission: to forge a combined-arms fighting force capable of decisive action across any theatre of operations. What began as a small cadre of dedicated operators has grown into a multi-branch expeditionary unit spanning infantry, special operations, medical, and aviation assets. Built on the principles of tactical realism, teamwork, and operational excellence, the 505th operates as a cohesive fighting force where every marine, corpsman, pilot, and operator plays a critical role in mission success.</p>
+            </div>
+
+            <div class="philosophy-section">
+                <h3>Command Philosophy</h3>
+                <p>Under Lt. General Oliver's leadership, the 505th embraces a doctrine of combined arms warfare — the integration of infantry, armour, aviation, and special operations into unified battle plans. We believe that victory comes not from individual heroism, but from disciplined coordination, thorough planning, and the relentless execution of well-rehearsed tactics. Every member of the 505th is trained to think beyond their role and understand the bigger picture.</p>
+            </div>
+
+            <!-- Photo Slider -->
+            <section class="photo-slider-section">
+                <h3>THE 505TH IN ACTION</h3>
+                <div class="slider-container">
+                    <div class="slider-track" id="sliderTrack">
+                        <!-- Slide 1 -->
+                        <div class="slider-slide">
+                            <div class="slider-image-wrapper" data-cms-slot="slider_1" data-cms-type="image">
+                                <span class="placeholder-text">SLIDE 1 - Set via Admin Panel</span>
+                            </div>
+                            <div class="slider-description">
+                                <h4 data-cms-slot="slider_1_title" data-cms-type="text">Combined Operations</h4>
+                                <p data-cms-slot="slider_1_desc" data-cms-type="text">505th forces conducting multi-element combined arms operations across diverse terrain.</p>
+                            </div>
+                        </div>
+                        <!-- Slide 2 -->
+                        <div class="slider-slide">
+                            <div class="slider-image-wrapper" data-cms-slot="slider_2" data-cms-type="image">
+                                <span class="placeholder-text">SLIDE 2 - Set via Admin Panel</span>
+                            </div>
+                            <div class="slider-description">
+                                <h4 data-cms-slot="slider_2_title" data-cms-type="text">Tactical Deployment</h4>
+                                <p data-cms-slot="slider_2_desc" data-cms-type="text">Full-scale deployment with coordinated infantry, armour, and air assets working in unison.</p>
+                            </div>
+                        </div>
+                        <!-- Slide 3 -->
+                        <div class="slider-slide">
+                            <div class="slider-image-wrapper" data-cms-slot="slider_3" data-cms-type="image">
+                                <span class="placeholder-text">SLIDE 3 - Set via Admin Panel</span>
+                            </div>
+                            <div class="slider-description">
+                                <h4 data-cms-slot="slider_3_title" data-cms-type="text">Joint Operations</h4>
+                                <p data-cms-slot="slider_3_desc" data-cms-type="text">Multi-branch coordination during large-scale expeditionary missions.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slider-controls">
+                    <button class="slider-btn" id="sliderPrev" aria-label="Previous slide">&lt;</button>
+                    <div class="slider-dots" id="sliderDots">
+                        <div class="slider-dot active" data-slide="0"></div>
+                        <div class="slider-dot" data-slide="1"></div>
+                        <div class="slider-dot" data-slide="2"></div>
+                    </div>
+                    <button class="slider-btn" id="sliderNext" aria-label="Next slide">&gt;</button>
+                </div>
+            </section>
+
+            <!-- Specializations -->
+            <section class="specializations-section">
+                <h3>FORCE STRUCTURE</h3>
+                <div class="spec-grid">
+                    <div class="spec-card">
+                        <h4>Alpha Company</h4>
+                        <p>The backbone of the 505th. Line infantry trained in combined arms warfare, urban operations, and sustained combat operations.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>JTF-23 Force Recon</h4>
+                        <p>Special operations element specializing in deep reconnaissance, direct action, and precision strike operations behind enemy lines.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>Hospital Corpsman</h4>
+                        <p>Combat medical specialists providing life-saving care under fire and maintaining unit readiness through advanced trauma medicine.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>54th Air Wing</h4>
+                        <p>Aviation assets providing close air support, transport, medevac, and air superiority across all operational theatres.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>Engineering Corps</h4>
+                        <p>Combat engineers providing forward operating base construction, fortification, and demolitions support.</p>
+                    </div>
+                    <div class="spec-card">
+                        <h4>Signal &amp; Intelligence</h4>
+                        <p>Communications and intelligence personnel ensuring battlefield awareness and secure command channels.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Equipment / Photo Cards -->
+            <section class="equipment-section">
+                <h3>OUR MARINES</h3>
+                <div class="equipment-grid">
+                    <div class="equipment-card">
+                        <div class="equipment-image" data-cms-slot="marine_1" data-cms-type="image">
+                            <span class="placeholder-text">Photo - Set via Admin Panel</span>
+                        </div>
+                        <div class="equipment-info">
+                            <h4 data-cms-slot="marine_1_title" data-cms-type="text">Marines in the Field</h4>
+                            <p data-cms-slot="marine_1_desc" data-cms-type="text">505th marines conducting tactical operations during deployment.</p>
+                        </div>
+                    </div>
+                    <div class="equipment-card">
+                        <div class="equipment-image" data-cms-slot="marine_2" data-cms-type="image">
+                            <span class="placeholder-text">Photo - Set via Admin Panel</span>
+                        </div>
+                        <div class="equipment-info">
+                            <h4 data-cms-slot="marine_2_title" data-cms-type="text">Training &amp; Readiness</h4>
+                            <p data-cms-slot="marine_2_desc" data-cms-type="text">Ongoing training programs that keep the 505th at peak combat effectiveness.</p>
+                        </div>
+                    </div>
+                    <div class="equipment-card">
+                        <div class="equipment-image" data-cms-slot="marine_3" data-cms-type="image">
+                            <span class="placeholder-text">Photo - Set via Admin Panel</span>
+                        </div>
+                        <div class="equipment-info">
+                            <h4 data-cms-slot="marine_3_title" data-cms-type="text">Brotherhood</h4>
+                            <p data-cms-slot="marine_3_desc" data-cms-type="text">The bonds forged through shared hardship and dedication to mission success.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="motto-section">
+                <div class="content">
+                    <h3>505TH EXPEDITIONARY FORCE</h3>
+                    <p>One Force. One Fight. One Victory.</p>
+                </div>
+            </div>
+
+            <div class="cta-box">
+                <h3>JOIN THE 505TH</h3>
+                <p>Ready to be part of something greater? The 505th Expeditionary Force is always looking for dedicated operators. Join our Discord to begin your journey.</p>
+                <a href="https://discord.gg/pNkbaUtcw6" class="cta-button" target="_blank">
+                    <span>JOIN DISCORD</span>
                 </a>
             </div>
         </div>
-    </section>
+    </main>
 
+    <!-- Lightbox -->
+    <div class="lightbox-overlay" id="lightbox">
+        <div class="lightbox-content">
+            <button class="lightbox-close" id="lightboxClose">&times;</button>
+            <img id="lightboxImg" src="" alt="">
+            <div class="lightbox-caption">
+                <h4 id="lightboxTitle"></h4>
+                <p id="lightboxDesc"></p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Footer -->
     <footer class="page-footer">
-        <p>© 2026 505th Expeditionary Force • 505th Dev Team</p>
+        <p>&copy; 2026 505th Expeditionary Force &bull; 505th Dev Team</p>
+        <p>Established 2025 &bull; Lt. Gen. Drake P. Oliver, Commanding</p>
     </footer>
 
     <script src="js/nav.js"></script>
     <script src="js/scroll.js"></script>
     <script type="module" src="js/auth.js"></script>
     <script type="module" src="js/cms.js"></script>
+    <script>
+        // ===== Photo Slider =====
+        (function() {
+            const track = document.getElementById('sliderTrack');
+            const dots = document.querySelectorAll('.slider-dot');
+            const prevBtn = document.getElementById('sliderPrev');
+            const nextBtn = document.getElementById('sliderNext');
+            let current = 0;
+            const total = dots.length;
+
+            function goToSlide(index) {
+                if (index < 0) index = total - 1;
+                if (index >= total) index = 0;
+                current = index;
+                track.style.transform = 'translateX(-' + (current * 100) + '%)';
+                dots.forEach(function(d, i) {
+                    d.classList.toggle('active', i === current);
+                });
+            }
+
+            prevBtn.addEventListener('click', function() { goToSlide(current - 1); });
+            nextBtn.addEventListener('click', function() { goToSlide(current + 1); });
+            dots.forEach(function(dot) {
+                dot.addEventListener('click', function() {
+                    goToSlide(parseInt(this.getAttribute('data-slide')));
+                });
+            });
+
+            // Auto-advance every 6 seconds
+            let autoSlide = setInterval(function() { goToSlide(current + 1); }, 6000);
+            var sliderContainer = document.querySelector('.slider-container');
+            if (sliderContainer) {
+                sliderContainer.addEventListener('mouseenter', function() { clearInterval(autoSlide); });
+                sliderContainer.addEventListener('mouseleave', function() {
+                    autoSlide = setInterval(function() { goToSlide(current + 1); }, 6000);
+                });
+            }
+        })();
+
+        // ===== Lightbox =====
+        (function() {
+            var overlay = document.getElementById('lightbox');
+            var lbImg = document.getElementById('lightboxImg');
+            var lbTitle = document.getElementById('lightboxTitle');
+            var lbDesc = document.getElementById('lightboxDesc');
+            var lbClose = document.getElementById('lightboxClose');
+
+            function openLightbox(imgSrc, title, desc) {
+                if (!imgSrc) return;
+                lbImg.src = imgSrc;
+                lbTitle.textContent = title || '';
+                lbDesc.textContent = desc || '';
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeLightbox() {
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            lbClose.addEventListener('click', function(e) { e.stopPropagation(); closeLightbox(); });
+            overlay.addEventListener('click', closeLightbox);
+            document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
+
+            // Slider images
+            document.querySelectorAll('.slider-image-wrapper').forEach(function(wrapper) {
+                wrapper.addEventListener('click', function() {
+                    var img = this.querySelector('img');
+                    if (!img) return;
+                    var slide = this.closest('.slider-slide');
+                    var title = slide ? slide.querySelector('.slider-description h4') : null;
+                    var desc = slide ? slide.querySelector('.slider-description p') : null;
+                    openLightbox(img.src, title ? title.textContent : '', desc ? desc.textContent : '');
+                });
+            });
+
+            // Equipment images
+            document.querySelectorAll('.equipment-image').forEach(function(wrapper) {
+                wrapper.addEventListener('click', function() {
+                    var img = this.querySelector('img');
+                    if (!img) return;
+                    var card = this.closest('.equipment-card');
+                    var title = card ? card.querySelector('.equipment-info h4') : null;
+                    var desc = card ? card.querySelector('.equipment-info p') : null;
+                    openLightbox(img.src, title ? title.textContent : '', desc ? desc.textContent : '');
+                });
+            });
+
+            // Re-bind after CMS loads images (slight delay for Firestore)
+            setTimeout(function() {
+                document.querySelectorAll('.slider-image-wrapper, .equipment-image').forEach(function(el) {
+                    var img = el.querySelector('img');
+                    if (img) img.style.cursor = 'zoom-in';
+                });
+            }, 3000);
+        })();
+    </script>
 </body>
 </html>
