@@ -31,7 +31,7 @@
         async function logAction(a, d) { try { await addDoc(collection(db,"audit_log"),{action:a,details:d,userId:currentUser.uid,userCallsign:currentUserData.callsign,userRole:currentUserData.role,timestamp:new Date().toISOString()}); } catch(e){} }
 
         const PAGE_SLOTS = {
-            'home': { name:'Home Page', slots:[{id:'enlist_photo',label:'Ready To Enlist Card Photo',type:'image',description:'Recruitment banner'}] },
+            'home': { name:'Home Page', slots:[{id:'enlist_photo',label:'Ready To Enlist Card Photo',type:'image',description:'Recruitment banner'},{id:'hero_video',label:'See Us In Action Video',type:'video',description:'YouTube or Twitch URL'},{id:'hero_video_description',label:'Video Description',type:'text',description:'Text below the video'}] },
             'about-505th': { name:'505th Expeditionary Force', slots:[
                 {id:'slider_1',label:'Slider Photo 1',type:'image',description:''},{id:'slider_1_title',label:'Slider 1 Title',type:'text',description:''},{id:'slider_1_desc',label:'Slider 1 Description',type:'text',description:''},
                 {id:'slider_2',label:'Slider Photo 2',type:'image',description:''},{id:'slider_2_title',label:'Slider 2 Title',type:'text',description:''},{id:'slider_2_desc',label:'Slider 2 Description',type:'text',description:''},
