@@ -4,1286 +4,361 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>505th - Command Terminal</title>
-
     <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
     <link rel="manifest" href="images/site.webmanifest">
-
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        const firebaseConfig = { apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg", authDomain:"th-website-91533.firebaseapp.com", projectId:"th-website-91533", storageBucket:"th-website-91533.firebasestorage.app", messagingSenderId:"1046139150142", appId:"1:1046139150142:web:01f409ae4a38c4f79d966f" };
+        const CLOUD_NAME='dwugtsdx', UPLOAD_PRESET='505th_uploads', CLOUDINARY_API_KEY='143672934239445';
+        const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+        const auth = getAuth(app), db = getFirestore(app);
+        let currentUser=null, currentUserData=null, allUsers=[], allMedia=[], pageContentData={};
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
-            authDomain: "th-website-91533.firebaseapp.com",
-            projectId: "th-website-91533",
-            storageBucket: "th-website-91533.firebasestorage.app",
-            messagingSenderId: "1046139150142",
-            appId: "1:1046139150142:web:01f409ae4a38c4f79d966f"
-        };
-
-        // Cloudinary config
-        const CLOUD_NAME = 'dwugtsdx';
-        const UPLOAD_PRESET = '505th_uploads';
-        const CLOUDINARY_API_KEY = '143672934239445';
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        let currentUser = null;
-        let currentUserData = null;
-
-        // ==========================================
-        // PAGE CONTENT SLOTS - defines editable areas
-        // ==========================================
-        const PAGE_SLOTS = {
-            'home': {
-                name: 'Home Page',
-                slots: [
-                    { id: 'hero_video', label: 'See Us In Action - Video', type: 'video', description: 'YouTube or Twitch embed URL' },
-                    { id: 'hero_video_description', label: 'Video Description', type: 'text', description: 'Text below the video' }
-                ]
-            },
-            'about-stalker': {
-                name: 'JTF-23 Force Recon',
-                slots: [
-                    { id: 'slider_1', label: 'Slider Photo 1', type: 'image', description: 'First slider photo' },
-                    { id: 'slider_1_title', label: 'Slider 1 Title', type: 'text', description: 'Title for slide 1' },
-                    { id: 'slider_1_desc', label: 'Slider 1 Description', type: 'text', description: 'Description for slide 1' },
-                    { id: 'slider_2', label: 'Slider Photo 2', type: 'image', description: 'Second slider photo' },
-                    { id: 'slider_2_title', label: 'Slider 2 Title', type: 'text', description: 'Title for slide 2' },
-                    { id: 'slider_2_desc', label: 'Slider 2 Description', type: 'text', description: 'Description for slide 2' },
-                    { id: 'slider_3', label: 'Slider Photo 3', type: 'image', description: 'Third slider photo' },
-                    { id: 'slider_3_title', label: 'Slider 3 Title', type: 'text', description: 'Title for slide 3' },
-                    { id: 'slider_3_desc', label: 'Slider 3 Description', type: 'text', description: 'Description for slide 3' },
-                    { id: 'equip_1', label: 'Equipment Photo 1', type: 'image', description: 'Primary Weapons photo' },
-                    { id: 'equip_1_title', label: 'Equipment 1 Title', type: 'text', description: 'Title for equipment card 1' },
-                    { id: 'equip_1_desc', label: 'Equipment 1 Description', type: 'text', description: 'Description for equipment card 1' },
-                    { id: 'equip_2', label: 'Equipment Photo 2', type: 'image', description: 'Surveillance Gear photo' },
-                    { id: 'equip_2_title', label: 'Equipment 2 Title', type: 'text', description: 'Title for equipment card 2' },
-                    { id: 'equip_2_desc', label: 'Equipment 2 Description', type: 'text', description: 'Description for equipment card 2' },
-                    { id: 'equip_3', label: 'Equipment Photo 3', type: 'image', description: 'Tactical Vehicles photo' },
-                    { id: 'equip_3_title', label: 'Equipment 3 Title', type: 'text', description: 'Title for equipment card 3' },
-                    { id: 'equip_3_desc', label: 'Equipment 3 Description', type: 'text', description: 'Description for equipment card 3' }
-                ]
-            },
-            'about-alpha': {
-                name: 'Alpha Company',
-                slots: [
-                    { id: 'photo_1', label: 'Mars Desert Campaign Photo', type: 'image', description: 'Operation photo 1' },
-                    { id: 'photo_2', label: 'Amazon Jungle Assault Photo', type: 'image', description: 'Operation photo 2' },
-                    { id: 'photo_3', label: 'Objective Assault Photo', type: 'image', description: 'Operation photo 3' }
-                ]
-            },
-            'about-corpsman': {
-                name: 'Hospital Corpsman',
-                slots: [
-                    { id: 'photo_1', label: 'Corpsman Photo 1', type: 'image', description: 'Corpsman in action' }
-                ]
-            },
-            'about-54th': {
-                name: '54th Air Wing',
-                slots: [
-                    { id: 'photo_1', label: 'Air Wing Photo 1', type: 'image', description: 'Aviation operation photo' }
-                ]
-            },
-            'media-gallery': {
-                name: 'Media Gallery',
-                slots: [] // Gallery is managed through Media Library directly
-            }
-        };
-
-        // ==========================================
-        // PERMISSIONS
-        // ==========================================
-        const ADMIN_ROLES = ['commander', 'developer', 'staff_nco', 'recruiter'];
+        const ADMIN_ROLES = ['commander','developer','staff_nco','recruiter'];
         const ROLE_PERMISSIONS = {
-            'commander':  { personnel: true, media: true, content: true, pages: true, settings: true, canChangeRoles: true, canApprove: true, canEditProfiles: true },
-            'developer':  { personnel: true, media: true, content: true, pages: true, settings: true, canChangeRoles: true, canApprove: true, canEditProfiles: true },
-            'staff_nco':  { personnel: true, media: true, content: true, pages: false, settings: false, canChangeRoles: false, canApprove: true, canEditProfiles: true },
-            'recruiter':  { personnel: true, media: false, content: false, pages: false, settings: false, canChangeRoles: false, canApprove: true, canEditProfiles: false }
+            'commander':  {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1},
+            'developer':  {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1},
+            'staff_nco':  {personnel:1,media:1,content:1,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0},
+            'recruiter':  {personnel:1,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0}
         };
+        function P() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
+        function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
-        function getPerms() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
+        async function logAction(a, d) { try { await addDoc(collection(db,"audit_log"),{action:a,details:d,userId:currentUser.uid,userCallsign:currentUserData.callsign,userRole:currentUserData.role,timestamp:new Date().toISOString()}); } catch(e){} }
 
-        function applyPermissions() {
-            const p = getPerms();
-            // Show/hide sidebar links and panels
-            document.querySelector('[data-panel="personnel"]').style.display = p.personnel ? '' : 'none';
-            document.querySelector('[data-panel="media"]').style.display = p.media ? '' : 'none';
-            document.querySelector('[data-panel="editor"]').style.display = p.content ? '' : 'none';
-            document.querySelector('[data-panel="pages"]').style.display = p.pages ? '' : 'none';
-            document.querySelector('[data-panel="settings"]').style.display = p.settings ? '' : 'none';
-            // Default to first visible panel
-            const firstPanel = p.personnel ? 'personnel' : p.media ? 'media' : 'personnel';
-            switchPanel(firstPanel);
-        }
+        const PAGE_SLOTS = {
+            'home': { name:'Home Page', slots:[{id:'enlist_photo',label:'Ready To Enlist Card Photo',type:'image',description:'Recruitment banner'}] },
+            'about-505th': { name:'505th Expeditionary Force', slots:[
+                {id:'slider_1',label:'Slider Photo 1',type:'image',description:''},{id:'slider_1_title',label:'Slider 1 Title',type:'text',description:''},{id:'slider_1_desc',label:'Slider 1 Description',type:'text',description:''},
+                {id:'slider_2',label:'Slider Photo 2',type:'image',description:''},{id:'slider_2_title',label:'Slider 2 Title',type:'text',description:''},{id:'slider_2_desc',label:'Slider 2 Description',type:'text',description:''},
+                {id:'slider_3',label:'Slider Photo 3',type:'image',description:''},{id:'slider_3_title',label:'Slider 3 Title',type:'text',description:''},{id:'slider_3_desc',label:'Slider 3 Description',type:'text',description:''},
+                {id:'marine_1',label:'Marine Card 1 Photo',type:'image',description:''},{id:'marine_1_title',label:'Marine Card 1 Title',type:'text',description:''},{id:'marine_1_desc',label:'Marine Card 1 Description',type:'text',description:''},
+                {id:'marine_2',label:'Marine Card 2 Photo',type:'image',description:''},{id:'marine_2_title',label:'Marine Card 2 Title',type:'text',description:''},{id:'marine_2_desc',label:'Marine Card 2 Description',type:'text',description:''},
+                {id:'marine_3',label:'Marine Card 3 Photo',type:'image',description:''},{id:'marine_3_title',label:'Marine Card 3 Title',type:'text',description:''},{id:'marine_3_desc',label:'Marine Card 3 Description',type:'text',description:''}
+            ]},
+            'about-alpha': { name:'Alpha Company', slots:[
+                {id:'slider_1',label:'Slider Photo 1',type:'image',description:''},{id:'slider_1_title',label:'Slider 1 Title',type:'text',description:''},{id:'slider_1_desc',label:'Slider 1 Description',type:'text',description:''},
+                {id:'slider_2',label:'Slider Photo 2',type:'image',description:''},{id:'slider_2_title',label:'Slider 2 Title',type:'text',description:''},{id:'slider_2_desc',label:'Slider 2 Description',type:'text',description:''},
+                {id:'slider_3',label:'Slider Photo 3',type:'image',description:''},{id:'slider_3_title',label:'Slider 3 Title',type:'text',description:''},{id:'slider_3_desc',label:'Slider 3 Description',type:'text',description:''},
+                {id:'op_1',label:'Operation Card 1 Photo',type:'image',description:''},{id:'op_1_title',label:'Op Card 1 Title',type:'text',description:''},{id:'op_1_desc',label:'Op Card 1 Description',type:'text',description:''},
+                {id:'op_2',label:'Operation Card 2 Photo',type:'image',description:''},{id:'op_2_title',label:'Op Card 2 Title',type:'text',description:''},{id:'op_2_desc',label:'Op Card 2 Description',type:'text',description:''},
+                {id:'op_3',label:'Operation Card 3 Photo',type:'image',description:''},{id:'op_3_title',label:'Op Card 3 Title',type:'text',description:''},{id:'op_3_desc',label:'Op Card 3 Description',type:'text',description:''}
+            ]},
+            'about-stalker': { name:'JTF Force Recon', slots:[
+                {id:'slider_1',label:'Slider Photo 1',type:'image',description:''},{id:'slider_1_title',label:'Slider 1 Title',type:'text',description:''},{id:'slider_1_desc',label:'Slider 1 Description',type:'text',description:''},
+                {id:'slider_2',label:'Slider Photo 2',type:'image',description:''},{id:'slider_2_title',label:'Slider 2 Title',type:'text',description:''},{id:'slider_2_desc',label:'Slider 2 Description',type:'text',description:''},
+                {id:'slider_3',label:'Slider Photo 3',type:'image',description:''},{id:'slider_3_title',label:'Slider 3 Title',type:'text',description:''},{id:'slider_3_desc',label:'Slider 3 Description',type:'text',description:''},
+                {id:'equip_1',label:'Equipment Card 1 Photo',type:'image',description:''},{id:'equip_1_title',label:'Equip Card 1 Title',type:'text',description:''},{id:'equip_1_desc',label:'Equip Card 1 Description',type:'text',description:''},
+                {id:'equip_2',label:'Equipment Card 2 Photo',type:'image',description:''},{id:'equip_2_title',label:'Equip Card 2 Title',type:'text',description:''},{id:'equip_2_desc',label:'Equip Card 2 Description',type:'text',description:''},
+                {id:'equip_3',label:'Equipment Card 3 Photo',type:'image',description:''},{id:'equip_3_title',label:'Equip Card 3 Title',type:'text',description:''},{id:'equip_3_desc',label:'Equip Card 3 Description',type:'text',description:''}
+            ]},
+            'about-corpsman': { name:'Hospital Corpsman', slots:[
+                {id:'slider_1',label:'Slider Photo 1',type:'image',description:''},{id:'slider_1_title',label:'Slider 1 Title',type:'text',description:''},{id:'slider_1_desc',label:'Slider 1 Description',type:'text',description:''},
+                {id:'slider_2',label:'Slider Photo 2',type:'image',description:''},{id:'slider_2_title',label:'Slider 2 Title',type:'text',description:''},{id:'slider_2_desc',label:'Slider 2 Description',type:'text',description:''},
+                {id:'slider_3',label:'Slider Photo 3',type:'image',description:''},{id:'slider_3_title',label:'Slider 3 Title',type:'text',description:''},{id:'slider_3_desc',label:'Slider 3 Description',type:'text',description:''},
+                {id:'equip_1',label:'Equipment Card 1 Photo',type:'image',description:''},{id:'equip_1_title',label:'Equip Card 1 Title',type:'text',description:''},{id:'equip_1_desc',label:'Equip Card 1 Description',type:'text',description:''},
+                {id:'equip_2',label:'Equipment Card 2 Photo',type:'image',description:''},{id:'equip_2_title',label:'Equip Card 2 Title',type:'text',description:''},{id:'equip_2_desc',label:'Equip Card 2 Description',type:'text',description:''},
+                {id:'equip_3',label:'Equipment Card 3 Photo',type:'image',description:''},{id:'equip_3_title',label:'Equip Card 3 Title',type:'text',description:''},{id:'equip_3_desc',label:'Equip Card 3 Description',type:'text',description:''}
+            ]},
+            'about-54th': { name:'54th Air Wing', slots:[
+                {id:'slider_1',label:'Slider Photo 1',type:'image',description:''},{id:'slider_1_title',label:'Slider 1 Title',type:'text',description:''},{id:'slider_1_desc',label:'Slider 1 Description',type:'text',description:''},
+                {id:'slider_2',label:'Slider Photo 2',type:'image',description:''},{id:'slider_2_title',label:'Slider 2 Title',type:'text',description:''},{id:'slider_2_desc',label:'Slider 2 Description',type:'text',description:''},
+                {id:'slider_3',label:'Slider Photo 3',type:'image',description:''},{id:'slider_3_title',label:'Slider 3 Title',type:'text',description:''},{id:'slider_3_desc',label:'Slider 3 Description',type:'text',description:''},
+                {id:'air_1',label:'Air Asset Card 1 Photo',type:'image',description:''},{id:'air_1_title',label:'Air Asset 1 Title',type:'text',description:''},{id:'air_1_desc',label:'Air Asset 1 Description',type:'text',description:''},
+                {id:'air_2',label:'Air Asset Card 2 Photo',type:'image',description:''},{id:'air_2_title',label:'Air Asset 2 Title',type:'text',description:''},{id:'air_2_desc',label:'Air Asset 2 Description',type:'text',description:''},
+                {id:'air_3',label:'Air Asset Card 3 Photo',type:'image',description:''},{id:'air_3_title',label:'Air Asset 3 Title',type:'text',description:''},{id:'air_3_desc',label:'Air Asset 3 Description',type:'text',description:''}
+            ]}
+        };
+        const sitePages=[{id:'home',file:'home.html',name:'Home Page',section:'main'},{id:'about-505th',file:'about-505th.html',name:'505th Expeditionary Force',section:'about'},{id:'about-alpha',file:'about-alpha-company.html',name:'Alpha Company',section:'about'},{id:'about-stalker',file:'about-stalker.html',name:'JTF Force Recon',section:'about'},{id:'about-corpsman',file:'about-corpsman.html',name:'Hospital Corpsman',section:'about'},{id:'about-54th',file:'about-54th-air-wing.html',name:'54th Air Wing',section:'about'},{id:'media-gallery',file:'media-gallery.html',name:'Gallery',section:'media'},{id:'media-videos',file:'media-videos.html',name:'Videos',section:'media'},{id:'resources-rules',file:'resources-discord-rules.html',name:'Discord Rules',section:'resources'},{id:'resources-handbook',file:'resources-handbook.html',name:'General Handbook',section:'resources'},{id:'resources-roster',file:'resources-roster.html',name:'Roster',section:'resources'},{id:'resources-roadmap',file:'resources-roadmap.html',name:'Development Roadmap',section:'resources'}];
 
-        // ==========================================
-        // AUTH GUARD
-        // ==========================================
+        // AUTH
         onAuthStateChanged(auth, async (user) => {
-            if (!user) { window.location.href = 'login.html'; return; }
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (!userDoc.exists()) { window.location.href = 'login.html'; return; }
-            const userData = userDoc.data();
-            if (!ADMIN_ROLES.includes(userData.role)) {
-                window.location.href = 'home.html'; return;
-            }
-            currentUser = user;
-            currentUserData = userData;
-            document.getElementById('commanderName').textContent = userData.callsign;
-            document.getElementById('commanderRole').textContent = userData.role.toUpperCase().replace('_', ' ');
+            if (!user) { window.location.href='login.html'; return; }
+            const ud = await getDoc(doc(db,"users",user.uid));
+            if (!ud.exists()) { window.location.href='login.html'; return; }
+            const d = ud.data();
+            if (!ADMIN_ROLES.includes(d.role)) { window.location.href='home.html'; return; }
+            currentUser=user; currentUserData=d;
+            document.getElementById('topbarName').textContent=d.callsign;
+            document.getElementById('topbarRole').textContent=d.role.toUpperCase().replace('_',' ');
             document.getElementById('loadingScreen').classList.add('hidden');
-            document.getElementById('adminContent').classList.remove('hidden');
-            applyPermissions();
-            if (getPerms().personnel) loadUsers();
-            if (getPerms().media) loadMediaLibrary();
-            if (getPerms().pages) loadPages();
-            if (getPerms().content) loadPageContent();
-            if (getPerms().settings) loadSiteSettings();
+            document.getElementById('adminApp').classList.remove('hidden');
+            const p=P();
+            document.getElementById('nav-personnel').style.display=p.personnel?'':'none';
+            document.getElementById('nav-media').style.display=p.media?'':'none';
+            document.getElementById('nav-content').style.display=p.content?'':'none';
+            document.getElementById('nav-settings').style.display=p.settings||p.pages||p.auditLog?'':'none';
+            logAction('LOGIN','Accessed Command Terminal');
+            loadDashboard();
         });
 
-        // ==========================================
-        // SIDEBAR
-        // ==========================================
-        // Edit user modal
-        window.openEditModal = function(uid, callsign, firstName, lastName, rank, joinedAt) {
-            document.getElementById('editUserId').value = uid;
-            document.getElementById('editCallsign').value = callsign;
-            document.getElementById('editFirstName').value = firstName;
-            document.getElementById('editLastName').value = lastName;
-            document.getElementById('editRank').value = rank;
-            document.getElementById('editJoinedAt').value = joinedAt ? joinedAt.split('T')[0] : '';
-            document.getElementById('editUserModal').classList.add('active');
+        // NAV
+        window.toggleDropdown=function(id){document.getElementById(id).classList.toggle('open');};
+        window.showPanel=function(id){
+            document.querySelectorAll('.panel').forEach(p=>p.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.sub-link').forEach(l=>l.classList.remove('active'));
+            const al=document.querySelector('[data-panel="'+id+'"]'); if(al) al.classList.add('active');
+            if(id==='panel-dashboard') loadDashboard();
+            if(id==='panel-active') loadActivePersonnel();
+            if(id==='panel-register') loadPendingUsers();
+            if(id==='panel-promote') loadPromotePanel();
+            if(id==='panel-gallery') loadGalleryMedia();
+            if(id==='panel-videos') loadVideoMedia();
+            if(id.startsWith('panel-page-')) loadPageContent();
+            if(id==='panel-discord') loadSiteSettings();
+            if(id==='panel-pagemanager') loadPages();
+            if(id==='panel-auditlog') loadAuditLog();
         };
-        window.closeEditModal = function() {
-            document.getElementById('editUserModal').classList.remove('active');
-        };
-        window.saveUserEdit = async function() {
-            const uid = document.getElementById('editUserId').value;
-            const updates = {
-                callsign: document.getElementById('editCallsign').value.trim(),
-                firstName: document.getElementById('editFirstName').value.trim(),
-                lastName: document.getElementById('editLastName').value.trim(),
-                rank: document.getElementById('editRank').value.trim(),
-                joinedAt: document.getElementById('editJoinedAt').value ? new Date(document.getElementById('editJoinedAt').value).toISOString() : null
-            };
-            try {
-                await updateDoc(doc(db, "users", uid), updates);
-                notify('OPERATIVE UPDATED');
-                closeEditModal();
-                loadUsers();
-            } catch (err) { notify('ERROR: ' + err.message, true); }
-        };
+        window.handleLogout=async function(){await signOut(auth);window.location.href='home.html';};
 
-        window.switchPanel = function(panel) {
-            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-            document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
-            document.querySelector(`[data-panel="${panel}"]`).classList.add('active');
-            document.getElementById(`panel-${panel}`).classList.remove('hidden');
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('sidebarOverlay').classList.remove('open');
-        };
+        // DASHBOARD
+        async function loadDashboard(){try{
+            const s=await getDocs(query(collection(db,"users"),orderBy("registeredAt","desc")));
+            allUsers=[];s.forEach(d=>allUsers.push({uid:d.id,...d.data()}));
+            const pend=allUsers.filter(u=>u.status==='pending'),appr=allUsers.filter(u=>u.status==='approved');
+            document.getElementById('dashPending').textContent=pend.length;
+            document.getElementById('dashActive').textContent=appr.length;
+            document.getElementById('dashTotal').textContent=allUsers.length;
+            const pc=document.getElementById('dashPendingList');
+            pc.innerHTML=!pend.length?'<div class="empty-state">NO PENDING</div>':pend.map(u=>`<div class="dash-card pending-card"><div><strong>${esc(u.callsign)}</strong> <span style="color:#555">${esc(u.email)}</span></div><div style="font-size:9px;color:#555;margin-top:4px">Registered: ${new Date(u.registeredAt).toLocaleDateString()}</div><div style="margin-top:8px"><button class="action-btn approve-btn small" onclick="approveUser('${u.uid}','${esc(u.callsign)}')">APPROVE</button> <button class="action-btn deny-btn small" onclick="denyUser('${u.uid}','${esc(u.callsign)}')">DENY</button></div></div>`).join('');
+            const rc=document.getElementById('dashRecentJoins');
+            const recent=appr.slice(0,5);
+            rc.innerHTML=!recent.length?'<div class="empty-state">NO RECENT JOINS</div>':recent.map(u=>`<div class="dash-card"><div><strong>${esc(u.callsign)}</strong> <span class="role-badge role-${u.role}">${u.role.toUpperCase().replace('_',' ')}</span></div><div style="font-size:9px;color:#555;margin-top:2px">${u.rank||'No Rank'} &bull; Joined: ${u.joinedAt?new Date(u.joinedAt).toLocaleDateString():'N/A'}</div></div>`).join('');
+        }catch(e){console.error(e);}}
 
-        window.toggleSidebar = function() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('sidebarOverlay').classList.toggle('open');
-        };
-
-        // ==========================================
-        // PERSONNEL
-        // ==========================================
-        async function loadUsers() {
-            try {
-                const snapshot = await getDocs(query(collection(db, "users"), orderBy("registeredAt", "desc")));
-                const pending = [], approved = [], denied = [];
-                snapshot.forEach(d => {
-                    const data = { ...d.data(), uid: d.id };
-                    if (data.status === 'pending') pending.push(data);
-                    else if (data.status === 'approved') approved.push(data);
-                    else denied.push(data);
-                });
-                document.getElementById('pendingCount').textContent = pending.length;
-                document.getElementById('approvedCount').textContent = approved.length;
-                document.getElementById('totalCount').textContent = snapshot.size;
-
-                const pendingBadge = document.getElementById('sidebarPendingBadge');
-                if (pending.length > 0) { pendingBadge.textContent = pending.length; pendingBadge.style.display = ''; }
-                else { pendingBadge.style.display = 'none'; }
-
-                renderPendingUsers(pending);
-                renderAllUsers([...pending, ...approved, ...denied]);
-            } catch (err) {
-                console.error('loadUsers error:', err);
-                notify('FAILED TO LOAD PERSONNEL — CHECK FIRESTORE RULES', true);
-            }
+        // ACTIVE PERSONNEL
+        async function loadActivePersonnel(){
+            if(!allUsers.length){const s=await getDocs(query(collection(db,"users"),orderBy("registeredAt","desc")));allUsers=[];s.forEach(d=>allUsers.push({uid:d.id,...d.data()}));}
+            const appr=allUsers.filter(u=>u.status==='approved'),c=document.getElementById('activeList');
+            if(!appr.length){c.innerHTML='<div class="empty-state">NO ACTIVE PERSONNEL</div>';return;}
+            c.innerHTML=`<div class="user-table"><div class="table-header"><span>NAME</span><span>STATUS</span><span>ROLE</span><span>RANK</span><span>JOINED</span><span>ACTIONS</span></div>${appr.map(u=>`<div class="table-row"><span class="name-cell"><strong>${esc(u.callsign)}</strong><br><small>${u.firstName?esc(u.firstName)+' '+esc(u.lastName||''):esc(u.email)}</small></span><span><span class="status-badge status-${u.status}">${u.status.toUpperCase()}</span></span><span><span class="role-badge role-${u.role}">${u.role.toUpperCase().replace('_',' ')}</span></span><span>${u.rank||'N/A'}</span><span>${u.joinedAt?new Date(u.joinedAt).toLocaleDateString():'N/A'}</span><span class="action-cell">${P().canEditProfiles?`<button class="action-btn small" style="color:var(--accent);border-color:rgba(0,217,255,.3)" onclick="openEditModal('${u.uid}')">EDIT</button>`:''} ${u.role!=='commander'&&u.role!=='developer'&&P().canChangeRoles?`<button class="action-btn remove-btn small" onclick="removeUser('${u.uid}','${esc(u.callsign)}')">REMOVE</button>`:''}</span></div>`).join('')}</div>`;
         }
 
-        function renderPendingUsers(users) {
-            const c = document.getElementById('pendingList');
-            if (!users.length) { c.innerHTML = '<div class="empty-state">NO PENDING REGISTRATIONS</div>'; return; }
-            c.innerHTML = users.map(u => `
-                <div class="user-card pending-card">
-                    <div class="user-info">
-                        <div class="user-callsign">${esc(u.callsign)}</div>
-                        <div class="user-email">${esc(u.email)}</div>
-                        <div class="user-date">Registered: ${new Date(u.registeredAt).toLocaleDateString()}</div>
-                    </div>
-                    <div class="user-actions">
-                        <button class="action-btn approve-btn" onclick="approveUser('${u.uid}','${esc(u.callsign)}')">APPROVE</button>
-                        <button class="action-btn deny-btn" onclick="denyUser('${u.uid}','${esc(u.callsign)}')">DENY</button>
-                    </div>
-                </div>`).join('');
+        // PENDING
+        async function loadPendingUsers(){
+            if(!allUsers.length){const s=await getDocs(query(collection(db,"users"),orderBy("registeredAt","desc")));allUsers=[];s.forEach(d=>allUsers.push({uid:d.id,...d.data()}));}
+            const pend=allUsers.filter(u=>u.status==='pending'),denied=allUsers.filter(u=>u.status==='denied'),c=document.getElementById('registerList');
+            if(!pend.length&&!denied.length){c.innerHTML='<div class="empty-state">NO PENDING OR DENIED</div>';return;}
+            let h='';
+            if(pend.length){h+='<div class="section-label">PENDING APPROVAL</div>';h+=pend.map(u=>`<div class="user-card pending-card"><div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-email">${esc(u.email)}</div><div class="user-date">Registered: ${new Date(u.registeredAt).toLocaleDateString()}</div></div><div class="user-actions"><button class="action-btn approve-btn small" onclick="approveUser('${u.uid}','${esc(u.callsign)}')">APPROVE</button><button class="action-btn deny-btn small" onclick="denyUser('${u.uid}','${esc(u.callsign)}')">DENY</button></div></div>`).join('');}
+            if(denied.length){h+='<div class="section-label" style="margin-top:20px">DENIED</div>';h+=denied.map(u=>`<div class="user-card status-denied"><div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div><div class="user-actions"><button class="action-btn approve-btn small" onclick="approveUser('${u.uid}','${esc(u.callsign)}')">RE-APPROVE</button><button class="action-btn remove-btn small" onclick="removeUser('${u.uid}','${esc(u.callsign)}')">REMOVE</button></div></div>`).join('');}
+            c.innerHTML=h;
         }
 
-        function renderAllUsers(users) {
-            const c = document.getElementById('allUsersList');
-            if (!users.length) { c.innerHTML = '<div class="empty-state">NO USERS</div>'; return; }
-            c.innerHTML = users.map(u => `
-                <div class="user-card status-${u.status}">
-                    <div class="user-info">
-                        <div class="user-callsign">${esc(u.callsign)} <span class="role-badge role-${u.role}">${u.role.toUpperCase().replace('_',' ')}</span></div>
-                        <div class="user-email">${u.firstName ? esc(u.firstName) + ' ' + esc(u.lastName || '') : ''} ${u.email ? '&bull; ' + esc(u.email) : ''}</div>
-                        <div class="user-details">
-                            <div class="user-detail">RANK: <span>${u.rank || 'N/A'}</span></div>
-                            <div class="user-detail">JOINED: <span>${u.joinedAt ? new Date(u.joinedAt).toLocaleDateString() : 'N/A'}</span></div>
-                            <div class="user-detail">REGISTERED: <span>${new Date(u.registeredAt).toLocaleDateString()}</span></div>
-                        </div>
-                        <div class="user-meta">
-                            <span class="status-badge status-${u.status}">${u.status.toUpperCase()}</span>
-                        </div>
-                    </div>
-                    <div class="user-actions">
-                        ${u.role !== 'commander' && u.role !== 'developer' && getPerms().canChangeRoles ? `
-                            <select class="role-select" onchange="changeRole('${u.uid}',this.value)">
-                                ${['marine','nco','recruiter','staff_nco'].map(r => `<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase().replace('_',' ')}</option>`).join('')}
-                            </select>
-                        ` : ''}
-                        ${u.role === 'commander' ? '<span class="commander-tag">COMMANDING OFFICER</span>' : ''}
-                        ${u.role === 'developer' ? '<span class="commander-tag dev-tag">DEVELOPER</span>' : ''}
-                        ${u.status !== 'approved' && getPerms().canApprove ? `<button class="action-btn approve-btn small" onclick="approveUser('${u.uid}','${esc(u.callsign)}')">APPROVE</button>` : ''}
-                        ${u.status !== 'approved' && getPerms().canApprove ? `<button class="action-btn deny-btn small" onclick="denyUser('${u.uid}','${esc(u.callsign)}')">DENY</button>` : ''}
-                        ${u.role !== 'commander' && u.role !== 'developer' && getPerms().canChangeRoles ? `<button class="action-btn remove-btn small" onclick="removeUser('${u.uid}','${esc(u.callsign)}')">REMOVE</button>` : ''}
-                        ${getPerms().canEditProfiles ? `<button class="action-btn small" style="color:var(--accent);border-color:rgba(0,217,255,0.3);" onclick="openEditModal('${u.uid}','${esc(u.callsign)}','${esc(u.firstName||'')}','${esc(u.lastName||'')}','${esc(u.rank||'')}','${u.joinedAt||''}')">EDIT</button>` : ''}
-                    </div>
-                </div>`).join('');
+        // PROMOTE
+        async function loadPromotePanel(){
+            if(!allUsers.length){const s=await getDocs(query(collection(db,"users"),orderBy("registeredAt","desc")));allUsers=[];s.forEach(d=>allUsers.push({uid:d.id,...d.data()}));}
+            const c=document.getElementById('promoteList'),el=allUsers.filter(u=>u.status==='approved'&&u.role!=='commander'&&u.role!=='developer');
+            if(!el.length){c.innerHTML='<div class="empty-state">NO ELIGIBLE PERSONNEL</div>';return;}
+            c.innerHTML=el.map(u=>`<div class="user-card"><div class="user-info"><div class="user-callsign">${esc(u.callsign)} <span class="role-badge role-${u.role}">${u.role.toUpperCase().replace('_',' ')}</span></div><div style="font-size:10px;color:#555;margin-top:4px">Current Rank: <span style="color:var(--accent)">${u.rank||'N/A'}</span></div></div><div class="user-actions">${P().canChangeRoles?`<select class="role-select" onchange="changeRole('${u.uid}',this.value)">${['marine','nco','recruiter','staff_nco'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase().replace('_',' ')}</option>`).join('')}</select>`:''} ${P().canEditProfiles?`<input type="text" class="slot-text-input" style="max-width:160px" placeholder="New rank..." id="rank_${u.uid}" value="${esc(u.rank||'')}"><button class="action-btn approve-btn small" onclick="updateRank('${u.uid}')">SET RANK</button>`:''}</div></div>`).join('');
         }
+        window.updateRank=async function(uid){const r=document.getElementById('rank_'+uid).value.trim();if(!r)return;const u=allUsers.find(x=>x.uid===uid);const rh=u.rankHistory||[];rh.push({rank:r,date:new Date().toISOString(),by:currentUserData.callsign});await updateDoc(doc(db,"users",uid),{rank:r,rankHistory:rh});logAction('PROMOTE',`${u?.callsign}: ${u?.rank||'None'} -> ${r}`);notify('RANK UPDATED');allUsers=[];loadPromotePanel();};
 
-        window.approveUser = async (uid, name) => { if(!confirm(`APPROVE ${name}?`)) return; await updateDoc(doc(db,"users",uid),{status:"approved",approvedBy:currentUserData.callsign,approvedAt:new Date().toISOString()}); notify(`${name} APPROVED`); loadUsers(); };
-        window.denyUser = async (uid, name) => { if(!confirm(`DENY ${name}?`)) return; await updateDoc(doc(db,"users",uid),{status:"denied"}); notify(`${name} DENIED`); loadUsers(); };
-        window.changeRole = async (uid, role) => { await updateDoc(doc(db,"users",uid),{role}); notify(`ROLE: ${role.toUpperCase()}`); loadUsers(); };
-        window.removeUser = async (uid, name) => { if(!confirm(`REMOVE ${name}?`)) return; await deleteDoc(doc(db,"users",uid)); notify(`${name} REMOVED`); loadUsers(); };
+        // USER ACTIONS
+        window.approveUser=async(uid,name)=>{if(!confirm('APPROVE '+name+'?'))return;await updateDoc(doc(db,"users",uid),{status:"approved",approvedBy:currentUserData.callsign,approvedAt:new Date().toISOString()});logAction('APPROVE','Approved '+name);notify(name+' APPROVED');allUsers=[];loadDashboard();};
+        window.denyUser=async(uid,name)=>{if(!confirm('DENY '+name+'?'))return;await updateDoc(doc(db,"users",uid),{status:"denied"});logAction('DENY','Denied '+name);notify(name+' DENIED');allUsers=[];loadDashboard();};
+        window.changeRole=async(uid,role)=>{const u=allUsers.find(x=>x.uid===uid);await updateDoc(doc(db,"users",uid),{role});logAction('ROLE_CHANGE',`${u?.callsign}: ${u?.role} -> ${role}`);notify('ROLE: '+role.toUpperCase());allUsers=[];};
+        window.removeUser=async(uid,name)=>{if(!confirm('REMOVE '+name+'?'))return;await deleteDoc(doc(db,"users",uid));logAction('REMOVE','Removed '+name);notify(name+' REMOVED');allUsers=[];};
+        window.openEditModal=function(uid){const u=allUsers.find(x=>x.uid===uid);if(!u)return;document.getElementById('editUserId').value=uid;document.getElementById('editCallsign').value=u.callsign||'';document.getElementById('editFirstName').value=u.firstName||'';document.getElementById('editLastName').value=u.lastName||'';document.getElementById('editRank').value=u.rank||'';document.getElementById('editJoinedAt').value=u.joinedAt?u.joinedAt.split('T')[0]:'';document.getElementById('editUserModal').classList.add('active');};
+        window.closeEditModal=function(){document.getElementById('editUserModal').classList.remove('active');};
+        window.saveUserEdit=async function(){const uid=document.getElementById('editUserId').value;const u={callsign:document.getElementById('editCallsign').value.trim(),firstName:document.getElementById('editFirstName').value.trim(),lastName:document.getElementById('editLastName').value.trim(),rank:document.getElementById('editRank').value.trim(),joinedAt:document.getElementById('editJoinedAt').value?new Date(document.getElementById('editJoinedAt').value).toISOString():null};await updateDoc(doc(db,"users",uid),u);logAction('EDIT_USER','Edited '+u.callsign);notify('UPDATED');closeEditModal();allUsers=[];loadActivePersonnel();};
 
-        window.switchTab = function(tab) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-            document.getElementById(`panel-tab-${tab}`).classList.remove('hidden');
-        };
+        // MEDIA
+        async function loadAllMedia(){const s=await getDocs(query(collection(db,"media"),orderBy("uploadedAt","desc")));allMedia=[];s.forEach(d=>allMedia.push({id:d.id,...d.data()}));}
+        async function loadGalleryMedia(){await loadAllMedia();const imgs=allMedia.filter(m=>m.type==='image');document.getElementById('galleryCount').textContent=imgs.length;renderMediaGrid('galleryGrid',imgs);}
+        async function loadVideoMedia(){await loadAllMedia();const vids=allMedia.filter(m=>m.type==='video');document.getElementById('videoCount').textContent=vids.length;renderMediaGrid('videoGrid',vids);}
+        function renderMediaGrid(containerId,items){const c=document.getElementById(containerId);if(!items.length){c.innerHTML='<div class="empty-state">NO MEDIA</div>';return;}c.innerHTML=items.map(m=>`<div class="media-card">${m.type==='video'?'<div class="media-thumb video-thumb"><span>&#9654;</span></div>':`<div class="media-thumb" style="background-image:url('${m.url}')"></div>`}<div class="media-info"><div class="media-name">${esc(m.name)}</div>${m.description?`<div class="media-desc">${esc(m.description)}</div>`:''}<div class="media-meta">${m.category.toUpperCase()}</div></div><div class="media-actions"><a href="${m.url}" target="_blank" class="action-btn approve-btn small">VIEW</a><button class="action-btn remove-btn small" onclick="deleteMedia('${m.id}')">DELETE</button></div></div>`).join('');}
 
-        // ==========================================
-        // MEDIA LIBRARY (Cloudinary + Firestore)
-        // ==========================================
-        window.handleFileUpload = async function() {
-            const fileInput = document.getElementById('mediaFileInput');
-            const files = fileInput.files;
-            if (!files.length) { notify('SELECT FILES FIRST', true); return; }
+        window.handleUpload=async function(type){const sfx=type==='video'?'Vid':'Img';const fi=document.getElementById('upload'+sfx+'File');if(!fi.files.length){notify('SELECT FILES',1);return;}const cat=document.getElementById('upload'+sfx+'Cat').value,desc=document.getElementById('upload'+sfx+'Desc').value.trim(),btn=document.getElementById('upload'+sfx+'Btn');btn.disabled=1;btn.textContent='UPLOADING...';let n=0;for(const f of fi.files){try{const fd=new FormData();fd.append('file',f);fd.append('upload_preset',UPLOAD_PRESET);fd.append('api_key',CLOUDINARY_API_KEY);const rt=f.type.startsWith('video/')?'video':'image';const r=await(await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${rt}/upload`,{method:'POST',body:fd})).json();if(r.error)throw new Error(r.error.message);await setDoc(doc(db,"media",`media_${Date.now()}_${Math.random().toString(36).substr(2,5)}`),{name:f.name,description:desc,url:r.secure_url,publicId:r.public_id,type:rt,format:r.format,width:r.width||null,height:r.height||null,size:r.bytes,category:cat,uploadedBy:currentUserData.callsign,uploadedAt:new Date().toISOString()});n++;}catch(e){notify('FAILED: '+f.name,1);}}btn.disabled=0;btn.textContent='UPLOAD';fi.value='';document.getElementById('upload'+sfx+'Desc').value='';logAction('UPLOAD',`Uploaded ${n} ${type}(s)`);notify(n+' FILE(S) UPLOADED');if(type==='video')loadVideoMedia();else loadGalleryMedia();};
+        window.deleteMedia=async function(id){if(!confirm('DELETE?'))return;await deleteDoc(doc(db,"media",id));logAction('DELETE_MEDIA','Deleted '+id);notify('DELETED');allMedia=[];};
 
-            const category = document.getElementById('mediaCategory').value;
-            const btn = document.getElementById('mediaUploadBtn');
-            const progress = document.getElementById('mediaProgress');
-            btn.disabled = true;
-            btn.textContent = 'UPLOADING...';
-            progress.classList.remove('hidden');
+        // PAGE CONTENT
+        async function loadPageContent(){try{const d=await getDoc(doc(db,"settings","page_content"));pageContentData=d.exists()?d.data():{};}catch(e){pageContentData={};}if(!allMedia.length)await loadAllMedia();document.querySelectorAll('.page-editor-container').forEach(el=>{const pg=el.dataset.page;if(pg&&PAGE_SLOTS[pg])renderPageSlots(el,pg);});}
+        function renderPageSlots(c,pid){const cfg=PAGE_SLOTS[pid];let h='';cfg.slots.forEach(s=>{const k=`${pid}__${s.id}`,v=pageContentData[k]||null;h+=`<div class="editor-slot"><div class="editor-slot-label">${s.label}</div>${s.description?`<div class="editor-slot-desc">${s.description}</div>`:''}<div class="editor-slot-preview">`;if(v){if(s.type==='image')h+=`<img src="${v.url}"><div class="preview-name">${esc(v.name||'')}</div>`;else h+=`<div class="preview-text">${esc(typeof v==='string'?v:v.text||v.url||'')}</div>`;}else h+='<div class="preview-empty">NOT SET</div>';h+='</div><div class="editor-slot-actions">';if(s.type==='image')h+=`<button class="action-btn approve-btn small" onclick="pickMedia('${k}','image')">SELECT IMAGE</button>`;else h+=`<input type="text" class="slot-text-input" id="input_${k}" placeholder="Enter text..." value="${v?esc(typeof v==='string'?v:v.text||v.url||''):''}"><button class="action-btn approve-btn small" onclick="saveSlotText('${k}')">SAVE</button>`;if(v)h+=`<button class="action-btn remove-btn small" onclick="clearSlot('${k}')">CLEAR</button>`;h+='</div></div>';});c.innerHTML=h;}
+        window.pickMedia=function(sk,t){const m=document.getElementById('mediaPickerModal'),g=document.getElementById('pickerGrid');m.classList.add('active');m.dataset.slotKey=sk;const f=allMedia.filter(x=>x.type===t);if(!f.length){g.innerHTML='<div class="empty-state">NO IMAGES</div>';return;}g.innerHTML=f.map(x=>`<div class="picker-item" onclick="selectMedia('${x.id}')"><div class="picker-thumb" style="background-image:url('${x.url}')"></div><div class="picker-name">${esc(x.name)}</div></div>`).join('');};
+        window.closeMediaPicker=function(){document.getElementById('mediaPickerModal').classList.remove('active');};
+        window.selectMedia=async function(mid){const m=document.getElementById('mediaPickerModal'),sk=m.dataset.slotKey,media=allMedia.find(x=>x.id===mid);if(!media)return;pageContentData[sk]={url:media.url,name:media.name,mediaId:media.id};await setDoc(doc(db,"settings","page_content"),pageContentData);logAction('ASSIGN','Assigned '+media.name+' to '+sk);notify('ASSIGNED');loadPageContent();closeMediaPicker();};
+        window.saveSlotText=async function(sk){const v=document.getElementById('input_'+sk).value.trim();if(!v)return;pageContentData[sk]={url:v,text:v};await setDoc(doc(db,"settings","page_content"),pageContentData);notify('SAVED');loadPageContent();};
+        window.clearSlot=async function(sk){if(!confirm('Clear?'))return;delete pageContentData[sk];await setDoc(doc(db,"settings","page_content"),pageContentData);notify('CLEARED');loadPageContent();};
 
-            let uploaded = 0;
-            for (const file of files) {
-                try {
-                    progress.textContent = `UPLOADING ${uploaded+1}/${files.length}: ${file.name}`;
+        // SITE SETTINGS
+        async function loadSiteSettings(){try{const d=await getDoc(doc(db,"settings","site"));const s=d.exists()?d.data():{};const i=document.getElementById('discordLinkInput');if(i&&s.discord_invite)i.value=s.discord_invite;const c=document.getElementById('currentDiscordLink');if(c){c.textContent=s.discord_invite||'NOT SET';c.href=s.discord_invite||'#';}}catch(e){}}
+        window.saveDiscordLink=async function(){const u=document.getElementById('discordLinkInput').value.trim();if(!u||!u.includes('discord')){notify('INVALID',1);return;}const d=await getDoc(doc(db,"settings","site"));let s=d.exists()?d.data():{};s.discord_invite=u;await setDoc(doc(db,"settings","site"),s);logAction('DISCORD','Updated Discord link');notify('DISCORD LINK UPDATED');loadSiteSettings();};
 
-                    // Upload to Cloudinary
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    formData.append('upload_preset', UPLOAD_PRESET);
-                    formData.append('api_key', CLOUDINARY_API_KEY);
+        // PAGE MANAGER
+        async function loadPages(){const c=document.getElementById('pagesList');let ps={};try{const d=await getDoc(doc(db,"settings","pages"));if(d.exists())ps=d.data();}catch(e){}const sec={main:'MAIN',about:'ABOUT US',media:'MEDIA',resources:'RESOURCES'};let h='';for(const[sk,sn]of Object.entries(sec)){h+=`<div class="section-label">${sn}</div>`;sitePages.filter(p=>p.section===sk).forEach(p=>{const on=ps[p.id]!==false;h+=`<div class="page-item ${on?'':'page-disabled'}"><div><div style="color:#ccc;font-size:12px">${p.name}</div><div style="color:#444;font-size:9px">${p.file}</div></div><div style="display:flex;gap:10px;align-items:center"><a href="${p.file}" target="_blank" class="action-btn approve-btn small">OPEN</a><label class="toggle-switch"><input type="checkbox" ${on?'checked':''} onchange="togglePage('${p.id}',this.checked)"><span class="toggle-slider"></span></label></div></div>`;});}c.innerHTML=h;}
+        window.togglePage=async function(id,on){const d=await getDoc(doc(db,"settings","pages"));let ps=d.exists()?d.data():{};ps[id]=on;await setDoc(doc(db,"settings","pages"),ps);logAction('TOGGLE_PAGE',id+': '+(on?'enabled':'disabled'));notify('PAGE '+(on?'ENABLED':'DISABLED'));loadPages();};
 
-                    const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
-                    const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
-                    console.log('Uploading to:', uploadUrl, 'Preset:', UPLOAD_PRESET, 'File:', file.name, 'Type:', file.type);
+        // AUDIT LOG
+        async function loadAuditLog(){const c=document.getElementById('auditList');c.innerHTML='<div class="empty-state">LOADING...</div>';try{const s=await getDocs(query(collection(db,"audit_log"),orderBy("timestamp","desc")));const logs=[];s.forEach(d=>logs.push(d.data()));if(!logs.length){c.innerHTML='<div class="empty-state">NO ENTRIES</div>';return;}c.innerHTML=logs.slice(0,100).map(l=>`<div class="audit-entry"><div class="audit-time">${new Date(l.timestamp).toLocaleString()}</div><div class="audit-user"><span class="role-badge role-${l.userRole}">${l.userRole.toUpperCase().replace('_',' ')}</span> ${esc(l.userCallsign)}</div><div class="audit-action">${esc(l.action)}</div><div class="audit-details">${esc(l.details)}</div></div>`).join('');}catch(e){c.innerHTML='<div class="empty-state">ERROR: '+e.message+'</div>';}}
 
-                    const resp = await fetch(uploadUrl, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const result = await resp.json();
-                    console.log('Cloudinary response:', result);
-
-                    if (result.error) throw new Error(result.error.message);
-                    if (!result.secure_url) throw new Error('No URL returned - check preset name and cloud name');
-
-                    // Save to Firestore
-                    const desc = document.getElementById('mediaDescription').value.trim();
-                    const docId = `media_${Date.now()}_${Math.random().toString(36).substr(2,5)}`;
-                    await setDoc(doc(db, "media", docId), {
-                        name: file.name,
-                        description: desc,
-                        url: result.secure_url,
-                        publicId: result.public_id,
-                        type: resourceType,
-                        format: result.format,
-                        width: result.width || null,
-                        height: result.height || null,
-                        size: result.bytes,
-                        category: category,
-                        uploadedBy: currentUserData.callsign,
-                        uploadedAt: new Date().toISOString()
-                    });
-                    uploaded++;
-                } catch (err) {
-                    console.error('Upload error:', err);
-                    notify(`FAILED: ${file.name} - ${err.message}`, true);
-                    progress.textContent = `ERROR: ${err.message}`;
-                }
-            }
-
-            btn.disabled = false;
-            btn.textContent = 'UPLOAD';
-            fileInput.value = '';
-            document.getElementById('mediaDescription').value = '';
-            progress.classList.add('hidden');
-            notify(`${uploaded} FILE(S) UPLOADED`);
-            loadMediaLibrary();
-        };
-
-        let allMedia = [];
-        async function loadMediaLibrary() {
-            const container = document.getElementById('mediaGrid');
-            container.innerHTML = '<div class="empty-state">LOADING...</div>';
-
-            try {
-                const snapshot = await getDocs(query(collection(db, "media"), orderBy("uploadedAt", "desc")));
-                allMedia = [];
-                snapshot.forEach(d => allMedia.push({ id: d.id, ...d.data() }));
-
-                document.getElementById('mediaCount').textContent = allMedia.length;
-                renderMediaGrid(allMedia);
-            } catch (err) {
-                container.innerHTML = `<div class="empty-state">ERROR: ${err.message}</div>`;
-            }
-        }
-
-        function renderMediaGrid(items) {
-            const container = document.getElementById('mediaGrid');
-            if (!items.length) { container.innerHTML = '<div class="empty-state">NO MEDIA UPLOADED</div>'; return; }
-
-            container.innerHTML = items.map(m => `
-                <div class="media-card" data-id="${m.id}">
-                    ${m.type === 'video'
-                        ? `<div class="media-thumb video-thumb"><span>&#9654;</span></div>`
-                        : `<div class="media-thumb" style="background-image:url('${m.url}')"></div>`
-                    }
-                    <div class="media-info">
-                        <div class="media-name" title="${esc(m.name)}">${esc(m.name)}</div>
-                        ${m.description ? `<div class="media-desc" style="color:#888;font-size:9px;margin-top:2px;letter-spacing:0.5px;">${esc(m.description)}</div>` : ''}
-                        <div class="media-meta">${m.category.toUpperCase()} &bull; ${m.type.toUpperCase()}</div>
-                    </div>
-                    <div class="media-actions">
-                        <a href="${m.url}" target="_blank" class="action-btn approve-btn small">VIEW</a>
-                        <button class="action-btn remove-btn small" onclick="deleteMedia('${m.id}')">DELETE</button>
-                    </div>
-                </div>`).join('');
-        }
-
-        window.filterMedia = function(category) {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-            if (category === 'all') renderMediaGrid(allMedia);
-            else renderMediaGrid(allMedia.filter(m => m.category === category));
-        };
-
-        window.deleteMedia = async function(docId) {
-            if (!confirm('DELETE this media?')) return;
-            try {
-                await deleteDoc(doc(db, "media", docId));
-                notify('MEDIA DELETED');
-                loadMediaLibrary();
-            } catch (err) { notify('ERROR: ' + err.message, true); }
-        };
-
-        // ==========================================
-        // PAGE CONTENT EDITOR
-        // ==========================================
-        let pageContentData = {};
-
-        async function loadPageContent() {
-            try {
-                const d = await getDoc(doc(db, "settings", "page_content"));
-                pageContentData = d.exists() ? d.data() : {};
-            } catch (err) { pageContentData = {}; }
-            renderPageEditor();
-        }
-
-        function renderPageEditor() {
-            const container = document.getElementById('pageEditorList');
-            let html = '';
-
-            for (const [pageId, pageConfig] of Object.entries(PAGE_SLOTS)) {
-                if (!pageConfig.slots.length) continue;
-
-                html += `<div class="editor-page-section">
-                    <div class="editor-page-header">${pageConfig.name}</div>`;
-
-                pageConfig.slots.forEach(slot => {
-                    const slotKey = `${pageId}__${slot.id}`;
-                    const currentValue = pageContentData[slotKey] || null;
-
-                    html += `<div class="editor-slot">
-                        <div class="editor-slot-info">
-                            <div class="editor-slot-label">${slot.label}</div>
-                            <div class="editor-slot-desc">${slot.description}</div>
-                        </div>
-                        <div class="editor-slot-preview" id="preview_${slotKey}">`;
-
-                    if (currentValue) {
-                        if (slot.type === 'image') {
-                            html += `<img src="${currentValue.url}" alt="${slot.label}"><div class="preview-name">${esc(currentValue.name || '')}</div>`;
-                        } else if (slot.type === 'video') {
-                            html += `<div class="preview-video-url">${esc(currentValue.url || currentValue)}</div>`;
-                        } else if (slot.type === 'text') {
-                            html += `<div class="preview-text">${esc(typeof currentValue === 'string' ? currentValue : currentValue.text || '')}</div>`;
-                        }
-                    } else {
-                        html += `<div class="preview-empty">NOT SET</div>`;
-                    }
-
-                    html += `</div><div class="editor-slot-actions">`;
-
-                    if (slot.type === 'image') {
-                        html += `<button class="action-btn approve-btn small" onclick="pickMedia('${slotKey}','image')">SELECT FROM LIBRARY</button>`;
-                    } else if (slot.type === 'video') {
-                        html += `<input type="text" class="slot-text-input" id="input_${slotKey}" placeholder="YouTube/Twitch URL..." value="${currentValue ? esc(typeof currentValue === 'string' ? currentValue : currentValue.url || '') : ''}">
-                            <button class="action-btn approve-btn small" onclick="saveSlotText('${slotKey}')">SAVE</button>`;
-                    } else if (slot.type === 'text') {
-                        html += `<input type="text" class="slot-text-input" id="input_${slotKey}" placeholder="Enter text..." value="${currentValue ? esc(typeof currentValue === 'string' ? currentValue : currentValue.text || '') : ''}">
-                            <button class="action-btn approve-btn small" onclick="saveSlotText('${slotKey}')">SAVE</button>`;
-                    }
-
-                    if (currentValue) {
-                        html += `<button class="action-btn remove-btn small" onclick="clearSlot('${slotKey}')">CLEAR</button>`;
-                    }
-
-                    html += `</div></div>`;
-                });
-
-                html += `</div>`;
-            }
-
-            container.innerHTML = html;
-        }
-
-        // Media picker modal
-        window.pickMedia = function(slotKey, type) {
-            const modal = document.getElementById('mediaPickerModal');
-            const grid = document.getElementById('pickerGrid');
-            modal.classList.add('active');
-            modal.dataset.slotKey = slotKey;
-
-            const filtered = allMedia.filter(m => m.type === type);
-            if (!filtered.length) {
-                grid.innerHTML = '<div class="empty-state">NO ' + type.toUpperCase() + 'S IN LIBRARY. UPLOAD SOME FIRST.</div>';
-                return;
-            }
-
-            grid.innerHTML = filtered.map(m => `
-                <div class="picker-item" onclick="selectMedia('${m.id}')">
-                    <div class="picker-thumb" style="background-image:url('${m.url}')"></div>
-                    <div class="picker-name">${esc(m.name)}</div>
-                </div>`).join('');
-        };
-
-        window.closeMediaPicker = function() {
-            document.getElementById('mediaPickerModal').classList.remove('active');
-        };
-
-        window.selectMedia = async function(mediaId) {
-            const modal = document.getElementById('mediaPickerModal');
-            const slotKey = modal.dataset.slotKey;
-            const media = allMedia.find(m => m.id === mediaId);
-            if (!media) return;
-
-            try {
-                pageContentData[slotKey] = { url: media.url, name: media.name, mediaId: media.id };
-                await setDoc(doc(db, "settings", "page_content"), pageContentData);
-                notify('CONTENT ASSIGNED');
-                renderPageEditor();
-                closeMediaPicker();
-            } catch (err) { notify('ERROR: ' + err.message, true); }
-        };
-
-        window.saveSlotText = async function(slotKey) {
-            const input = document.getElementById(`input_${slotKey}`);
-            const value = input.value.trim();
-            if (!value) { notify('ENTER A VALUE', true); return; }
-
-            try {
-                pageContentData[slotKey] = { url: value, text: value };
-                await setDoc(doc(db, "settings", "page_content"), pageContentData);
-                notify('SAVED');
-                renderPageEditor();
-            } catch (err) { notify('ERROR: ' + err.message, true); }
-        };
-
-        window.clearSlot = async function(slotKey) {
-            if (!confirm('CLEAR this content slot?')) return;
-            try {
-                delete pageContentData[slotKey];
-                await setDoc(doc(db, "settings", "page_content"), pageContentData);
-                notify('SLOT CLEARED');
-                renderPageEditor();
-            } catch (err) { notify('ERROR: ' + err.message, true); }
-        };
-
-        // ==========================================
-        // SITE SETTINGS (Discord link etc)
-        // ==========================================
-        async function loadSiteSettings() {
-            try {
-                const d = await getDoc(doc(db, "settings", "site"));
-                const settings = d.exists() ? d.data() : {};
-                const discordInput = document.getElementById('discordLinkInput');
-                if (discordInput && settings.discord_invite) {
-                    discordInput.value = settings.discord_invite;
-                }
-                const currentLink = document.getElementById('currentDiscordLink');
-                if (currentLink) {
-                    currentLink.textContent = settings.discord_invite || 'NOT SET';
-                    currentLink.href = settings.discord_invite || '#';
-                }
-            } catch (err) { console.error('Settings load error:', err); }
-        }
-
-        window.saveDiscordLink = async function() {
-            const url = document.getElementById('discordLinkInput').value.trim();
-            if (!url) { notify('ENTER A DISCORD LINK', true); return; }
-            if (!url.includes('discord')) { notify('INVALID DISCORD URL', true); return; }
-            try {
-                const d = await getDoc(doc(db, "settings", "site"));
-                let settings = d.exists() ? d.data() : {};
-                settings.discord_invite = url;
-                await setDoc(doc(db, "settings", "site"), settings);
-                notify('DISCORD LINK UPDATED - ALL PAGES WILL USE NEW LINK');
-                loadSiteSettings();
-            } catch (err) { notify('ERROR: ' + err.message, true); }
-        };
-
-        // ==========================================
-        // PAGE MANAGER (enable/disable)
-        // ==========================================
-        const sitePages = [
-            { id: 'home', file: 'home.html', name: 'Home Page', section: 'main' },
-            { id: 'about-505th', file: 'about-505th.html', name: '505th Expeditionary Force', section: 'about' },
-            { id: 'about-alpha', file: 'about-alpha-company.html', name: 'Alpha Company', section: 'about' },
-            { id: 'about-stalker', file: 'about-stalker.html', name: 'JTF-23 Force Recon', section: 'about' },
-            { id: 'about-corpsman', file: 'about-corpsman.html', name: 'Hospital Corpsman', section: 'about' },
-            { id: 'about-54th', file: 'about-54th-air-wing.html', name: '54th Air Wing', section: 'about' },
-            { id: 'media-gallery', file: 'media-gallery.html', name: 'Gallery', section: 'media' },
-            { id: 'media-videos', file: 'media-videos.html', name: 'Videos', section: 'media' },
-            { id: 'resources-rules', file: 'resources-discord-rules.html', name: 'Discord Rules', section: 'resources' },
-            { id: 'resources-handbook', file: 'resources-handbook.html', name: 'General Handbook', section: 'resources' },
-            { id: 'resources-roster', file: 'resources-roster.html', name: 'Roster', section: 'resources' },
-            { id: 'resources-roadmap', file: 'resources-roadmap.html', name: 'Development Roadmap', section: 'resources' }
-        ];
-
-        async function loadPages() {
-            const container = document.getElementById('pagesList');
-            let pageSettings = {};
-            try { const d = await getDoc(doc(db,"settings","pages")); if(d.exists()) pageSettings = d.data(); } catch(e){}
-            const sections = { main:'MAIN', about:'ABOUT US', media:'MEDIA', resources:'RESOURCES' };
-            let html = '';
-            for (const [sk,sn] of Object.entries(sections)) {
-                html += `<div class="page-section-header">${sn}</div>`;
-                sitePages.filter(p=>p.section===sk).forEach(p => {
-                    const on = pageSettings[p.id] !== false;
-                    html += `<div class="page-item ${on?'':'page-disabled'}">
-                        <div class="page-info"><div class="page-name">${p.name}</div><div class="page-file">${p.file}</div></div>
-                        <div class="page-actions">
-                            <a href="${p.file}" target="_blank" class="action-btn approve-btn small">OPEN</a>
-                            <label class="toggle-switch"><input type="checkbox" ${on?'checked':''} onchange="togglePage('${p.id}',this.checked)"><span class="toggle-slider"></span></label>
-                        </div>
-                    </div>`;
-                });
-            }
-            container.innerHTML = html;
-        }
-
-        window.togglePage = async function(id, on) {
-            try {
-                const d = await getDoc(doc(db,"settings","pages"));
-                let s = d.exists() ? d.data() : {};
-                s[id] = on;
-                await setDoc(doc(db,"settings","pages"), s);
-                notify(`${id.toUpperCase()} ${on?'ENABLED':'DISABLED'}`);
-                loadPages();
-            } catch(e){ notify('ERROR: '+e.message, true); }
-        };
-
-        // ==========================================
-        // HELPERS
-        // ==========================================
-        window.handleLogout = async () => { await signOut(auth); window.location.href = 'home.html'; };
-
-        function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
-
-        function notify(msg, err=false) {
-            const n = document.getElementById('notification');
-            n.textContent = msg;
-            n.className = 'notification show' + (err ? ' error' : '');
-            setTimeout(() => n.classList.remove('show'), err ? 8000 : 3000);
-        }
+        function notify(m,err){const n=document.getElementById('notification');n.textContent=m;n.className='notification show'+(err?' error':'');setTimeout(()=>n.className='notification',3000);}
     </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
-        :root {
-            --accent: #00D9FF;
-            --accent-glow: rgba(0, 217, 255, 0.5);
-            --bg-dark: #0A0E12;
-            --primary: #4A5D23;
-            --success: #00FF41;
-        }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            font-family:'Share Tech Mono',monospace;
-            background: linear-gradient(180deg, #0A0E12 0%, #050709 100%);
-            color:#a0a0a0;
-            min-height:100vh;
-            display:flex;
-            flex-direction:column;
-        }
-        /* Tactical grid */
-        body::before {
-            content:'';
-            position:fixed; top:0;left:0;right:0;bottom:0;
-            background-image:
-                repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(0,217,255,0.03) 50px, rgba(0,217,255,0.03) 51px),
-                repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(0,217,255,0.03) 50px, rgba(0,217,255,0.03) 51px);
-            opacity:0.3;
-            pointer-events:none;
-            z-index:0;
-        }
-        /* Scanlines */
-        .scanlines {
-            position:fixed; top:0;left:0; width:100%;height:100%;
-            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.12), rgba(0,0,0,0.12) 1px, transparent 1px, transparent 2px);
-            pointer-events:none;
-            z-index:9999;
-        }
-        .hidden { display:none !important; }
-        .loading-screen {
-            display:flex; justify-content:center; align-items:center; height:100vh;
-            color:var(--accent); font-size:14px; letter-spacing:4px;
-            position:relative; z-index:10;
-        }
-        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
-
-        /* TOP BAR */
-        .top-bar {
-            background:rgba(8,10,14,0.92);
-            border-bottom:1px solid rgba(0,217,255,0.1);
-            padding:12px 20px;
-            display:flex; justify-content:space-between; align-items:center;
-            position:sticky; top:0; z-index:100;
-            backdrop-filter:blur(10px);
-        }
-        .top-bar-left { display:flex; align-items:center; gap:12px; }
-        .hamburger { display:none; background:none; border:1px solid rgba(0,217,255,0.2); color:var(--accent); font-size:20px; width:38px; height:38px; cursor:pointer; }
-        .hamburger:hover { border-color:var(--accent); box-shadow:0 0 10px var(--accent-glow); }
-        .top-bar-left img { width:32px; height:32px; filter:drop-shadow(0 0 8px var(--accent-glow)); }
-        .top-bar-title { font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:16px; font-weight:700; letter-spacing:3px; text-shadow:0 0 10px var(--accent-glow); }
-        .top-bar-right { display:flex; align-items:center; gap:12px; }
-        .user-identity { text-align:right; }
-        #commanderName { color:#ccc; font-size:12px; letter-spacing:1px; }
-        #commanderRole { color:#f59e0b; font-size:9px; letter-spacing:3px; }
-        .top-btn {
-            background:transparent; border:1px solid rgba(0,217,255,0.2); color:#666;
-            font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:2px;
-            padding:7px 14px; cursor:pointer; transition:all 0.3s;
-            text-decoration:none; display:inline-flex; align-items:center; gap:6px;
-        }
-        .home-btn:hover { border-color:var(--accent); color:var(--accent); box-shadow:0 0 15px rgba(0,217,255,0.15); }
-        .logout-btn:hover { border-color:#ef4444; color:#ef4444; box-shadow:0 0 15px rgba(239,68,68,0.15); }
-
-        /* LAYOUT */
-        .app-layout { display:flex; flex:1; min-height:calc(100vh - 58px); position:relative; z-index:1; }
-        .sidebar-overlay { display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.7); z-index:49; }
-        .sidebar {
-            width:220px;
-            background:rgba(8,10,14,0.95);
-            border-right:1px solid rgba(0,217,255,0.08);
-            padding:20px 0;
-            flex-shrink:0;
-            overflow-y:auto;
-            position:sticky; top:58px; height:calc(100vh - 58px);
-            backdrop-filter:blur(8px);
-        }
-        .sidebar-section { padding:0 16px; margin-bottom:20px; }
-        .sidebar-label { color:rgba(0,217,255,0.3); font-size:9px; letter-spacing:3px; margin-bottom:8px; padding-left:4px; }
-        .sidebar-link {
-            display:flex; align-items:center; gap:10px;
-            padding:10px 12px; color:#555; font-size:12px; letter-spacing:1px;
-            cursor:pointer; transition:all 0.2s;
-            border-left:2px solid transparent; margin-bottom:2px; text-decoration:none;
-        }
-        .sidebar-link:hover { color:#999; background:rgba(0,217,255,0.03); }
-        .sidebar-link.active { color:var(--accent); border-left-color:var(--accent); background:rgba(0,217,255,0.06); text-shadow:0 0 8px var(--accent-glow); }
-        .sidebar-icon { font-size:14px; width:20px; text-align:center; }
-        .sidebar-badge { margin-left:auto; background:#f59e0b; color:#000; font-size:9px; font-weight:bold; padding:1px 6px; border-radius:2px; min-width:18px; text-align:center; }
-
-        /* MAIN */
-        .main-content { flex:1; padding:24px; overflow-y:auto; display:flex; gap:24px; }
-        .panel-title {
-            font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:20px;
-            font-weight:700; letter-spacing:3px; margin-bottom:20px; padding-bottom:10px;
-            border-bottom:1px solid rgba(0,217,255,0.12);
-            text-shadow:0 0 10px var(--accent-glow);
-        }
-
-        /* TWO COLUMN LAYOUT */
-        .content-left { flex:1; min-width:0; }
-        .content-right { width:320px; flex-shrink:0; }
-        .info-panel {
-            background:rgba(8,10,14,0.8); border:1px solid rgba(0,217,255,0.1);
-            padding:20px; backdrop-filter:blur(4px); position:sticky; top:82px;
-        }
-        .info-panel-title {
-            font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:14px;
-            font-weight:700; letter-spacing:3px; margin-bottom:16px; padding-bottom:8px;
-            border-bottom:1px solid rgba(0,217,255,0.12); text-shadow:0 0 10px var(--accent-glow);
-        }
-        .role-info-item { margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.03); }
-        .role-info-item:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
-        .role-info-name { font-size:11px; letter-spacing:2px; font-weight:700; margin-bottom:6px; }
-        .role-info-perms { font-size:9px; letter-spacing:1px; color:#555; line-height:1.8; }
-        .role-info-perms .perm-yes { color:var(--success); }
-        .role-info-perms .perm-no { color:#ef4444; }
-
-        /* USER DETAIL FIELDS */
-        .user-details { display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:6px; }
-        .user-detail { font-size:9px; letter-spacing:1px; color:#555; }
-        .user-detail span { color:#888; }
-        .user-detail-edit {
-            background:none; border:none; color:var(--accent); cursor:pointer;
-            font-size:9px; letter-spacing:2px; font-family:'Share Tech Mono',monospace;
-            padding:2px 6px; margin-left:4px; opacity:0.5; transition:all 0.2s;
-        }
-        .user-detail-edit:hover { opacity:1; text-shadow:0 0 8px var(--accent-glow); }
-
-        /* EDIT MODAL */
-        .edit-modal {
-            position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.88);
-            z-index:300; display:flex; align-items:center; justify-content:center;
-            opacity:0; visibility:hidden; transition:all 0.3s;
-        }
-        .edit-modal.active { opacity:1; visibility:visible; }
-        .edit-modal-content {
-            background:rgba(8,10,14,0.97); border:1px solid var(--accent);
-            max-width:500px; width:95%; padding:24px; box-shadow:0 0 40px var(--accent-glow);
-        }
-        .edit-modal-title {
-            font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:16px;
-            font-weight:700; letter-spacing:3px; margin-bottom:20px;
-        }
-        .edit-field { margin-bottom:12px; }
-        .edit-field label {
-            display:block; color:#555; font-size:9px; letter-spacing:2px; margin-bottom:4px;
-        }
-        .edit-field input, .edit-field select {
-            width:100%; padding:9px; background:rgba(0,0,0,0.6);
-            border:1px solid rgba(0,217,255,0.1); color:#ccc;
-            font-family:'Share Tech Mono',monospace; font-size:11px; outline:none;
-        }
-        .edit-field input:focus, .edit-field select:focus {
-            border-color:var(--accent); box-shadow:0 0 10px rgba(0,217,255,0.1);
-        }
-        .edit-modal-actions { display:flex; gap:10px; margin-top:20px; }
-
-        /* STATS */
-        .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
-        .stat-card {
-            background:rgba(8,10,14,0.8);
-            border:1px solid rgba(0,217,255,0.1);
-            padding:16px; text-align:center;
-            backdrop-filter:blur(4px);
-            transition:all 0.3s;
-        }
-        .stat-card:hover { border-color:rgba(0,217,255,0.3); box-shadow:0 0 20px rgba(0,217,255,0.08); }
-        .stat-number { font-family:'Rajdhani',sans-serif; font-size:32px; font-weight:700; color:var(--accent); line-height:1; text-shadow:0 0 15px var(--accent-glow); }
-        .stat-number.warning { color:#f59e0b; text-shadow:0 0 15px rgba(245,158,11,0.4); }
-        .stat-label { font-size:9px; letter-spacing:3px; color:#555; margin-top:4px; }
-
-        /* TABS */
-        .tabs { display:flex; margin-bottom:20px; border-bottom:1px solid rgba(0,217,255,0.1); }
-        .tab-btn {
-            background:transparent; border:none; border-bottom:2px solid transparent;
-            color:#555; font-family:'Share Tech Mono',monospace; font-size:11px;
-            letter-spacing:2px; padding:10px 20px; cursor:pointer; transition:all 0.3s;
-        }
-        .tab-btn:hover { color:#888; }
-        .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); text-shadow:0 0 8px var(--accent-glow); }
-
-        /* USER CARDS */
-        .user-card {
-            background:rgba(8,10,14,0.8);
-            border:1px solid rgba(0,217,255,0.08);
-            border-left:3px solid #333;
-            padding:14px 16px; margin-bottom:8px;
-            display:flex; justify-content:space-between; align-items:center;
-            flex-wrap:wrap; gap:10px; transition:all 0.3s;
-            backdrop-filter:blur(4px);
-        }
-        .user-card:hover { background:rgba(12,14,18,0.9); border-left-color:var(--accent); box-shadow:0 0 15px rgba(0,217,255,0.05); }
-        .pending-card,.status-pending { border-left-color:#f59e0b; }
-        .status-approved { border-left-color:var(--success); }
-        .status-denied { border-left-color:#ef4444; }
-        .user-callsign { color:#ccc; font-size:13px; letter-spacing:1px; display:flex; align-items:center; gap:8px; }
-        .user-email { color:#555; font-size:10px; margin-top:2px; }
-        .user-meta { display:flex; align-items:center; gap:10px; margin-top:4px; }
-        .user-date { color:#444; font-size:9px; letter-spacing:1px; }
-        .role-badge { font-size:8px; letter-spacing:2px; padding:1px 6px; border:1px solid #333; color:#888; }
-        .role-commander { color:#f59e0b; border-color:#f59e0b; }
-        .role-developer { color:#a78bfa; border-color:#a78bfa; }
-        .role-staff_nco { color:#2DD4BF; border-color:#2DD4BF; }
-        .role-recruiter { color:#fb923c; border-color:#fb923c; }
-        .role-nco { color:#34d399; border-color:#34d399; }
-        .role-marine { color:#94a3b8; border-color:#94a3b8; }
-        .status-badge { font-size:8px; letter-spacing:2px; padding:1px 6px; }
-        .status-badge.status-pending { color:#f59e0b; border:1px solid #f59e0b; }
-        .status-badge.status-approved { color:var(--success); border:1px solid var(--success); }
-        .status-badge.status-denied { color:#ef4444; border:1px solid #ef4444; }
-        .user-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
-        .action-btn {
-            font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:700; letter-spacing:2px;
-            padding:8px 16px; border:1px solid; background:transparent;
-            cursor:pointer; transition:all 0.3s; text-decoration:none; display:inline-block;
-        }
-        .action-btn.small { padding:5px 10px; font-size:9px; }
-        .approve-btn { color:var(--success); border-color:var(--success); }
-        .approve-btn:hover { background:rgba(0,255,65,0.1); box-shadow:0 0 15px rgba(0,255,65,0.15); }
-        .deny-btn { color:#ef4444; border-color:#ef4444; }
-        .deny-btn:hover { background:rgba(239,68,68,0.1); box-shadow:0 0 15px rgba(239,68,68,0.15); }
-        .remove-btn { color:#666; border-color:#333; }
-        .remove-btn:hover { color:#ef4444; border-color:#ef4444; }
-        .role-select { background:rgba(0,0,0,0.6); border:1px solid rgba(0,217,255,0.15); color:#ccc; font-family:'Share Tech Mono',monospace; font-size:10px; padding:5px 8px; cursor:pointer; outline:none; }
-        .role-select:focus { border-color:var(--accent); }
-        .commander-tag { color:#f59e0b; font-size:9px; letter-spacing:2px; }
-        .commander-tag.dev-tag { color:#a78bfa; }
-        .empty-state { text-align:center; padding:30px; color:#333; font-size:11px; letter-spacing:3px; }
-
-        /* MEDIA LIBRARY */
-        .upload-area {
-            background:rgba(8,10,14,0.8);
-            border:1px solid rgba(0,217,255,0.1);
-            padding:16px; margin-bottom:16px;
-            backdrop-filter:blur(4px);
-        }
-        .upload-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
-        .upload-field { flex:1; min-width:140px; }
-        .upload-field label { display:block; color:#555; font-size:9px; letter-spacing:2px; margin-bottom:4px; }
-        .upload-field input[type="file"],.upload-field select {
-            width:100%; padding:9px;
-            background:rgba(0,0,0,0.6); border:1px solid rgba(0,217,255,0.1);
-            color:#ccc; font-family:'Share Tech Mono',monospace; font-size:11px; outline:none;
-        }
-        .upload-field input:focus,.upload-field select:focus { border-color:var(--accent); box-shadow:0 0 10px rgba(0,217,255,0.1); }
-        .upload-btn {
-            background:transparent; border:1px solid var(--accent); color:var(--accent);
-            font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700; letter-spacing:2px;
-            padding:9px 18px; cursor:pointer; white-space:nowrap; transition:all 0.3s;
-        }
-        .upload-btn:hover { background:rgba(0,217,255,0.1); box-shadow:0 0 20px rgba(0,217,255,0.15); }
-        .upload-btn:disabled { opacity:0.5; cursor:not-allowed; }
-        .upload-progress { color:var(--accent); font-size:10px; letter-spacing:2px; margin-top:8px; }
-
-        .filter-bar { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
-        .filter-btn {
-            background:transparent; border:1px solid rgba(0,217,255,0.1); color:#555;
-            font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:1px;
-            padding:5px 12px; cursor:pointer; transition:all 0.2s;
-        }
-        .filter-btn:hover { color:#aaa; border-color:rgba(0,217,255,0.3); }
-        .filter-btn.active { color:var(--accent); border-color:var(--accent); text-shadow:0 0 6px var(--accent-glow); }
-
-        .media-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; }
-        .media-card {
-            background:rgba(8,10,14,0.8); border:1px solid rgba(0,217,255,0.08);
-            overflow:hidden; transition:all 0.3s;
-        }
-        .media-card:hover { border-color:var(--accent); box-shadow:0 0 20px rgba(0,217,255,0.1); }
-        .media-thumb { width:100%; height:120px; background-size:cover; background-position:center; background-color:rgba(5,7,9,0.8); }
-        .video-thumb { display:flex; align-items:center; justify-content:center; font-size:36px; color:var(--accent); }
-        .media-info { padding:8px 10px; }
-        .media-name { color:#ccc; font-size:10px; letter-spacing:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .media-meta { color:#444; font-size:8px; letter-spacing:1px; margin-top:2px; }
-        .media-actions { padding:0 10px 8px; display:flex; gap:6px; }
-
-        /* PAGE EDITOR */
-        .editor-page-section { margin-bottom:24px; }
-        .editor-page-header {
-            font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:14px;
-            font-weight:700; letter-spacing:3px; padding:10px 0 6px;
-            border-bottom:1px solid rgba(0,217,255,0.12); margin-bottom:10px;
-        }
-        .editor-slot {
-            background:rgba(8,10,14,0.8); border:1px solid rgba(0,217,255,0.08);
-            padding:14px 16px; margin-bottom:8px; backdrop-filter:blur(4px);
-        }
-        .editor-slot-label { color:#ccc; font-size:12px; letter-spacing:1px; }
-        .editor-slot-desc { color:#444; font-size:9px; letter-spacing:1px; margin-top:2px; }
-        .editor-slot-preview {
-            margin:10px 0; padding:10px;
-            background:rgba(0,0,0,0.4); border:1px dashed rgba(0,217,255,0.1);
-            min-height:50px; display:flex; align-items:center; justify-content:center;
-        }
-        .editor-slot-preview img { max-height:120px; max-width:100%; object-fit:contain; }
-        .preview-empty { color:#333; font-size:10px; letter-spacing:3px; }
-        .preview-name { color:#555; font-size:9px; margin-top:6px; text-align:center; }
-        .preview-video-url,.preview-text { color:var(--accent); font-size:11px; word-break:break-all; }
-        .editor-slot-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-        .slot-text-input {
-            flex:1; min-width:180px; padding:7px 10px;
-            background:rgba(0,0,0,0.6); border:1px solid rgba(0,217,255,0.1);
-            color:#ccc; font-family:'Share Tech Mono',monospace; font-size:11px; outline:none;
-        }
-        .slot-text-input:focus { border-color:var(--accent); box-shadow:0 0 10px rgba(0,217,255,0.1); }
-
-        /* MEDIA PICKER MODAL */
-        .media-picker-modal {
-            position:fixed; top:0;left:0;right:0;bottom:0;
-            background:rgba(0,0,0,0.88); z-index:300;
-            display:flex; align-items:center; justify-content:center;
-            opacity:0; visibility:hidden; transition:all 0.3s;
-        }
-        .media-picker-modal.active { opacity:1; visibility:visible; }
-        .picker-content {
-            background:rgba(8,10,14,0.97); border:1px solid var(--accent);
-            max-width:700px; width:95%; max-height:80vh; overflow-y:auto;
-            box-shadow:0 0 40px var(--accent-glow);
-        }
-        .picker-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid rgba(0,217,255,0.15); }
-        .picker-header h3 { font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:16px; letter-spacing:3px; }
-        .picker-close { background:none; border:1px solid #333; color:#666; width:30px; height:30px; cursor:pointer; font-size:16px; }
-        .picker-close:hover { border-color:#ef4444; color:#ef4444; }
-        .picker-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; padding:16px; }
-        .picker-item { border:2px solid rgba(0,217,255,0.1); cursor:pointer; transition:all 0.2s; overflow:hidden; }
-        .picker-item:hover { border-color:var(--accent); transform:scale(1.03); box-shadow:0 0 15px rgba(0,217,255,0.2); }
-        .picker-thumb { width:100%; height:100px; background-size:cover; background-position:center; background-color:rgba(5,7,9,0.8); }
-        .picker-name { padding:6px 8px; color:#888; font-size:9px; letter-spacing:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-
-        /* PAGE MANAGER */
-        .page-section-header {
-            color:var(--accent); font-family:'Rajdhani',sans-serif; font-size:13px;
-            font-weight:700; letter-spacing:3px; padding:12px 0 6px;
-            border-bottom:1px solid rgba(0,217,255,0.12); margin-bottom:8px; margin-top:16px;
-        }
-        .page-section-header:first-child { margin-top:0; }
-        .page-item {
-            background:rgba(8,10,14,0.8);
-            border:1px solid rgba(0,217,255,0.08);
-            border-left:3px solid var(--success);
-            padding:12px 16px; margin-bottom:6px;
-            display:flex; justify-content:space-between; align-items:center; gap:10px;
-        }
-        .page-item.page-disabled { border-left-color:#ef4444; opacity:0.5; }
-        .page-name { color:#ccc; font-size:12px; letter-spacing:1px; }
-        .page-file { color:#444; font-size:9px; letter-spacing:1px; margin-top:2px; }
-        .page-actions { display:flex; gap:10px; align-items:center; }
-        .toggle-switch { position:relative; display:inline-block; width:40px; height:20px; }
-        .toggle-switch input { opacity:0; width:0; height:0; }
-        .toggle-slider { position:absolute; cursor:pointer; top:0;left:0;right:0;bottom:0; background:#222; transition:0.3s; border-radius:2px; }
-        .toggle-slider::before { content:''; position:absolute; height:14px; width:14px; left:3px; bottom:3px; background:#555; transition:0.3s; border-radius:1px; }
-        .toggle-switch input:checked + .toggle-slider { background:rgba(0,255,65,0.2); }
-        .toggle-switch input:checked + .toggle-slider::before { transform:translateX(20px); background:var(--success); box-shadow:0 0 8px rgba(0,255,65,0.4); }
-
-        /* NOTIFICATION */
-        .notification {
-            position:fixed; top:70px; right:20px;
-            background:rgba(8,10,14,0.97); border:1px solid var(--accent); border-left:3px solid var(--accent);
-            color:var(--accent); padding:12px 20px; font-size:11px; letter-spacing:2px;
-            z-index:200; opacity:0; transform:translateX(20px);
-            transition:all 0.3s; pointer-events:none;
-            box-shadow:0 0 20px var(--accent-glow);
-        }
-        .notification.show { opacity:1; transform:translateX(0); }
-        .notification.error { border-color:#ef4444; color:#ef4444; box-shadow:0 0 20px rgba(239,68,68,0.3); }
-
-        /* RESPONSIVE */
-        @media (max-width:768px) {
-            .hamburger { display:flex; align-items:center; justify-content:center; }
-            .sidebar { position:fixed; top:0; left:-240px; width:240px; height:100vh; z-index:50; transition:left 0.3s; padding-top:70px; }
-            .sidebar.open { left:0; }
-            .sidebar-overlay.open { display:block; }
-            .main-content { padding:16px; flex-direction:column; }
-            .content-right { width:100%; }
-            .stats-row { grid-template-columns:1fr; }
-            .media-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); }
-            .upload-row { flex-direction:column; }
-            .user-card { flex-direction:column; align-items:flex-start; }
-        }
+        :root{--accent:#00D9FF;--accent-glow:rgba(0,217,255,.5);--bg-dark:#0A0E12;--success:#00FF41}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Share Tech Mono',monospace;background:linear-gradient(180deg,#0A0E12,#050709);color:#a0a0a0;min-height:100vh}
+        body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 50px,rgba(0,217,255,.03) 50px,rgba(0,217,255,.03) 51px),repeating-linear-gradient(90deg,transparent,transparent 50px,rgba(0,217,255,.03) 50px,rgba(0,217,255,.03) 51px);opacity:.3;pointer-events:none;z-index:0}
+        .scanlines{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(0,0,0,.12),rgba(0,0,0,.12) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:9999}
+        .hidden{display:none!important}
+        .loading-screen{display:flex;justify-content:center;align-items:center;height:100vh;color:var(--accent);font-size:14px;letter-spacing:4px;z-index:10}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+        .top-bar{background:rgba(8,10,14,.92);border-bottom:1px solid rgba(0,217,255,.1);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+        .top-bar-left{display:flex;align-items:center;gap:12px}
+        .hamburger{display:none;background:none;border:1px solid rgba(0,217,255,.2);color:var(--accent);font-size:20px;width:38px;height:38px;cursor:pointer}
+        .top-bar-left img{width:32px;height:32px;filter:drop-shadow(0 0 8px var(--accent-glow))}
+        .top-bar-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:16px;font-weight:700;letter-spacing:3px;text-shadow:0 0 10px var(--accent-glow)}
+        .top-bar-right{display:flex;align-items:center;gap:12px}
+        .user-identity{text-align:right}
+        #topbarName{color:#ccc;font-size:12px;letter-spacing:1px}
+        #topbarRole{color:#f59e0b;font-size:9px;letter-spacing:3px}
+        .top-btn{background:transparent;border:1px solid rgba(0,217,255,.2);color:#666;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;padding:7px 14px;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+        .top-btn:hover{border-color:var(--accent);color:var(--accent)}
+        .logout-btn:hover{border-color:#ef4444;color:#ef4444}
+        .app-layout{display:flex;min-height:calc(100vh - 52px);position:relative;z-index:1}
+        .sidebar{width:240px;background:rgba(8,10,14,.95);border-right:1px solid rgba(0,217,255,.08);padding:16px 0;flex-shrink:0;overflow-y:auto;position:sticky;top:52px;height:calc(100vh - 52px)}
+        .nav-header{display:flex;align-items:center;gap:10px;padding:9px 16px;color:#666;font-size:11px;letter-spacing:1.5px;cursor:pointer;transition:all .2s;user-select:none}
+        .nav-header:hover{color:#999;background:rgba(0,217,255,.03)}
+        .nav-header .arrow{font-size:8px;margin-left:auto;transition:transform .2s}
+        .nav-item.open .nav-header .arrow{transform:rotate(90deg)}
+        .nav-item.open .nav-header{color:var(--accent)}
+        .nav-icon{font-size:14px;width:20px;text-align:center}
+        .sub-links{display:none;padding-left:32px}
+        .nav-item.open .sub-links{display:block}
+        .sub-link{display:block;padding:7px 16px;color:#555;font-size:10px;letter-spacing:1px;cursor:pointer;border-left:2px solid transparent;transition:all .2s;text-decoration:none}
+        .sub-link:hover{color:#888;background:rgba(0,217,255,.02)}
+        .sub-link.active{color:var(--accent);border-left-color:var(--accent);background:rgba(0,217,255,.05)}
+        .dash-link{display:flex;align-items:center;gap:10px;padding:9px 16px;color:var(--accent);font-size:11px;letter-spacing:1.5px;cursor:pointer;border-left:3px solid var(--accent);background:rgba(0,217,255,.05);margin-bottom:4px}
+        .dash-link:hover{background:rgba(0,217,255,.08)}
+        .sidebar-divider{border:none;border-top:1px solid rgba(0,217,255,.06);margin:12px 16px}
+        .quick-link{display:flex;align-items:center;gap:10px;padding:9px 16px;color:#444;font-size:10px;letter-spacing:1.5px;text-decoration:none;transition:all .2s}
+        .quick-link:hover{color:#888}
+        .main-content{flex:1;padding:24px;overflow-y:auto;min-width:0}
+        .panel-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:20px;font-weight:700;letter-spacing:3px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid rgba(0,217,255,.12);text-shadow:0 0 10px var(--accent-glow)}
+        .section-label{color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:8px;margin-top:8px}
+        .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+        .stat-card{background:rgba(8,10,14,.8);border:1px solid rgba(0,217,255,.1);padding:16px;text-align:center}
+        .stat-number{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;color:var(--accent);line-height:1;text-shadow:0 0 15px var(--accent-glow)}
+        .stat-number.warning{color:#f59e0b;text-shadow:0 0 15px rgba(245,158,11,.4)}
+        .stat-label{font-size:9px;letter-spacing:3px;color:#555;margin-top:4px}
+        .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .dash-section{background:rgba(8,10,14,.8);border:1px solid rgba(0,217,255,.08);padding:16px}
+        .dash-section-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:13px;font-weight:700;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)}
+        .dash-card{background:rgba(0,0,0,.2);border:1px solid rgba(0,217,255,.05);padding:10px 12px;margin-bottom:6px}
+        .dash-card.pending-card{border-left:3px solid #f59e0b}
+        .user-table{width:100%}
+        .table-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;gap:8px;padding:8px 12px;color:rgba(0,217,255,.4);font-size:9px;letter-spacing:2px;border-bottom:1px solid rgba(0,217,255,.1)}
+        .table-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px;align-items:center}
+        .table-row:hover{background:rgba(0,217,255,.02)}
+        .action-cell{display:flex;gap:4px}
+        .user-card{background:rgba(8,10,14,.8);border:1px solid rgba(0,217,255,.08);border-left:3px solid #333;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+        .user-card:hover{border-left-color:var(--accent)}
+        .pending-card{border-left-color:#f59e0b}
+        .status-denied{border-left-color:#ef4444}
+        .user-callsign{color:#ccc;font-size:13px;letter-spacing:1px}
+        .user-email{color:#555;font-size:10px;margin-top:2px}
+        .user-date{color:#444;font-size:9px;margin-top:2px}
+        .user-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+        .action-btn{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:6px 14px;border:1px solid;background:transparent;cursor:pointer;transition:all .3s}
+        .action-btn.small{padding:4px 10px;font-size:9px}
+        .approve-btn{color:var(--success);border-color:var(--success)}.approve-btn:hover{background:rgba(0,255,65,.1)}
+        .deny-btn{color:#ef4444;border-color:#ef4444}.deny-btn:hover{background:rgba(239,68,68,.1)}
+        .remove-btn{color:#666;border-color:#333}.remove-btn:hover{color:#ef4444;border-color:#ef4444}
+        .role-badge{font-size:8px;letter-spacing:2px;padding:1px 6px;border:1px solid #333;color:#888}
+        .role-commander{color:#f59e0b;border-color:#f59e0b}.role-developer{color:#a78bfa;border-color:#a78bfa}.role-staff_nco{color:#2DD4BF;border-color:#2DD4BF}.role-recruiter{color:#fb923c;border-color:#fb923c}.role-nco{color:#34d399;border-color:#34d399}.role-marine{color:#94a3b8;border-color:#94a3b8}
+        .status-badge{font-size:8px;letter-spacing:2px;padding:1px 6px}
+        .status-badge.status-approved{color:var(--success);border:1px solid var(--success)}.status-badge.status-pending{color:#f59e0b;border:1px solid #f59e0b}.status-badge.status-denied{color:#ef4444;border:1px solid #ef4444}
+        .role-select{background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.15);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:10px;padding:5px 8px;cursor:pointer}
+        .empty-state{text-align:center;padding:30px;color:#333;font-size:11px;letter-spacing:3px}
+        .upload-area{background:rgba(8,10,14,.8);border:1px solid rgba(0,217,255,.1);padding:16px;margin-bottom:16px}
+        .upload-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+        .upload-field{flex:1;min-width:140px}
+        .upload-field label{display:block;color:#555;font-size:9px;letter-spacing:2px;margin-bottom:4px}
+        .upload-field input,.upload-field select{width:100%;padding:9px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none}
+        .upload-field input:focus,.upload-field select:focus{border-color:var(--accent)}
+        .upload-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:9px 18px;cursor:pointer}
+        .upload-btn:hover{background:rgba(0,217,255,.1)}.upload-btn:disabled{opacity:.5}
+        .editor-slot{background:rgba(8,10,14,.8);border:1px solid rgba(0,217,255,.08);padding:14px 16px;margin-bottom:8px}
+        .editor-slot-label{color:#ccc;font-size:12px;letter-spacing:1px}.editor-slot-desc{color:#444;font-size:9px;margin-top:2px}
+        .editor-slot-preview{margin:10px 0;padding:10px;background:rgba(0,0,0,.4);border:1px dashed rgba(0,217,255,.1);min-height:50px;display:flex;align-items:center;justify-content:center}
+        .editor-slot-preview img{max-height:120px;max-width:100%;object-fit:contain}
+        .preview-empty{color:#333;font-size:10px;letter-spacing:3px}.preview-text{color:var(--accent);font-size:11px;word-break:break-all}.preview-name{color:#555;font-size:9px;margin-top:6px;text-align:center}
+        .editor-slot-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .slot-text-input{flex:1;min-width:140px;padding:7px 10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none}
+        .slot-text-input:focus{border-color:var(--accent)}
+        .media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+        .media-card{background:rgba(8,10,14,.8);border:1px solid rgba(0,217,255,.08);overflow:hidden;transition:all .3s}.media-card:hover{border-color:var(--accent)}
+        .media-thumb{width:100%;height:120px;background-size:cover;background-position:center;background-color:rgba(5,7,9,.8)}
+        .video-thumb{display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--accent)}
+        .media-info{padding:8px 10px}.media-name{color:#ccc;font-size:10px;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.media-desc{color:#888;font-size:9px;margin-top:2px}.media-meta{color:#444;font-size:8px;letter-spacing:1px;margin-top:2px}
+        .media-actions{padding:0 10px 8px;display:flex;gap:6px}
+        .media-picker-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all .3s}.media-picker-modal.active{opacity:1;visibility:visible}
+        .picker-content{background:rgba(8,10,14,.97);border:1px solid var(--accent);max-width:700px;width:95%;max-height:80vh;overflow-y:auto}
+        .picker-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(0,217,255,.15)}
+        .picker-header h3{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:16px;letter-spacing:3px}
+        .picker-close{background:none;border:1px solid #333;color:#666;width:30px;height:30px;cursor:pointer;font-size:16px}.picker-close:hover{border-color:#ef4444;color:#ef4444}
+        .picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:16px}
+        .picker-item{border:2px solid rgba(0,217,255,.1);cursor:pointer;overflow:hidden;transition:all .2s}.picker-item:hover{border-color:var(--accent);transform:scale(1.03)}
+        .picker-thumb{width:100%;height:100px;background-size:cover;background-position:center}.picker-name{padding:6px 8px;color:#888;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .edit-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all .3s}.edit-modal.active{opacity:1;visibility:visible}
+        .edit-modal-content{background:rgba(8,10,14,.97);border:1px solid var(--accent);max-width:500px;width:95%;padding:24px}
+        .edit-modal-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:16px;font-weight:700;letter-spacing:3px;margin-bottom:20px}
+        .edit-field{margin-bottom:12px}.edit-field label{display:block;color:#555;font-size:9px;letter-spacing:2px;margin-bottom:4px}
+        .edit-field input{width:100%;padding:9px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none}.edit-field input:focus{border-color:var(--accent)}
+        .edit-modal-actions{display:flex;gap:10px;margin-top:20px}
+        .page-item{background:rgba(8,10,14,.8);border:1px solid rgba(0,217,255,.08);border-left:3px solid var(--success);padding:12px 16px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}.page-item.page-disabled{border-left-color:#ef4444;opacity:.5}
+        .toggle-switch{position:relative;display:inline-block;width:40px;height:20px}.toggle-switch input{opacity:0;width:0;height:0}
+        .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#222;transition:.3s}.toggle-slider::before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#555;transition:.3s}
+        .toggle-switch input:checked + .toggle-slider{background:rgba(0,255,65,.2)}.toggle-switch input:checked + .toggle-slider::before{transform:translateX(20px);background:var(--success)}
+        .audit-entry{display:grid;grid-template-columns:160px 200px 120px 1fr;gap:8px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.02);font-size:10px;align-items:center}.audit-entry:hover{background:rgba(0,217,255,.02)}
+        .audit-time{color:#555}.audit-user{color:#888}.audit-action{color:var(--accent);letter-spacing:1px}.audit-details{color:#666}
+        .audit-header{display:grid;grid-template-columns:160px 200px 120px 1fr;gap:8px;padding:8px 12px;color:rgba(0,217,255,.4);font-size:9px;letter-spacing:2px;border-bottom:1px solid rgba(0,217,255,.1)}
+        .notification{position:fixed;top:60px;right:20px;background:rgba(8,10,14,.97);border:1px solid var(--accent);color:var(--accent);padding:12px 20px;font-size:11px;letter-spacing:2px;z-index:200;opacity:0;transform:translateX(20px);transition:all .3s;pointer-events:none}.notification.show{opacity:1;transform:translateX(0)}.notification.error{border-color:#ef4444;color:#ef4444}
+        @media(max-width:768px){.hamburger{display:flex;align-items:center;justify-content:center}.sidebar{position:fixed;top:0;left:-260px;width:260px;height:100vh;z-index:50;transition:left .3s;padding-top:60px}.sidebar.open{left:0}.stats-row{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.table-header,.table-row{grid-template-columns:1fr 1fr;font-size:9px}.audit-entry,.audit-header{grid-template-columns:1fr;font-size:9px}}
     </style>
 </head>
 <body>
     <div class="scanlines"></div>
-    <div class="loading-screen" id="loadingScreen">AUTHENTICATING<span style="animation: blink 1s infinite">_</span></div>
+    <div class="loading-screen" id="loadingScreen">AUTHENTICATING<span style="animation:blink 1s infinite">_</span></div>
     <div class="notification" id="notification"></div>
-
-    <!-- Media Picker Modal -->
-    <div class="media-picker-modal" id="mediaPickerModal">
-        <div class="picker-content">
-            <div class="picker-header">
-                <h3>SELECT MEDIA</h3>
-                <button class="picker-close" onclick="closeMediaPicker()">&times;</button>
-            </div>
-            <div class="picker-grid" id="pickerGrid"></div>
-        </div>
-    </div>
-
-    <div id="adminContent" class="hidden" style="display:flex;flex-direction:column;min-height:100vh;">
-        <!-- Top Bar -->
-        <div class="top-bar">
-            <div class="top-bar-left">
-                <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
-                <img src="images/logo.png" alt="505th">
-                <span class="top-bar-title">COMMAND TERMINAL_</span>
-            </div>
-            <div class="top-bar-right">
-                <div class="user-identity">
-                    <div id="commanderName">---</div>
-                    <div id="commanderRole">---</div>
-                </div>
-                <a href="home.html" class="top-btn home-btn">&#8962; HOME</a>
-                <button class="top-btn logout-btn" onclick="handleLogout()">&#9211; LOGOUT</button>
-            </div>
-        </div>
-
+    <div class="media-picker-modal" id="mediaPickerModal"><div class="picker-content"><div class="picker-header"><h3>SELECT MEDIA</h3><button class="picker-close" onclick="closeMediaPicker()">&times;</button></div><div class="picker-grid" id="pickerGrid"></div></div></div>
+    <div class="edit-modal" id="editUserModal"><div class="edit-modal-content"><div class="edit-modal-title">EDIT OPERATIVE</div><input type="hidden" id="editUserId"><div class="edit-field"><label>CALLSIGN</label><input type="text" id="editCallsign"></div><div class="edit-field"><label>FIRST NAME</label><input type="text" id="editFirstName"></div><div class="edit-field"><label>LAST NAME</label><input type="text" id="editLastName"></div><div class="edit-field"><label>RANK</label><input type="text" id="editRank" placeholder="e.g. Private, Corporal, Sergeant..."></div><div class="edit-field"><label>DATE JOINED</label><input type="date" id="editJoinedAt"></div><div class="edit-modal-actions"><button class="action-btn approve-btn" onclick="saveUserEdit()">SAVE CHANGES</button><button class="action-btn remove-btn" onclick="closeEditModal()">CANCEL</button></div></div></div>
+    <div id="adminApp" class="hidden">
+        <div class="top-bar"><div class="top-bar-left"><button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button><img src="images/logo.png" alt="505th"><span class="top-bar-title">COMMAND TERMINAL_</span></div><div class="top-bar-right"><div class="user-identity"><div id="topbarName">---</div><div id="topbarRole">---</div></div><a href="profile.html" class="top-btn">&#9823; PROFILE</a><a href="home.html" class="top-btn">&#8962; HOME</a><button class="top-btn logout-btn" onclick="handleLogout()">&#9211; LOGOUT</button></div></div>
         <div class="app-layout">
-            <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
             <div class="sidebar" id="sidebar">
-                <div class="sidebar-section">
-                    <div class="sidebar-label">MANAGEMENT</div>
-                    <div class="sidebar-link active" data-panel="personnel" onclick="switchPanel('personnel')">
-                        <span class="sidebar-icon">&#9823;</span> PERSONNEL
-                        <span class="sidebar-badge" id="sidebarPendingBadge" style="display:none">0</span>
-                    </div>
-                    <div class="sidebar-link" data-panel="media" onclick="switchPanel('media')">
-                        <span class="sidebar-icon">&#9881;</span> MEDIA LIBRARY
-                    </div>
-                    <div class="sidebar-link" data-panel="editor" onclick="switchPanel('editor')">
-                        <span class="sidebar-icon">&#9998;</span> PAGE CONTENT
-                    </div>
-                    <div class="sidebar-link" data-panel="pages" onclick="switchPanel('pages')">
-                        <span class="sidebar-icon">&#9783;</span> PAGE MANAGER
-                    </div>
-                    <div class="sidebar-link" data-panel="settings" onclick="switchPanel('settings')">
-                        <span class="sidebar-icon">&#9881;</span> SITE SETTINGS
-                    </div>
-                </div>
-                <div class="sidebar-section">
-                    <div class="sidebar-label">QUICK LINKS</div>
-                    <a href="home.html" class="sidebar-link"><span class="sidebar-icon">&#8962;</span> VIEW SITE</a>
-                </div>
+                <div class="dash-link" onclick="showPanel('panel-dashboard')"><span class="nav-icon">&#9632;</span> DASHBOARD</div>
+                <hr class="sidebar-divider">
+                <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> PERSONNEL <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">Active Personnel</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')">Register Panel</div><div class="sub-link" data-panel="panel-promote" onclick="showPanel('panel-promote')">Promote Ranks</div></div></div>
+                <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> MEDIA LIBRARY <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
+                <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PAGE CONTENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div></div></div>
+                <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> SITE SETTINGS <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div class="sub-link" data-panel="panel-pagemanager" onclick="showPanel('panel-pagemanager')">Page Manager</div><div class="sub-link" data-panel="panel-auditlog" onclick="showPanel('panel-auditlog')">Admin Audit Log</div></div></div>
+                <hr class="sidebar-divider">
+                <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
             </div>
-
             <div class="main-content">
-                <div class="content-left">
-                <!-- PERSONNEL -->
-                <div class="panel" id="panel-personnel">
-                    <div class="panel-title">PERSONNEL MANAGEMENT</div>
-                    <div class="stats-row">
-                        <div class="stat-card"><div class="stat-number warning" id="pendingCount">0</div><div class="stat-label">PENDING</div></div>
-                        <div class="stat-card"><div class="stat-number" id="approvedCount">0</div><div class="stat-label">ACTIVE</div></div>
-                        <div class="stat-card"><div class="stat-number" id="totalCount">0</div><div class="stat-label">TOTAL</div></div>
-                    </div>
-                    <div class="tabs">
-                        <button class="tab-btn active" data-tab="pending" onclick="switchTab('pending')">PENDING</button>
-                        <button class="tab-btn" data-tab="all" onclick="switchTab('all')">ALL PERSONNEL</button>
-                    </div>
-                    <div id="panel-tab-pending" class="tab-panel"><div id="pendingList"><div class="empty-state">LOADING...</div></div></div>
-                    <div id="panel-tab-all" class="tab-panel hidden"><div id="allUsersList"><div class="empty-state">LOADING...</div></div></div>
-                </div>
-
-                <!-- MEDIA LIBRARY -->
-                <div class="panel hidden" id="panel-media">
-                    <div class="panel-title">MEDIA LIBRARY</div>
-                    <div class="upload-area">
-                        <p style="color:#555;font-size:9px;letter-spacing:2px;margin-bottom:10px;">UPLOAD IMAGES & VIDEOS TO CLOUDINARY (25GB FREE)</p>
-                        <div class="upload-row">
-                            <div class="upload-field"><label>SELECT FILES</label><input type="file" id="mediaFileInput" multiple accept="image/*,video/*"></div>
-                            <div class="upload-field" style="max-width:160px;"><label>CATEGORY</label>
-                                <select id="mediaCategory"><option value="operations">OPERATIONS</option><option value="training">TRAINING</option><option value="events">EVENTS</option><option value="screenshots">SCREENSHOTS</option><option value="other">OTHER</option></select>
-                            </div>
-                            <button class="upload-btn" id="mediaUploadBtn" onclick="handleFileUpload()">UPLOAD</button>
-                        </div>
-                        <div style="margin-top:10px;">
-                            <label style="color:#555;font-size:9px;letter-spacing:2px;display:block;margin-bottom:4px;">DESCRIPTION (OPTIONAL)</label>
-                            <input type="text" id="mediaDescription" placeholder="Describe this media..." style="width:100%;padding:9px;background:rgba(0,0,0,0.5);border:1px solid #222;color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;">
-                        </div>
-                        <div class="upload-progress hidden" id="mediaProgress">UPLOADING...</div>
-                    </div>
-                    <div class="filter-bar">
-                        <button class="filter-btn active" onclick="filterMedia('all')">ALL</button>
-                        <button class="filter-btn" onclick="filterMedia('operations')">OPS</button>
-                        <button class="filter-btn" onclick="filterMedia('training')">TRAINING</button>
-                        <button class="filter-btn" onclick="filterMedia('events')">EVENTS</button>
-                        <button class="filter-btn" onclick="filterMedia('screenshots')">SCREENSHOTS</button>
-                    </div>
-                    <div style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:10px;">TOTAL: <span id="mediaCount" style="color:#2DD4BF;">0</span></div>
-                    <div class="media-grid" id="mediaGrid"><div class="empty-state">LOADING...</div></div>
-                </div>
-
-                <!-- PAGE CONTENT EDITOR -->
-                <div class="panel hidden" id="panel-editor">
-                    <div class="panel-title">PAGE CONTENT EDITOR</div>
-                    <p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px;">ASSIGN MEDIA FROM YOUR LIBRARY TO SPECIFIC PAGE SLOTS</p>
-                    <div id="pageEditorList"><div class="empty-state">LOADING...</div></div>
-                </div>
-
-                <!-- PAGE MANAGER -->
-                <div class="panel hidden" id="panel-pages">
-                    <div class="panel-title">PAGE MANAGER</div>
-                    <p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px;">ENABLE OR DISABLE SITE PAGES</p>
-                    <div id="pagesList"><div class="empty-state">LOADING...</div></div>
-                </div>
-
-                <!-- SITE SETTINGS -->
-                <div class="panel hidden" id="panel-settings">
-                    <div class="panel-title">SITE SETTINGS</div>
-
-                    <!-- Discord Link -->
-                    <div style="background:rgba(15,15,15,0.9);border:1px solid #1a1a1a;padding:20px;margin-bottom:16px;">
-                        <div style="color:#ccc;font-size:13px;letter-spacing:2px;margin-bottom:4px;">DISCORD INVITE LINK</div>
-                        <p style="color:#555;font-size:9px;letter-spacing:1px;margin-bottom:12px;">CHANGE THIS ONCE AND ALL PAGES UPDATE AUTOMATICALLY — NO NEED TO EDIT EACH PAGE</p>
-                        <div style="color:#444;font-size:9px;letter-spacing:2px;margin-bottom:8px;">CURRENT: <a id="currentDiscordLink" href="#" target="_blank" style="color:#2DD4BF;text-decoration:none;">NOT SET</a></div>
-                        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-                            <div style="flex:1;min-width:200px;">
-                                <input type="url" id="discordLinkInput" placeholder="https://discord.gg/XXXXXXXX" style="width:100%;padding:10px;background:rgba(0,0,0,0.5);border:1px solid #222;color:#ccc;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none;">
-                            </div>
-                            <button class="upload-btn" onclick="saveDiscordLink()">SAVE LINK</button>
-                        </div>
-                    </div>
-
-                    <div style="background:rgba(15,15,15,0.9);border:1px solid #1a1a1a;padding:16px;">
-                        <div style="color:#555;font-size:9px;letter-spacing:2px;">
-                            <p style="margin-bottom:6px;">HOW IT WORKS:</p>
-                            <p style="margin-bottom:4px;">&#8226; Every page loads <code style="color:#2DD4BF;">cms.js</code> which reads this link from Firestore</p>
-                            <p style="margin-bottom:4px;">&#8226; ALL Discord links on ALL pages are replaced automatically</p>
-                            <p style="margin-bottom:4px;">&#8226; If the invite expires, just paste the new one here</p>
-                            <p>&#8226; No code changes needed — instant site-wide update</p>
-                        </div>
-                    </div>
-                </div>
-                </div><!-- /content-left -->
-
-                <div class="content-right">
-                    <div class="info-panel">
-                        <div class="info-panel-title">ROLE PERMISSIONS</div>
-
-                        <div class="role-info-item">
-                            <div class="role-info-name" style="color:#f59e0b;">COMMANDER</div>
-                            <div class="role-info-perms">
-                                <span class="perm-yes">&#10003;</span> Personnel &bull;
-                                <span class="perm-yes">&#10003;</span> Media &bull;
-                                <span class="perm-yes">&#10003;</span> Page Content<br>
-                                <span class="perm-yes">&#10003;</span> Page Manager &bull;
-                                <span class="perm-yes">&#10003;</span> Site Settings<br>
-                                <span class="perm-yes">&#10003;</span> Change Roles &bull;
-                                <span class="perm-yes">&#10003;</span> Edit Profiles
-                            </div>
-                        </div>
-
-                        <div class="role-info-item">
-                            <div class="role-info-name" style="color:#a78bfa;">DEVELOPER</div>
-                            <div class="role-info-perms">
-                                <span class="perm-yes">&#10003;</span> Personnel &bull;
-                                <span class="perm-yes">&#10003;</span> Media &bull;
-                                <span class="perm-yes">&#10003;</span> Page Content<br>
-                                <span class="perm-yes">&#10003;</span> Page Manager &bull;
-                                <span class="perm-yes">&#10003;</span> Site Settings<br>
-                                <span class="perm-yes">&#10003;</span> Change Roles &bull;
-                                <span class="perm-yes">&#10003;</span> Edit Profiles
-                            </div>
-                        </div>
-
-                        <div class="role-info-item">
-                            <div class="role-info-name" style="color:#2DD4BF;">STAFF NCO</div>
-                            <div class="role-info-perms">
-                                <span class="perm-yes">&#10003;</span> Personnel &bull;
-                                <span class="perm-yes">&#10003;</span> Media &bull;
-                                <span class="perm-yes">&#10003;</span> Page Content<br>
-                                <span class="perm-no">&#10007;</span> Page Manager &bull;
-                                <span class="perm-no">&#10007;</span> Site Settings<br>
-                                <span class="perm-no">&#10007;</span> Change Roles &bull;
-                                <span class="perm-yes">&#10003;</span> Edit Profiles
-                            </div>
-                        </div>
-
-                        <div class="role-info-item">
-                            <div class="role-info-name" style="color:#fb923c;">RECRUITER</div>
-                            <div class="role-info-perms">
-                                <span class="perm-yes">&#10003;</span> Personnel (Approve/Deny)<br>
-                                <span class="perm-no">&#10007;</span> Media &bull;
-                                <span class="perm-no">&#10007;</span> Page Content<br>
-                                <span class="perm-no">&#10007;</span> Page Manager &bull;
-                                <span class="perm-no">&#10007;</span> Site Settings<br>
-                                <span class="perm-no">&#10007;</span> Change Roles &bull;
-                                <span class="perm-no">&#10007;</span> Edit Profiles
-                            </div>
-                        </div>
-
-                        <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(0,217,255,0.08);">
-                            <div class="info-panel-title" style="font-size:12px;">NO ADMIN ACCESS</div>
-                            <div class="role-info-perms" style="line-height:2.2;">
-                                <span style="color:#34d399;">&#9679;</span> NCO<br>
-                                <span style="color:#94a3b8;">&#9679;</span> MARINE / ENLISTED
-                            </div>
-                        </div>
-                    </div>
-                </div><!-- /content-right -->
-            </div><!-- /main-content -->
-        </div><!-- /app-layout -->
-    </div><!-- /adminContent -->
-
-    <!-- EDIT USER MODAL -->
-    <div class="edit-modal" id="editUserModal">
-        <div class="edit-modal-content">
-            <div class="edit-modal-title">EDIT OPERATIVE</div>
-            <input type="hidden" id="editUserId">
-            <div class="edit-field">
-                <label>CALLSIGN</label>
-                <input type="text" id="editCallsign">
-            </div>
-            <div class="edit-field">
-                <label>FIRST NAME</label>
-                <input type="text" id="editFirstName">
-            </div>
-            <div class="edit-field">
-                <label>LAST NAME</label>
-                <input type="text" id="editLastName">
-            </div>
-            <div class="edit-field">
-                <label>RANK</label>
-                <input type="text" id="editRank" placeholder="e.g. Private, Corporal, Sergeant...">
-            </div>
-            <div class="edit-field">
-                <label>DATE JOINED UNIT</label>
-                <input type="date" id="editJoinedAt">
-            </div>
-            <div class="edit-modal-actions">
-                <button class="action-btn approve-btn" onclick="saveUserEdit()">SAVE CHANGES</button>
-                <button class="action-btn remove-btn" onclick="closeEditModal()">CANCEL</button>
+                <div class="panel" id="panel-dashboard"><div class="panel-title">DASHBOARD</div><div class="stats-row"><div class="stat-card"><div class="stat-number warning" id="dashPending">0</div><div class="stat-label">PENDING</div></div><div class="stat-card"><div class="stat-number" id="dashActive">0</div><div class="stat-label">ACTIVE</div></div><div class="stat-card"><div class="stat-number" id="dashTotal">0</div><div class="stat-label">TOTAL</div></div></div><div class="dash-grid"><div class="dash-section"><div class="dash-section-title">PENDING REGISTRATIONS</div><div id="dashPendingList"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">RECENT JOINS</div><div id="dashRecentJoins"><div class="empty-state">LOADING...</div></div></div></div></div>
+                <div class="panel hidden" id="panel-active"><div class="panel-title">ACTIVE PERSONNEL</div><div id="activeList"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-register"><div class="panel-title">REGISTRATION PANEL</div><div id="registerList"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-promote"><div class="panel-title">PROMOTE RANKS</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">CHANGE ROLES AND SET RANKS</p><div id="promoteList"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-gallery"><div class="panel-title">GALLERY</div><div class="upload-area"><div class="upload-row"><div class="upload-field"><label>SELECT IMAGES</label><input type="file" id="uploadImgFile" multiple accept="image/*"></div><div class="upload-field" style="max-width:160px"><label>CATEGORY</label><select id="uploadImgCat"><option value="operations">OPERATIONS</option><option value="training">TRAINING</option><option value="events">EVENTS</option><option value="screenshots">SCREENSHOTS</option></select></div><button class="upload-btn" id="uploadImgBtn" onclick="handleUpload('image')">UPLOAD</button></div><div class="upload-field" style="margin-top:10px"><label>DESCRIPTION</label><input type="text" id="uploadImgDesc" placeholder="Describe..."></div></div><div style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:10px">TOTAL: <span id="galleryCount" style="color:var(--accent)">0</span></div><div class="media-grid" id="galleryGrid"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-videos"><div class="panel-title">VIDEOS</div><div class="upload-area"><div class="upload-row"><div class="upload-field"><label>SELECT VIDEOS</label><input type="file" id="uploadVidFile" multiple accept="video/*"></div><div class="upload-field" style="max-width:160px"><label>CATEGORY</label><select id="uploadVidCat"><option value="operations">OPERATIONS</option><option value="training">TRAINING</option><option value="events">EVENTS</option><option value="other">OTHER</option></select></div><button class="upload-btn" id="uploadVidBtn" onclick="handleUpload('video')">UPLOAD</button></div><div class="upload-field" style="margin-top:10px"><label>DESCRIPTION</label><input type="text" id="uploadVidDesc" placeholder="Describe..."></div></div><div style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:10px">TOTAL: <span id="videoCount" style="color:var(--accent)">0</span></div><div class="media-grid" id="videoGrid"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-page-home"><div class="panel-title">HOME PAGE</div><div class="page-editor-container" data-page="home"></div></div>
+                <div class="panel hidden" id="panel-page-505th"><div class="panel-title">505TH EXPEDITIONARY FORCE</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 MARINE PHOTO CARDS</p><div class="page-editor-container" data-page="about-505th"></div></div>
+                <div class="panel hidden" id="panel-page-alpha"><div class="panel-title">ALPHA COMPANY</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 OPERATION CARDS</p><div class="page-editor-container" data-page="about-alpha"></div></div>
+                <div class="panel hidden" id="panel-page-stalker"><div class="panel-title">JTF FORCE RECON</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 EQUIPMENT CARDS</p><div class="page-editor-container" data-page="about-stalker"></div></div>
+                <div class="panel hidden" id="panel-page-corpsman"><div class="panel-title">HOSPITAL CORPSMAN</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 EQUIPMENT CARDS</p><div class="page-editor-container" data-page="about-corpsman"></div></div>
+                <div class="panel hidden" id="panel-page-54th"><div class="panel-title">54TH AIR WING</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 AIR ASSET CARDS</p><div class="page-editor-container" data-page="about-54th"></div></div>
+                <div class="panel hidden" id="panel-discord"><div class="panel-title">DISCORD INVITE LINK</div><div class="upload-area"><p style="color:#555;font-size:9px;letter-spacing:1px;margin-bottom:12px">CHANGE ONCE - ALL PAGES UPDATE AUTOMATICALLY</p><div style="color:#444;font-size:9px;letter-spacing:2px;margin-bottom:8px">CURRENT: <a id="currentDiscordLink" href="#" target="_blank" style="color:var(--accent);text-decoration:none">NOT SET</a></div><div class="upload-row"><div class="upload-field"><input type="url" id="discordLinkInput" placeholder="https://discord.gg/XXXXXXXX"></div><button class="upload-btn" onclick="saveDiscordLink()">SAVE LINK</button></div></div></div>
+                <div class="panel hidden" id="panel-pagemanager"><div class="panel-title">PAGE MANAGER</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">ENABLE OR DISABLE SITE PAGES</p><div id="pagesList"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-auditlog"><div class="panel-title">ADMIN AUDIT LOG</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">TRACKS ALL ADMIN ACTIONS &bull; CANNOT BE DELETED</p><div class="audit-header"><span>TIMESTAMP</span><span>USER</span><span>ACTION</span><span>DETAILS</span></div><div id="auditList"><div class="empty-state">LOADING...</div></div></div>
             </div>
         </div>
     </div>

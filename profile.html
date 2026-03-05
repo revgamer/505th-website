@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>505th - My Profile</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/site.webmanifest">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script type="module">
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        const firebaseConfig = { apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg", authDomain:"th-website-91533.firebaseapp.com", projectId:"th-website-91533", storageBucket:"th-website-91533.firebasestorage.app", messagingSenderId:"1046139150142", appId:"1:1046139150142:web:01f409ae4a38c4f79d966f" };
+        const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+        const auth = getAuth(app), db = getFirestore(app);
+        let currentUser, currentUserData;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = 'login.html'; return; }
+            const ud = await getDoc(doc(db, "users", user.uid));
+            if (!ud.exists()) { window.location.href = 'login.html'; return; }
+            currentUser = user;
+            currentUserData = ud.data();
+            document.getElementById('loadingScreen').classList.add('hidden');
+            document.getElementById('profileApp').classList.remove('hidden');
+            fillProfile();
+        });
+
+        function fillProfile() {
+            const d = currentUserData;
+            document.getElementById('profCallsign').textContent = d.callsign || 'N/A';
+            document.getElementById('profRole').textContent = (d.role || 'N/A').toUpperCase().replace('_', ' ');
+            document.getElementById('profRole').className = 'role-badge role-' + d.role;
+            document.getElementById('profRank').textContent = d.rank || 'Not Assigned';
+            document.getElementById('profEmail').textContent = d.email || '';
+
+            // Editable fields
+            document.getElementById('inputFirst').value = d.firstName || '';
+            document.getElementById('inputMiddle').value = d.middleName || '';
+            document.getElementById('inputLast').value = d.lastName || '';
+
+            // Rank history
+            const rh = d.rankHistory || [];
+            const rhc = document.getElementById('rankHistoryList');
+            if (!rh.length) { rhc.innerHTML = '<div class="empty-state">NO RANK HISTORY</div>'; }
+            else { rhc.innerHTML = rh.map(r => `<div class="rh-entry"><span class="rh-rank">${r.rank}</span><span class="rh-date">${new Date(r.date).toLocaleDateString()}</span>${r.by ? `<span class="rh-by">by ${r.by}</span>` : ''}</div>`).join(''); }
+
+            // Time in unit
+            if (d.joinedAt) {
+                const joined = new Date(d.joinedAt);
+                const now = new Date();
+                const months = (now.getFullYear() - joined.getFullYear()) * 12 + (now.getMonth() - joined.getMonth());
+                const years = Math.floor(months / 12);
+                const rem = months % 12;
+                let timeStr = '';
+                if (years > 0) timeStr += years + ' year' + (years > 1 ? 's' : '') + ' ';
+                timeStr += rem + ' month' + (rem !== 1 ? 's' : '');
+                document.getElementById('profTimeInUnit').textContent = timeStr;
+                document.getElementById('profJoinDate').textContent = joined.toLocaleDateString();
+            } else {
+                document.getElementById('profTimeInUnit').textContent = 'N/A';
+                document.getElementById('profJoinDate').textContent = 'Not Set';
+            }
+        }
+
+        window.saveProfile = async function() {
+            const updates = {
+                firstName: document.getElementById('inputFirst').value.trim(),
+                middleName: document.getElementById('inputMiddle').value.trim(),
+                lastName: document.getElementById('inputLast').value.trim()
+            };
+            // Update callsign from names
+            updates.callsign = [updates.firstName, updates.middleName, updates.lastName].filter(Boolean).join(' ');
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), updates);
+                currentUserData = { ...currentUserData, ...updates };
+                fillProfile();
+                const n = document.getElementById('notification');
+                n.textContent = 'PROFILE UPDATED';
+                n.className = 'notification show';
+                setTimeout(() => n.className = 'notification', 3000);
+            } catch(e) {
+                const n = document.getElementById('notification');
+                n.textContent = 'ERROR: ' + e.message;
+                n.className = 'notification show error';
+                setTimeout(() => n.className = 'notification', 3000);
+            }
+        };
+
+        window.handleLogout = async function() { await signOut(auth); window.location.href = 'home.html'; };
+    </script>
+    <style>
+        :root{--accent:#00D9FF;--accent-glow:rgba(0,217,255,.5);--success:#00FF41}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Share Tech Mono',monospace;background:linear-gradient(180deg,#0A0E12,#050709);color:#a0a0a0;min-height:100vh}
+        body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 50px,rgba(0,217,255,.03) 50px,rgba(0,217,255,.03) 51px),repeating-linear-gradient(90deg,transparent,transparent 50px,rgba(0,217,255,.03) 50px,rgba(0,217,255,.03) 51px);opacity:.3;pointer-events:none;z-index:0}
+        .scanlines{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(0,0,0,.12),rgba(0,0,0,.12) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:9999}
+        .hidden{display:none!important}
+        .loading-screen{display:flex;justify-content:center;align-items:center;height:100vh;color:var(--accent);font-size:14px;letter-spacing:4px;z-index:10}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+        .top-bar{background:rgba(8,10,14,.92);border-bottom:1px solid rgba(0,217,255,.1);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+        .top-bar-left{display:flex;align-items:center;gap:12px}
+        .top-bar-left img{width:32px;height:32px;filter:drop-shadow(0 0 8px var(--accent-glow))}
+        .top-bar-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:16px;font-weight:700;letter-spacing:3px;text-shadow:0 0 10px var(--accent-glow)}
+        .top-bar-right{display:flex;align-items:center;gap:12px}
+        .top-btn{background:transparent;border:1px solid rgba(0,217,255,.2);color:#666;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;padding:7px 14px;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+        .top-btn:hover{border-color:var(--accent);color:var(--accent)}
+        .logout-btn:hover{border-color:#ef4444;color:#ef4444}
+        .profile-container{max-width:700px;margin:40px auto;padding:0 20px;position:relative;z-index:1}
+        .profile-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:24px;font-weight:700;letter-spacing:4px;margin-bottom:24px;text-shadow:0 0 15px var(--accent-glow)}
+        .profile-card{background:rgba(8,10,14,.8);border:1px solid rgba(0,217,255,.1);padding:24px;margin-bottom:16px}
+        .card-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:14px;font-weight:700;letter-spacing:3px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid rgba(0,217,255,.08)}
+        .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.02)}
+        .info-label{color:#555;font-size:10px;letter-spacing:2px}
+        .info-value{color:#ccc;font-size:12px}
+        .role-badge{font-size:10px;letter-spacing:2px;padding:2px 8px;border:1px solid #333;color:#888}
+        .role-commander{color:#f59e0b;border-color:#f59e0b}.role-developer{color:#a78bfa;border-color:#a78bfa}.role-staff_nco{color:#2DD4BF;border-color:#2DD4BF}.role-recruiter{color:#fb923c;border-color:#fb923c}.role-nco{color:#34d399;border-color:#34d399}.role-marine{color:#94a3b8;border-color:#94a3b8}
+        .edit-field{margin-bottom:12px}
+        .edit-field label{display:block;color:#555;font-size:9px;letter-spacing:2px;margin-bottom:4px}
+        .edit-field input{width:100%;padding:10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none}
+        .edit-field input:focus{border-color:var(--accent)}
+        .edit-field input:disabled{opacity:.5;cursor:not-allowed}
+        .name-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+        .save-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;padding:12px 30px;cursor:pointer;transition:all .3s;margin-top:8px}
+        .save-btn:hover{background:rgba(0,217,255,.1);box-shadow:0 0 20px rgba(0,217,255,.15)}
+        .rh-entry{display:flex;gap:16px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px}
+        .rh-rank{color:var(--accent);min-width:120px}.rh-date{color:#555}.rh-by{color:#444;font-style:italic}
+        .empty-state{text-align:center;padding:20px;color:#333;font-size:11px;letter-spacing:3px}
+        .notification{position:fixed;top:60px;right:20px;background:rgba(8,10,14,.97);border:1px solid var(--accent);color:var(--accent);padding:12px 20px;font-size:11px;letter-spacing:2px;z-index:200;opacity:0;transform:translateX(20px);transition:all .3s;pointer-events:none}.notification.show{opacity:1;transform:translateX(0)}.notification.error{border-color:#ef4444;color:#ef4444}
+        @media(max-width:640px){.name-row{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+    <div class="loading-screen" id="loadingScreen">LOADING PROFILE<span style="animation:blink 1s infinite">_</span></div>
+    <div class="notification" id="notification"></div>
+    <div id="profileApp" class="hidden">
+        <div class="top-bar">
+            <div class="top-bar-left"><img src="images/logo.png" alt="505th"><span class="top-bar-title">OPERATIVE PROFILE_</span></div>
+            <div class="top-bar-right">
+                <a href="home.html" class="top-btn">&#8962; HOME</a>
+                <button class="top-btn logout-btn" onclick="handleLogout()">&#9211; LOGOUT</button>
+            </div>
+        </div>
+        <div class="profile-container">
+            <div class="profile-title">MY PROFILE</div>
+            <div class="profile-card">
+                <div class="card-title">OPERATIVE STATUS</div>
+                <div class="info-row"><span class="info-label">CALLSIGN</span><span class="info-value" id="profCallsign">---</span></div>
+                <div class="info-row"><span class="info-label">ROLE</span><span id="profRole" class="role-badge">---</span></div>
+                <div class="info-row"><span class="info-label">RANK</span><span class="info-value" id="profRank">---</span></div>
+                <div class="info-row"><span class="info-label">EMAIL</span><span class="info-value" id="profEmail">---</span></div>
+                <div class="info-row"><span class="info-label">DATE JOINED</span><span class="info-value" id="profJoinDate">---</span></div>
+                <div class="info-row"><span class="info-label">TIME IN UNIT</span><span class="info-value" id="profTimeInUnit">---</span></div>
+            </div>
+            <div class="profile-card">
+                <div class="card-title">EDIT NAME</div>
+                <div class="name-row">
+                    <div class="edit-field"><label>FIRST NAME</label><input type="text" id="inputFirst" placeholder="First name..."></div>
+                    <div class="edit-field"><label>MIDDLE NAME</label><input type="text" id="inputMiddle" placeholder="Middle name (optional)..."></div>
+                    <div class="edit-field"><label>LAST NAME</label><input type="text" id="inputLast" placeholder="Last name..."></div>
+                </div>
+                <button class="save-btn" onclick="saveProfile()">SAVE CHANGES</button>
+            </div>
+            <div class="profile-card">
+                <div class="card-title">RANK HISTORY</div>
+                <div id="rankHistoryList"><div class="empty-state">NO RANK HISTORY</div></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

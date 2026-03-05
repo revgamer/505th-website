@@ -62,6 +62,11 @@ onAuthStateChanged(auth, async (user) => {
                         </div>`;
 
                 // Admin/Commander gets admin panel link
+                dropdownHTML += `
+                        <a href="profile.html" class="auth-dropdown-item">
+                            <span>&#9823;</span> MY PROFILE
+                        </a>`;
+
                 if (['commander','developer','staff_nco','recruiter'].includes(userData.role)) {
                     dropdownHTML += `
                         <a href="admin.html" class="auth-dropdown-item">
@@ -94,10 +99,16 @@ onAuthStateChanged(auth, async (user) => {
                             <span class="menu-auth-role">${userData.role.toUpperCase()}</span>
                         </div>`;
 
+                    menuHTML += `
+                        <a href="profile.html" class="submenu-item">
+                            <span class="submenu-bullet">&#9655;</span>
+                            My Profile
+                        </a>`;
+
                     if (['commander','developer','staff_nco','recruiter'].includes(userData.role)) {
                         menuHTML += `
                         <a href="admin.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
+                            <span class="submenu-bullet">&#9655;</span>
                             Command Panel
                         </a>`;
                     }
