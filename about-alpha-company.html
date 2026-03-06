@@ -496,11 +496,53 @@
                 <p>Alpha Company stands among the most decorated Marine companies in the UNSC, having fought across the deserts of Mars and the jungles of the Amazon. Our record is written in completed missions and secured ground.</p>
             </div>
 
-            <!-- Philosophy Section -->
-            <div class="philosophy-section">
-                <h3>Operational Philosophy</h3>
-                <p>Alpha Company operates on a foundation of aggression, discipline, and combined arms integration. We bring every asset to bear — infantry, armour, fire support, and air coordination — to overwhelm the enemy and hold what we take. Every Marine in Alpha understands their role within the larger machine, and every platoon is trained to fight independently or as part of the whole.</p>
-            </div>
+            <!-- Photo Slider -->
+            <section class="photo-slider-section">
+                <h3>THE 505TH IN ACTION</h3>
+                <div class="slider-container">
+                    <div class="slider-track" id="sliderTrack">
+                        <!-- Slide 1 -->
+                        <div class="slider-slide">
+                            <div class="slider-image-wrapper" data-cms-slot="slider_1" data-cms-type="image">
+                                <span class="placeholder-text">SLIDE 1 - Set via Admin Panel</span>
+                            </div>
+                            <div class="slider-description">
+                                <h4 data-cms-slot="slider_1_title" data-cms-type="text">Title - Set via Admin Panel</h4>
+                                <p data-cms-slot="slider_1_desc" data-cms-type="text">Description - Set via Admin Panel</p>
+                            </div>
+                        </div>
+                        <!-- Slide 2 -->
+                        <div class="slider-slide">
+                            <div class="slider-image-wrapper" data-cms-slot="slider_2" data-cms-type="image">
+                                <span class="placeholder-text">SLIDE 2 - Set via Admin Panel</span>
+                            </div>
+                            <div class="slider-description">
+                                <h4 data-cms-slot="slider_2_title" data-cms-type="text">Title - Set via Admin Panel</h4>
+                                <p data-cms-slot="slider_2_desc" data-cms-type="text">Description - Set via Admin Panel</p>
+                            </div>
+                        </div>
+                        <!-- Slide 3 -->
+                        <div class="slider-slide">
+                            <div class="slider-image-wrapper" data-cms-slot="slider_3" data-cms-type="image">
+                                <span class="placeholder-text">SLIDE 3 - Set via Admin Panel</span>
+                            </div>
+                            <div class="slider-description">
+                                <h4 data-cms-slot="slider_3_title" data-cms-type="text">Title - Set via Admin Panel</h4>
+                                <p data-cms-slot="slider_3_desc" data-cms-type="text">Description - Set via Admin Panel</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slider-controls">
+                    <button class="slider-btn" id="sliderPrev" aria-label="Previous slide">&lt;</button>
+                    <div class="slider-dots" id="sliderDots">
+                        <div class="slider-dot active" data-slide="0"></div>
+                        <div class="slider-dot" data-slide="1"></div>
+                        <div class="slider-dot" data-slide="2"></div>
+                    </div>
+                    <button class="slider-btn" id="sliderNext" aria-label="Next slide">&gt;</button>
+                </div>
+            </section>
 
             <!-- Specializations -->
             <section class="specializations-section">
@@ -589,6 +631,18 @@
         </div>
     </main>
 
+    <!-- Lightbox -->
+    <div class="lightbox-overlay" id="lightbox">
+        <div class="lightbox-content">
+            <button class="lightbox-close" id="lightboxClose">&times;</button>
+            <img id="lightboxImg" src="" alt="">
+            <div class="lightbox-caption">
+                <h4 id="lightboxTitle"></h4>
+                <p id="lightboxDesc"></p>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="page-footer">
         <p>© 2026 505th Expeditionary Force • 505th Dev Team</p>
@@ -598,5 +652,103 @@
     <script src="js/scroll.js"></script>
     <script type="module" src="js/cms.js"></script>
     <script type="module" src="js/auth.js"></script>
+    <script>
+        // ===== Photo Slider =====
+        (function() {
+            const track = document.getElementById('sliderTrack');
+            const dots = document.querySelectorAll('.slider-dot');
+            const prevBtn = document.getElementById('sliderPrev');
+            const nextBtn = document.getElementById('sliderNext');
+            let current = 0;
+            const total = dots.length;
+
+            function goToSlide(index) {
+                if (index < 0) index = total - 1;
+                if (index >= total) index = 0;
+                current = index;
+                track.style.transform = 'translateX(-' + (current * 100) + '%)';
+                dots.forEach(function(d, i) {
+                    d.classList.toggle('active', i === current);
+                });
+            }
+
+            prevBtn.addEventListener('click', function() { goToSlide(current - 1); });
+            nextBtn.addEventListener('click', function() { goToSlide(current + 1); });
+            dots.forEach(function(dot) {
+                dot.addEventListener('click', function() {
+                    goToSlide(parseInt(this.getAttribute('data-slide')));
+                });
+            });
+
+            // Auto-advance every 6 seconds
+            let autoSlide = setInterval(function() { goToSlide(current + 1); }, 6000);
+            var sliderContainer = document.querySelector('.slider-container');
+            if (sliderContainer) {
+                sliderContainer.addEventListener('mouseenter', function() { clearInterval(autoSlide); });
+                sliderContainer.addEventListener('mouseleave', function() {
+                    autoSlide = setInterval(function() { goToSlide(current + 1); }, 6000);
+                });
+            }
+        })();
+
+        // ===== Lightbox =====
+        (function() {
+            var overlay = document.getElementById('lightbox');
+            var lbImg = document.getElementById('lightboxImg');
+            var lbTitle = document.getElementById('lightboxTitle');
+            var lbDesc = document.getElementById('lightboxDesc');
+            var lbClose = document.getElementById('lightboxClose');
+
+            function openLightbox(imgSrc, title, desc) {
+                if (!imgSrc) return;
+                lbImg.src = imgSrc;
+                lbTitle.textContent = title || '';
+                lbDesc.textContent = desc || '';
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeLightbox() {
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            lbClose.addEventListener('click', function(e) { e.stopPropagation(); closeLightbox(); });
+            overlay.addEventListener('click', closeLightbox);
+            document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
+
+            // Slider images
+            document.querySelectorAll('.slider-image-wrapper').forEach(function(wrapper) {
+                wrapper.addEventListener('click', function() {
+                    var img = this.querySelector('img');
+                    if (!img) return;
+                    var slide = this.closest('.slider-slide');
+                    var title = slide ? slide.querySelector('.slider-description h4') : null;
+                    var desc = slide ? slide.querySelector('.slider-description p') : null;
+                    openLightbox(img.src, title ? title.textContent : '', desc ? desc.textContent : '');
+                });
+            });
+
+            // Equipment images
+            document.querySelectorAll('.equipment-image').forEach(function(wrapper) {
+                wrapper.addEventListener('click', function() {
+                    var img = this.querySelector('img');
+                    if (!img) return;
+                    var card = this.closest('.equipment-card');
+                    var title = card ? card.querySelector('.equipment-info h4') : null;
+                    var desc = card ? card.querySelector('.equipment-info p') : null;
+                    openLightbox(img.src, title ? title.textContent : '', desc ? desc.textContent : '');
+                });
+            });
+
+            // Re-bind after CMS loads images (slight delay for Firestore)
+            setTimeout(function() {
+                document.querySelectorAll('.slider-image-wrapper, .equipment-image').forEach(function(el) {
+                    var img = el.querySelector('img');
+                    if (img) img.style.cursor = 'zoom-in';
+                });
+            }, 3000);
+        })();
+    </script>
 </body>
 </html>
