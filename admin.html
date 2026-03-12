@@ -11,7 +11,7 @@
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, orderBy, addDoc, limit } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
         const firebaseConfig = { apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg", authDomain:"th-website-91533.firebaseapp.com", projectId:"th-website-91533", storageBucket:"th-website-91533.firebasestorage.app", messagingSenderId:"1046139150142", appId:"1:1046139150142:web:01f409ae4a38c4f79d966f" };
         const CLOUD_NAME='dwugtsdx', UPLOAD_PRESET='505th_uploads', CLOUDINARY_API_KEY='143672934239445';
         const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -113,6 +113,7 @@
             if(id==='panel-discord') loadSiteSettings();
             if(id==='panel-pagemanager') loadPages();
             if(id==='panel-auditlog') loadAuditLog();
+            if(id==='panel-analytics') loadAnalytics();
         };
         window.handleLogout=async function(){await signOut(auth);window.location.href='home.html';};
 
@@ -196,6 +197,56 @@
 
         // AUDIT LOG
         async function loadAuditLog(){const c=document.getElementById('auditList');c.innerHTML='<div class="empty-state">LOADING...</div>';try{const s=await getDocs(query(collection(db,"audit_log"),orderBy("timestamp","desc")));const logs=[];s.forEach(d=>logs.push(d.data()));if(!logs.length){c.innerHTML='<div class="empty-state">NO ENTRIES</div>';return;}c.innerHTML=logs.slice(0,100).map(l=>`<div class="audit-entry"><div class="audit-time">${new Date(l.timestamp).toLocaleString()}</div><div class="audit-user"><span class="role-badge role-${l.userRole}">${l.userRole.toUpperCase().replace('_',' ')}</span> ${esc(l.userCallsign)}</div><div class="audit-action">${esc(l.action)}</div><div class="audit-details">${esc(l.details)}</div></div>`).join('');}catch(e){c.innerHTML='<div class="empty-state">ERROR: '+e.message+'</div>';}}
+
+        // SITE ANALYTICS
+        async function loadAnalytics() {
+            const el = id => document.getElementById(id);
+            ['analyticsToday','analyticsWeek','analyticsTotal'].forEach(i => { const e = el(i); if(e) e.textContent = '...'; });
+            const recentEl = el('analyticsRecent'), pagesEl = el('analyticsPages');
+            if(recentEl) recentEl.innerHTML = '<div class="empty-state">LOADING...</div>';
+            if(pagesEl)  pagesEl.innerHTML  = '<div class="empty-state">LOADING...</div>';
+            try {
+                const snap = await getDocs(query(collection(db,'page_views'), orderBy('timestamp','desc'), limit(500)));
+                const views = [];
+                snap.forEach(d => views.push({id:d.id,...d.data()}));
+                if(!views.length) {
+                    if(recentEl) recentEl.innerHTML = '<div class="empty-state">NO DATA YET — ADD site-tracking.js TO YOUR PUBLIC PAGES</div>';
+                    if(pagesEl)  pagesEl.innerHTML  = '<div class="empty-state">NO DATA</div>';
+                    ['analyticsToday','analyticsWeek','analyticsTotal'].forEach(i => { const e = el(i); if(e) e.textContent = '0'; });
+                    return;
+                }
+                const now = new Date();
+                const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
+                const weekStart  = new Date(now); weekStart.setDate(now.getDate()-7);
+                const todayViews = views.filter(v => new Date(v.timestamp) >= todayStart);
+                const weekViews  = views.filter(v => new Date(v.timestamp) >= weekStart);
+                if(el('analyticsToday')) el('analyticsToday').textContent = todayViews.length;
+                if(el('analyticsWeek'))  el('analyticsWeek').textContent  = weekViews.length;
+                if(el('analyticsTotal')) el('analyticsTotal').textContent = views.length;
+                function getLabel(v) {
+                    if(!v.userId) return '<span style="color:#444">GUEST</span>';
+                    const u = allUsers.find(x => x.uid === v.userId);
+                    if(u) return `<span class="role-badge role-${u.role}">${u.role.toUpperCase().replace('_',' ')}</span> <strong>${esc(u.callsign)}</strong>`;
+                    return `<span style="color:#666">UID:${v.userId.substr(0,8)}&hellip;</span>`;
+                }
+                if(recentEl) {
+                    recentEl.innerHTML = views.slice(0,100).map(v => `<div class="audit-entry"><div class="audit-time">${new Date(v.timestamp).toLocaleString()}</div><div class="audit-user">${getLabel(v)}</div><div class="audit-action">${esc(v.page.toUpperCase())}</div><div class="audit-details" style="color:#444;font-size:9px">${v.referrer?'&#8617; '+esc(v.referrer.substring(0,50)):'DIRECT'}</div></div>`).join('');
+                }
+                const pageCounts = {};
+                views.forEach(v => { pageCounts[v.page] = (pageCounts[v.page]||0)+1; });
+                const sortedPages = Object.entries(pageCounts).sort((a,b) => b[1]-a[1]);
+                const maxCount = sortedPages[0]?.[1]||1;
+                if(pagesEl) {
+                    pagesEl.innerHTML = sortedPages.map(([page,count]) => {
+                        const pct = Math.round((count/maxCount)*100);
+                        return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="color:#ccc;font-size:10px;letter-spacing:1px">${esc(page.toUpperCase())}</span><span style="color:var(--accent);font-size:11px;font-family:'Rajdhani',sans-serif">${count}</span></div><div style="background:rgba(0,217,255,.07);height:4px;border-radius:2px"><div style="width:${pct}%;background:var(--accent);height:100%;border-radius:2px;transition:width .4s"></div></div></div>`;
+                    }).join('');
+                }
+            } catch(e) {
+                if(recentEl) recentEl.innerHTML = `<div class="empty-state">ERROR: ${esc(e.message)}</div>`;
+                console.error('Analytics error:',e);
+            }
+        }
 
         function notify(m,err){const n=document.getElementById('notification');n.textContent=m;n.className='notification show'+(err?' error':'');setTimeout(()=>n.className='notification',3000);}
     </script>
@@ -339,7 +390,7 @@
                 <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> PERSONNEL <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">Active Personnel</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')">Register Panel</div><div class="sub-link" data-panel="panel-promote" onclick="showPanel('panel-promote')">Promote Ranks</div></div></div>
                 <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> MEDIA LIBRARY <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
                 <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PAGE CONTENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div></div></div>
-                <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> SITE SETTINGS <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div class="sub-link" data-panel="panel-pagemanager" onclick="showPanel('panel-pagemanager')">Page Manager</div><div class="sub-link" data-panel="panel-auditlog" onclick="showPanel('panel-auditlog')">Admin Audit Log</div><div class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Discord Tracking</div></div></div>
+                <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> SITE SETTINGS <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div class="sub-link" data-panel="panel-pagemanager" onclick="showPanel('panel-pagemanager')">Page Manager</div><div class="sub-link" data-panel="panel-auditlog" onclick="showPanel('panel-auditlog')">Admin Audit Log</div><div class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Discord Tracking</div><div class="sub-link" data-panel="panel-analytics" onclick="showPanel('panel-analytics')">Site Analytics</div></div></div>
                 <hr class="sidebar-divider">
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
             </div>
@@ -359,6 +410,27 @@
                 <div class="panel hidden" id="panel-discord"><div class="panel-title">DISCORD INVITE LINK</div><div class="upload-area"><p style="color:#555;font-size:9px;letter-spacing:1px;margin-bottom:12px">CHANGE ONCE - ALL PAGES UPDATE AUTOMATICALLY</p><div style="color:#444;font-size:9px;letter-spacing:2px;margin-bottom:8px">CURRENT: <a id="currentDiscordLink" href="#" target="_blank" style="color:var(--accent);text-decoration:none">NOT SET</a></div><div class="upload-row"><div class="upload-field"><input type="url" id="discordLinkInput" placeholder="https://discord.gg/XXXXXXXX"></div><button class="upload-btn" onclick="saveDiscordLink()">SAVE LINK</button></div></div></div>
                 <div class="panel hidden" id="panel-pagemanager"><div class="panel-title">PAGE MANAGER</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">ENABLE OR DISABLE SITE PAGES</p><div id="pagesList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-auditlog"><div class="panel-title">ADMIN AUDIT LOG</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">TRACKS ALL ADMIN ACTIONS &bull; CANNOT BE DELETED</p><div class="audit-header"><span>TIMESTAMP</span><span>USER</span><span>ACTION</span><span>DETAILS</span></div><div id="auditList"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-analytics">
+                    <div class="panel-title">SITE ANALYTICS</div>
+                    <p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">TRACKS WHO IS VIEWING THE 505TH WEBSITE &bull; MEMBERS IDENTIFIED BY CALLSIGN</p>
+                    <div class="stats-row" style="margin-bottom:20px">
+                        <div class="stat-card"><div class="stat-number" id="analyticsToday">-</div><div class="stat-label">TODAY</div></div>
+                        <div class="stat-card"><div class="stat-number" id="analyticsWeek">-</div><div class="stat-label">THIS WEEK</div></div>
+                        <div class="stat-card"><div class="stat-number" id="analyticsTotal">-</div><div class="stat-label">ALL TIME</div></div>
+                    </div>
+                    <div class="dash-grid">
+                        <div class="dash-section" style="flex:2">
+                            <div class="dash-section-title">RECENT VISITORS</div>
+                            <div class="audit-header"><span>TIMESTAMP</span><span>OPERATIVE</span><span>PAGE</span><span>REFERRER</span></div>
+                            <div id="analyticsRecent"><div class="empty-state">LOADING...</div></div>
+                        </div>
+                        <div class="dash-section" style="flex:1;min-width:200px">
+                            <div class="dash-section-title">VIEWS BY PAGE</div>
+                            <div id="analyticsPages"><div class="empty-state">LOADING...</div></div>
+                        </div>
+                    </div>
+                    <div style="margin-top:16px"><button class="action-btn approve-btn" onclick="loadAnalytics()">&#8635; REFRESH</button></div>
+                </div>
                 <div class="panel hidden" id="panel-discord-tracking">
                     <div class="panel-title">DISCORD TRACKING</div>
                     <div style="text-align:center;padding:60px 20px;">
