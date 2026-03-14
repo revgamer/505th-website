@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Reference — 505th Expeditionary Force</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/site.webmanifest">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .keybind-header-sub {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            letter-spacing: 0.1em;
+            margin-bottom: 2.5rem;
+        }
+        .keybind-note {
+            background: rgba(0,217,255,0.06);
+            border-left: 3px solid var(--accent);
+            padding: 0.8rem 1.2rem;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.04em;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+        .keybind-note strong { color: var(--accent); }
+
+        /* Category Tabs */
+        .kb-tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        .kb-tab {
+            background: none;
+            border: 1px solid rgba(0,217,255,0.25);
+            color: var(--text-secondary);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            padding: 0.35rem 0.9rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+        .kb-tab:hover, .kb-tab.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(0,217,255,0.07);
+        }
+
+        /* Search */
+        .kb-search {
+            background: var(--bg-card);
+            border: 1px solid rgba(0,217,255,0.3);
+            color: var(--text-primary);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.95rem;
+            padding: 0.5rem 1rem;
+            width: 100%;
+            max-width: 400px;
+            letter-spacing: 0.05em;
+            outline: none;
+            margin-bottom: 2rem;
+        }
+        .kb-search::placeholder { color: rgba(255,255,255,0.3); }
+        .kb-search:focus { border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+
+        /* Section */
+        .kb-section { margin-bottom: 3rem; }
+        .kb-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent);
+            border-bottom: 1px solid rgba(0,217,255,0.2);
+            padding-bottom: 0.4rem;
+            margin-bottom: 1rem;
+        }
+        .kb-section-icon {
+            margin-right: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Table */
+        .kb-table { width: 100%; border-collapse: collapse; }
+        .kb-table tr { border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .kb-table tr:last-child { border-bottom: none; }
+        .kb-table tr:hover { background: rgba(0,217,255,0.04); }
+        .kb-table td { padding: 0.65rem 0.5rem; vertical-align: middle; }
+
+        .kb-action {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            width: 45%;
+        }
+        .kb-key-cell {
+            width: 25%;
+        }
+        .kb-desc {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Key badge */
+        .key {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-card);
+            border: 1px solid rgba(0,217,255,0.45);
+            border-bottom: 2px solid rgba(0,217,255,0.6);
+            color: var(--text-primary);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            padding: 0.18rem 0.45rem;
+            min-width: 28px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .key-combo { display: flex; gap: 0.25rem; align-items: center; flex-wrap: wrap; }
+        .key-sep { color: rgba(255,255,255,0.3); font-size: 0.7rem; }
+
+        /* Important flag */
+        .kb-important { color: #FFD700; }
+        .kb-star { color: #FFD700; margin-right: 0.3rem; font-size: 0.75rem; }
+
+        .kb-empty {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .kb-highlight { background: rgba(0,217,255,0.15); }
+
+        @media (max-width: 600px) {
+            .kb-desc { display: none; }
+            .kb-action { width: 60%; }
+            .kb-key-cell { width: 40%; }
+        }
+    </style>
+</head>
+<body data-cms-page="resources-keybinds">
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand" id="logoMenu">
+                <img src="images/logo.png" alt="505th Logo" class="nav-logo">
+                <span class="nav-title">505TH EXPEDITIONARY FORCE</span>
+            </div>
+            <div class="nav-auth-wrapper">
+                <a href="login.html" class="nav-auth-btn" id="navAuthBtn">LOGIN</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tactical Dropdown Menu -->
+    <div class="tactical-menu" id="tacticalMenu">
+        <div class="tactical-menu-overlay" id="menuOverlay"></div>
+        <div class="tactical-menu-content">
+            <div class="menu-header">
+                <h2>COMMAND TERMINAL</h2>
+                <button class="menu-close" id="menuClose">✕</button>
+            </div>
+            <div class="menu-sections">
+                <div class="menu-section">
+                    <a href="home.html" class="section-title">
+                        <span class="section-icon"><img src="images/icons/Home.png" alt="" style="width:24px;height:24px;"></span>
+                        <span>HOME</span>
+                    </a>
+                </div>
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="about">
+                        <span class="section-icon"><img src="images/icons/About Us.png" alt="" style="width:24px;height:24px;"></span>
+                        <span>ABOUT US</span><span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu" id="submenu-about">
+                        <a href="about-505th.html" class="submenu-item"><span class="submenu-bullet">▸</span>505th Expeditionary Force</a>
+                        <a href="about-alpha-company.html" class="submenu-item"><span class="submenu-bullet">▸</span>Alpha Company</a>
+                        <a href="about-stalker.html" class="submenu-item"><span class="submenu-bullet">▸</span>JTF-23 Force Recon</a>
+                        <a href="about-corpsman.html" class="submenu-item"><span class="submenu-bullet">▸</span>Hospital Corpsman</a>
+                        <a href="about-54th-air-wing.html" class="submenu-item"><span class="submenu-bullet">▸</span>54th Air Wing</a>
+                    </div>
+                </div>
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="media">
+                        <span class="section-icon"><img src="images/icons/Media.png" alt="" style="width:24px;height:24px;"></span>
+                        <span>MEDIA</span><span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu" id="submenu-media">
+                        <a href="media-gallery.html" class="submenu-item"><span class="submenu-bullet">▸</span>Gallery</a>
+                        <a href="media-videos.html" class="submenu-item"><span class="submenu-bullet">▸</span>Videos</a>
+                    </div>
+                </div>
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="resources">
+                        <span class="section-icon"><img src="images/icons/Resources.png" alt="" style="width:24px;height:24px;"></span>
+                        <span>RESOURCES</span><span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu" id="submenu-resources">
+                        <a href="resources-discord-rules.html" class="submenu-item"><span class="submenu-bullet">▸</span>Discord Rules</a>
+                        <a href="resources-handbook.html" class="submenu-item"><span class="submenu-bullet">▸</span>General Handbook</a>
+                        <a href="resources-roster.html" class="submenu-item"><span class="submenu-bullet">▸</span>Roster</a>
+                        <a href="resources-roadmap.html" class="submenu-item"><span class="submenu-bullet">▸</span>Development Roadmap</a>
+                        <a href="resources-aar.html" class="submenu-item"><span class="submenu-bullet">▸</span>After Action Reports</a>
+                        <a href="resources-field-lexicon.html" class="submenu-item"><span class="submenu-bullet">▸</span>Field Lexicon</a>
+                        <a href="resources-keybinds.html" class="submenu-item" style="color:var(--accent);"><span class="submenu-bullet">▸</span>Control Reference</a>
+                    </div>
+                </div>
+                <div class="menu-section">
+                    <a href="https://discord.gg/pNkbaUtcw6" class="section-title join-btn" target="_blank">
+                        <span class="section-icon"><img src="images/icons/Join Us.png" alt="" style="width:24px;height:24px;"></span>
+                        <span>JOIN US</span>
+                    </a>
+                </div>
+            </div>
+            <div class="menu-section menu-auth-section">
+                <div class="section-title" style="cursor:default;"><span class="section-icon">&#x1F512;</span><span>ACCOUNT</span></div>
+                <div id="menuAuthSection">
+                    <a href="login.html" class="submenu-item"><span class="submenu-bullet">&#x25B8;</span>System Login</a>
+                </div>
+            </div>
+            <div class="menu-footer"><p>CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY</p></div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="homepage-content">
+        <div class="container">
+
+            <section style="padding: 3rem 0 1.5rem;">
+                <h1 class="section-header">
+                    <span class="header-line"></span>
+                    CONTROL REFERENCE
+                    <span class="header-line"></span>
+                </h1>
+                <p class="keybind-header-sub">STANDARD KEYBINDINGS FOR 505TH OPERATIONS // ARMA 3 + ACE3 + OPTRE</p>
+            </section>
+
+            <div class="keybind-note">
+                <strong>★ Starred</strong> entries are critical binds every member must know before deploying.
+                Keybinds listed here reflect the 505th standard loadout with <strong>ACE3</strong>, <strong>CBA</strong>, <strong>OPTRE</strong>, and the <strong>505th Aux Mod</strong>.
+                Some binds may differ — always check your personal Arma 3 keybinds menu. Default Arma 3 binds are noted where applicable.
+            </div>
+
+            <!-- Tabs -->
+            <div class="kb-tabs">
+                <button class="kb-tab active" data-section="all">All</button>
+                <button class="kb-tab" data-section="movement">Movement</button>
+                <button class="kb-tab" data-section="combat">Combat</button>
+                <button class="kb-tab" data-section="ace">ACE3 Medical</button>
+                <button class="kb-tab" data-section="ace-interact">ACE3 Interact</button>
+                <button class="kb-tab" data-section="comms">Comms / ACRE</button>
+                <button class="kb-tab" data-section="vehicle">Vehicle</button>
+                <button class="kb-tab" data-section="aux">505th Aux</button>
+            </div>
+
+            <input type="text" class="kb-search" id="kbSearch" placeholder="Search keybinds...">
+
+            <div id="kbBody"></div>
+
+        </div>
+    </main>
+
+    <footer class="page-footer">
+        <p>© 2026 505th Expeditionary Force • 505th Dev Team</p>
+    </footer>
+
+    <script src="js/nav.js"></script>
+    <script src="js/scroll.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/cms.js"></script>
+    <script type="module" src="js/site-tracking.js"></script>
+
+    <script>
+    function key(...keys) {
+        return `<div class="key-combo">${keys.map(k =>
+            k === '+' ? `<span class="key-sep">+</span>` : `<span class="key">${k}</span>`
+        ).join('')}</div>`;
+    }
+
+    const SECTIONS = [
+        {
+            id: 'movement',
+            label: '⬆ Movement & Stances',
+            rows: [
+                { action: '★ Sprint',                    keys: key('Shift','+',' W'),     desc: 'Hold Shift while moving forward to sprint.',         important: true },
+                { action: '★ Prone',                     keys: key('Z'),                  desc: 'Toggle prone position. Reduces profile significantly.', important: true },
+                { action: '★ Crouch',                    keys: key('X'),                  desc: 'Toggle crouch stance.',                              important: true },
+                { action: 'Adjust Stance Up/Down',       keys: key('Ctrl','+',' W / S'),  desc: 'Fine-tune stance height while prone or crouched.'    },
+                { action: 'Walk / Jog Toggle',           keys: key('Caps Lock'),          desc: 'Toggle between walk and jog speed.'                  },
+                { action: '★ Jump',                      keys: key('V'),                  desc: 'Jump or vault over low obstacles.',                  important: true },
+                { action: 'Peek Left / Right',           keys: key('Q') + ' / ' + key('E'), desc: 'Lean out from cover.'                             },
+                { action: 'Freelook',                    keys: key('Alt'),                desc: 'Hold to look around without moving weapon.'          },
+            ]
+        },
+        {
+            id: 'combat',
+            label: '🎯 Combat',
+            rows: [
+                { action: '★ Fire / Shoot',              keys: key('LMB'),                desc: 'Left Mouse Button. Fire weapon.',                    important: true },
+                { action: '★ Aim Down Sights',           keys: key('RMB'),                desc: 'Right Mouse Button. ADS / Iron Sights.',             important: true },
+                { action: '★ Reload',                    keys: key('R'),                  desc: 'Reload current weapon.',                             important: true },
+                { action: 'Switch Fire Mode',            keys: key('F'),                  desc: 'Cycle between single, burst, and automatic.',        },
+                { action: 'Switch Weapon',               keys: key('F'),                  desc: 'Hold to bring up weapon selection.'                  },
+                { action: '★ Grenade',                   keys: key('G'),                  desc: 'Throw selected grenade.',                            important: true },
+                { action: 'Select Grenade Type',         keys: key('Ctrl','+',' G'),      desc: 'Cycle through carried grenades.'                     },
+                { action: 'Zeroing +/-',                 keys: key('Page Up') + ' / ' + key('Page Dn'), desc: 'Increase or decrease weapon zeroing.' },
+                { action: 'Laser / Light Toggle',        keys: key('L'),                  desc: 'Toggle laser designator or weapon light.'            },
+                { action: 'Night Vision',                keys: key('N'),                  desc: 'Toggle NVGs if equipped.'                            },
+                { action: 'Suppress (Hold Breath)',      keys: key('Shift'),              desc: 'Hold while aiming to steady weapon for precise shot.'},
+                { action: 'Fire Underbarrel',            keys: key('Ctrl','+',' RMB'),    desc: 'Switch to underbarrel grenade launcher or device.'   },
+            ]
+        },
+        {
+            id: 'ace',
+            label: '⚕ ACE3 Medical',
+            rows: [
+                { action: '★ Self-Treat',                keys: key('Ctrl','+',' Alt','+',' W'), desc: 'Open ACE medical menu on yourself.',           important: true },
+                { action: '★ Treat Other',               keys: key('Win'),                desc: 'ACE self-interact (Windows key) to open medical on self; use ACE interact for others.', important: true },
+                { action: 'Apply Tourniquet',            keys: key('ACE Interact'),       desc: 'Interact with a downed player → Medical → Apply Tourniquet on limb.' },
+                { action: 'Apply Bandage',               keys: key('ACE Interact'),       desc: 'Select wound type and bandage from ACE medical menu.' },
+                { action: 'CPR',                         keys: key('ACE Interact'),       desc: 'Interact → Medical → CPR on unconscious patient.'    },
+                { action: 'Drag Casualty',               keys: key('ACE Interact'),       desc: 'Interact → Drag to move downed player to cover.'     },
+                { action: 'Carry Casualty',              keys: key('ACE Interact'),       desc: 'Interact → Carry for faster movement of a patient.'  },
+                { action: '★ Check Pulse / Status',      keys: key('ACE Interact'),       desc: 'Interact → Medical → Check Pulse to assess patient status.', important: true },
+            ]
+        },
+        {
+            id: 'ace-interact',
+            label: '⚙ ACE3 Interactions',
+            rows: [
+                { action: '★ ACE Interact (Others)',     keys: key('Windows'),            desc: 'Opens interaction menu on nearby players and objects.', important: true },
+                { action: '★ ACE Self-Interact',         keys: key('Ctrl','+',' Windows'),desc: 'Opens self-interaction menu (medical, earplugs, etc).', important: true },
+                { action: 'Use ACE Item',                keys: key('Ctrl','+',' \\'),     desc: 'Use quick-use ACE item (morphine, etc.).'            },
+                { action: 'Inspect',                     keys: key('ACE Interact'),       desc: 'Look at objects, examine intel items, check vehicle status.' },
+                { action: 'Earplugs',                    keys: key('Self Interact'),      desc: 'Self Interact → Insert/Remove earplugs to reduce hearing damage.' },
+                { action: 'Attach Items',                keys: key('ACE Interact'),       desc: 'Interact with compatible equipment to attach accessories.' },
+                { action: 'Fortify / Build',             keys: key('ACE Interact'),       desc: 'Interact with engineer toolkit → place fortifications via ACE Fortify.' },
+                { action: 'Surrender',                   keys: key('Alt','+',' S'),       desc: 'Raise hands and surrender to an enemy player.'       },
+            ]
+        },
+        {
+            id: 'comms',
+            label: '📻 Comms / ACRE2',
+            rows: [
+                { action: '★ Short Range Radio (SRR)',   keys: key('Caps Lock'),          desc: 'Default PTT for short-range radio (PRC-343). Squad net.', important: true },
+                { action: '★ Long Range Radio (LRR)',    keys: key('Ctrl','+',' Caps'),   desc: 'Default PTT for long-range radio (PRC-152/117F). Command net.', important: true },
+                { action: 'Open Radio GUI',              keys: key('Ctrl','+',' ~'),      desc: 'Open the ACRE2 radio interface to change frequency.'   },
+                { action: 'Whisper (ACRE)',              keys: key('Shift','+',' SRR PTT'),desc: 'Hold Shift + SRR PTT to speak in a whisper (shorter range).' },
+                { action: 'Yell (ACRE)',                 keys: key('Shift','+',' Y'),     desc: 'Hold Shift + Y to yell — heard at greater distance.'   },
+                { action: 'Direct Speech (no radio)',    keys: key('Caps Lock'),          desc: 'Without radio equipped, Caps Lock is direct speech — heard close range only.' },
+                { action: 'Radio Volume',                keys: key('ACE Interact'),       desc: 'Self Interact → ACRE → Adjust radio volume.'          },
+            ]
+        },
+        {
+            id: 'vehicle',
+            label: '🚗 Vehicle',
+            rows: [
+                { action: 'Get In (nearest)',            keys: key('V'),                  desc: 'Board the nearest vehicle.'                          },
+                { action: 'Get Out',                     keys: key('V'),                  desc: 'Exit vehicle.'                                       },
+                { action: 'Throttle Up / Down',          keys: key('W') + ' / ' + key('S'), desc: 'Accelerate and brake/reverse.'                     },
+                { action: 'Turn Left / Right',           keys: key('A') + ' / ' + key('D'), desc: 'Steer vehicle.'                                    },
+                { action: 'Handbrake',                   keys: key('Space'),              desc: 'Apply handbrake for sharp turns or skidding.'        },
+                { action: 'Change Seat',                 keys: key('Ctrl','+',' 1-9'),    desc: 'Move to specific seat number inside a vehicle.'      },
+                { action: 'Flares / Countermeasures',    keys: key('L'),                  desc: 'Fire countermeasures if equipped on aircraft/vehicle.'},
+                { action: 'Engine On/Off',               keys: key('ACE Interact'),       desc: 'ACE Interact with vehicle → Engine On/Off to conserve fuel.' },
+                { action: 'Hover Mode (VTOL)',           keys: key('Ctrl','+',' Space'),  desc: 'Toggle VTOL/hover mode on compatible aircraft.'      },
+            ]
+        },
+        {
+            id: 'aux',
+            label: '🛡 505th Aux Mod',
+            rows: [
+                { action: '★ Tactical Tablet',           keys: key('U'),                  desc: 'Open 505th Tactical Tablet — squad roster, ACE medical overview, map tools.', important: true },
+                { action: 'Chat Wheel',                  keys: key('\\'),                 desc: 'Open Chat Wheel Redux for quick voice lines and callouts.' },
+                { action: 'Reload Callout',              keys: key('Auto'),               desc: 'Automatic callout triggered when reloading. No manual input required.' },
+                { action: 'Grenade Callout',             keys: key('Auto'),               desc: 'Automatic audio/text callout when throwing a grenade.' },
+                { action: 'Medical Scanner',             keys: key('Hold RMB'),           desc: 'If wearing scanner glasses, hold RMB to scan nearby personnel for triage status.' },
+                { action: 'Team Colour',                 keys: key('Tablet'),             desc: 'Open Tactical Tablet → Team Colours to set your icon colour on the map.' },
+                { action: 'Numpad Callouts',             keys: key('Num 1-9'),            desc: 'Quick callout shortcuts — configured via CBA keybind menu.' },
+            ]
+        },
+    ];
+
+    let activeSection = 'all';
+
+    function renderKB(search = '') {
+        const q = search.toLowerCase();
+        const body = document.getElementById('kbBody');
+        let html = '';
+        let anyResult = false;
+
+        SECTIONS.forEach(section => {
+            if (activeSection !== 'all' && section.id !== activeSection) return;
+            const filtered = section.rows.filter(r =>
+                !q || r.action.toLowerCase().includes(q) || r.desc.toLowerCase().includes(q)
+            );
+            if (!filtered.length) return;
+            anyResult = true;
+            html += `<div class="kb-section" id="kb-${section.id}">
+                <div class="kb-section-title">${section.label}</div>
+                <table class="kb-table">
+                ${filtered.map(r => `
+                <tr>
+                    <td class="kb-action">${r.important ? '<span class="kb-star">★</span>' : ''}${r.action}</td>
+                    <td class="kb-key-cell">${r.keys}</td>
+                    <td class="kb-desc">${r.desc}</td>
+                </tr>`).join('')}
+                </table>
+            </div>`;
+        });
+
+        body.innerHTML = anyResult ? html : '<div class="kb-empty">No keybinds match your search.</div>';
+    }
+
+    document.querySelectorAll('.kb-tab').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.kb-tab').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            activeSection = this.dataset.section;
+            renderKB(document.getElementById('kbSearch').value);
+        });
+    });
+
+    document.getElementById('kbSearch').addEventListener('input', function() {
+        renderKB(this.value);
+    });
+
+    renderKB();
+    </script>
+</body>
+</html>
