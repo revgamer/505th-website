@@ -584,13 +584,35 @@
         window.openModal = function(id) {
             const a = allAARs.find(x => x.id === id);
             if (!a) return;
-            const objectives = (a.objectives || []).map(o =>
-                `<li><span class="${o.completed ? 'obj-pass' : 'obj-fail'}">${o.completed ? '✓' : '✗'}</span> ${o.text}</li>`
+
+            const sec = (title, content) => content ? `
+                <div class="aar-modal-section">
+                    <div class="aar-modal-section-title">${title}</div>
+                    <p class="aar-modal-text">${content}</p>
+                </div>` : '';
+
+            // Attachments
+            const attachHTML = (a.attachments || []).filter(Boolean).map(url =>
+                `<a href="${url}" target="_blank" rel="noopener" style="display:block;margin-bottom:0.5rem;">
+                    <img src="${url}" alt="Attachment" style="max-width:100%;max-height:300px;object-fit:contain;border:1px solid rgba(0,217,255,0.2);">
+                </a>`
             ).join('');
+
             document.getElementById('aarModalContent').innerHTML = `
-                <button class="aar-modal-close" id="aarModalClose" onclick="closeModal()">✕</button>
+                <button class="aar-modal-close" onclick="closeModal()">✕</button>
+
+                <!-- CLASSIFICATION HEADER -->
+                <div style="text-align:center;padding:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(0,217,255,0.15);margin-bottom:1.2rem;line-height:1.8;">
+                    <div style="font-size:0.65rem;letter-spacing:0.2em;color:var(--accent);">CLASSIFICATION: CL-5</div>
+                    <div style="font-size:0.6rem;letter-spacing:0.12em;color:rgba(255,255,255,0.35);">BATTALION AFTER ACTION REPORT // 505TH EXPEDITIONARY FORCE</div>
+                    <div style="font-size:0.55rem;letter-spacing:0.08em;color:rgba(255,255,255,0.2);">DISTRIBUTION OUTSIDE 505TH CLASSIFIED DOCUMENT AUTHORITY IS STRICTLY PROHIBITED</div>
+                </div>
+
+                <!-- TITLE & DATE -->
                 <div class="aar-modal-title">${a.title || 'Unnamed Operation'}</div>
                 <div class="aar-modal-date">📅 ${formatDate(a.date)}</div>
+
+                <!-- HEADER ROW: logo + key info -->
                 <div class="aar-modal-header-row">
                     <img class="aar-modal-logo" src="${UNIT_LOGOS[a.unit] || 'images/logo.png'}" alt="">
                     <div class="aar-modal-info">
@@ -608,8 +630,16 @@
                                 <span class="aar-modal-info-value">${a.commander || '—'}</span>
                             </div>
                             <div class="aar-modal-info-item">
+                                <span class="aar-modal-info-label">Filed By</span>
+                                <span class="aar-modal-info-value">${a.filedBy || a.submittedByName || '—'}</span>
+                            </div>
+                            <div class="aar-modal-info-item">
+                                <span class="aar-modal-info-label">Location</span>
+                                <span class="aar-modal-info-value">${a.location || '—'}</span>
+                            </div>
+                            <div class="aar-modal-info-item">
                                 <span class="aar-modal-info-label">Personnel</span>
-                                <span class="aar-modal-info-value">${a.personnel || '—'}</span>
+                                <span class="aar-modal-info-value">${a.personnel ?? '—'}</span>
                             </div>
                             <div class="aar-modal-info-item">
                                 <span class="aar-modal-info-label">Casualties</span>
@@ -622,28 +652,64 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ENGAGEMENT OVERVIEW -->
+                ${sec('Main Objective', a.mainObjective)}
+                ${sec('Summary of Events', a.summary)}
+
+                <!-- FRIENDLY FORCES -->
+                ${a.unitsInvolved ? `<div class="aar-modal-section">
+                    <div class="aar-modal-section-title">Units Involved</div>
+                    <p class="aar-modal-text">${a.unitsInvolved}</p>
+                </div>` : ''}
+
+                <!-- ENEMY FORCES -->
+                ${(a.enemyFaction || a.enemyCasualties || a.enemyTactics || a.enemyDisposition) ? `
                 <div class="aar-modal-section">
-                    <div class="aar-modal-section-title">Executive Summary</div>
-                    <p class="aar-modal-text">${a.summary || 'No summary provided.'}</p>
-                </div>
-                ${objectives ? `<div class="aar-modal-section">
-                    <div class="aar-modal-section-title">Mission Objectives</div>
-                    <ul class="aar-objectives-list">${objectives}</ul>
+                    <div class="aar-modal-section-title">Enemy Forces</div>
+                    ${a.enemyFaction ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Faction:</strong> ${a.enemyFaction}</p>` : ''}
+                    ${a.enemyCasualties ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Est. Enemy Casualties:</strong> ${a.enemyCasualties}</p>` : ''}
+                    ${a.enemyDisposition ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Disposition:</strong> ${a.enemyDisposition}</p>` : ''}
+                    ${a.enemyTactics ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Tactics Observed:</strong> ${a.enemyTactics}</p>` : ''}
                 </div>` : ''}
-                ${a.notableEvents ? `<div class="aar-modal-section">
-                    <div class="aar-modal-section-title">Notable Events</div>
-                    <p class="aar-modal-text">${a.notableEvents}</p>
+
+                <!-- TACTICAL NOTES -->
+                ${(a.keyMoments || a.successfulManeuvers || a.mistakes || a.unexpected) ? `
+                <div class="aar-modal-section">
+                    <div class="aar-modal-section-title">Tactical Notes &amp; Events</div>
+                    ${a.keyMoments ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Key Moments:</strong> ${a.keyMoments}</p>` : ''}
+                    ${a.successfulManeuvers ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Successful Maneuvers:</strong> ${a.successfulManeuvers}</p>` : ''}
+                    ${a.mistakes ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Mistakes / Failures:</strong> ${a.mistakes}</p>` : ''}
+                    ${a.unexpected ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Unexpected Occurrences:</strong> ${a.unexpected}</p>` : ''}
                 </div>` : ''}
-                ${a.lessonsLearned ? `<div class="aar-modal-section">
-                    <div class="aar-modal-section-title">Areas for Improvement</div>
-                    <p class="aar-modal-text">${a.lessonsLearned}</p>
+
+                <!-- INTERROGATION -->
+                ${(a.detainee || a.interrogationSummary || a.infoObtained) ? `
+                <div class="aar-modal-section">
+                    <div class="aar-modal-section-title">Interrogation Report</div>
+                    ${a.detainee ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Detainee:</strong> ${a.detainee}</p>` : ''}
+                    ${a.interrogationSummary ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Summary:</strong> ${a.interrogationSummary}</p>` : ''}
+                    ${a.infoObtained ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Information Obtained:</strong> ${a.infoObtained}</p>` : ''}
                 </div>` : ''}
-                ${a.commendations ? `<div class="aar-modal-section">
-                    <div class="aar-modal-section-title">Commendations</div>
-                    <p class="aar-modal-text">${a.commendations}</p>
+
+                <!-- CONCLUSION -->
+                ${(a.objectiveOutcome || a.recommended || a.miscComments) ? `
+                <div class="aar-modal-section">
+                    <div class="aar-modal-section-title">Conclusion</div>
+                    ${a.objectiveOutcome ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Objective Outcome:</strong> ${a.objectiveOutcome}</p>` : ''}
+                    ${a.recommended ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Recommended Actions:</strong> ${a.recommended}</p>` : ''}
+                    ${a.miscComments ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Misc. Comments:</strong> ${a.miscComments}</p>` : ''}
                 </div>` : ''}
-                <div style="font-size:0.7rem;color:rgba(255,255,255,0.25);letter-spacing:0.08em;margin-top:1.5rem;">
-                    SUBMITTED BY: ${a.submittedByName || 'UNKNOWN'} // CLASSIFICATION: UNCLASSIFIED
+
+                <!-- ATTACHMENTS -->
+                ${attachHTML ? `<div class="aar-modal-section">
+                    <div class="aar-modal-section-title">Attachments</div>
+                    ${attachHTML}
+                </div>` : ''}
+
+                <!-- FOOTER -->
+                <div style="font-size:0.7rem;color:rgba(255,255,255,0.25);letter-spacing:0.08em;margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.07);">
+                    SUBMITTED BY: ${a.submittedByName || 'UNKNOWN'} // CLASSIFICATION: CL-5 // 505TH EXPEDITIONARY FORCE
                 </div>
             `;
             document.getElementById('aarModal').classList.add('active');
