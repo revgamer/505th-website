@@ -399,6 +399,17 @@
     <!-- Page Content -->
     <main class="page-content">
         <div class="container">
+
+            <!-- AUTH GATE -->
+            <div id="authGate" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:20px;text-align:center;">
+                <div style="font-size:52px;opacity:.25;">🔒</div>
+                <h2 style="font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:22px;letter-spacing:4px;">RESTRICTED ACCESS</h2>
+                <p style="color:#555;font-size:11px;letter-spacing:2px;">THIS ROADMAP REQUIRES STAFF NCO STATUS OR ABOVE</p>
+                <a href="login.html" style="color:var(--accent);text-decoration:none;border:1px solid rgba(0,217,255,.3);padding:9px 24px;font-size:11px;letter-spacing:3px;font-family:'Share Tech Mono',monospace;transition:.2s;">AUTHENTICATE →</a>
+            </div>
+
+            <!-- ROADMAP CONTENT -->
+            <div id="roadmapContent" style="display:none">
             <!-- Page Header -->
             <div class="page-header">
                 <span class="page-tag">DEVELOPMENT STATUS</span>
@@ -788,6 +799,7 @@
                     Have suggestions or want to contribute? Reach out in the #suggestions channel on Discord!
                 </p>
             </div>
+            </div><!-- end roadmapContent -->
         </div>
     </main>
 
@@ -802,5 +814,52 @@
     <script type="module" src="js/cms.js"></script>
     <script type="module" src="js/auth.js"></script>
     <script type="module" src="js/site-tracking.js"></script>
+    <script type="module">
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
+            authDomain:"th-website-91533.firebaseapp.com",
+            projectId:"th-website-91533",
+            storageBucket:"th-website-91533.firebasestorage.app",
+            messagingSenderId:"1046139150142",
+            appId:"1:1046139150142:web:01f409ae4a38c4f79d966f"
+        };
+
+        const ALLOWED_ROLES = ['staff_nco','commander','developer'];
+
+        const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db   = getFirestore(app);
+
+        onAuthStateChanged(auth, async user => {
+            const gate    = document.getElementById('authGate');
+            const content = document.getElementById('roadmapContent');
+
+            if (!user) {
+                sessionStorage.setItem('loginReturnTo', window.location.href);
+                gate.style.display    = 'flex';
+                content.style.display = 'none';
+                return;
+            }
+
+            const snap = await getDoc(doc(db, 'users', user.uid));
+            const role = snap.data()?.role;
+
+            if (!snap.exists() || !ALLOWED_ROLES.includes(role)) {
+                gate.style.display    = 'flex';
+                content.style.display = 'none';
+                if (snap.exists()) {
+                    gate.querySelector('p').textContent = 'ACCESS DENIED — INSUFFICIENT CLEARANCE';
+                }
+                return;
+            }
+
+            gate.style.display    = 'none';
+            content.style.display = 'block';
+        });
+    </script>
 </body>
 </html>
