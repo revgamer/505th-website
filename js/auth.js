@@ -16,8 +16,7 @@ const firebaseConfig = {
 
 // Pages that require login — key=filename, value='any'|role name
 const ROLE_GATED_PAGES = {
-    'resources-roster.html':       'any',    // any registered user
-    'resources-roadmap.html':      'staff_nco', // staff_nco+
+    'resources-roster.html':       'any',    // any registered user    
     'resources-field-lexicon.html':'public', // public
     'resources-keybinds.html':     'public', // public
 };

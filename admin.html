@@ -20,11 +20,11 @@
 
         const ADMIN_ROLES = ['commander','developer','staff_nco','nco','recruiter'];
         const ROLE_PERMISSIONS = {
-            'commander': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1},
-            'developer': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1},
-            'staff_nco': {personnel:1,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1,roster:1},
-            'nco':       {personnel:1,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0,roster:1},
-            'recruiter': {personnel:1,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0,roster:0},
+            'commander': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,roadmap:1},
+            'developer': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,roadmap:1},
+            'staff_nco': {personnel:1,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1,roster:1,roadmap:0},
+            'nco':       {personnel:1,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0,roster:1,roadmap:0},
+            'recruiter': {personnel:1,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0,roster:0,roadmap:0},
         };
         function P() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
@@ -192,6 +192,8 @@
             if(rosterNavLink) rosterNavLink.style.display=p.roster?'':'none';
             const aarNavLink=document.getElementById('navlink-aar');
             if(aarNavLink) aarNavLink.style.display=p.aar?'':'none';
+            const roadmapNavLink=document.getElementById('navlink-roadmap-editor');
+            if(roadmapNavLink) roadmapNavLink.style.display=p.roadmap?'':'none';
             // Promote panel role options
             const roleOpts=['enlistee','marine','nco','recruiter','staff_nco'];
             window._allowedRoleOpts=p.canChangeRoles?roleOpts:[];
@@ -220,6 +222,7 @@
             if(id==='panel-aar') loadAARPanel();
             if(id==='panel-roster') loadRosterPanel();
             if(id==='panel-unitcards') loadUnitCards();
+            if(id==='panel-roadmap-editor') loadRoadmapEditor();
         };
         window.handleLogout=async function(){await signOut(auth);window.location.href='home.html';};
 
@@ -669,6 +672,130 @@
         };
         // ── END UNIT CARDS ────────────────────────────────────────────────────
 
+
+        // ── ROADMAP EDITOR ─────────────────────────────────────────────────────
+        const ROADMAP_STATUSES = ['planned','in-progress','complete','cancelled'];
+        const ROADMAP_CATS = ['Arma 3 Mod','Website','Discord Bot','Other'];
+        const STATUS_LABELS = {planned:'PLANNED','in-progress':'IN PROGRESS',complete:'COMPLETE',cancelled:'CANCELLED'};
+        const STATUS_COLORS = {planned:'#555','in-progress':'#FFD700',complete:'var(--success)',cancelled:'#ef4444'};
+        let roadmapItems = [];
+
+        async function loadRoadmapEditor() {
+            const c = document.getElementById('roadmapEditorList');
+            if(c) c.innerHTML = '<div class="empty-state">LOADING...</div>';
+            try {
+                const snap = await getDoc(doc(db,'settings','roadmap'));
+                roadmapItems = snap.exists() ? (snap.data().items || []) : [];
+            } catch(e) { roadmapItems = []; }
+            renderRoadmapEditor();
+        }
+
+        function renderRoadmapEditor() {
+            const c = document.getElementById('roadmapEditorList');
+            if(!c) return;
+            if(!roadmapItems.length) { c.innerHTML = '<div class="empty-state">NO ROADMAP ITEMS — ADD YOUR FIRST</div>'; return; }
+            const total = roadmapItems.length;
+            c.innerHTML = roadmapItems.map((item,i) => {
+                const col = STATUS_COLORS[item.status]||'#555';
+                return `<div class="roadmap-item-row" data-id="${item.id}" style="display:flex;gap:0;align-items:stretch">
+                    <div style="display:flex;flex-direction:column;gap:2px;padding:6px 4px;background:rgba(0,0,0,.3);border-right:1px solid rgba(0,217,255,.06)">
+                        <span style="font-size:9px;color:#333;font-family:'Share Tech Mono',monospace;padding:2px 6px;text-align:center">${i+1}</span>
+                        <button onclick="rmMove('${item.id}',-1)" ${i===0?'disabled':''} style="background:none;border:none;color:${i===0?'#222':'rgba(0,217,255,.4)'};cursor:${i===0?'default':'pointer'};font-size:14px;line-height:1;padding:2px 6px" title="Move up">▲</button>
+                        <button onclick="rmMove('${item.id}',1)"  ${i===total-1?'disabled':''} style="background:none;border:none;color:${i===total-1?'#222':'rgba(0,217,255,.4)'};cursor:${i===total-1?'default':'pointer'};font-size:14px;line-height:1;padding:2px 6px" title="Move down">▼</button>
+                    </div>
+                    <div style="flex:1;padding:10px 14px">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                            <span style="font-size:8px;padding:2px 8px;border:1px solid ${col};color:${col};letter-spacing:2px">${STATUS_LABELS[item.status]||item.status}</span>
+                            <span style="font-size:9px;color:rgba(0,217,255,.4);letter-spacing:1px">${esc(item.category||'')}</span>
+                            <div style="margin-left:auto;display:flex;gap:6px">
+                                <button class="action-btn approve-btn small" onclick="openRoadmapEdit('${item.id}')">EDIT</button>
+                                <button class="action-btn remove-btn small" onclick="deleteRoadmapItem('${item.id}','${esc(item.title||'')}')">DEL</button>
+                            </div>
+                        </div>
+                        <div style="color:#ccc;font-size:11px;letter-spacing:1px;font-weight:600">${esc(item.title)}</div>
+                        ${item.description?`<div style="color:#555;font-size:9px;letter-spacing:.5px;margin-top:4px;line-height:1.6">${esc(item.description)}</div>`:''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.rmMove = async function(id, dir) {
+            const i = roadmapItems.findIndex(x=>x.id===id);
+            if(i<0) return;
+            const j = i + dir;
+            if(j<0 || j>=roadmapItems.length) return;
+            // Swap
+            [roadmapItems[i], roadmapItems[j]] = [roadmapItems[j], roadmapItems[i]];
+            await saveRoadmapItems();
+            notify(dir<0?'MOVED UP':'MOVED DOWN');
+            renderRoadmapEditor();
+        };
+
+        async function saveRoadmapItems() {
+            await setDoc(doc(db,'settings','roadmap'), {items: roadmapItems, updatedAt: new Date().toISOString()});
+            logAction('ROADMAP_SAVE', roadmapItems.length + ' items saved');
+        }
+
+        window.openRoadmapAdd = function() {
+            document.getElementById('rmModalTitle').textContent = 'ADD ROADMAP ITEM';
+            document.getElementById('rmItemId').value = '';
+            document.getElementById('rmTitle').value = '';
+            document.getElementById('rmCategory').value = 'Arma 3 Mod';
+            document.getElementById('rmStatus').value = 'planned';
+            document.getElementById('rmDescription').value = '';
+            document.getElementById('rmModal').classList.add('active');
+        };
+
+        window.openRoadmapEdit = function(id) {
+            const item = roadmapItems.find(x=>x.id===id);
+            if(!item) return;
+            document.getElementById('rmModalTitle').textContent = 'EDIT ITEM';
+            document.getElementById('rmItemId').value = id;
+            document.getElementById('rmTitle').value = item.title||'';
+            document.getElementById('rmCategory').value = item.category||'Arma 3 Mod';
+            document.getElementById('rmStatus').value = item.status||'planned';
+            document.getElementById('rmDescription').value = item.description||'';
+            document.getElementById('rmModal').classList.add('active');
+        };
+
+        window.closeRoadmapModal = function() { document.getElementById('rmModal').classList.remove('active'); };
+
+        window.saveRoadmapItem = async function() {
+            const id    = document.getElementById('rmItemId').value;
+            const title = document.getElementById('rmTitle').value.trim();
+            if(!title) { notify('TITLE REQUIRED',1); return; }
+            const data = {
+                id: id || 'rm_' + Date.now(),
+                title,
+                category: document.getElementById('rmCategory').value,
+                status:   document.getElementById('rmStatus').value,
+                description: document.getElementById('rmDescription').value.trim(),
+                updatedAt: new Date().toISOString()
+            };
+            if(id) {
+                const idx = roadmapItems.findIndex(x=>x.id===id);
+                if(idx>-1) roadmapItems[idx] = data; else roadmapItems.push(data);
+            } else {
+                data.createdAt = new Date().toISOString();
+                roadmapItems.push(data);
+            }
+            await saveRoadmapItems();
+            logAction('ROADMAP_'+(id?'EDIT':'ADD'), title);
+            notify(id?'ITEM UPDATED':'ITEM ADDED');
+            closeRoadmapModal();
+            renderRoadmapEditor();
+        };
+
+        window.deleteRoadmapItem = async function(id, title) {
+            if(!confirm('DELETE "'+title+'"?')) return;
+            roadmapItems = roadmapItems.filter(x=>x.id!==id);
+            await saveRoadmapItems();
+            logAction('ROADMAP_DEL', title);
+            notify('ITEM DELETED');
+            renderRoadmapEditor();
+        };
+        // ── END ROADMAP EDITOR ────────────────────────────────────────────────
+
         function notify(m,err){const n=document.getElementById('notification');n.textContent=m;n.className='notification show'+(err?' error':'');setTimeout(()=>n.className='notification',3000);}
     </script>
 
@@ -798,7 +925,9 @@
         .roster-row:hover{background:rgba(0,217,255,.025)}
         .roster-cell{font-size:10px;letter-spacing:.5px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:4px}
         .roster-name{color:#d0d0d0;font-weight:600;letter-spacing:1px}
-        @media(max-width:768px){.hamburger{display:flex;align-items:center;justify-content:center}.sidebar{position:fixed;top:0;left:-260px;width:260px;height:100vh;z-index:50;transition:left .3s;padding-top:60px}.sidebar.open{left:0}.stats-row{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.table-header,.table-row{grid-template-columns:1fr 1fr;font-size:9px}.audit-entry,.audit-header{grid-template-columns:1fr;font-size:9px}.roster-header,.roster-row{grid-template-columns:1.6fr 1fr;font-size:8px}.roster-cell:nth-child(n+3){display:none}}
+        .roadmap-item-row{padding:12px 14px;border:1px solid rgba(0,217,255,.08);background:rgba(0,0,0,.25);margin-bottom:6px;transition:background .15s}
+        .roadmap-item-row:hover{background:rgba(0,217,255,.03)}
+                @media(max-width:768px){.hamburger{display:flex;align-items:center;justify-content:center}.sidebar{position:fixed;top:0;left:-260px;width:260px;height:100vh;z-index:50;transition:left .3s;padding-top:60px}.sidebar.open{left:0}.stats-row{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.table-header,.table-row{grid-template-columns:1fr 1fr;font-size:9px}.audit-entry,.audit-header{grid-template-columns:1fr;font-size:9px}.roster-header,.roster-row{grid-template-columns:1.6fr 1fr;font-size:8px}.roster-cell:nth-child(n+3){display:none}}
     </style>
 </head>
 <body>
@@ -908,7 +1037,7 @@
                 <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> PERSONNEL <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">Active Personnel</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')">Register Panel</div><div class="sub-link" data-panel="panel-promote" onclick="showPanel('panel-promote')">Promote Ranks</div></div></div>
                 <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> MEDIA LIBRARY <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
                 <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> UNIT MANAGEMENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div><div class="sub-link" data-panel="panel-unitcards" onclick="showPanel('panel-unitcards')">Unit Cards</div></div></div>
-                <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PAGE CONTENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">ABOUT US</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:8px 0 3px 4px">RESOURCES</div><div class="sub-link" data-panel="panel-page-rules" onclick="showPanel('panel-page-rules')">Discord Rules</div><div class="sub-link" data-panel="panel-page-handbook" onclick="showPanel('panel-page-handbook')">General Handbook</div><div class="sub-link" data-panel="panel-page-roadmap" onclick="showPanel('panel-page-roadmap')">Development Roadmap</div><div class="sub-link" data-panel="panel-page-lexicon" onclick="showPanel('panel-page-lexicon')">Field Lexicon</div><div class="sub-link" data-panel="panel-page-keybinds" onclick="showPanel('panel-page-keybinds')">Control Reference</div></div></div>
+                <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PAGE CONTENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">ABOUT US</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:8px 0 3px 4px">RESOURCES</div><div id="navlink-roadmap-editor" class="sub-link" data-panel="panel-roadmap-editor" onclick="showPanel('panel-roadmap-editor')">Development Roadmap</div><div class="sub-link" data-panel="panel-page-rules" onclick="showPanel('panel-page-rules')">Discord Rules</div><div class="sub-link" data-panel="panel-page-handbook" onclick="showPanel('panel-page-handbook')">General Handbook</div><div class="sub-link" data-panel="panel-page-roadmap" onclick="showPanel('panel-page-roadmap')">Development Roadmap</div><div class="sub-link" data-panel="panel-page-lexicon" onclick="showPanel('panel-page-lexicon')">Field Lexicon</div><div class="sub-link" data-panel="panel-page-keybinds" onclick="showPanel('panel-page-keybinds')">Control Reference</div></div></div>
                 <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> SITE SETTINGS <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-discord" class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div id="navlink-pagemanager" class="sub-link" data-panel="panel-pagemanager" onclick="showPanel('panel-pagemanager')">Page Manager</div><div id="navlink-auditlog" class="sub-link" data-panel="panel-auditlog" onclick="showPanel('panel-auditlog')">Admin Audit Log</div><div id="navlink-discord-tracking" class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Discord Tracking</div><div id="navlink-analytics" class="sub-link" data-panel="panel-analytics" onclick="showPanel('panel-analytics')">Site Analytics</div></div></div>
                 <hr class="sidebar-divider">
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
@@ -1139,6 +1268,22 @@
                     </div>
                     <div id="unitCardsList"><div class="empty-state">LOADING...</div></div>
                 </div>
+                <div class="panel hidden" id="panel-roadmap-editor">
+                    <div class="panel-title">DEVELOPMENT ROADMAP</div>
+                    <p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">COMMANDER &amp; DEVELOPER ACCESS // ADD, EDIT, DELETE AND REORDER ROADMAP ITEMS</p>
+                    <div style="margin-bottom:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <button class="upload-btn" onclick="openRoadmapAdd()" style="font-size:10px;letter-spacing:2px">+ ADD ITEM</button>
+                        <button class="action-btn approve-btn" onclick="loadRoadmapEditor()">&#8635; REFRESH</button>
+                        <span style="color:#444;font-size:9px;letter-spacing:2px">&#9432; SORTED AUTOMATICALLY BY STATUS</span>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;font-family:'Share Tech Mono',monospace;font-size:9px">
+                        <span style="padding:2px 8px;border:1px solid #FFD700;color:#FFD700">IN PROGRESS</span>
+                        <span style="padding:2px 8px;border:1px solid #555;color:#555">PLANNED</span>
+                        <span style="padding:2px 8px;border:1px solid var(--success);color:var(--success)">COMPLETE</span>
+                        <span style="padding:2px 8px;border:1px solid #ef4444;color:#ef4444">CANCELLED</span>
+                    </div>
+                    <div id="roadmapEditorList"><div class="empty-state">LOADING...</div></div>
+                </div>
                 <div class="panel hidden" id="panel-discord-tracking">
                     <div class="panel-title">DISCORD TRACKING</div>
                     <div style="text-align:center;padding:60px 20px;">
@@ -1163,6 +1308,39 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    <!-- Roadmap Item Modal -->
+    <div class="edit-modal" id="rmModal">
+        <div class="edit-modal-content" style="max-width:540px;width:95%">
+            <div class="edit-modal-title" id="rmModalTitle">ADD ROADMAP ITEM</div>
+            <input type="hidden" id="rmItemId">
+            <div class="edit-field"><label>TITLE *</label><input type="text" id="rmTitle" placeholder="e.g. Medical Scanner System"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
+                <div class="edit-field"><label>CATEGORY</label>
+                    <select id="rmCategory" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
+                        <option value="Arma 3 Mod">Arma 3 Mod</option>
+                        <option value="Website">Website</option>
+                        <option value="Discord Bot">Discord Bot</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="edit-field"><label>STATUS</label>
+                    <select id="rmStatus" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
+                        <option value="planned">PLANNED</option>
+                        <option value="in-progress">IN PROGRESS</option>
+                        <option value="complete">COMPLETE</option>
+                        <option value="cancelled">CANCELLED</option>
+                    </select>
+                </div>
+            </div>
+            <div class="edit-field"><label>DESCRIPTION</label>
+                <textarea id="rmDescription" rows="4" placeholder="Brief description of this roadmap item..." style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;resize:vertical;line-height:1.6"></textarea>
+            </div>
+            <div class="edit-modal-actions">
+                <button class="action-btn approve-btn" onclick="saveRoadmapItem()">SAVE ITEM</button>
+                <button class="action-btn remove-btn" onclick="closeRoadmapModal()">CANCEL</button>
             </div>
         </div>
     </div>
