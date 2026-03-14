@@ -649,6 +649,13 @@
             const field = el.dataset.ucField;
             if(!unitCardData[key]) unitCardData[key] = {status:'open',name:''};
             unitCardData[key][field] = el.value;
+            // Auto-set status to 'filled' when a name is typed
+            if(field === 'name' && el.value.trim()) {
+                unitCardData[key].status = 'filled';
+                // Update the sibling status dropdown to reflect
+                const row = el.closest('div[style]');
+                if(row) { const sel = row.querySelector('select[data-uc-field="status"]'); if(sel) sel.value = 'filled'; }
+            }
             // Mark the save button as dirty
             const btn = document.getElementById('ucSaveBtn');
             if(btn) { btn.textContent='SAVE CHANGES ●'; btn.style.borderColor='#FFD700'; btn.style.color='#FFD700'; }
