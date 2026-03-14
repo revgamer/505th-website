@@ -275,7 +275,47 @@
         window.aarResultChange=function(){[['success','#7FFF7F'],['partial','#FFD700'],['failure','#FF4444']].forEach(([v,bc])=>{const el=document.getElementById('ropt-'+v);if(!el)return;const checked=document.querySelector('input[name="aarResult"][value="'+v+'"]')?.checked;el.style.background=checked?bc+'18':'transparent';el.style.borderColor=checked?bc:bc+'40';el.style.color=checked?bc:bc+'66';});};
         async function loadAARPanel(){aarObjectives=[];renderAARObjs();document.getElementById('aarDate').value=new Date().toISOString().split('T')[0];document.getElementById('aarSubmitStatus').textContent='';await loadRecentAARs();}
         async function loadRecentAARs(){const c=document.getElementById('aarRecentList');if(!c)return;c.innerHTML='<div class="empty-state">LOADING...</div>';try{const s=await getDocs(query(collection(db,'aars'),orderBy('date','desc'),limit(20)));if(s.empty){c.innerHTML='<div class="empty-state">NO REPORTS SUBMITTED YET</div>';return;}const rows=[];s.forEach(d=>rows.push({id:d.id,...d.data()}));c.innerHTML=rows.map(a=>{const dt=a.date?.toDate?a.date.toDate().toLocaleDateString('en-GB'):(a.date?new Date(a.date).toLocaleDateString('en-GB'):'—');return`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03)"><img src="${UNIT_LOGOS[a.unit]||'images/logo.png'}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0"><div style="flex:1;color:#ccc;font-size:11px;letter-spacing:1px">${esc(a.title||'Untitled')}</div><div style="color:#555;font-size:9px;white-space:nowrap">${dt}</div><div style="font-size:8px;letter-spacing:1px;padding:1px 5px;border:1px solid;color:${a.result==='success'?'#7FFF7F':a.result==='partial'?'#FFD700':'#FF4444'};border-color:${a.result==='success'?'#7FFF7F':a.result==='partial'?'#FFD700':'#FF4444'}">${RES_LABELS[a.result]||'—'}</div><button class="action-btn remove-btn small" onclick="deleteAAR('${a.id}')">DELETE</button></div>`;}).join('');}catch(e){c.innerHTML=`<div class="empty-state">ERROR: ${esc(e.message)}</div>`;}}
-        window.submitAAR=async function(){const title=document.getElementById('aarTitle').value.trim(),dateVal=document.getElementById('aarDate').value,opType=document.getElementById('aarOpType').value,commander=document.getElementById('aarCommander').value.trim(),personnel=parseInt(document.getElementById('aarPersonnel').value)||null,casualties=parseInt(document.getElementById('aarCasualties').value)||0,result=document.querySelector('input[name="aarResult"]:checked')?.value||'',unit=document.querySelector('input[name="aarUnit"]:checked')?.value||'',summary=document.getElementById('aarSummary').value.trim(),notable=document.getElementById('aarNotable').value.trim(),lessons=document.getElementById('aarLessons').value.trim(),commendations=document.getElementById('aarCommendations').value.trim(),st=document.getElementById('aarSubmitStatus'),btn=document.getElementById('aarSubmitBtn');if(!title||!dateVal||!opType||!commander||!result||!unit||!summary){st.style.color='#FF4444';st.textContent='⚠ FILL ALL REQUIRED FIELDS AND SELECT UNIT + RESULT';return;}const objs=aarObjectives.filter(o=>o.text.trim()).map(o=>({text:o.text.trim(),completed:o.ok}));btn.disabled=1;btn.textContent='SUBMITTING...';st.style.color='var(--accent)';st.textContent='SUBMITTING...';try{await addDoc(collection(db,'aars'),{title,operationType:opType,commander,personnel,casualties,result,unit,summary,notableEvents:notable,lessonsLearned:lessons,commendations,objectives:objs,date:new Date(dateVal),submittedBy:currentUser.uid,submittedByName:currentUserData.callsign,submittedAt:new Date().toISOString()});logAction('AAR_SUBMIT',`${title} (${OP_LABELS[opType]||opType}) — ${UNIT_LABELS[unit]||unit} — ${RES_LABELS[result]||result}`);st.style.color='#7FFF7F';st.textContent='✓ REPORT SUBMITTED';notify('AAR SUBMITTED');['aarTitle','aarCommander','aarPersonnel','aarCasualties','aarSummary','aarNotable','aarLessons','aarCommendations'].forEach(id=>{document.getElementById(id).value='';});document.getElementById('aarOpType').value='';document.querySelectorAll('input[name="aarResult"],input[name="aarUnit"]').forEach(r=>r.checked=false);aarObjectives=[];renderAARObjs();await loadRecentAARs();}catch(e){st.style.color='#FF4444';st.textContent='✗ FAILED: '+e.message;}btn.disabled=0;btn.textContent='SUBMIT REPORT';};
+        // DISCORD WEBHOOK — paste your webhook URL here
+        const AAR_WEBHOOK_URL = 'https://discord.com/api/webhooks/1482209258534862961/FLgLtV9APIGOwsNZJWHaT8_ErfEuafl1R59M6aUKbJRqVU6nNVe8sBz0U_YNm7iFf0oY';
+
+        window.submitAAR=async function(){const title=document.getElementById('aarTitle').value.trim(),dateVal=document.getElementById('aarDate').value,opType=document.getElementById('aarOpType').value,commander=document.getElementById('aarCommander').value.trim(),personnel=parseInt(document.getElementById('aarPersonnel').value)||null,casualties=parseInt(document.getElementById('aarCasualties').value)||0,result=document.querySelector('input[name="aarResult"]:checked')?.value||'',unit=document.querySelector('input[name="aarUnit"]:checked')?.value||'',summary=document.getElementById('aarSummary').value.trim(),notable=document.getElementById('aarNotable').value.trim(),lessons=document.getElementById('aarLessons').value.trim(),commendations=document.getElementById('aarCommendations').value.trim(),st=document.getElementById('aarSubmitStatus'),btn=document.getElementById('aarSubmitBtn');if(!title||!dateVal||!opType||!commander||!result||!unit||!summary){st.style.color='#FF4444';st.textContent='⚠ FILL ALL REQUIRED FIELDS AND SELECT UNIT + RESULT';return;}const objs=aarObjectives.filter(o=>o.text.trim()).map(o=>({text:o.text.trim(),completed:o.ok}));btn.disabled=1;btn.textContent='SUBMITTING...';st.style.color='var(--accent)';st.textContent='SUBMITTING...';
+        try{
+            await addDoc(collection(db,'aars'),{title,operationType:opType,commander,personnel,casualties,result,unit,summary,notableEvents:notable,lessonsLearned:lessons,commendations,objectives:objs,date:new Date(dateVal),submittedBy:currentUser.uid,submittedByName:currentUserData.callsign,submittedAt:new Date().toISOString()});
+            logAction('AAR_SUBMIT',`${title} (${OP_LABELS[opType]||opType}) — ${UNIT_LABELS[unit]||unit} — ${RES_LABELS[result]||result}`);
+            // Fire Discord webhook
+            if(AAR_WEBHOOK_URL && AAR_WEBHOOK_URL !== 'YOUR_WEBHOOK_URL_HERE'){
+                const RESULT_COLOURS={success:0x7FFF7F,partial:0xFFD700,failure:0xFF4444};
+                const RESULT_ICONS={success:'✅',partial:'🟡',failure:'❌'};
+                const objList=objs.length?objs.map(o=>`${o.completed?'✓':'✗'} ${o.text}`).join('\n'):'No objectives listed.';
+                const embed={
+                    title:`📋 AFTER ACTION REPORT — ${title.toUpperCase()}`,
+                    color:RESULT_COLOURS[result]||0x00D9FF,
+                    fields:[
+                        {name:'Unit',value:UNIT_LABELS[unit]||unit,inline:true},
+                        {name:'Operation Type',value:OP_LABELS[opType]||opType,inline:true},
+                        {name:'Result',value:`${RESULT_ICONS[result]||''} ${RES_LABELS[result]||result}`,inline:true},
+                        {name:'Date',value:new Date(dateVal).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}),inline:true},
+                        {name:'Commanding Officer',value:commander,inline:true},
+                        {name:'Casualties',value:String(casualties),inline:true},
+                        {name:'Summary',value:summary.length>1024?summary.slice(0,1021)+'...':summary,inline:false},
+                        ...(objs.length?[{name:'Objectives',value:objList.length>1024?objList.slice(0,1021)+'...':objList,inline:false}]:[]),
+                        ...(notable?[{name:'Notable Events',value:notable.length>512?notable.slice(0,509)+'...':notable,inline:false}]:[]),
+                        ...(commendations?[{name:'Commendations',value:commendations,inline:false}]:[]),
+                    ],
+                    footer:{text:`Submitted by ${currentUserData.callsign} • 505th Expeditionary Force`},
+                    timestamp:new Date().toISOString()
+                };
+                try{
+                    await fetch(AAR_WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'505th Command Terminal',avatar_url:'https://'+location.host+'/images/logo.png',embeds:[embed]})});
+                }catch(we){console.warn('Webhook failed (non-critical):',we);}
+            }
+            st.style.color='#7FFF7F';st.textContent='✓ REPORT SUBMITTED';notify('AAR SUBMITTED');
+            ['aarTitle','aarCommander','aarPersonnel','aarCasualties','aarSummary','aarNotable','aarLessons','aarCommendations'].forEach(id=>{document.getElementById(id).value='';});
+            document.getElementById('aarOpType').value='';
+            document.querySelectorAll('input[name="aarResult"],input[name="aarUnit"]').forEach(r=>r.checked=false);
+            aarObjectives=[];renderAARObjs();await loadRecentAARs();
+        }catch(e){st.style.color='#FF4444';st.textContent='✗ FAILED: '+e.message;}
+        btn.disabled=0;btn.textContent='SUBMIT REPORT';};
         window.deleteAAR=async function(id){if(!confirm('DELETE THIS AAR?'))return;await deleteDoc(doc(db,'aars',id));logAction('AAR_DELETE','Deleted AAR '+id);notify('AAR DELETED');loadRecentAARs();};
 
         function notify(m,err){const n=document.getElementById('notification');n.textContent=m;n.className='notification show'+(err?' error':'');setTimeout(()=>n.className='notification',3000);}
