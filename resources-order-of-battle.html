@@ -28,8 +28,9 @@
         .legend-item { display:flex; align-items:center; gap:7px; color:#666; }
         .legend-dot  { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
         .view-toggle { display:flex; gap:8px; margin-bottom:28px; flex-wrap:wrap; }
-        .vt-btn { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:2px; padding:8px 18px; background:transparent; border:1px solid rgba(0,217,255,.15); color:#555; cursor:pointer; transition:.2s; }
-        .vt-btn:hover, .vt-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(0,217,255,.05); }
+        .vt-btn { font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:600; letter-spacing:3px; padding:10px 28px; background:transparent; border:1px solid rgba(0,217,255,.2); color:#666; cursor:pointer; transition:all .2s; text-transform:uppercase; }
+        .vt-btn:hover { border-color:var(--accent); color:var(--accent); }
+        .vt-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(0,217,255,.08); box-shadow:0 0 12px rgba(0,217,255,.12); }
         #treeView {
             width: 100%;
             overflow-x: auto;
@@ -59,7 +60,9 @@
         .plt-row { display:flex; justify-content:space-between; font-size:9px; padding:3px 0; border-bottom:1px solid rgba(255,255,255,.03); }
         .plt-row:last-child { border:none; }
         .plt-pos { color:#666; }
-        .plt-open { color:rgba(0,217,255,.35); font-style:italic; }
+        .plt-open   { color:rgba(0,217,255,.35); font-style:italic; letter-spacing:1px; }
+        .plt-filled { color:#8aad44; font-weight:600; letter-spacing:.5px; }
+        .plt-closed { color:#333; font-style:italic; letter-spacing:1px; }
         .plt-squad-row { font-size:8.5px; color:#555; padding:2px 0 2px 10px; border-bottom:1px solid rgba(255,255,255,.02); display:flex; gap:8px; }
         .plt-squad-label { color:rgba(0,217,255,.4); min-width:80px; flex-shrink:0; }
         .staff-card { font-family:'Share Tech Mono',monospace; background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.07); padding:12px 16px; margin-bottom:2px; }
@@ -469,6 +472,129 @@
             document.getElementById('btnTree').classList.toggle('active',v==='tree');
             document.getElementById('btnCard').classList.toggle('active',v==='card');
         }
+    </script>
+    <script type="module">
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
+            authDomain:"th-website-91533.firebaseapp.com",
+            projectId:"th-website-91533",
+            storageBucket:"th-website-91533.firebasestorage.app",
+            messagingSenderId:"1046139150142",
+            appId:"1:1046139150142:web:01f409ae4a38c4f79d966f"
+        };
+        const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+        const db  = getFirestore(app);
+
+        function makeKey(unit, section, slot) {
+            return `${unit}__${section}__${slot}`.split(' ').join('_');
+        }
+
+        // Must exactly match UNIT_CARD_STRUCTURE keys in admin.html
+        const STRUCTURE = {
+            'Alpha Company': {
+                'Company HQ':                 ['Commanding Officer','Executive Officer','Company Sergeant'],
+                '1st Platoon — Killjoy':      ['Platoon Commander','Platoon Sergeant','Platoon JTAC','KJ 1-1 SQL','KJ 1-1 Marine','KJ 1-2 SQL','KJ 1-2 Marine','KJ 1-3 SQL','KJ 1-3 Marine'],
+                '2nd Platoon':                ['Platoon Commander','Platoon Sergeant','Platoon JTAC','Alpha 2-1 SQL','Bravo 2-2 SQL','Charlie 2-3 SQL'],
+                '3rd Platoon':                ['Platoon Commander','Platoon Sergeant','Platoon JTAC','Alpha 3-1 SQL','Bravo 3-2 SQL','Charlie 3-3 SQL'],
+            },
+            'JSOTF-23': {
+                'Task Force HQ':              ['Task Force Commander','Task Force Sergeant'],
+                '1st Plt — Marine Recon':     ['Platoon Commander','Platoon Sergeant','Platoon JTAC','Stalker 1-0 SQL','Stalker 2-0 SQL'],
+                '2nd Plt — Marine Raiders':   ['Platoon Commander','Platoon Sergeant','Platoon JTAC','Squad A SQL','Squad B SQL'],
+                '3rd Plt — Special Tactics':  ['Platoon Commander','Platoon Sergeant','Platoon JTAC','Squad A SQL','Squad B SQL'],
+                '4th Plt — Pararescue Sq':    ['Platoon Commander','Platoon Sergeant','Squad A SQL','Squad B SQL'],
+            },
+            '54th Air Wing': {
+                'Wing HQ':                    ['Wing Commander','Wing Assistant'],
+                '22nd Air Mobility Sq':       ['Squadron Leader','Squadron Assistant','Pilot 1','Pilot 2','Pilot 3'],
+                '31st Fighter Sq':            ['Squadron Leader','Squadron Assistant','Pilot 1','Pilot 2','Pilot 3'],
+                '5th Special Ops Sq':         ['Squadron Leader','Squadron Assistant','Pilot 1','Pilot 2','Pilot 3'],
+            },
+            'Support Company': {
+                'Hospital Corpsman':          ['Hospital Overseer','Hospital Supervisor','Head of Training','Corpsman 1','Corpsman 2','Corpsman 3'],
+                'Reserves':                   ['Reserve 1','Reserve 2','Reserve 3','Reserve 4','Reserve 5'],
+            }
+        };
+
+        // Add data-uc-key to every value span in the card view
+        // We walk the STRUCTURE and set IDs on matching spans
+        function tagSlotSpans() {
+            // For each unit → section → slot, find the matching plt-row in cardView
+            // Strategy: find all .plt-pos spans, match text to slot names, tag sibling span
+            const cardView = document.getElementById('cardView');
+            if(!cardView) return;
+
+            // Build a lookup: slot label text → key
+            const lookup = {};
+            for(const [unit, sections] of Object.entries(STRUCTURE)) {
+                for(const [section, slots] of Object.entries(sections)) {
+                    slots.forEach(slot => {
+                        // Use a composite key based on slot text alone won't work for duplicates
+                        // so we need to walk in order
+                        const key = makeKey(unit, section, slot);
+                        if(!lookup[key]) lookup[key] = [];
+                        lookup[key].push(slot);
+                    });
+                }
+            }
+
+            // Walk all plt-row and plt-squad-row divs in order, matching to structure order
+            // We tag value spans with data-uc-key so we can update them
+            let idx = 0;
+            const allKeys = [];
+            for(const [unit, sections] of Object.entries(STRUCTURE)) {
+                for(const [section, slots] of Object.entries(sections)) {
+                    slots.forEach(slot => {
+                        allKeys.push(makeKey(unit, section, slot));
+                    });
+                }
+            }
+
+            // Find all value spans (second span in plt-row / last span in plt-squad-row)
+            const valueSpans = cardView.querySelectorAll('.plt-row .plt-open, .plt-row .plt-filled, .plt-row .plt-closed, .plt-squad-row span:last-child');
+            valueSpans.forEach((span, i) => {
+                if(allKeys[i]) span.setAttribute('data-uc-key', allKeys[i]);
+            });
+        }
+
+        function applyCardData(ucData) {
+            const cardView = document.getElementById('cardView');
+            if(!cardView) return;
+
+            // Update all tagged spans
+            cardView.querySelectorAll('[data-uc-key]').forEach(span => {
+                const key = span.getAttribute('data-uc-key');
+                const val = ucData[key];
+                if(!val) return;
+
+                span.className = ''; // clear existing
+                if(val.status === 'filled' && val.name) {
+                    span.textContent = val.name;
+                    span.className = 'plt-filled';
+                } else if(val.status === 'closed') {
+                    span.textContent = 'CLOSED';
+                    span.className = 'plt-closed';
+                } else {
+                    span.textContent = 'OPEN';
+                    span.className = 'plt-open';
+                }
+            });
+        }
+
+        async function loadUnitCardData() {
+            try {
+                tagSlotSpans();
+                const snap = await getDoc(doc(db, 'settings', 'unit_cards'));
+                if(snap.exists()) applyCardData(snap.data());
+            } catch(e) {
+                console.warn('Unit card data unavailable:', e.message);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', loadUnitCardData);
     </script>
 </body>
 </html>

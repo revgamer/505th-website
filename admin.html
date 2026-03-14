@@ -602,13 +602,13 @@
                         const statusLabel = val.status==='closed'?'CLOSED':val.status==='filled'?(val.name||'FILLED'):'OPEN';
                         html += `<div style="display:flex;flex-direction:column;gap:4px;background:rgba(0,0,0,.4);border:1px solid ${statusColor};padding:8px 10px;min-width:160px;flex:1;max-width:220px">`;
                         html += `<div style="font-size:9px;letter-spacing:1px;color:#666;margin-bottom:2px">${slot}</div>`;
-                        html += `<select onchange="setCardStatus('${key}',this.value)" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;outline:none">
+                        html += `<select data-uc-key="${key}" data-uc-field="status" onchange="ucLocalChange(this)" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;outline:none">
                             <option value="open" ${val.status==='open'?'selected':''}>OPEN</option>
                             <option value="closed" ${val.status==='closed'?'selected':''}>CLOSED</option>
                             <option value="filled" ${val.status==='filled'?'selected':''}>FILLED</option>
                         </select>`;
-                        html += `<input type="text" placeholder="Name..." value="${esc(val.name||'')}" 
-                            onchange="setCardName('${key}',this.value)"
+                        html += `<input type="text" data-uc-key="${key}" data-uc-field="name" placeholder="Name (when filled)..." value="${esc(val.name||'')}" 
+                            oninput="ucLocalChange(this)"
                             style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.08);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;outline:none;${val.status!=='filled'?'opacity:.35':''}">`;
                         html += `</div>`;
                     });
@@ -619,19 +619,32 @@
             c.innerHTML = html;
         }
 
-        window.setCardStatus = async function(key, status) {
+        // Track local edits before save
+        window.ucLocalChange = function(el) {
+            const key   = el.dataset.ucKey;
+            const field = el.dataset.ucField;
             if(!unitCardData[key]) unitCardData[key] = {status:'open',name:''};
-            unitCardData[key].status = status;
-            await setDoc(doc(db,'settings','unit_cards'), unitCardData);
-            logAction('UNIT_CARD', key + ' → ' + status);
-            renderUnitCards();
+            unitCardData[key][field] = el.value;
+            // Mark the save button as dirty
+            const btn = document.getElementById('ucSaveBtn');
+            if(btn) { btn.textContent='SAVE CHANGES ●'; btn.style.borderColor='#FFD700'; btn.style.color='#FFD700'; }
         };
-        window.setCardName = async function(key, name) {
-            if(!unitCardData[key]) unitCardData[key] = {status:'filled',name:''};
-            unitCardData[key].name = name.trim();
-            if(name.trim()) unitCardData[key].status = 'filled';
-            await setDoc(doc(db,'settings','unit_cards'), unitCardData);
-            logAction('UNIT_CARD_NAME', key + ' = ' + name);
+        window.saveAllCards = async function() {
+            const btn = document.getElementById('ucSaveBtn');
+            if(btn) { btn.disabled=true; btn.textContent='SAVING...'; }
+            try {
+                await setDoc(doc(db,'settings','unit_cards'), unitCardData);
+                logAction('UNIT_CARDS_SAVE','Saved all unit card data');
+                notify('UNIT CARDS SAVED');
+                if(btn) { btn.textContent='SAVED ✓'; btn.style.borderColor='var(--success)'; btn.style.color='var(--success)'; }
+                setTimeout(()=>{
+                    if(btn){btn.textContent='SAVE CHANGES';btn.style.borderColor='';btn.style.color='';btn.disabled=false;}
+                }, 2000);
+                renderUnitCards();
+            } catch(e) {
+                notify('SAVE FAILED: '+e.message, 1);
+                if(btn){btn.textContent='SAVE FAILED';btn.disabled=false;}
+            }
         };
         // ── END UNIT CARDS ────────────────────────────────────────────────────
 
@@ -1098,9 +1111,10 @@
                 <div class="panel hidden" id="panel-unitcards">
                     <div class="panel-title">UNIT CARDS</div>
                     <p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">MANAGE POSITION SLOTS — OPEN / CLOSED / FILLED WITH NAME // DISPLAYS ON ORDER OF BATTLE PAGE</p>
-                    <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center">
+                    <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <button id="ucSaveBtn" class="upload-btn" onclick="saveAllCards()" style="font-size:10px;letter-spacing:2px">SAVE CHANGES</button>
                         <button class="action-btn approve-btn" onclick="loadUnitCards()">&#8635; REFRESH</button>
-                        <span style="color:#444;font-size:9px;letter-spacing:2px">&#9432; SET STATUS THEN TYPE NAME FOR FILLED SLOTS</span>
+                        <span style="color:#444;font-size:9px;letter-spacing:2px">&#9432; CHANGE STATUS / NAME THEN HIT SAVE</span>
                     </div>
                     <div id="unitCardsList"><div class="empty-state">LOADING...</div></div>
                 </div>
