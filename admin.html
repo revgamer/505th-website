@@ -219,6 +219,7 @@
             if(id==='panel-analytics') loadAnalytics();
             if(id==='panel-aar') loadAARPanel();
             if(id==='panel-roster') loadRosterPanel();
+            if(id==='panel-unitcards') loadUnitCards();
         };
         window.handleLogout=async function(){await signOut(auth);window.location.href='home.html';};
 
@@ -533,6 +534,107 @@
         };
         // ── END ROSTER ───────────────────────────────────────────────────────
 
+
+        // ── UNIT CARDS ────────────────────────────────────────────────────────
+        const UNIT_CARD_STRUCTURE = {
+            'Alpha Company': {
+                color:'#4A5D23', accent:'#8aad44',
+                sections:{
+                    'Company HQ': ['Commanding Officer','Executive Officer','Company Sergeant'],
+                    '1st Platoon — Killjoy': ['Platoon Commander','Platoon Sergeant','Platoon JTAC','KJ 1-1 SQL','KJ 1-1 Marine','KJ 1-2 SQL','KJ 1-2 Marine','KJ 1-3 SQL','KJ 1-3 Marine'],
+                    '2nd Platoon': ['Platoon Commander','Platoon Sergeant','Platoon JTAC','Alpha 2-1 SQL','Bravo 2-2 SQL','Charlie 2-3 SQL'],
+                    '3rd Platoon': ['Platoon Commander','Platoon Sergeant','Platoon JTAC','Alpha 3-1 SQL','Bravo 3-2 SQL','Charlie 3-3 SQL'],
+                }
+            },
+            'JSOTF-23': {
+                color:'#6B3FA0', accent:'#a47de0',
+                sections:{
+                    'Task Force HQ': ['Task Force Commander','Task Force Sergeant'],
+                    '1st Plt — Marine Recon': ['Platoon Commander','Platoon Sergeant','Platoon JTAC','Stalker 1-0 SQL','Stalker 2-0 SQL'],
+                    '2nd Plt — Marine Raiders': ['Platoon Commander','Platoon Sergeant','Platoon JTAC','Squad A SQL','Squad B SQL'],
+                    '3rd Plt — Special Tactics': ['Platoon Commander','Platoon Sergeant','Platoon JTAC','Squad A SQL','Squad B SQL'],
+                    '4th Plt — Pararescue Sq': ['Platoon Commander','Platoon Sergeant','Squad A SQL','Squad B SQL'],
+                }
+            },
+            '54th Air Wing': {
+                color:'#007A70', accent:'#00c4b7',
+                sections:{
+                    'Wing HQ': ['Wing Commander','Wing Assistant'],
+                    '22nd Air Mobility Sq': ['Squadron Leader','Squadron Assistant','Pilot 1','Pilot 2','Pilot 3'],
+                    '31st Fighter Sq': ['Squadron Leader','Squadron Assistant','Pilot 1','Pilot 2','Pilot 3'],
+                    '5th Special Ops Sq': ['Squadron Leader','Squadron Assistant','Pilot 1','Pilot 2','Pilot 3'],
+                }
+            },
+            'Support Company': {
+                color:'#8B1A1A', accent:'#e05a4a',
+                sections:{
+                    'Hospital Corpsman': ['Hospital Overseer','Hospital Supervisor','Head of Training','Corpsman 1','Corpsman 2','Corpsman 3'],
+                    'Reserves': ['Reserve 1','Reserve 2','Reserve 3','Reserve 4','Reserve 5'],
+                }
+            }
+        };
+        let unitCardData = {};
+
+        async function loadUnitCards() {
+            const c = document.getElementById('unitCardsList');
+            if(c) c.innerHTML = '<div class="empty-state">LOADING...</div>';
+            try {
+                const snap = await getDoc(doc(db,'settings','unit_cards'));
+                unitCardData = snap.exists() ? snap.data() : {};
+            } catch(e) { unitCardData = {}; }
+            renderUnitCards();
+        }
+
+        function renderUnitCards() {
+            const c = document.getElementById('unitCardsList');
+            if(!c) return;
+            let html = '';
+            for(const [unit, cfg] of Object.entries(UNIT_CARD_STRUCTURE)) {
+                html += `<div style="margin-bottom:20px;border:1px solid ${cfg.color}33;padding:14px 16px;background:rgba(0,0,0,.25)">`;
+                html += `<div style="color:${cfg.accent};font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:4px;margin-bottom:12px">${unit.toUpperCase()}</div>`;
+                for(const [section, slots] of Object.entries(cfg.sections)) {
+                    html += `<div style="color:#555;font-size:9px;letter-spacing:2px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.04)">${section}</div>`;
+                    html += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
+                    slots.forEach(slot => {
+                        const key = (`${unit}__${section}__${slot}`).split(' ').join('_');
+                        const val = unitCardData[key] || {status:'open',name:''};
+                        const statusColor = val.status==='closed'?'#333':val.status==='filled'?'#4A5D23':'rgba(0,217,255,.2)';
+                        const statusLabel = val.status==='closed'?'CLOSED':val.status==='filled'?(val.name||'FILLED'):'OPEN';
+                        html += `<div style="display:flex;flex-direction:column;gap:4px;background:rgba(0,0,0,.4);border:1px solid ${statusColor};padding:8px 10px;min-width:160px;flex:1;max-width:220px">`;
+                        html += `<div style="font-size:9px;letter-spacing:1px;color:#666;margin-bottom:2px">${slot}</div>`;
+                        html += `<select onchange="setCardStatus('${key}',this.value)" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;outline:none">
+                            <option value="open" ${val.status==='open'?'selected':''}>OPEN</option>
+                            <option value="closed" ${val.status==='closed'?'selected':''}>CLOSED</option>
+                            <option value="filled" ${val.status==='filled'?'selected':''}>FILLED</option>
+                        </select>`;
+                        html += `<input type="text" placeholder="Name..." value="${esc(val.name||'')}" 
+                            onchange="setCardName('${key}',this.value)"
+                            style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.08);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;outline:none;${val.status!=='filled'?'opacity:.35':''}">`;
+                        html += `</div>`;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div>`;
+            }
+            c.innerHTML = html;
+        }
+
+        window.setCardStatus = async function(key, status) {
+            if(!unitCardData[key]) unitCardData[key] = {status:'open',name:''};
+            unitCardData[key].status = status;
+            await setDoc(doc(db,'settings','unit_cards'), unitCardData);
+            logAction('UNIT_CARD', key + ' → ' + status);
+            renderUnitCards();
+        };
+        window.setCardName = async function(key, name) {
+            if(!unitCardData[key]) unitCardData[key] = {status:'filled',name:''};
+            unitCardData[key].name = name.trim();
+            if(name.trim()) unitCardData[key].status = 'filled';
+            await setDoc(doc(db,'settings','unit_cards'), unitCardData);
+            logAction('UNIT_CARD_NAME', key + ' = ' + name);
+        };
+        // ── END UNIT CARDS ────────────────────────────────────────────────────
+
         function notify(m,err){const n=document.getElementById('notification');n.textContent=m;n.className='notification show'+(err?' error':'');setTimeout(()=>n.className='notification',3000);}
     </script>
 
@@ -771,7 +873,7 @@
                 <hr class="sidebar-divider">
                 <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> PERSONNEL <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">Active Personnel</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')">Register Panel</div><div class="sub-link" data-panel="panel-promote" onclick="showPanel('panel-promote')">Promote Ranks</div></div></div>
                 <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> MEDIA LIBRARY <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
-                <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> BATTALION RECORDS <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div></div></div>
+                <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> BATTALION RECORDS <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div><div class="sub-link" data-panel="panel-unitcards" onclick="showPanel('panel-unitcards')">Unit Cards</div></div></div>
                 <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PAGE CONTENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">ABOUT US</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:8px 0 3px 4px">RESOURCES</div><div class="sub-link" data-panel="panel-page-rules" onclick="showPanel('panel-page-rules')">Discord Rules</div><div class="sub-link" data-panel="panel-page-handbook" onclick="showPanel('panel-page-handbook')">General Handbook</div><div class="sub-link" data-panel="panel-page-roadmap" onclick="showPanel('panel-page-roadmap')">Development Roadmap</div><div class="sub-link" data-panel="panel-page-lexicon" onclick="showPanel('panel-page-lexicon')">Field Lexicon</div><div class="sub-link" data-panel="panel-page-keybinds" onclick="showPanel('panel-page-keybinds')">Control Reference</div></div></div>
                 <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> SITE SETTINGS <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-discord" class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div id="navlink-pagemanager" class="sub-link" data-panel="panel-pagemanager" onclick="showPanel('panel-pagemanager')">Page Manager</div><div id="navlink-auditlog" class="sub-link" data-panel="panel-auditlog" onclick="showPanel('panel-auditlog')">Admin Audit Log</div><div id="navlink-discord-tracking" class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Discord Tracking</div><div id="navlink-analytics" class="sub-link" data-panel="panel-analytics" onclick="showPanel('panel-analytics')">Site Analytics</div></div></div>
                 <hr class="sidebar-divider">
@@ -992,6 +1094,15 @@
                         <div>TIME IN UNIT</div><div>PT</div><div>ACTIONS</div>
                     </div>
                     <div id="rosterList"><div class="empty-state">LOADING...</div></div>
+                </div>
+                <div class="panel hidden" id="panel-unitcards">
+                    <div class="panel-title">UNIT CARDS</div>
+                    <p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">MANAGE POSITION SLOTS — OPEN / CLOSED / FILLED WITH NAME // DISPLAYS ON ORDER OF BATTLE PAGE</p>
+                    <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center">
+                        <button class="action-btn approve-btn" onclick="loadUnitCards()">&#8635; REFRESH</button>
+                        <span style="color:#444;font-size:9px;letter-spacing:2px">&#9432; SET STATUS THEN TYPE NAME FOR FILLED SLOTS</span>
+                    </div>
+                    <div id="unitCardsList"><div class="empty-state">LOADING...</div></div>
                 </div>
                 <div class="panel hidden" id="panel-discord-tracking">
                     <div class="panel-title">DISCORD TRACKING</div>

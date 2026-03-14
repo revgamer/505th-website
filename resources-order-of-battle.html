@@ -43,8 +43,8 @@
         .jsotf-hdr { color:var(--purple-l);border-left:3px solid var(--purple); background:rgba(107,63,160,.07); }
         .air-hdr   { color:var(--teal-l);  border-left:3px solid var(--teal);   background:rgba(0,122,112,.07);  }
         .sup-hdr   { color:var(--red-l);   border-left:3px solid var(--red);    background:rgba(139,26,26,.06);  }
-        .platoon-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:2px; margin-bottom:8px; }
-        .plt-card { font-family:'Share Tech Mono',monospace; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.05); padding:14px 16px; transition:background .2s; }
+        .platoon-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-bottom:8px; }
+        .plt-card { font-family:'Share Tech Mono',monospace; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.05); padding:14px 16px; transition:background .2s; width:240px; flex-shrink:0; }
         .plt-card:hover { background:rgba(0,217,255,.03); }
         .plt-card-title { font-size:10px; letter-spacing:2px; margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid rgba(255,255,255,.05); }
         .plt-row { display:flex; justify-content:space-between; font-size:9px; padding:3px 0; border-bottom:1px solid rgba(255,255,255,.03); }
@@ -139,382 +139,158 @@
             <div class="view-toggle">
                 <button class="vt-btn active" id="btnTree" onclick="setView('tree')">HIERARCHY VIEW</button>
                 <button class="vt-btn"        id="btnCard" onclick="setView('card')">UNIT CARDS</button>
-            </div>
-
-            <!-- ══ HIERARCHY SVG ══ -->
+                       <!-- ══ HIERARCHY SVG ══ -->
             <div id="treeView">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 640"
-                 style="width:100%;min-width:1100px;display:block;"
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 430"
+                 style="width:100%;min-width:1200px;display:block;"
                  font-family="'Share Tech Mono',monospace">
-            <defs>
-                <style>
-                    .conn { stroke:rgba(0,217,255,.18); stroke-width:1; fill:none; }
-                    .t    { font-size:9px;   letter-spacing:1.5px; text-anchor:middle; dominant-baseline:middle; }
-                    .ts   { font-size:7.5px; letter-spacing:1px;   text-anchor:middle; dominant-baseline:middle; opacity:.6; }
-                    .tx   { font-size:7px;   letter-spacing:1px;   text-anchor:middle; dominant-baseline:middle; opacity:.4; }
-                </style>
-            </defs>
+            <defs><style>
+                .conn{stroke:rgba(0,217,255,.18);stroke-width:1;fill:none}
+                .t  {font-size:9.5px;letter-spacing:1.5px;text-anchor:middle;dominant-baseline:middle}
+                .ts {font-size:8px;  letter-spacing:1px;  text-anchor:middle;dominant-baseline:middle;opacity:.65}
+                .tx {font-size:7.5px;letter-spacing:.8px; text-anchor:middle;dominant-baseline:middle;opacity:.45}
+                .txx{font-size:7px;  letter-spacing:.5px; text-anchor:middle;dominant-baseline:middle;opacity:.35}
+            </style></defs>
 
             <!-- ══ BATTALION COMMAND ══ -->
-            <rect x="430" y="14" width="300" height="44" rx="1" fill="rgba(201,162,39,.08)" stroke="#C9A227" stroke-width="1"/>
-            <text x="580" y="30" class="t" fill="#C9A227">505TH EXPEDITIONARY FORCE</text>
-            <text x="580" y="46" class="ts" fill="#C9A227">BATTALION COMMAND</text>
-            <line x1="580" y1="58" x2="580" y2="84" class="conn"/>
-            <!-- H-rail to 4 formations -->
-            <line x1="100" y1="84" x2="1070" y2="84" class="conn"/>
-            <line x1="175"  y1="84"  x2="175"  y2="108" class="conn"/>
-            <line x1="490"  y1="84"  x2="490"  y2="108" class="conn"/>
-            <line x1="770"  y1="84"  x2="770"  y2="108" class="conn"/>
-            <line x1="1020" y1="84"  x2="1020" y2="108" class="conn"/>
+            <rect x="720" y="16" width="200" height="46" rx="1" fill="rgba(201,162,39,.08)" stroke="#C9A227" stroke-width="1"/>
+            <text x="820" y="33" class="t"  fill="#C9A227">505TH EXPEDITIONARY FORCE</text>
+            <text x="820" y="51" class="ts" fill="#C9A227">BATTALION COMMAND</text>
+            <line x1="820" y1="62"  x2="820" y2="76"   class="conn"/>
+            <line x1="220" y1="76"  x2="1420" y2="76"  class="conn"/>
+            <line x1="220"  y1="76" x2="220"  y2="94"  class="conn"/>
+            <line x1="640"  y1="76" x2="640"  y2="94"  class="conn"/>
+            <line x1="1080" y1="76" x2="1080" y2="94"  class="conn"/>
+            <line x1="1420" y1="76" x2="1420" y2="94"  class="conn"/>
 
             <!-- ══ ALPHA COMPANY ══ -->
-            <rect x="82"  y="108" width="186" height="44" rx="1" fill="rgba(74,93,35,.12)" stroke="#4A5D23" stroke-width="1"/>
-            <text x="175" y="124" class="t"  fill="#8aad44">ALPHA COMPANY</text>
-            <text x="175" y="140" class="ts" fill="#8aad44">MARINE INFANTRY // CO LR: 40</text>
-            <line x1="175" y1="152" x2="175" y2="174" class="conn"/>
-            <line x1="50"  y1="174" x2="300" y2="174" class="conn"/>
-            <line x1="50"  y1="174" x2="50"  y2="196" class="conn"/>
-            <line x1="175" y1="174" x2="175" y2="196" class="conn"/>
-            <line x1="300" y1="174" x2="300" y2="196" class="conn"/>
+            <rect x="120" y="94" width="200" height="46" rx="1" fill="rgba(74,93,35,.12)" stroke="#4A5D23" stroke-width="1"/>
+            <text x="220" y="111" class="t"  fill="#8aad44">ALPHA COMPANY</text>
+            <text x="220" y="128" class="ts" fill="#8aad44">MARINE INFANTRY // CO LR: 40</text>
+            <line x1="220" y1="140" x2="220" y2="156" class="conn"/>
+            <line x1="90"  y1="156" x2="350" y2="156" class="conn"/>
+            <line x1="90"  y1="156" x2="90"  y2="170" class="conn"/>
+            <line x1="220" y1="156" x2="220" y2="170" class="conn"/>
+            <line x1="350" y1="156" x2="350" y2="170" class="conn"/>
 
-            <!-- 1st PLT -->
-            <rect x="10"  y="196" width="80" height="38" rx="1" fill="rgba(74,93,35,.09)" stroke="rgba(74,93,35,.5)" stroke-width="1"/>
-            <text x="50"  y="209" class="t"  fill="#6a9436" font-size="8">1ST PLT</text>
-            <text x="50"  y="220" class="ts" fill="#6a9436">KILLJOY</text>
-            <text x="50"  y="230" class="tx" fill="#6a9436">PLT NET: SR 100</text>
-            <!-- 1st PLT squads -->
-            <line x1="50"  y1="234" x2="50"  y2="250" class="conn"/>
-            <line x1="16"  y1="250" x2="84"  y2="250" class="conn"/>
-            <line x1="16"  y1="250" x2="16"  y2="262" class="conn"/>
-            <line x1="50"  y1="250" x2="50"  y2="262" class="conn"/>
-            <line x1="84"  y1="250" x2="84"  y2="262" class="conn"/>
-            <rect x="4"   y="262" width="24" height="22" rx="1" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.1)" stroke-width="1"/>
-            <text x="16"  y="275" class="tx" fill="rgba(0,217,255,.5)">KJ 1-1</text>
-            <rect x="38"  y="262" width="24" height="22" rx="1" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.1)" stroke-width="1"/>
-            <text x="50"  y="275" class="tx" fill="rgba(0,217,255,.5)">KJ 1-2</text>
-            <rect x="72"  y="262" width="24" height="22" rx="1" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.1)" stroke-width="1"/>
-            <text x="84"  y="275" class="tx" fill="rgba(0,217,255,.5)">KJ 1-3</text>
+            <!-- Alpha: 1st Plt -->
+            <rect x="40"  y="170" w="100" width="100" height="54" rx="1" fill="rgba(74,93,35,.09)" stroke="rgba(74,93,35,.5)" stroke-width="1"/>
+            <text x="90"  y="185" class="t"  fill="#6a9436" font-size="8.5px">1ST PLT — KILLJOY</text>
+            <text x="90"  y="200" class="tx" fill="#6a9436">PLT NET: SR 100</text>
+            <text x="90"  y="213" class="txx" fill="rgba(0,217,255,.5)">KJ 1-1 · KJ 1-2 · KJ 1-3</text>
 
-            <!-- 2nd PLT -->
-            <rect x="135" y="196" width="80" height="38" rx="1" fill="rgba(74,93,35,.09)" stroke="rgba(74,93,35,.5)" stroke-width="1"/>
-            <text x="175" y="209" class="t"  fill="#6a9436" font-size="8">2ND PLT</text>
-            <text x="175" y="220" class="ts" fill="#6a9436">ALPHA/BRAVO</text>
-            <text x="175" y="230" class="tx" fill="#6a9436">PLT NET: SR 120</text>
-            <line x1="175" y1="234" x2="175" y2="250" class="conn"/>
-            <line x1="141" y1="250" x2="209" y2="250" class="conn"/>
-            <line x1="141" y1="250" x2="141" y2="262" class="conn"/>
-            <line x1="175" y1="250" x2="175" y2="262" class="conn"/>
-            <line x1="209" y1="250" x2="209" y2="262" class="conn"/>
-            <rect x="129" y="262" width="24" height="22" rx="1" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.1)" stroke-width="1"/>
-            <text x="141" y="273" class="tx" fill="rgba(0,217,255,.5)">A</text>
-            <text x="141" y="281" class="tx" fill="rgba(0,217,255,.4)">2-1</text>
-            <rect x="163" y="262" width="24" height="22" rx="1" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.1)" stroke-width="1"/>
-            <text x="175" y="273" class="tx" fill="rgba(0,217,255,.5)">B</text>
-            <text x="175" y="281" class="tx" fill="rgba(0,217,255,.4)">2-2</text>
-            <rect x="197" y="262" width="24" height="22" rx="1" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.1)" stroke-width="1"/>
-            <text x="209" y="273" class="tx" fill="rgba(0,217,255,.5)">C</text>
-            <text x="209" y="281" class="tx" fill="rgba(0,217,255,.4)">2-3</text>
+            <!-- Alpha: 2nd Plt -->
+            <rect x="170" y="170" width="100" height="54" rx="1" fill="rgba(74,93,35,.09)" stroke="rgba(74,93,35,.5)" stroke-width="1"/>
+            <text x="220" y="185" class="t"  fill="#6a9436" font-size="8.5px">2ND PLATOON</text>
+            <text x="220" y="200" class="tx" fill="#6a9436">PLT NET: SR 120</text>
+            <text x="220" y="213" class="txx" fill="rgba(0,217,255,.5)">A 2-1 · B 2-2 · C 2-3</text>
 
-            <!-- 3rd PLT -->
-            <rect x="260" y="196" width="80" height="38" rx="1" fill="rgba(74,93,35,.09)" stroke="rgba(74,93,35,.5)" stroke-width="1"/>
-            <text x="300" y="209" class="t"  fill="#6a9436" font-size="8">3RD PLT</text>
-            <text x="300" y="220" class="ts" fill="#6a9436">ALPHA/BRAVO</text>
-            <text x="300" y="230" class="tx" fill="#6a9436">PLT NET: SR 140</text>
-            <line x1="300" y1="234" x2="300" y2="250" class="conn"/>
-            <line x1="266" y1="250" x2="334" y2="250" class="conn"/>
-            <line x1="266" y1="250" x2="266" y2="262" class="conn"/>
-            <line x1="300" y1="250" x2="300" y2="262" class="conn"/>
-            <line x1="334" y1="250" x2="334" y2="262" class="conn"/>
-            <rect x="254" y="262" width="24" height="22" rx="1" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.1)" stroke-width="1"/>
-            <text x="266" y="273" class="tx" fill="rgba(0,217,255,.5)">A</text>
-            <text x="266" y="281" class="tx" fill="rgba(0,217,255,.4)">3-1</text>
-            <rect x="288" y="262" width="24" height="22" rx="1" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.1)" stroke-width="1"/>
-            <text x="300" y="273" class="tx" fill="rgba(0,217,255,.5)">B</text>
-            <text x="300" y="281" class="tx" fill="rgba(0,217,255,.4)">3-2</text>
-            <rect x="322" y="262" width="24" height="22" rx="1" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.1)" stroke-width="1"/>
-            <text x="334" y="273" class="tx" fill="rgba(0,217,255,.5)">C</text>
-            <text x="334" y="281" class="tx" fill="rgba(0,217,255,.4)">3-3</text>
+            <!-- Alpha: 3rd Plt -->
+            <rect x="300" y="170" width="100" height="54" rx="1" fill="rgba(74,93,35,.09)" stroke="rgba(74,93,35,.5)" stroke-width="1"/>
+            <text x="350" y="185" class="t"  fill="#6a9436" font-size="8.5px">3RD PLATOON</text>
+            <text x="350" y="200" class="tx" fill="#6a9436">PLT NET: SR 140</text>
+            <text x="350" y="213" class="txx" fill="rgba(0,217,255,.5)">A 3-1 · B 3-2 · C 3-3</text>
 
             <!-- ══ JSOTF-23 ══ -->
-            <rect x="385" y="108" width="210" height="44" rx="1" fill="rgba(107,63,160,.1)" stroke="#6B3FA0" stroke-width="1"/>
-            <text x="490" y="124" class="t"  fill="#a47de0">JSOTF-23</text>
-            <text x="490" y="140" class="ts" fill="#a47de0">JOINT SPECIAL OPS TASK FORCE</text>
-            <line x1="490" y1="152" x2="490" y2="174" class="conn"/>
-            <line x1="420" y1="174" x2="560" y2="174" class="conn"/>
-            <!-- MSOC -->
-            <line x1="420" y1="174" x2="420" y2="188" class="conn"/>
-            <rect x="388" y="188" width="64" height="22" rx="1" fill="rgba(107,63,160,.07)" stroke="rgba(107,63,160,.3)" stroke-width="1"/>
-            <text x="420" y="198" class="tx" fill="#8860c0">MARINE SOC</text>
-            <text x="420" y="206" class="tx" fill="#8860c0">COMPONENT</text>
-            <!-- AFSOC -->
-            <line x1="560" y1="174" x2="560" y2="188" class="conn"/>
-            <rect x="528" y="188" width="64" height="22" rx="1" fill="rgba(107,63,160,.07)" stroke="rgba(107,63,160,.3)" stroke-width="1"/>
-            <text x="560" y="198" class="tx" fill="#8860c0">AIR FORCE SOC</text>
-            <text x="560" y="206" class="tx" fill="#8860c0">COMPONENT</text>
+            <rect x="540" y="94" width="200" height="46" rx="1" fill="rgba(107,63,160,.1)" stroke="#6B3FA0" stroke-width="1"/>
+            <text x="640" y="111" class="t"  fill="#a47de0">JSOTF-23</text>
+            <text x="640" y="128" class="ts" fill="#a47de0">JOINT SPECIAL OPS TASK FORCE</text>
+            <line x1="640" y1="140" x2="640" y2="154" class="conn"/>
+            <line x1="540" y1="154" x2="760" y2="154" class="conn"/>
+            <line x1="540" y1="154" x2="540" y2="164" class="conn"/>
+            <line x1="760" y1="154" x2="760" y2="164" class="conn"/>
 
-            <!-- MSOC → 3 plts -->
-            <line x1="420" y1="210" x2="420" y2="224" class="conn"/>
-            <line x1="388" y1="224" x2="452" y2="224" class="conn"/>
-            <line x1="388" y1="224" x2="388" y2="238" class="conn"/>
-            <line x1="420" y1="224" x2="420" y2="238" class="conn"/>
-            <line x1="452" y1="224" x2="452" y2="238" class="conn"/>
-            <!-- 1st PLT Recon -->
-            <rect x="368" y="238" width="40" height="40" rx="1" fill="rgba(107,63,160,.07)" stroke="rgba(107,63,160,.3)" stroke-width="1"/>
-            <text x="388" y="251" class="tx" fill="#8860c0">1ST PLT</text>
-            <text x="388" y="261" class="tx" fill="#8860c0">MARINE</text>
-            <text x="388" y="271" class="tx" fill="#8860c0">RECON</text>
-            <!-- Stalker teams -->
-            <line x1="388" y1="278" x2="388" y2="292" class="conn"/>
-            <line x1="374" y1="292" x2="402" y2="292" class="conn"/>
-            <line x1="374" y1="292" x2="374" y2="304" class="conn"/>
-            <line x1="402" y1="292" x2="402" y2="304" class="conn"/>
-            <rect x="364" y="304" width="20" height="20" rx="1" fill="rgba(107,63,160,.05)" stroke="rgba(107,63,160,.2)" stroke-width="1"/>
-            <text x="374" y="315" class="tx" fill="rgba(164,125,224,.45)">STK1</text>
-            <rect x="392" y="304" width="20" height="20" rx="1" fill="rgba(107,63,160,.05)" stroke="rgba(107,63,160,.2)" stroke-width="1"/>
-            <text x="402" y="315" class="tx" fill="rgba(164,125,224,.45)">STK2</text>
-            <!-- 2nd PLT Raiders -->
-            <rect x="400" y="238" width="40" height="40" rx="1" fill="rgba(107,63,160,.07)" stroke="rgba(107,63,160,.3)" stroke-width="1"/>
-            <text x="420" y="251" class="tx" fill="#8860c0">2ND PLT</text>
-            <text x="420" y="261" class="tx" fill="#8860c0">MARINE</text>
-            <text x="420" y="271" class="tx" fill="#8860c0">RAIDERS</text>
-            <!-- 3rd PLT Special Tactics -->
-            <rect x="432" y="238" width="40" height="40" rx="1" fill="rgba(107,63,160,.07)" stroke="rgba(107,63,160,.3)" stroke-width="1"/>
-            <text x="452" y="251" class="tx" fill="#8860c0">3RD PLT</text>
-            <text x="452" y="261" class="tx" fill="#8860c0">SP.TACT</text>
-            <text x="452" y="271" class="tx" fill="#8860c0">SQ</text>
+            <!-- MSOC header -->
+            <rect x="430" y="164" width="220" height="22" rx="1" fill="rgba(107,63,160,.07)" stroke="rgba(107,63,160,.3)" stroke-width="1"/>
+            <text x="540" y="175" class="tx" fill="#a47de0">MARINE SPECIAL OPS COMPONENT</text>
+            <line x1="540" y1="186" x2="540" y2="196" class="conn"/>
+            <line x1="455" y1="196" x2="625" y2="196" class="conn"/>
+            <line x1="455" y1="196" x2="455" y2="208" class="conn"/>
+            <line x1="540" y1="196" x2="540" y2="208" class="conn"/>
+            <line x1="625" y1="196" x2="625" y2="208" class="conn"/>
 
-            <!-- AFSOC → 4th PLT Pararescue -->
-            <line x1="560" y1="210" x2="560" y2="238" class="conn"/>
-            <rect x="532" y="238" width="56" height="40" rx="1" fill="rgba(107,63,160,.07)" stroke="rgba(107,63,160,.3)" stroke-width="1"/>
-            <text x="560" y="251" class="tx" fill="#8860c0">4TH PLT</text>
-            <text x="560" y="261" class="tx" fill="#8860c0">PARA-</text>
-            <text x="560" y="271" class="tx" fill="#8860c0">RESCUE SQ</text>
+            <!-- MSOC: 1st PLT Recon -->
+            <rect x="410" y="208" width="90" height="54" rx="1" fill="rgba(107,63,160,.08)" stroke="rgba(107,63,160,.35)" stroke-width="1"/>
+            <text x="455" y="223" class="t"  fill="#8860c0" font-size="8.5px">1ST PLT</text>
+            <text x="455" y="237" class="ts" fill="#8860c0">MARINE RECON</text>
+            <text x="455" y="251" class="txx" fill="rgba(164,125,224,.5)">STK 1-0 · STK 2-0</text>
+
+            <!-- MSOC: 2nd PLT Raiders -->
+            <rect x="496" y="208" width="90" height="54" rx="1" fill="rgba(107,63,160,.08)" stroke="rgba(107,63,160,.35)" stroke-width="1"/>
+            <text x="541" y="223" class="t"  fill="#8860c0" font-size="8.5px">2ND PLT</text>
+            <text x="541" y="237" class="ts" fill="#8860c0">MARINE RAIDERS</text>
+
+            <!-- MSOC: 3rd PLT Sp.Tact -->
+            <rect x="582" y="208" width="90" height="54" rx="1" fill="rgba(107,63,160,.08)" stroke="rgba(107,63,160,.35)" stroke-width="1"/>
+            <text x="627" y="223" class="t"  fill="#8860c0" font-size="8.5px">3RD PLT</text>
+            <text x="627" y="237" class="ts" fill="#8860c0">SPECIAL TACTICS</text>
+
+            <!-- AFSOC header -->
+            <rect x="700" y="164" width="120" height="22" rx="1" fill="rgba(107,63,160,.07)" stroke="rgba(107,63,160,.3)" stroke-width="1"/>
+            <text x="760" y="175" class="tx" fill="#a47de0">AIR FORCE SOC COMPONENT</text>
+            <line x1="760" y1="186" x2="760" y2="208" class="conn"/>
+
+            <!-- AFSOC: 4th PLT Pararescue -->
+            <rect x="715" y="208" width="90" height="54" rx="1" fill="rgba(107,63,160,.08)" stroke="rgba(107,63,160,.35)" stroke-width="1"/>
+            <text x="760" y="223" class="t"  fill="#8860c0" font-size="8.5px">4TH PLT</text>
+            <text x="760" y="237" class="ts" fill="#8860c0">PARARESCUE SQ</text>
+            <text x="760" y="251" class="txx" fill="rgba(164,125,224,.4)">AIR FORCE SOC</text>
 
             <!-- ══ 54TH AIR WING ══ -->
-            <rect x="658" y="108" width="224" height="44" rx="1" fill="rgba(0,122,112,.1)" stroke="#007A70" stroke-width="1"/>
-            <text x="770" y="124" class="t"  fill="#00c4b7">54TH AIR WING</text>
-            <text x="770" y="140" class="ts" fill="#00c4b7">PILOT // AIR WING LR: 70</text>
-            <line x1="770" y1="152" x2="770" y2="174" class="conn"/>
-            <line x1="666" y1="174" x2="874" y2="174" class="conn"/>
-            <line x1="666" y1="174" x2="666" y2="196" class="conn"/>
-            <line x1="770" y1="174" x2="770" y2="196" class="conn"/>
-            <line x1="874" y1="174" x2="874" y2="196" class="conn"/>
+            <rect x="980" y="94" width="200" height="46" rx="1" fill="rgba(0,122,112,.1)" stroke="#007A70" stroke-width="1"/>
+            <text x="1080" y="111" class="t"  fill="#00c4b7">54TH AIR WING</text>
+            <text x="1080" y="128" class="ts" fill="#00c4b7">PILOT // AIR WING LR: 70</text>
+            <line x1="1080" y1="140" x2="1080" y2="156" class="conn"/>
+            <line x1="970"  y1="156" x2="1190" y2="156" class="conn"/>
+            <line x1="970"  y1="156" x2="970"  y2="170" class="conn"/>
+            <line x1="1080" y1="156" x2="1080" y2="170" class="conn"/>
+            <line x1="1190" y1="156" x2="1190" y2="170" class="conn"/>
+
             <!-- 22nd Air Mobility -->
-            <rect x="624" y="196" width="84" height="38" rx="1" fill="rgba(0,122,112,.08)" stroke="rgba(0,122,112,.4)" stroke-width="1"/>
-            <text x="666" y="210" class="t"  fill="#00a89e" font-size="8">22ND SQ</text>
-            <text x="666" y="221" class="ts" fill="#00a89e">AIR MOBILITY</text>
-            <text x="666" y="230" class="tx" fill="#00a89e">ATG LR: 71</text>
+            <rect x="915" y="170" width="110" height="50" rx="1" fill="rgba(0,122,112,.08)" stroke="rgba(0,122,112,.4)" stroke-width="1"/>
+            <text x="970"  y="185" class="t"  fill="#00a89e" font-size="8.5px">22ND AIR MOBILITY SQ</text>
+            <text x="970"  y="200" class="tx" fill="#00a89e">ATG LR: 71</text>
+
             <!-- 31st Fighter -->
-            <rect x="728" y="196" width="84" height="38" rx="1" fill="rgba(0,122,112,.08)" stroke="rgba(0,122,112,.4)" stroke-width="1"/>
-            <text x="770" y="210" class="t"  fill="#00a89e" font-size="8">31ST SQ</text>
-            <text x="770" y="221" class="ts" fill="#00a89e">FIGHTER</text>
-            <text x="770" y="230" class="tx" fill="#00a89e">ATG LR: 71</text>
+            <rect x="1025" y="170" width="110" height="50" rx="1" fill="rgba(0,122,112,.08)" stroke="rgba(0,122,112,.4)" stroke-width="1"/>
+            <text x="1080" y="185" class="t"  fill="#00a89e" font-size="8.5px">31ST FIGHTER SQ</text>
+            <text x="1080" y="200" class="tx" fill="#00a89e">ATG LR: 71</text>
+
             <!-- 5th Special Ops -->
-            <rect x="832" y="196" width="84" height="38" rx="1" fill="rgba(0,122,112,.08)" stroke="rgba(0,122,112,.4)" stroke-width="1"/>
-            <text x="874" y="210" class="t"  fill="#00a89e" font-size="8">5TH SQ</text>
-            <text x="874" y="221" class="ts" fill="#00a89e">SPECIAL OPS</text>
-            <text x="874" y="230" class="tx" fill="#00a89e">ATG LR: 71</text>
-            <!-- pilot slots -->
-            <line x1="666" y1="234" x2="666" y2="254" class="conn"/>
-            <rect x="644" y="254" width="44" height="18" rx="1" fill="rgba(0,122,112,.04)" stroke="rgba(0,122,112,.18)" stroke-width="1"/>
-            <text x="666" y="265" class="tx" fill="rgba(0,196,183,.35)">PILOTS</text>
-            <line x1="770" y1="234" x2="770" y2="254" class="conn"/>
-            <rect x="748" y="254" width="44" height="18" rx="1" fill="rgba(0,122,112,.04)" stroke="rgba(0,122,112,.18)" stroke-width="1"/>
-            <text x="770" y="265" class="tx" fill="rgba(0,196,183,.35)">PILOTS</text>
-            <line x1="874" y1="234" x2="874" y2="254" class="conn"/>
-            <rect x="852" y="254" width="44" height="18" rx="1" fill="rgba(0,122,112,.04)" stroke="rgba(0,122,112,.18)" stroke-width="1"/>
-            <text x="874" y="265" class="tx" fill="rgba(0,196,183,.35)">PILOTS</text>
+            <rect x="1135" y="170" width="110" height="50" rx="1" fill="rgba(0,122,112,.08)" stroke="rgba(0,122,112,.4)" stroke-width="1"/>
+            <text x="1190" y="185" class="t"  fill="#00a89e" font-size="8.5px">5TH SPECIAL OPS SQ</text>
+            <text x="1190" y="200" class="tx" fill="#00a89e">ATG LR: 71</text>
 
             <!-- ══ SUPPORT COMPANY ══ -->
-            <rect x="908" y="108" width="224" height="44" rx="1" fill="rgba(139,26,26,.08)" stroke="#8B1A1A" stroke-width="1"/>
-            <text x="1020" y="124" class="t"  fill="#e05a4a">SUPPORT COMPANY</text>
-            <text x="1020" y="140" class="ts" fill="#e05a4a">HOSPITAL CORPSMAN &amp; RESERVES</text>
-            <line x1="1020" y1="152" x2="1020" y2="174" class="conn"/>
-            <line x1="960"  y1="174" x2="1080" y2="174" class="conn"/>
-            <line x1="960"  y1="174" x2="960"  y2="196" class="conn"/>
-            <line x1="1080" y1="174" x2="1080" y2="196" class="conn"/>
+            <rect x="1320" y="94" width="200" height="46" rx="1" fill="rgba(139,26,26,.08)" stroke="#8B1A1A" stroke-width="1"/>
+            <text x="1420" y="111" class="t"  fill="#e05a4a">SUPPORT COMPANY</text>
+            <text x="1420" y="128" class="ts" fill="#e05a4a">HOSPITAL CORPSMAN &amp; RESERVES</text>
+            <line x1="1420" y1="140" x2="1420" y2="156" class="conn"/>
+            <line x1="1330" y1="156" x2="1510" y2="156" class="conn"/>
+            <line x1="1330" y1="156" x2="1330" y2="170" class="conn"/>
+            <line x1="1510" y1="156" x2="1510" y2="170" class="conn"/>
+
             <!-- Hospital Corpsman -->
-            <rect x="912" y="196" width="96" height="38" rx="1" fill="rgba(139,26,26,.07)" stroke="rgba(139,26,26,.4)" stroke-width="1"/>
-            <text x="960" y="210" class="t"  fill="#c05a4a" font-size="8">HOSPITAL</text>
-            <text x="960" y="221" class="ts" fill="#c05a4a">CORPSMAN</text>
-            <text x="960" y="230" class="tx" fill="#c05a4a">EMER. NET: 333</text>
-            <!-- Staff roles -->
-            <line x1="960" y1="234" x2="960" y2="250" class="conn"/>
-            <line x1="924" y1="250" x2="996" y2="250" class="conn"/>
-            <line x1="924" y1="250" x2="924" y2="262" class="conn"/>
-            <line x1="960" y1="250" x2="960" y2="262" class="conn"/>
-            <line x1="996" y1="250" x2="996" y2="262" class="conn"/>
-            <rect x="910" y="262" width="28" height="30" rx="1" fill="rgba(139,26,26,.05)" stroke="rgba(139,26,26,.2)" stroke-width="1"/>
-            <text x="924" y="273" class="tx" fill="rgba(224,90,74,.4)">HOSP</text>
-            <text x="924" y="281" class="tx" fill="rgba(224,90,74,.35)">OVER</text>
-            <text x="924" y="289" class="tx" fill="rgba(224,90,74,.3)">SEER</text>
-            <rect x="946" y="262" width="28" height="30" rx="1" fill="rgba(139,26,26,.05)" stroke="rgba(139,26,26,.2)" stroke-width="1"/>
-            <text x="960" y="273" class="tx" fill="rgba(224,90,74,.4)">HOSP</text>
-            <text x="960" y="281" class="tx" fill="rgba(224,90,74,.35)">SUPER</text>
-            <text x="960" y="289" class="tx" fill="rgba(224,90,74,.3)">VISOR</text>
-            <rect x="982" y="262" width="28" height="30" rx="1" fill="rgba(139,26,26,.05)" stroke="rgba(139,26,26,.2)" stroke-width="1"/>
-            <text x="996" y="273" class="tx" fill="rgba(224,90,74,.4)">HEAD</text>
-            <text x="996" y="281" class="tx" fill="rgba(224,90,74,.35)">OF</text>
-            <text x="996" y="289" class="tx" fill="rgba(224,90,74,.3)">TRAIN.</text>
+            <rect x="1270" y="170" width="120" height="60" rx="1" fill="rgba(139,26,26,.07)" stroke="rgba(139,26,26,.4)" stroke-width="1"/>
+            <text x="1330" y="185" class="t"  fill="#c05a4a" font-size="8.5px">HOSPITAL CORPSMAN</text>
+            <text x="1330" y="200" class="tx" fill="#c05a4a">EMER. NET: 333</text>
+            <text x="1330" y="213" class="txx" fill="rgba(224,90,74,.4)">OVERSEER · SUPERVISOR</text>
+            <text x="1330" y="224" class="txx" fill="rgba(224,90,74,.35)">HEAD OF TRAINING</text>
+
             <!-- Reserves -->
-            <rect x="1032" y="196" width="96" height="38" rx="1" fill="rgba(139,26,26,.07)" stroke="rgba(139,26,26,.4)" stroke-width="1"/>
-            <text x="1080" y="210" class="t"  fill="#c05a4a" font-size="8">RESERVES</text>
-            <text x="1080" y="221" class="ts" fill="#c05a4a">STANDBY</text>
-            <line x1="1080" y1="234" x2="1080" y2="254" class="conn"/>
-            <rect x="1052" y="254" width="56" height="18" rx="1" fill="rgba(139,26,26,.04)" stroke="rgba(139,26,26,.15)" stroke-width="1"/>
-            <text x="1080" y="265" class="tx" fill="rgba(224,90,74,.3)">PERSONNEL</text>
+            <rect x="1450" y="170" width="120" height="60" rx="1" fill="rgba(139,26,26,.07)" stroke="rgba(139,26,26,.4)" stroke-width="1"/>
+            <text x="1510" y="185" class="t"  fill="#c05a4a" font-size="8.5px">RESERVES</text>
+            <text x="1510" y="200" class="ts" fill="#c05a4a">STANDBY PERSONNEL</text>
 
             <!-- footer -->
-            <text x="580" y="630" class="ts" fill="rgba(0,217,255,.15)" font-size="7.5">
-                505TH EXPEDITIONARY FORCE // ORDER OF BATTLE // FOUO // POSITIONS WITHOUT NAMES BY DESIGN
+            <text x="820" y="418" class="txx" fill="rgba(0,217,255,.15)" font-size="7.5">
+                505TH EXPEDITIONARY FORCE // ORDER OF BATTLE // FOUO // POSITIONS SHOWN WITHOUT NAMES BY DESIGN
             </text>
             </svg>
             </div>
 
             <!-- ══ CARD VIEW ══ -->
-            <div id="cardView">
-                <!-- BATTALION COMMAND -->
-                <div class="formation-block">
-                    <div class="formation-header cmd-hdr"><img src="images/logo.png" alt="">505th Expeditionary Force — Battalion Command</div>
-                    <div class="staff-card">
-                        <div class="staff-title">COMMAND STAFF</div>
-                        <div class="plt-row"><span class="plt-pos">Commanding Officer</span><span class="plt-open">OPEN</span></div>
-                        <div class="plt-row"><span class="plt-pos">Executive Officer</span><span class="plt-open">OPEN</span></div>
-                        <div class="plt-row"><span class="plt-pos">Sergeant Major</span><span class="plt-open">OPEN</span></div>
-                    </div>
-                </div>
-
-                <!-- ALPHA COMPANY -->
-                <div class="formation-block">
-                    <div class="formation-header alpha-hdr"><img src="images/logos/Alpha Company.png" alt="">Alpha Company — Marine Infantry // CO LR: 40</div>
-                    <div class="staff-card">
-                        <div class="staff-title">COMPANY STAFF</div>
-                        <div class="plt-row"><span class="plt-pos">Company Commander (KJ9)</span><span class="plt-open">OPEN</span></div>
-                        <div class="plt-row"><span class="plt-pos">Company Sergeant (KJ8)</span><span class="plt-open">OPEN</span></div>
-                        <div class="plt-row"><span class="plt-pos">Company JTAC (KJ7)</span><span class="plt-open">OPEN</span></div>
-                    </div>
-                    <div class="platoon-grid">
-                        <div class="plt-card">
-                            <div class="plt-card-title" style="color:#6a9436">1ST PLT — KILLJOY // PLT NET: SR 100</div>
-                            <div class="plt-row"><span class="plt-pos">Plt Commander (KJ9)</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt Sergeant (KJ8)</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt JTAC (KJ7)</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">KJ 1-1 · SQ NET 101</span><span class="plt-open">SQL + MARINE</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">KJ 1-2 · SQ NET 102</span><span class="plt-open">SQL + MARINE</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">KJ 1-3 · SQ NET 103</span><span class="plt-open">SQL + MARINE</span></div>
-                        </div>
-                        <div class="plt-card">
-                            <div class="plt-card-title" style="color:#6a9436">2ND PLT // PLT NET: SR 120</div>
-                            <div class="plt-row"><span class="plt-pos">Plt Commander</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt Sergeant</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt JTAC</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Alpha 2-1 · SQ NET 121</span><span class="plt-open">SQL + MARINE</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Bravo 2-2 · SQ NET 122</span><span class="plt-open">SQL + MARINE</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Charlie 2-3 · SQ NET 123</span><span class="plt-open">SQL + MARINE</span></div>
-                        </div>
-                        <div class="plt-card">
-                            <div class="plt-card-title" style="color:#6a9436">3RD PLT // PLT NET: SR 140</div>
-                            <div class="plt-row"><span class="plt-pos">Plt Commander</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt Sergeant</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt JTAC</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Alpha 3-1 · SQ NET 141</span><span class="plt-open">SQL + MARINE</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Bravo 3-2 · SQ NET 142</span><span class="plt-open">SQL + MARINE</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Charlie 3-3 · SQ NET 143</span><span class="plt-open">SQL + MARINE</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- JSOTF-23 -->
-                <div class="formation-block">
-                    <div class="formation-header jsotf-hdr"><img src="images/logos/Stalker_Patch.png" alt="">JSOTF-23 — Joint Special Operations Task Force</div>
-                    <div class="formation-sub-header">▸ MARINE SPECIAL OPERATIONS COMPONENT</div>
-                    <div class="platoon-grid">
-                        <div class="plt-card">
-                            <div class="plt-card-title" style="color:#8860c0">1ST PLT — MARINE RECON</div>
-                            <div class="plt-row"><span class="plt-pos">Plt Commander</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt Sergeant</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt JTAC</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Stalker 1-0</span><span class="plt-open">SQL + MARINE</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Stalker 2-0</span><span class="plt-open">SQL + MARINE</span></div>
-                        </div>
-                        <div class="plt-card">
-                            <div class="plt-card-title" style="color:#8860c0">2ND PLT — MARINE RAIDERS</div>
-                            <div class="plt-row"><span class="plt-pos">Plt Commander</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt Sergeant</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt JTAC</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Squad A</span><span class="plt-open">SQL + MARINE</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Squad B</span><span class="plt-open">SQL + MARINE</span></div>
-                        </div>
-                        <div class="plt-card">
-                            <div class="plt-card-title" style="color:#8860c0">3RD PLT — SPECIAL TACTICS SQ</div>
-                            <div class="plt-row"><span class="plt-pos">Plt Commander</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt Sergeant</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt JTAC</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Squad A</span><span class="plt-open">SQL + MARINE</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Squad B</span><span class="plt-open">SQL + MARINE</span></div>
-                        </div>
-                    </div>
-                    <div class="formation-sub-header" style="margin-top:10px">▸ AIR FORCE SPECIAL OPERATIONS COMPONENT</div>
-                    <div class="platoon-grid">
-                        <div class="plt-card">
-                            <div class="plt-card-title" style="color:#8860c0">4TH PLT — PARARESCUE SQUADRON</div>
-                            <div class="plt-row"><span class="plt-pos">Plt Commander</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt Sergeant</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Plt JTAC</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Squad A</span><span class="plt-open">SQL + MARINE</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Squad B</span><span class="plt-open">SQL + MARINE</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 54TH AIR WING -->
-                <div class="formation-block">
-                    <div class="formation-header air-hdr"><img src="images/logos/54th Air Wing.png" alt="">54th Air Wing — Pilot // Air Wing LR: 70</div>
-                    <div class="staff-card">
-                        <div class="staff-title">WING STAFF</div>
-                        <div class="plt-row"><span class="plt-pos">Wing Commander</span><span class="plt-open">OPEN</span></div>
-                        <div class="plt-row"><span class="plt-pos">Wing Assistant</span><span class="plt-open">OPEN</span></div>
-                    </div>
-                    <div class="platoon-grid">
-                        <div class="plt-card">
-                            <div class="plt-card-title" style="color:#00a89e">22ND AIR MOBILITY SQ // ATG LR: 71</div>
-                            <div class="plt-row"><span class="plt-pos">Squadron Leader</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Squadron Assistant</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Pilot Slots</span><span class="plt-open">×N</span></div>
-                        </div>
-                        <div class="plt-card">
-                            <div class="plt-card-title" style="color:#00a89e">31ST FIGHTER SQ // ATG LR: 71</div>
-                            <div class="plt-row"><span class="plt-pos">Squadron Leader</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Squadron Assistant</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Pilot Slots</span><span class="plt-open">×N</span></div>
-                        </div>
-                        <div class="plt-card">
-                            <div class="plt-card-title" style="color:#00a89e">5TH SPECIAL OPS SQ // ATG LR: 71</div>
-                            <div class="plt-row"><span class="plt-pos">Squadron Leader</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Squadron Assistant</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Pilot Slots</span><span class="plt-open">×N</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SUPPORT COMPANY -->
-                <div class="formation-block">
-                    <div class="formation-header sup-hdr"><img src="images/logos/Hospital_Corpsman.png" alt="">Support Company — Medical &amp; Reserves</div>
-                    <div class="platoon-grid">
-                        <div class="plt-card">
-                            <div class="plt-card-title" style="color:#c05a4a">HOSPITAL CORPSMAN // EMER. NET: 333</div>
-                            <div class="plt-row"><span class="plt-pos">Hospital Overseer</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Hospital Supervisor</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-row"><span class="plt-pos">Head of Training</span><span class="plt-open">OPEN</span></div>
-                            <div class="plt-squad-row"><span class="plt-squad-label">Corpsman Slots</span><span class="plt-open">OPEN</span></div>
-                        </div>
-                        <div class="plt-card">
-                            <div class="plt-card-title" style="color:#c05a4a">RESERVES</div>
-                            <div class="plt-row"><span class="plt-pos">Reserve Personnel Pool</span><span class="plt-open">OPEN</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div><!-- end cardView -->
+            <div id="cardView">View -->
 
             <div class="oob-notice">
                 ⚠ &nbsp;STRUCTURAL LAYOUT — POSITIONS SHOWN WITHOUT ASSIGNED NAMES BY DESIGN.<br>
