@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order of Battle — 505th Expeditionary Force</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/site.webmanifest">
+    <link rel="stylesheet" href="css/pages.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --accent:  #00D9FF;
+            --accent2: #4A5D23;
+            --bg:      #0A0E12;
+            --gold:    #C9A227;
+            --red:     #C0392B;
+            --teal:    #00857A;
+            --purple:  #6B3FA0;
+        }
+
+        body { background: var(--bg); }
+
+        /* ── HEADER ── */
+        .oob-header {
+            margin-bottom: 36px;
+        }
+        .oob-header .page-tag {
+            font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:4px;
+            color:var(--accent); opacity:.5; display:block; margin-bottom:8px;
+        }
+        .oob-header h1 {
+            font-family:'Rajdhani',sans-serif; font-size:clamp(28px,5vw,50px);
+            font-weight:700; letter-spacing:6px; color:#e8e8e8; margin:0 0 6px;
+        }
+        .oob-header .subtitle {
+            font-family:'Share Tech Mono',monospace; font-size:11px; color:#555; letter-spacing:3px;
+        }
+        .header-rule { border:none; border-top:1px solid rgba(0,217,255,.15); margin:16px 0 28px; }
+
+        /* ── LEGEND ── */
+        .legend {
+            display:flex; gap:20px; flex-wrap:wrap; margin-bottom:32px;
+            font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:2px;
+        }
+        .legend-item { display:flex; align-items:center; gap:7px; color:#666; }
+        .legend-dot  { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+        /* ── VIEW TOGGLE ── */
+        .view-toggle {
+            display:flex; gap:8px; margin-bottom:28px;
+        }
+        .vt-btn {
+            font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:2px;
+            padding:8px 18px; background:transparent; border:1px solid rgba(0,217,255,.15);
+            color:#555; cursor:pointer; transition:.2s;
+        }
+        .vt-btn:hover { border-color:var(--accent); color:var(--accent); }
+        .vt-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(0,217,255,.05); }
+
+        /* ══════════════════════════════════════════
+           TREE VIEW
+        ══════════════════════════════════════════ */
+        #treeView { display:block; overflow-x:auto; padding-bottom:24px; }
+        .tree-root { display:flex; flex-direction:column; align-items:center; min-width:900px; }
+
+        /* Node */
+        .node {
+            display:inline-flex; flex-direction:column; align-items:center;
+            font-family:'Share Tech Mono',monospace; cursor:default;
+        }
+        .node-box {
+            padding:8px 16px; text-align:center; position:relative;
+            min-width:110px; max-width:160px;
+            transition: transform .15s, box-shadow .15s;
+        }
+        .node-box:hover { transform:translateY(-2px); }
+        .node-box .node-role { font-size:9px; letter-spacing:2px; line-height:1.5; }
+        .node-box .node-sub  { font-size:8px; opacity:.5; margin-top:2px; letter-spacing:1px; }
+
+        /* Connector lines using CSS borders */
+        .vline { width:1px; background:rgba(0,217,255,.2); flex-shrink:0; }
+        .hline { height:1px; background:rgba(0,217,255,.2); flex:1; }
+
+        /* Row layouts */
+        .tree-row {
+            display:flex; align-items:flex-start; justify-content:center; gap:0;
+            position:relative;
+        }
+        .tree-col { display:flex; flex-direction:column; align-items:center; }
+        .connector-h { display:flex; align-items:center; width:100%; }
+        .connector-cap { width:1px; height:16px; background:rgba(0,217,255,.2); }
+        .connector-down { width:1px; height:24px; background:rgba(0,217,255,.2); margin:0 auto; }
+
+        /* Branch group: line across top, then children below */
+        .branch-group { display:flex; flex-direction:column; align-items:center; }
+        .branch-children { display:flex; gap:0; align-items:flex-start; position:relative; }
+        .branch-children::before {
+            content:''; position:absolute; top:0; left:calc(50px + 1px); right:calc(50px + 1px);
+            height:1px; background:rgba(0,217,255,.2);
+        }
+
+        /* Node colour themes */
+        .node-command { border:1px solid var(--gold); background:rgba(201,162,39,.08); }
+        .node-command .node-role { color:var(--gold); }
+
+        .node-alpha { border:1px solid var(--accent2); background:rgba(74,93,35,.1); }
+        .node-alpha .node-role { color:#8aad44; }
+
+        .node-jsotf { border:1px solid var(--purple); background:rgba(107,63,160,.1); }
+        .node-jsotf .node-role { color:#a47de0; }
+
+        .node-air { border:1px solid var(--teal); background:rgba(0,133,122,.1); }
+        .node-air .node-role { color:#00c4b7; }
+
+        .node-support { border:1px solid var(--red); background:rgba(192,57,43,.08); }
+        .node-support .node-role { color:#e05a4a; }
+
+        .node-squad { border:1px solid rgba(0,217,255,.15); background:rgba(0,217,255,.03); }
+        .node-squad .node-role { color:var(--accent); font-size:8px; letter-spacing:1.5px; }
+
+        .node-open { border:1px dashed rgba(255,255,255,.1); background:transparent; }
+        .node-open .node-role { color:#3a3a3a; font-size:8px; }
+
+        /* ══════════════════════════════════════════
+           CARD VIEW (flat grid alternative)
+        ══════════════════════════════════════════ */
+        #cardView { display:none; }
+        .oob-section { margin-bottom:36px; }
+        .oob-section-title {
+            font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:700;
+            letter-spacing:5px; text-transform:uppercase; padding:10px 16px;
+            margin-bottom:2px;
+        }
+        .oob-section-title.cmd-color   { color:var(--gold);   border-left:3px solid var(--gold);   background:rgba(201,162,39,.05); }
+        .oob-section-title.alpha-color { color:#8aad44;        border-left:3px solid var(--accent2); background:rgba(74,93,35,.06); }
+        .oob-section-title.jsotf-color { color:#a47de0;        border-left:3px solid var(--purple);  background:rgba(107,63,160,.06); }
+        .oob-section-title.air-color   { color:#00c4b7;        border-left:3px solid var(--teal);    background:rgba(0,133,122,.06); }
+        .oob-section-title.sup-color   { color:#e05a4a;        border-left:3px solid var(--red);     background:rgba(192,57,43,.05); }
+
+        .oob-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:2px; }
+        .oob-card {
+            padding:14px 16px; border:1px solid rgba(255,255,255,.05);
+            font-family:'Share Tech Mono',monospace; background:rgba(0,0,0,.25);
+            transition: background .2s;
+        }
+        .oob-card:hover { background:rgba(0,217,255,.03); }
+        .oob-card .card-title { font-size:11px; letter-spacing:2px; margin-bottom:8px; }
+        .oob-card .card-row { display:flex; justify-content:space-between; font-size:9px; color:#555; padding:3px 0; border-bottom:1px solid rgba(255,255,255,.03); letter-spacing:1px; }
+        .oob-card .card-row:last-child { border:none; }
+        .pos-label { color:#777; }
+        .pos-status { color:#333; font-style:italic; }
+        .pos-open   { color:rgba(0,217,255,.35); }
+        .pos-filled { color:#8aad44; }
+
+        /* ── NOTICE ── */
+        .oob-notice {
+            margin-top:36px; padding:14px 18px;
+            border:1px dashed rgba(0,217,255,.08); background:rgba(0,0,0,.3);
+            font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:2px;
+            color:#3a3a3a; line-height:2.2;
+        }
+
+        @media(max-width:768px) {
+            #treeView { overflow-x:scroll; }
+            .tree-root { min-width:700px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand" id="logoMenu">
+                <img src="images/logo.png" alt="505th Logo" class="nav-logo">
+                <span class="nav-title">505TH EXPEDITIONARY FORCE</span>
+            </div>
+            <div class="nav-auth-wrapper">
+                <a href="login.html" class="nav-auth-btn" id="navAuthBtn">LOGIN</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tactical Dropdown Menu -->
+    <div class="tactical-menu" id="tacticalMenu">
+        <div class="tactical-menu-overlay" id="menuOverlay"></div>
+        <div class="tactical-menu-content">
+            <div class="menu-header">
+                <h2>COMMAND TERMINAL</h2>
+                <button class="menu-close" id="menuClose">✕</button>
+            </div>
+            <div class="menu-sections">
+                <div class="menu-section">
+                    <a href="home.html" class="section-title">
+                        <span class="section-icon"><img src="images/icons/Home.png" alt="" style="width:24px;height:24px;"></span>
+                        <span>HOME</span>
+                    </a>
+                </div>
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="about">
+                        <span class="section-icon"><img src="images/icons/About Us.png" alt="" style="width:24px;height:24px;"></span>
+                        <span>ABOUT US</span><span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu" id="submenu-about">
+                        <a href="about-505th.html" class="submenu-item"><span class="submenu-bullet">▸</span>505th Expeditionary Force</a>
+                        <a href="about-alpha-company.html" class="submenu-item"><span class="submenu-bullet">▸</span>Alpha Company</a>
+                        <a href="about-stalker.html" class="submenu-item"><span class="submenu-bullet">▸</span>JTF-23 Force Recon</a>
+                        <a href="about-corpsman.html" class="submenu-item"><span class="submenu-bullet">▸</span>Hospital Corpsman</a>
+                        <a href="about-54th-air-wing.html" class="submenu-item"><span class="submenu-bullet">▸</span>54th Air Wing</a>
+                    </div>
+                </div>
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="resources">
+                        <span class="section-icon"><img src="images/icons/Resources.png" alt="" style="width:24px;height:24px;"></span>
+                        <span>RESOURCES</span><span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu" id="submenu-resources">
+                        <a href="resources-discord-rules.html" class="submenu-item"><span class="submenu-bullet">▸</span>Discord Rules</a>
+                        <a href="resources-handbook.html" class="submenu-item"><span class="submenu-bullet">▸</span>General Handbook</a>
+                        <a href="resources-roster.html" class="submenu-item"><span class="submenu-bullet">▸</span>Roster</a>
+                        <a href="resources-roadmap.html" class="submenu-item"><span class="submenu-bullet">▸</span>Development Roadmap</a>
+                        <a href="resources-aar.html" class="submenu-item"><span class="submenu-bullet">▸</span>After Action Reports</a>
+                        <a href="resources-field-lexicon.html" class="submenu-item"><span class="submenu-bullet">▸</span>Field Lexicon</a>
+                        <a href="resources-keybinds.html" class="submenu-item"><span class="submenu-bullet">▸</span>Control Reference</a>
+                        <a href="resources-order-of-battle.html" class="submenu-item"><span class="submenu-bullet">▸</span>Order of Battle</a>
+                    </div>
+                </div>
+                <div class="menu-section">
+                    <a href="https://discord.gg/pNkbaUtcw6" class="section-title join-btn" target="_blank">
+                        <span class="section-icon"><img src="images/icons/Join Us.png" alt="" style="width:24px;height:24px;"></span>
+                        <span>JOIN US</span>
+                    </a>
+                </div>
+                <div class="menu-section">
+                    <div class="section-title" data-submenu="account">
+                        <span class="section-icon"><img src="images/icons/Account.png" alt="" style="width:24px;height:24px;"></span>
+                        <span>ACCOUNT</span>
+                    </div>
+                    <div id="menuAuthSection">
+                        <a href="login.html" class="submenu-item"><span class="submenu-bullet">&#x25B8;</span>System Login</a>
+                    </div>
+                </div>
+            </div>
+            <div class="menu-footer">
+                <p>CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Content -->
+    <main class="page-content">
+        <div class="container">
+
+            <div class="oob-header">
+                <span class="page-tag">CLASSIFICATION: UNCLASSIFIED // FOUO</span>
+                <h1>Order of Battle</h1>
+                <p class="subtitle">505th Expeditionary Force — Structural Command Layout</p>
+                <hr class="header-rule">
+            </div>
+
+            <!-- Legend -->
+            <div class="legend">
+                <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Command</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#8aad44"></div>Alpha Company (Marine)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#a47de0"></div>JSOTF-23 (Force Recon)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#00c4b7"></div>54th Air Wing (Pilot)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#e05a4a"></div>Support Company</div>
+            </div>
+
+            <!-- View toggle -->
+            <div class="view-toggle">
+                <button class="vt-btn active" id="btnTree" onclick="setView('tree')">HIERARCHY VIEW</button>
+                <button class="vt-btn"         id="btnCard" onclick="setView('card')">UNIT CARDS</button>
+            </div>
+
+            <!-- ══ TREE VIEW ══ -->
+            <div id="treeView">
+                <svg id="oobSvg" xmlns="http://www.w3.org/2000/svg" style="width:100%;overflow:visible;display:block;margin:0 auto" viewBox="0 0 1200 900" font-family="'Share Tech Mono',monospace">
+
+                    <!-- ── DEFS ── -->
+                    <defs>
+                        <marker id="arr" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+                            <path d="M0,0 L6,3 L0,6 Z" fill="rgba(0,217,255,.3)"/>
+                        </marker>
+                    </defs>
+
+                    <!-- connector stroke style -->
+                    <style>
+                        .conn { stroke:rgba(0,217,255,.18); stroke-width:1; fill:none; }
+                        .box  { rx:2; }
+                        .lbl  { font-size:9px; letter-spacing:1.5px; text-anchor:middle; dominant-baseline:middle; }
+                        .lbl-sub { font-size:7.5px; letter-spacing:1px; text-anchor:middle; dominant-baseline:middle; opacity:.5; }
+                    </style>
+
+                    <!-- ═══════════════════════
+                         COMMAND (top centre)
+                    ═══════════════════════ -->
+                    <!-- Box -->
+                    <rect x="490" y="20" width="220" height="50" class="box" fill="rgba(201,162,39,.08)" stroke="#C9A227" stroke-width="1"/>
+                    <text x="600" y="39" class="lbl" fill="#C9A227">505TH EXPEDITIONARY FORCE</text>
+                    <text x="600" y="55" class="lbl-sub" fill="#C9A227">BATTALION COMMAND</text>
+
+                    <!-- Trunk down -->
+                    <line x1="600" y1="70" x2="600" y2="110" class="conn"/>
+                    <!-- Horizontal rail -->
+                    <line x1="100" y1="110" x2="1100" y2="110" class="conn"/>
+
+                    <!-- ── Branch drops ── -->
+                    <!-- Alpha -->
+                    <line x1="200"  y1="110" x2="200"  y2="140" class="conn"/>
+                    <!-- JSOTF -->
+                    <line x1="490"  y1="110" x2="490"  y2="140" class="conn"/>
+                    <!-- 54th Air -->
+                    <line x1="760"  y1="110" x2="760"  y2="140" class="conn"/>
+                    <!-- Support -->
+                    <line x1="1020" y1="110" x2="1020" y2="140" class="conn"/>
+
+                    <!-- ═══════════════════════
+                         ALPHA COMPANY (col 1)
+                    ═══════════════════════ -->
+                    <rect x="100" y="140" width="200" height="46" class="box" fill="rgba(74,93,35,.12)" stroke="#4A5D23" stroke-width="1"/>
+                    <text x="200" y="157" class="lbl" fill="#8aad44">ALPHA COMPANY</text>
+                    <text x="200" y="172" class="lbl-sub" fill="#8aad44">MARINE INFANTRY</text>
+
+                    <!-- Alpha down -->
+                    <line x1="200" y1="186" x2="200" y2="216" class="conn"/>
+                    <!-- Alpha H-rail -->
+                    <line x1="65" y1="216" x2="335" y2="216" class="conn"/>
+                    <!-- Platoon drops -->
+                    <line x1="65"  y1="216" x2="65"  y2="246" class="conn"/>
+                    <line x1="200" y1="216" x2="200" y2="246" class="conn"/>
+                    <line x1="335" y1="216" x2="335" y2="246" class="conn"/>
+
+                    <!-- 1st Platoon -->
+                    <rect x="15"  y="246" width="100" height="40" class="box" fill="rgba(74,93,35,.08)" stroke="rgba(74,93,35,.5)" stroke-width="1"/>
+                    <text x="65"  y="261" class="lbl" fill="#6a9436" font-size="8">1ST PLATOON</text>
+                    <text x="65"  y="275" class="lbl-sub" fill="#6a9436">KILLJOY</text>
+
+                    <!-- 2nd Platoon -->
+                    <rect x="150" y="246" width="100" height="40" class="box" fill="rgba(74,93,35,.08)" stroke="rgba(74,93,35,.5)" stroke-width="1"/>
+                    <text x="200" y="261" class="lbl" fill="#6a9436" font-size="8">2ND PLATOON</text>
+                    <text x="200" y="275" class="lbl-sub" fill="#6a9436">ALPHA/BRAVO</text>
+
+                    <!-- 3rd Platoon -->
+                    <rect x="285" y="246" width="100" height="40" class="box" fill="rgba(74,93,35,.08)" stroke="rgba(74,93,35,.5)" stroke-width="1"/>
+                    <text x="335" y="261" class="lbl" fill="#6a9436" font-size="8">3RD PLATOON</text>
+                    <text x="335" y="275" class="lbl-sub" fill="#6a9436">ALPHA/BRAVO</text>
+
+                    <!-- Platoon → Squads -->
+                    <!-- 1st -->
+                    <line x1="65" y1="286" x2="65" y2="306" class="conn"/>
+                    <line x1="22" y1="306" x2="108" y2="306" class="conn"/>
+                    <line x1="22"  y1="306" x2="22"  y2="320" class="conn"/>
+                    <line x1="65"  y1="306" x2="65"  y2="320" class="conn"/>
+                    <line x1="108" y1="306" x2="108" y2="320" class="conn"/>
+
+                    <rect x="5"   y="320" width="34" height="28" class="box" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.12)" stroke-width="1"/>
+                    <text x="22"  y="337" class="lbl" fill="rgba(0,217,255,.5)" font-size="7.5">KJ 1-1</text>
+                    <rect x="48"  y="320" width="34" height="28" class="box" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.12)" stroke-width="1"/>
+                    <text x="65"  y="337" class="lbl" fill="rgba(0,217,255,.5)" font-size="7.5">KJ 1-2</text>
+                    <rect x="91"  y="320" width="34" height="28" class="box" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.12)" stroke-width="1"/>
+                    <text x="108" y="337" class="lbl" fill="rgba(0,217,255,.5)" font-size="7.5">KJ 1-3</text>
+
+                    <!-- 2nd -->
+                    <line x1="200" y1="286" x2="200" y2="306" class="conn"/>
+                    <line x1="165" y1="306" x2="235" y2="306" class="conn"/>
+                    <line x1="165" y1="306" x2="165" y2="320" class="conn"/>
+                    <line x1="235" y1="306" x2="235" y2="320" class="conn"/>
+
+                    <rect x="148" y="320" width="34" height="28" class="box" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.12)" stroke-width="1"/>
+                    <text x="165" y="337" class="lbl" fill="rgba(0,217,255,.5)" font-size="7.5">A 2-1</text>
+                    <rect x="218" y="320" width="34" height="28" class="box" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.12)" stroke-width="1"/>
+                    <text x="235" y="337" class="lbl" fill="rgba(0,217,255,.5)" font-size="7.5">B 2-2</text>
+
+                    <!-- 3rd -->
+                    <line x1="335" y1="286" x2="335" y2="306" class="conn"/>
+                    <line x1="300" y1="306" x2="370" y2="306" class="conn"/>
+                    <line x1="300" y1="306" x2="300" y2="320" class="conn"/>
+                    <line x1="370" y1="306" x2="370" y2="320" class="conn"/>
+
+                    <rect x="283" y="320" width="34" height="28" class="box" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.12)" stroke-width="1"/>
+                    <text x="300" y="337" class="lbl" fill="rgba(0,217,255,.5)" font-size="7.5">A 3-1</text>
+                    <rect x="353" y="320" width="34" height="28" class="box" fill="rgba(0,217,255,.03)" stroke="rgba(0,217,255,.12)" stroke-width="1"/>
+                    <text x="370" y="337" class="lbl" fill="rgba(0,217,255,.5)" font-size="7.5">B 3-2</text>
+
+                    <!-- ═══════════════════════
+                         JSOTF-23 (col 2)
+                    ═══════════════════════ -->
+                    <rect x="385" y="140" width="210" height="46" class="box" fill="rgba(107,63,160,.1)" stroke="#6B3FA0" stroke-width="1"/>
+                    <text x="490" y="157" class="lbl" fill="#a47de0">JSOTF-23</text>
+                    <text x="490" y="172" class="lbl-sub" fill="#a47de0">JOINT SPECIAL OPS TASK FORCE</text>
+
+                    <!-- JSOTF down -->
+                    <line x1="490" y1="186" x2="490" y2="216" class="conn"/>
+                    <line x1="400" y1="216" x2="580" y2="216" class="conn"/>
+                    <line x1="400" y1="216" x2="400" y2="246" class="conn"/>
+                    <line x1="490" y1="216" x2="490" y2="246" class="conn"/>
+                    <line x1="580" y1="216" x2="580" y2="246" class="conn"/>
+
+                    <!-- MSOC -->
+                    <rect x="355" y="246" width="90" height="40" class="box" fill="rgba(107,63,160,.08)" stroke="rgba(107,63,160,.4)" stroke-width="1"/>
+                    <text x="400" y="260" class="lbl" fill="#8860c0" font-size="7.5">1ST PLT</text>
+                    <text x="400" y="274" class="lbl-sub" fill="#8860c0">MARINE RECON</text>
+
+                    <!-- Marine Raiders -->
+                    <rect x="445" y="246" width="90" height="40" class="box" fill="rgba(107,63,160,.08)" stroke="rgba(107,63,160,.4)" stroke-width="1"/>
+                    <text x="490" y="260" class="lbl" fill="#8860c0" font-size="7.5">2ND PLT</text>
+                    <text x="490" y="274" class="lbl-sub" fill="#8860c0">MARINE RAIDERS</text>
+
+                    <!-- STS -->
+                    <rect x="535" y="246" width="90" height="40" class="box" fill="rgba(107,63,160,.08)" stroke="rgba(107,63,160,.4)" stroke-width="1"/>
+                    <text x="580" y="260" class="lbl" fill="#8860c0" font-size="7.5">3RD PLT</text>
+                    <text x="580" y="274" class="lbl-sub" fill="#8860c0">SPECIAL TACTICS</text>
+
+                    <!-- JSOTF squads -->
+                    <!-- 1st Plt -->
+                    <line x1="400" y1="286" x2="400" y2="306" class="conn"/>
+                    <line x1="368" y1="306" x2="432" y2="306" class="conn"/>
+                    <line x1="368" y1="306" x2="368" y2="320" class="conn"/>
+                    <line x1="432" y1="306" x2="432" y2="320" class="conn"/>
+                    <rect x="351" y="320" width="34" height="28" class="box" fill="rgba(107,63,160,.05)" stroke="rgba(107,63,160,.2)" stroke-width="1"/>
+                    <text x="368" y="337" class="lbl" fill="rgba(164,125,224,.5)" font-size="7.5">STK 1-0</text>
+                    <rect x="415" y="320" width="34" height="28" class="box" fill="rgba(107,63,160,.05)" stroke="rgba(107,63,160,.2)" stroke-width="1"/>
+                    <text x="432" y="337" class="lbl" fill="rgba(164,125,224,.5)" font-size="7.5">STK 2-0</text>
+
+                    <!-- 2nd Plt -->
+                    <line x1="490" y1="286" x2="490" y2="306" class="conn"/>
+                    <line x1="458" y1="306" x2="522" y2="306" class="conn"/>
+                    <line x1="458" y1="306" x2="458" y2="320" class="conn"/>
+                    <line x1="522" y1="306" x2="522" y2="320" class="conn"/>
+                    <rect x="441" y="320" width="34" height="28" class="box" fill="rgba(107,63,160,.05)" stroke="rgba(107,63,160,.2)" stroke-width="1"/>
+                    <text x="458" y="337" class="lbl" fill="rgba(164,125,224,.5)" font-size="7.5">SQ A</text>
+                    <rect x="505" y="320" width="34" height="28" class="box" fill="rgba(107,63,160,.05)" stroke="rgba(107,63,160,.2)" stroke-width="1"/>
+                    <text x="522" y="337" class="lbl" fill="rgba(164,125,224,.5)" font-size="7.5">SQ B</text>
+
+                    <!-- 3rd Plt -->
+                    <line x1="580" y1="286" x2="580" y2="306" class="conn"/>
+                    <line x1="548" y1="306" x2="612" y2="306" class="conn"/>
+                    <line x1="548" y1="306" x2="548" y2="320" class="conn"/>
+                    <line x1="612" y1="306" x2="612" y2="320" class="conn"/>
+                    <rect x="531" y="320" width="34" height="28" class="box" fill="rgba(107,63,160,.05)" stroke="rgba(107,63,160,.2)" stroke-width="1"/>
+                    <text x="548" y="337" class="lbl" fill="rgba(164,125,224,.5)" font-size="7.5">SQ A</text>
+                    <rect x="595" y="320" width="34" height="28" class="box" fill="rgba(107,63,160,.05)" stroke="rgba(107,63,160,.2)" stroke-width="1"/>
+                    <text x="612" y="337" class="lbl" fill="rgba(164,125,224,.5)" font-size="7.5">SQ B</text>
+
+                    <!-- ═══════════════════════
+                         54TH AIR WING (col 3)
+                    ═══════════════════════ -->
+                    <rect x="655" y="140" width="210" height="46" class="box" fill="rgba(0,133,122,.1)" stroke="#00857A" stroke-width="1"/>
+                    <text x="760" y="157" class="lbl" fill="#00c4b7">54TH AIR WING</text>
+                    <text x="760" y="172" class="lbl-sub" fill="#00c4b7">PILOT / AIR ASSETS</text>
+
+                    <line x1="760" y1="186" x2="760" y2="216" class="conn"/>
+                    <line x1="680" y1="216" x2="840" y2="216" class="conn"/>
+                    <line x1="680" y1="216" x2="680" y2="246" class="conn"/>
+                    <line x1="760" y1="216" x2="760" y2="246" class="conn"/>
+                    <line x1="840" y1="216" x2="840" y2="246" class="conn"/>
+
+                    <!-- 22nd Air Mobility -->
+                    <rect x="638" y="246" width="84" height="40" class="box" fill="rgba(0,133,122,.08)" stroke="rgba(0,133,122,.4)" stroke-width="1"/>
+                    <text x="680" y="260" class="lbl" fill="#00a89e" font-size="7.5">22ND SQ</text>
+                    <text x="680" y="274" class="lbl-sub" fill="#00a89e">AIR MOBILITY</text>
+
+                    <!-- 31st Fighter -->
+                    <rect x="718" y="246" width="84" height="40" class="box" fill="rgba(0,133,122,.08)" stroke="rgba(0,133,122,.4)" stroke-width="1"/>
+                    <text x="760" y="260" class="lbl" fill="#00a89e" font-size="7.5">31ST SQ</text>
+                    <text x="760" y="274" class="lbl-sub" fill="#00a89e">FIGHTER</text>
+
+                    <!-- 5th SOAS -->
+                    <rect x="798" y="246" width="84" height="40" class="box" fill="rgba(0,133,122,.08)" stroke="rgba(0,133,122,.4)" stroke-width="1"/>
+                    <text x="840" y="260" class="lbl" fill="#00a89e" font-size="7.5">5TH SQ</text>
+                    <text x="840" y="274" class="lbl-sub" fill="#00a89e">SPECIAL OPS</text>
+
+                    <!-- Air wing pilot slots -->
+                    <line x1="680" y1="286" x2="680" y2="320" class="conn"/>
+                    <rect x="656" y="320" width="48" height="28" class="box" fill="rgba(0,133,122,.05)" stroke="rgba(0,133,122,.2)" stroke-width="1"/>
+                    <text x="680" y="337" class="lbl" fill="rgba(0,196,183,.4)" font-size="7">PILOTS ×N</text>
+
+                    <line x1="760" y1="286" x2="760" y2="320" class="conn"/>
+                    <rect x="736" y="320" width="48" height="28" class="box" fill="rgba(0,133,122,.05)" stroke="rgba(0,133,122,.2)" stroke-width="1"/>
+                    <text x="760" y="337" class="lbl" fill="rgba(0,196,183,.4)" font-size="7">PILOTS ×N</text>
+
+                    <line x1="840" y1="286" x2="840" y2="320" class="conn"/>
+                    <rect x="816" y="320" width="48" height="28" class="box" fill="rgba(0,133,122,.05)" stroke="rgba(0,133,122,.2)" stroke-width="1"/>
+                    <text x="840" y="337" class="lbl" fill="rgba(0,196,183,.4)" font-size="7">PILOTS ×N</text>
+
+                    <!-- ═══════════════════════
+                         SUPPORT COMPANY (col 4)
+                    ═══════════════════════ -->
+                    <rect x="915" y="140" width="210" height="46" class="box" fill="rgba(192,57,43,.07)" stroke="#C0392B" stroke-width="1"/>
+                    <text x="1020" y="157" class="lbl" fill="#e05a4a">SUPPORT COMPANY</text>
+                    <text x="1020" y="172" class="lbl-sub" fill="#e05a4a">MEDICAL / RESERVES</text>
+
+                    <line x1="1020" y1="186" x2="1020" y2="216" class="conn"/>
+                    <line x1="960"  y1="216" x2="1080" y2="216" class="conn"/>
+                    <line x1="960"  y1="216" x2="960"  y2="246" class="conn"/>
+                    <line x1="1080" y1="216" x2="1080" y2="246" class="conn"/>
+
+                    <!-- Hospital Corpsman -->
+                    <rect x="910" y="246" width="100" height="40" class="box" fill="rgba(192,57,43,.07)" stroke="rgba(192,57,43,.4)" stroke-width="1"/>
+                    <text x="960" y="260" class="lbl" fill="#c05a4a" font-size="7.5">HOSPITAL</text>
+                    <text x="960" y="274" class="lbl-sub" fill="#c05a4a">CORPSMAN</text>
+
+                    <!-- Reserves -->
+                    <rect x="1030" y="246" width="100" height="40" class="box" fill="rgba(192,57,43,.07)" stroke="rgba(192,57,43,.4)" stroke-width="1"/>
+                    <text x="1080" y="260" class="lbl" fill="#c05a4a" font-size="7.5">RESERVES</text>
+                    <text x="1080" y="274" class="lbl-sub" fill="#c05a4a">STANDBY PERSONNEL</text>
+
+                    <!-- Corpsman sub-roles -->
+                    <line x1="960" y1="286" x2="960" y2="306" class="conn"/>
+                    <line x1="926" y1="306" x2="994" y2="306" class="conn"/>
+                    <line x1="926" y1="306" x2="926" y2="320" class="conn"/>
+                    <line x1="960" y1="306" x2="960" y2="320" class="conn"/>
+                    <line x1="994" y1="306" x2="994" y2="320" class="conn"/>
+
+                    <rect x="909" y="320" width="34" height="28" class="box" fill="rgba(192,57,43,.05)" stroke="rgba(192,57,43,.2)" stroke-width="1"/>
+                    <text x="926" y="331" class="lbl" fill="rgba(224,90,74,.45)" font-size="7">HOSP</text>
+                    <text x="926" y="342" class="lbl" fill="rgba(224,90,74,.45)" font-size="7">OVERSEER</text>
+
+                    <rect x="943" y="320" width="34" height="28" class="box" fill="rgba(192,57,43,.05)" stroke="rgba(192,57,43,.2)" stroke-width="1"/>
+                    <text x="960" y="331" class="lbl" fill="rgba(224,90,74,.45)" font-size="7">HOSP</text>
+                    <text x="960" y="342" class="lbl" fill="rgba(224,90,74,.45)" font-size="7">SUPERVISOR</text>
+
+                    <rect x="977" y="320" width="34" height="28" class="box" fill="rgba(192,57,43,.05)" stroke="rgba(192,57,43,.2)" stroke-width="1"/>
+                    <text x="994" y="331" class="lbl" fill="rgba(224,90,74,.45)" font-size="7">HEAD OF</text>
+                    <text x="994" y="342" class="lbl" fill="rgba(224,90,74,.45)" font-size="7">TRAINING</text>
+
+                    <!-- Reserves just a pool indicator -->
+                    <line x1="1080" y1="286" x2="1080" y2="320" class="conn"/>
+                    <rect x="1053" y="320" width="54" height="28" class="box" fill="rgba(192,57,43,.04)" stroke="rgba(192,57,43,.15)" stroke-width="1"/>
+                    <text x="1080" y="337" class="lbl" fill="rgba(224,90,74,.35)" font-size="7">PERSONNEL</text>
+
+                    <!-- ── CLASSIFICATION FOOTER ── -->
+                    <text x="600" y="895" class="lbl-sub" fill="rgba(0,217,255,.2)" font-size="8" letter-spacing="3">
+                        505TH EXPEDITIONARY FORCE // ORDER OF BATTLE // CLASSIFICATION: FOUO
+                    </text>
+                </svg>
+            </div>
+
+            <!-- ══ CARD VIEW ══ -->
+            <div id="cardView">
+                <!-- COMMAND -->
+                <div class="oob-section">
+                    <div class="oob-section-title cmd-color">Battalion Command</div>
+                    <div class="oob-grid">
+                        <div class="oob-card">
+                            <div class="card-title" style="color:var(--gold)">505TH EXPEDITIONARY FORCE</div>
+                            <div class="card-row"><span class="pos-label">Commanding Officer</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Executive Officer</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Sergeant Major</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ALPHA COMPANY -->
+                <div class="oob-section">
+                    <div class="oob-section-title alpha-color">Alpha Company — Marine Infantry</div>
+                    <div class="oob-grid">
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#8aad44">COMPANY HQ</div>
+                            <div class="card-row"><span class="pos-label">Company Commander</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Company Sergeant</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#8aad44">1ST PLATOON — KILLJOY</div>
+                            <div class="card-row"><span class="pos-label">Platoon Commander</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Platoon Sergeant</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Platoon JTAC</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squad KJ 1-1</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squad KJ 1-2</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squad KJ 1-3</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#8aad44">2ND PLATOON</div>
+                            <div class="card-row"><span class="pos-label">Platoon Commander</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Platoon Sergeant</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Platoon JTAC</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squad Alpha 2-1</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squad Bravo 2-2</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squad Charlie 2-3</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#8aad44">3RD PLATOON</div>
+                            <div class="card-row"><span class="pos-label">Platoon Commander</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Platoon Sergeant</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Platoon JTAC</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squad Alpha 3-1</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squad Bravo 3-2</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JSOTF-23 -->
+                <div class="oob-section">
+                    <div class="oob-section-title jsotf-color">JSOTF-23 — Joint Special Operations Task Force</div>
+                    <div class="oob-grid">
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#a47de0">TASK FORCE HQ</div>
+                            <div class="card-row"><span class="pos-label">Task Force Commander</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Task Force Sergeant</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#a47de0">1ST PLT — MARINE RECON</div>
+                            <div class="card-row"><span class="pos-label">Platoon Commander</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Platoon Sergeant</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Stalker 1-0</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Stalker 2-0</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#a47de0">2ND PLT — MARINE RAIDERS</div>
+                            <div class="card-row"><span class="pos-label">Platoon Commander</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Platoon Sergeant</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squad Alpha</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squad Bravo</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#a47de0">3RD PLT — SPECIAL TACTICS</div>
+                            <div class="card-row"><span class="pos-label">Platoon Commander</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Platoon Sergeant</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squad Alpha</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squad Bravo</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 54TH AIR WING -->
+                <div class="oob-section">
+                    <div class="oob-section-title air-color">54th Air Wing — Pilot</div>
+                    <div class="oob-grid">
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#00c4b7">AIR WING HQ</div>
+                            <div class="card-row"><span class="pos-label">Wing Commander</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Wing Assistant</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#00c4b7">22ND AIR MOBILITY SQ</div>
+                            <div class="card-row"><span class="pos-label">Squadron Leader</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squadron Assistant</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Pilot Slots</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#00c4b7">31ST FIGHTER SQ</div>
+                            <div class="card-row"><span class="pos-label">Squadron Leader</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squadron Assistant</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Pilot Slots</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#00c4b7">5TH SPECIAL OPS SQ</div>
+                            <div class="card-row"><span class="pos-label">Squadron Leader</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Squadron Assistant</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Pilot Slots</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUPPORT COMPANY -->
+                <div class="oob-section">
+                    <div class="oob-section-title sup-color">Support Company — Medical &amp; Reserves</div>
+                    <div class="oob-grid">
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#e05a4a">HOSPITAL CORPSMAN</div>
+                            <div class="card-row"><span class="pos-label">Hospital Overseer</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Hospital Supervisor</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Head of Training</span><span class="pos-open">OPEN</span></div>
+                            <div class="card-row"><span class="pos-label">Corpsman Slots</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                        <div class="oob-card">
+                            <div class="card-title" style="color:#e05a4a">RESERVES</div>
+                            <div class="card-row"><span class="pos-label">Reserve Personnel</span><span class="pos-open">OPEN</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="oob-notice">
+                ⚠ &nbsp;STRUCTURAL LAYOUT — POSITIONS SHOWN WITHOUT ASSIGNED NAMES BY DESIGN.<br>
+                FOR ACTIVE PERSONNEL ASSIGNMENTS, SEE THE <a href="resources-roster.html" style="color:var(--accent);text-decoration:none">BATTALION ROSTER →</a><br>
+                STRUCTURE IS SUBJECT TO CHANGE. LAST UPDATED: MARCH 2026.
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="page-footer">
+        <p>© 2026 505th Expeditionary Force • 505th Dev Team</p>
+    </footer>
+
+    <script src="js/nav.js"></script>
+    <script src="js/scroll.js"></script>
+    <script type="module" src="js/cms.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/site-tracking.js"></script>
+    <script>
+        function setView(v) {
+            document.getElementById('treeView').style.display = v === 'tree' ? 'block' : 'none';
+            document.getElementById('cardView').style.display  = v === 'card'  ? 'block' : 'none';
+            document.getElementById('btnTree').classList.toggle('active', v === 'tree');
+            document.getElementById('btnCard').classList.toggle('active', v === 'card');
+        }
+    </script>
+</body>
+</html>

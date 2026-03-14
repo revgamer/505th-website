@@ -3,18 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unit Roster - 505th</title>
-    
-    <!-- Favicon -->
+    <title>Unit Roster — 505th Expeditionary Force</title>
     <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
     <link rel="manifest" href="images/site.webmanifest">
-    
     <link rel="stylesheet" href="css/pages.css">
-    <link rel="stylesheet" href="css/roster.css">
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/auth.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --accent: #00D9FF;
+            --accent-glow: rgba(0,217,255,.45);
+            --bg: #0A0E12;
+            --success: #00FF41;
+            --warn: #FFD700;
+        }
+
+        /* ── AUTH GATE ── */
+        #authGate {
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            min-height:60vh; gap:20px; text-align:center;
+            font-family:'Share Tech Mono',monospace;
+        }
+        #authGate .gate-icon { font-size:52px; opacity:.25; }
+        #authGate h2 { font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:22px; letter-spacing:4px; }
+        #authGate p  { color:#555; font-size:11px; letter-spacing:2px; }
+        #authGate a  { color:var(--accent); text-decoration:none; border:1px solid rgba(0,217,255,.3); padding:9px 24px; font-size:11px; letter-spacing:3px; transition:.2s; }
+        #authGate a:hover { background:rgba(0,217,255,.08); }
+
+        /* ── ROSTER CONTENT ── */
+        #rosterContent { display:none; }
+
+        .roster-header-block {
+            margin-bottom: 32px;
+        }
+        .roster-header-block .page-tag {
+            font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:4px;
+            color:var(--accent); opacity:.6; display:block; margin-bottom:8px;
+        }
+        .roster-header-block h1 {
+            font-family:'Rajdhani',sans-serif; font-size:clamp(28px,5vw,48px);
+            font-weight:700; letter-spacing:6px; color:#e8e8e8;
+            text-transform:uppercase; margin:0 0 6px;
+        }
+        .roster-header-block .subtitle {
+            font-family:'Share Tech Mono',monospace; font-size:11px;
+            color:#555; letter-spacing:3px;
+        }
+        .header-rule { border:none; border-top:1px solid rgba(0,217,255,.15); margin:16px 0 0; }
+
+        /* ── STAT STRIP ── */
+        .stat-strip {
+            display:flex; gap:12px; flex-wrap:wrap; margin-bottom:28px;
+        }
+        .stat-pill {
+            background:rgba(0,217,255,.04); border:1px solid rgba(0,217,255,.12);
+            padding:10px 20px; font-family:'Share Tech Mono',monospace; display:flex; flex-direction:column; gap:2px;
+        }
+        .stat-pill .val { font-size:22px; color:var(--accent); font-weight:700; line-height:1; }
+        .stat-pill .lbl { font-size:9px; letter-spacing:3px; color:#555; }
+
+        /* ── FILTER BAR ── */
+        .filter-bar {
+            display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; align-items:center;
+        }
+        .filter-bar input, .filter-bar select {
+            background:rgba(0,0,0,.5); border:1px solid rgba(0,217,255,.12); color:#bbb;
+            font-family:'Share Tech Mono',monospace; font-size:11px; padding:8px 14px;
+            outline:none; transition:border-color .2s; letter-spacing:1px;
+        }
+        .filter-bar input:focus, .filter-bar select:focus { border-color:var(--accent); }
+        .filter-bar input { flex:1; min-width:180px; }
+        .filter-bar select { min-width:160px; }
+
+        /* ── PLATOON SECTIONS ── */
+        .platoon-section { margin-bottom:32px; }
+        .platoon-label {
+            font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700;
+            letter-spacing:4px; color:var(--accent); text-transform:uppercase;
+            padding:8px 14px; background:rgba(0,217,255,.05);
+            border-left:3px solid var(--accent); border-bottom:1px solid rgba(0,217,255,.12);
+            margin-bottom:2px; display:flex; justify-content:space-between; align-items:center;
+        }
+        .platoon-count { font-size:10px; color:#555; letter-spacing:2px; }
+
+        /* ── TABLE ── */
+        .roster-table-wrap { overflow-x:auto; }
+        .roster-table {
+            width:100%; border-collapse:collapse; font-family:'Share Tech Mono',monospace;
+        }
+        .roster-table th {
+            font-size:8px; letter-spacing:2.5px; color:rgba(0,217,255,.55);
+            text-align:left; padding:9px 14px; background:rgba(0,0,0,.3);
+            border-bottom:1px solid rgba(0,217,255,.1); white-space:nowrap; font-weight:400;
+        }
+        .roster-table td {
+            font-size:10px; padding:10px 14px; border-bottom:1px solid rgba(255,255,255,.04);
+            color:#999; white-space:nowrap; vertical-align:middle;
+        }
+        .roster-table tr:hover td { background:rgba(0,217,255,.025); }
+        .roster-table td.name-cell { color:#d8d8d8; font-weight:600; letter-spacing:1px; font-size:11px; }
+        .rank-badge {
+            display:inline-block; font-size:9px; letter-spacing:1px;
+            padding:2px 7px; border:1px solid rgba(0,217,255,.2); color:var(--accent); white-space:nowrap;
+        }
+        .att-bar { display:flex; gap:3px; align-items:center; }
+        .att-pip {
+            width:9px; height:9px; border-radius:50%;
+            border:1px solid rgba(0,217,255,.2); background:transparent;
+        }
+        .att-pip.filled-1 { background:#FF4444; border-color:#FF4444; }
+        .att-pip.filled-2 { background:var(--warn); border-color:var(--warn); }
+        .att-pip.filled-3 { background:var(--success); border-color:var(--success); }
+        .pt-val { color:var(--accent); font-weight:700; font-size:13px; }
+        .time-val { color:#666; }
+        .no-data {
+            font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:3px;
+            color:#333; text-align:center; padding:32px; border:1px dashed rgba(0,217,255,.08);
+            margin-bottom:28px;
+        }
+        .loading-state {
+            font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:3px;
+            color:var(--accent); text-align:center; padding:48px; opacity:.5;
+        }
+
+        /* ── NOTICE ── */
+        .roster-notice {
+            margin-top:32px; padding:14px 18px;
+            border:1px dashed rgba(0,217,255,.1); background:rgba(0,0,0,.3);
+            font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:2px; color:#444;
+            line-height:2;
+        }
+        .roster-notice a {
+            color:var(--accent); text-decoration:none;
+        }
+
+        @media(max-width:600px) {
+            .roster-table th:nth-child(n+5),
+            .roster-table td:nth-child(n+5) { display:none; }
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -38,128 +168,68 @@
                 <h2>COMMAND TERMINAL</h2>
                 <button class="menu-close" id="menuClose">✕</button>
             </div>
-            
             <div class="menu-sections">
-                <!-- HOME -->
                 <div class="menu-section">
                     <a href="home.html" class="section-title">
                         <span class="section-icon"><img src="images/icons/Home.png" alt="" style="width:24px;height:24px;"></span>
                         <span>HOME</span>
                     </a>
                 </div>
-
-                <!-- ABOUT US (with dropdown) -->
                 <div class="menu-section">
                     <div class="section-title" data-submenu="about">
                         <span class="section-icon"><img src="images/icons/About Us.png" alt="" style="width:24px;height:24px;"></span>
-                        <span>ABOUT US</span>
-                        <span class="submenu-arrow">▼</span>
+                        <span>ABOUT US</span><span class="submenu-arrow">▼</span>
                     </div>
                     <div class="submenu" id="submenu-about">
-                        <a href="about-505th.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            505th Expeditionary Force
-                        </a>
-                        <a href="about-alpha-company.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Alpha Company
-                        </a>
-                        <a href="about-stalker.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            JTF-23 Force Recon
-                        </a>
-                        <a href="about-corpsman.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Hospital Corpsman
-                        </a>
-                        <a href="about-54th-air-wing.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            54th Air Wing
-                        </a>
+                        <a href="about-505th.html" class="submenu-item"><span class="submenu-bullet">▸</span>505th Expeditionary Force</a>
+                        <a href="about-alpha-company.html" class="submenu-item"><span class="submenu-bullet">▸</span>Alpha Company</a>
+                        <a href="about-stalker.html" class="submenu-item"><span class="submenu-bullet">▸</span>JTF-23 Force Recon</a>
+                        <a href="about-corpsman.html" class="submenu-item"><span class="submenu-bullet">▸</span>Hospital Corpsman</a>
+                        <a href="about-54th-air-wing.html" class="submenu-item"><span class="submenu-bullet">▸</span>54th Air Wing</a>
                     </div>
                 </div>
-
-                <!-- MEDIA (with dropdown) -->
                 <div class="menu-section">
                     <div class="section-title" data-submenu="media">
                         <span class="section-icon"><img src="images/icons/Media.png" alt="" style="width:24px;height:24px;"></span>
-                        <span>MEDIA</span>
-                        <span class="submenu-arrow">▼</span>
+                        <span>MEDIA</span><span class="submenu-arrow">▼</span>
                     </div>
                     <div class="submenu" id="submenu-media">
-                        <a href="media-gallery.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Gallery
-                        </a>
-                        <a href="media-videos.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Videos
-                        </a>
+                        <a href="media-gallery.html" class="submenu-item"><span class="submenu-bullet">▸</span>Gallery</a>
+                        <a href="media-videos.html" class="submenu-item"><span class="submenu-bullet">▸</span>Videos</a>
                     </div>
                 </div>
-
-                <!-- RESOURCES (with dropdown) -->
                 <div class="menu-section">
                     <div class="section-title" data-submenu="resources">
                         <span class="section-icon"><img src="images/icons/Resources.png" alt="" style="width:24px;height:24px;"></span>
-                        <span>RESOURCES</span>
-                        <span class="submenu-arrow">▼</span>
+                        <span>RESOURCES</span><span class="submenu-arrow">▼</span>
                     </div>
                     <div class="submenu" id="submenu-resources">
-                        <a href="resources-discord-rules.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Discord Rules
-                        </a>
-                        <a href="resources-handbook.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            General Handbook
-                        </a>
-                        <a href="resources-roster.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Roster
-                        </a>
-                        <a href="resources-roadmap.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Development Roadmap
-                        </a>
-                        <a href="resources-aar.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            After Action Reports
-                        </a>
-                        <a href="resources-field-lexicon.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Field Lexicon
-                        </a>
-                        <a href="resources-keybinds.html" class="submenu-item">
-                            <span class="submenu-bullet">▸</span>
-                            Control Reference
-                        </a>
+                        <a href="resources-discord-rules.html" class="submenu-item"><span class="submenu-bullet">▸</span>Discord Rules</a>
+                        <a href="resources-handbook.html" class="submenu-item"><span class="submenu-bullet">▸</span>General Handbook</a>
+                        <a href="resources-roster.html" class="submenu-item"><span class="submenu-bullet">▸</span>Roster</a>
+                        <a href="resources-roadmap.html" class="submenu-item"><span class="submenu-bullet">▸</span>Development Roadmap</a>
+                        <a href="resources-aar.html" class="submenu-item"><span class="submenu-bullet">▸</span>After Action Reports</a>
+                        <a href="resources-field-lexicon.html" class="submenu-item"><span class="submenu-bullet">▸</span>Field Lexicon</a>
+                        <a href="resources-keybinds.html" class="submenu-item"><span class="submenu-bullet">▸</span>Control Reference</a>
+                        <a href="resources-order-of-battle.html" class="submenu-item"><span class="submenu-bullet">▸</span>Order of Battle</a>
                     </div>
                 </div>
-
-                <!-- JOIN US (Direct Discord Link) -->
                 <div class="menu-section">
                     <a href="https://discord.gg/pNkbaUtcw6" class="section-title join-btn" target="_blank">
                         <span class="section-icon"><img src="images/icons/Join Us.png" alt="" style="width:24px;height:24px;"></span>
                         <span>JOIN US</span>
                     </a>
                 </div>
-            
-                <!-- ACCOUNT -->
                 <div class="menu-section">
                     <div class="section-title" data-submenu="account">
                         <span class="section-icon"><img src="images/icons/Account.png" alt="" style="width:24px;height:24px;"></span>
                         <span>ACCOUNT</span>
                     </div>
                     <div id="menuAuthSection">
-                        <a href="login.html" class="submenu-item">
-                            <span class="submenu-bullet">&#x25B8;</span>
-                            System Login
-                        </a>
+                        <a href="login.html" class="submenu-item"><span class="submenu-bullet">&#x25B8;</span>System Login</a>
                     </div>
                 </div>
             </div>
-            
             <div class="menu-footer">
                 <p>CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY</p>
             </div>
@@ -169,48 +239,244 @@
     <!-- Page Content -->
     <main class="page-content">
         <div class="container">
-            <!-- Page Header -->
-            <div class="page-header">
-                <span class="page-tag">CLASSIFIED: LEVEL 3</span>
-                <h1>UNIT ROSTER</h1>
-                <p class="roster-subtitle">Live Personnel Database</p>
-                <div class="header-line"></div>
+
+            <!-- AUTH GATE -->
+            <div id="authGate">
+                <div class="gate-icon">🔒</div>
+                <h2>RESTRICTED ACCESS</h2>
+                <p>THIS ROSTER REQUIRES ACTIVE ENLISTEE STATUS OR ABOVE</p>
+                <a href="login.html">AUTHENTICATE →</a>
             </div>
 
-            <!-- Roster Info -->
-            <div class="roster-info">
-                <p>This roster is automatically updated. Changes made to the Google Sheet will reflect here immediately.</p>
-                <a href="https://docs.google.com/spreadsheets/d/1_9YoQXvLVIwrbbLuNHmu8rwH2UNUeM1RyNsXpAtPN3Y/edit?gid=0#gid=0" class="sheet-link" target="_blank">
-                    <span class="link-icon">📊</span>
-                    <span>Open Full Sheet</span>
-                </a>
+            <!-- ROSTER CONTENT (shown after auth check) -->
+            <div id="rosterContent">
+                <div class="roster-header-block">
+                    <span class="page-tag">CLASSIFICATION: LEVEL 3</span>
+                    <h1>Unit Roster</h1>
+                    <p class="subtitle">Live Personnel Database</p>
+                    <hr class="header-rule">
+                </div>
+
+                <div id="loadingState" class="loading-state">SYNCING PERSONNEL DATABASE<span id="loadDots">...</span></div>
+
+                <div id="rosterBody" style="display:none">
+                    <!-- Stat strip -->
+                    <div class="stat-strip">
+                        <div class="stat-pill"><span class="val" id="statTotal">—</span><span class="lbl">TOTAL PERSONNEL</span></div>
+                        <div class="stat-pill"><span class="val" id="statActive">—</span><span class="lbl">ACTIVE</span></div>
+                        <div class="stat-pill"><span class="val" id="statReserves">—</span><span class="lbl">RESERVES</span></div>
+                        <div class="stat-pill"><span class="val" id="statPlatoons">—</span><span class="lbl">PLATOONS</span></div>
+                    </div>
+
+                    <!-- Filter bar -->
+                    <div class="filter-bar">
+                        <input type="text" id="searchInput" placeholder="SEARCH BY NAME...">
+                        <select id="platoonFilter">
+                            <option value="">ALL PLATOONS</option>
+                            <option value="Command">Command</option>
+                            <option value="1st Platoon">1st Platoon</option>
+                            <option value="2nd Platoon">2nd Platoon</option>
+                            <option value="3rd Platoon">3rd Platoon</option>
+                            <option value="Force Recon">Force Recon</option>
+                            <option value="Corpsmen">Corpsmen</option>
+                            <option value="Pilot">Pilot</option>
+                            <option value="Reserves">Reserves</option>
+                        </select>
+                    </div>
+
+                    <div id="rosterGroups"></div>
+
+                    <div class="roster-notice">
+                        ⚠ &nbsp;THIS ROSTER IS FOR OFFICIAL UNIT USE ONLY. PERSONNEL INFORMATION IS CONFIDENTIAL.<br>
+                        FOR ROSTER UPDATES OR CORRECTIONS, CONTACT YOUR NCO OR UNIT ADMINISTRATION.<br>
+                        VIEW THE FULL <a href="resources-order-of-battle.html">ORDER OF BATTLE →</a>
+                    </div>
+                </div>
             </div>
 
-            <!-- Embedded Google Sheet -->
-            <div class="roster-embed">
-                <iframe 
-                    src="https://docs.google.com/spreadsheets/d/1_9YoQXvLVIwrbbLuNHmu8rwH2UNUeM1RyNsXpAtPN3Y/edit?gid=0&rm=minimal&single=true&widget=true&headers=false" 
-                    class="roster-iframe">
-                </iframe>
-            </div>
-
-            <!-- Footer Notice -->
-            <div class="roster-notice">
-                <p>⚠️ This roster is for official unit use only. Personnel information is confidential.</p>
-                <p class="notice-footer">For roster updates or corrections, contact your NCO or Unit Administration.</p>
-            </div>
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="page-footer">
         <p>© 2026 505th Expeditionary Force • 505th Dev Team</p>
     </footer>
 
     <script src="js/nav.js"></script>
     <script src="js/scroll.js"></script>
-    <script type="module" src="js/cms.js"></script>
-    <script type="module" src="js/auth.js"></script>
     <script type="module" src="js/site-tracking.js"></script>
+    <script type="module">
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, getDocs, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
+            authDomain:"th-website-91533.firebaseapp.com",
+            projectId:"th-website-91533",
+            storageBucket:"th-website-91533.firebasestorage.app",
+            messagingSenderId:"1046139150142",
+            appId:"1:1046139150142:web:01f409ae4a38c4f79d966f"
+        };
+
+        const ALLOWED_ROLES = ['enlistee','marine','nco','recruiter','staff_nco','commander','developer'];
+
+        const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db   = getFirestore(app);
+
+        let allRoster = [];
+
+        function calcPeriod(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr), now = new Date();
+            let m = (now.getFullYear()-d.getFullYear())*12+(now.getMonth()-d.getMonth());
+            const y = Math.floor(m/12), r = m%12;
+            return (y>0?y+'y ':'')+r+'m';
+        }
+
+        function attPips(att) {
+            let html = '<div class="att-bar">';
+            for (let i=1; i<=3; i++) {
+                const cls = att>=i ? `filled-${att}` : '';
+                html += `<div class="att-pip ${cls}"></div>`;
+            }
+            html += `<span style="font-size:9px;color:#555;margin-left:4px">${att}/3</span></div>`;
+            return html;
+        }
+
+        function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+        // Platoon display order
+        const PLATOON_ORDER = ['Command','1st Platoon','2nd Platoon','3rd Platoon','Force Recon','Corpsmen','Pilot','Reserves'];
+
+        function renderRoster(data) {
+            // Group by platoon
+            const groups = {};
+            data.forEach(r => {
+                const p = r.platoon || 'Other';
+                if (!groups[p]) groups[p] = [];
+                groups[p].push(r);
+            });
+
+            const active = data.filter(r => r.platoon !== 'Reserves').length;
+            const reserves = data.filter(r => r.platoon === 'Reserves').length;
+            const platoonCount = Object.keys(groups).filter(k => k !== 'Reserves').length;
+
+            document.getElementById('statTotal').textContent = data.length;
+            document.getElementById('statActive').textContent = active;
+            document.getElementById('statReserves').textContent = reserves;
+            document.getElementById('statPlatoons').textContent = platoonCount;
+
+            // Sort platoons by order
+            const sortedKeys = Object.keys(groups).sort((a,b) => {
+                const ai = PLATOON_ORDER.indexOf(a), bi = PLATOON_ORDER.indexOf(b);
+                return (ai===-1?99:ai)-(bi===-1?99:bi);
+            });
+
+            let html = '';
+            if (!sortedKeys.length) {
+                html = '<div class="no-data">NO PERSONNEL ON RECORD</div>';
+            } else {
+                sortedKeys.forEach(platoon => {
+                    const members = groups[platoon];
+                    html += `
+                    <div class="platoon-section" data-platoon="${esc(platoon)}">
+                        <div class="platoon-label">
+                            <span>${esc(platoon)}</span>
+                            <span class="platoon-count">${members.length} PERSONNEL</span>
+                        </div>
+                        <div class="roster-table-wrap">
+                        <table class="roster-table">
+                            <thead>
+                                <tr>
+                                    <th>NAME</th>
+                                    <th>RANK / GRADE</th>
+                                    <th>JOINED PLATOON</th>
+                                    <th>PLATOON SERVICE</th>
+                                    <th>GRADUATION</th>
+                                    <th>TIME IN UNIT</th>
+                                    <th>ATT.</th>
+                                    <th>PT</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${members.map(r => `
+                                <tr>
+                                    <td class="name-cell">${esc(r.name)}</td>
+                                    <td><span class="rank-badge">${esc(r.rankGrade||'—')}</span></td>
+                                    <td>${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-GB'):'—'}</td>
+                                    <td class="time-val">${calcPeriod(r.joinedPlatoon)}</td>
+                                    <td>${r.graduation?new Date(r.graduation).toLocaleDateString('en-GB'):'—'}</td>
+                                    <td class="time-val">${calcPeriod(r.graduation)}</td>
+                                    <td>${attPips(r.attendance||0)}</td>
+                                    <td><span class="pt-val">${r.promotionTracker||0}</span></td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            document.getElementById('rosterGroups').innerHTML = html;
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            const platoon = document.getElementById('platoonFilter').value;
+            let filtered = allRoster;
+            if (search) filtered = filtered.filter(r => (r.name||'').toLowerCase().includes(search));
+            if (platoon) filtered = filtered.filter(r => r.platoon === platoon);
+            renderRoster(filtered);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('platoonFilter').addEventListener('change', applyFilters);
+
+        // Animate loading dots
+        let dotInterval = setInterval(() => {
+            const el = document.getElementById('loadDots');
+            if (el) el.textContent = el.textContent.length >= 3 ? '' : el.textContent + '.';
+        }, 400);
+
+        onAuthStateChanged(auth, async user => {
+            const gate = document.getElementById('authGate');
+            const content = document.getElementById('rosterContent');
+            const loadState = document.getElementById('loadingState');
+            const rosterBody = document.getElementById('rosterBody');
+
+            if (!user) {
+                gate.style.display = 'flex';
+                content.style.display = 'none';
+                clearInterval(dotInterval);
+                return;
+            }
+
+            const snap = await getDoc(doc(db, 'users', user.uid));
+            if (!snap.exists() || !ALLOWED_ROLES.includes(snap.data()?.role)) {
+                gate.style.display = 'flex';
+                gate.querySelector('p').textContent = 'ACCESS DENIED — INSUFFICIENT CLEARANCE';
+                content.style.display = 'none';
+                clearInterval(dotInterval);
+                return;
+            }
+
+            gate.style.display = 'none';
+            content.style.display = 'block';
+
+            try {
+                const s = await getDocs(query(collection(db,'roster'), orderBy('name','asc')));
+                allRoster = [];
+                s.forEach(d => allRoster.push({id:d.id,...d.data()}));
+                clearInterval(dotInterval);
+                loadState.style.display = 'none';
+                rosterBody.style.display = 'block';
+                renderRoster(allRoster);
+            } catch(e) {
+                clearInterval(dotInterval);
+                loadState.textContent = 'ERROR LOADING ROSTER: ' + e.message;
+            }
+        });
+    </script>
 </body>
 </html>
