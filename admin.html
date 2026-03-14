@@ -310,7 +310,7 @@
                     submittedBy:currentUser.uid,submittedByName:currentUserData.callsign,submittedAt:new Date().toISOString()
                 });
                 logAction('AAR_SUBMIT',`${title} (${OP_LABELS[opType]||opType}) \u2014 ${UNIT_LABELS[unit]||unit} \u2014 ${RES_LABELS[result]||result}`);
-                if(AAR_WEBHOOK_URL&&AAR_WEBHOOK_URL!==https://discord.com/api/webhooks/1482209258534862961/FLgLtV9APIGOwsNZJWHaT8_ErfEuafl1R59M6aUKbJRqVU6nNVe8sBz0U_YNm7iFf0oY){
+                if(AAR_WEBHOOK_URL && AAR_WEBHOOK_URL !== 'YOUR_WEBHOOK_URL_HERE'){
                     const LOGO_URL='https://i.ibb.co/d0Gn5M5R/505-TH-Logo.png';
                     const RC={success:0x00FF41,partial:0xFFD700,failure:0xFF4444};
                     const RI={success:'✅ Mission Success',partial:'🟡 Partial Success',failure:'❌ Mission Failure'};
