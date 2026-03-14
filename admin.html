@@ -278,45 +278,73 @@
         // DISCORD WEBHOOK — paste your webhook URL here
         const AAR_WEBHOOK_URL = 'https://discord.com/api/webhooks/1482209258534862961/FLgLtV9APIGOwsNZJWHaT8_ErfEuafl1R59M6aUKbJRqVU6nNVe8sBz0U_YNm7iFf0oY';
 
-        window.submitAAR=async function(){const title=document.getElementById('aarTitle').value.trim(),dateVal=document.getElementById('aarDate').value,opType=document.getElementById('aarOpType').value,commander=document.getElementById('aarCommander').value.trim(),personnel=parseInt(document.getElementById('aarPersonnel').value)||null,casualties=parseInt(document.getElementById('aarCasualties').value)||0,result=document.querySelector('input[name="aarResult"]:checked')?.value||'',unit=document.querySelector('input[name="aarUnit"]:checked')?.value||'',summary=document.getElementById('aarSummary').value.trim(),notable=document.getElementById('aarNotable').value.trim(),lessons=document.getElementById('aarLessons').value.trim(),commendations=document.getElementById('aarCommendations').value.trim(),st=document.getElementById('aarSubmitStatus'),btn=document.getElementById('aarSubmitBtn');if(!title||!dateVal||!opType||!commander||!result||!unit||!summary){st.style.color='#FF4444';st.textContent='⚠ FILL ALL REQUIRED FIELDS AND SELECT UNIT + RESULT';return;}const objs=aarObjectives.filter(o=>o.text.trim()).map(o=>({text:o.text.trim(),completed:o.ok}));btn.disabled=1;btn.textContent='SUBMITTING...';st.style.color='var(--accent)';st.textContent='SUBMITTING...';
-        try{
-            await addDoc(collection(db,'aars'),{title,operationType:opType,commander,personnel,casualties,result,unit,summary,notableEvents:notable,lessonsLearned:lessons,commendations,objectives:objs,date:new Date(dateVal),submittedBy:currentUser.uid,submittedByName:currentUserData.callsign,submittedAt:new Date().toISOString()});
-            logAction('AAR_SUBMIT',`${title} (${OP_LABELS[opType]||opType}) — ${UNIT_LABELS[unit]||unit} — ${RES_LABELS[result]||result}`);
-            // Fire Discord webhook
-            if(AAR_WEBHOOK_URL && AAR_WEBHOOK_URL !== 'YOUR_WEBHOOK_URL_HERE'){
-                const RESULT_COLOURS={success:0x7FFF7F,partial:0xFFD700,failure:0xFF4444};
-                const RESULT_ICONS={success:'✅',partial:'🟡',failure:'❌'};
-                const objList=objs.length?objs.map(o=>`${o.completed?'✓':'✗'} ${o.text}`).join('\n'):'No objectives listed.';
-                const embed={
-                    title:`📋 AFTER ACTION REPORT — ${title.toUpperCase()}`,
-                    color:RESULT_COLOURS[result]||0x00D9FF,
-                    fields:[
-                        {name:'Unit',value:UNIT_LABELS[unit]||unit,inline:true},
-                        {name:'Operation Type',value:OP_LABELS[opType]||opType,inline:true},
-                        {name:'Result',value:`${RESULT_ICONS[result]||''} ${RES_LABELS[result]||result}`,inline:true},
-                        {name:'Date',value:new Date(dateVal).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}),inline:true},
-                        {name:'Commanding Officer',value:commander,inline:true},
-                        {name:'Casualties',value:String(casualties),inline:true},
-                        {name:'Summary',value:summary.length>1024?summary.slice(0,1021)+'...':summary,inline:false},
-                        ...(objs.length?[{name:'Objectives',value:objList.length>1024?objList.slice(0,1021)+'...':objList,inline:false}]:[]),
-                        ...(notable?[{name:'Notable Events',value:notable.length>512?notable.slice(0,509)+'...':notable,inline:false}]:[]),
-                        ...(commendations?[{name:'Commendations',value:commendations,inline:false}]:[]),
-                    ],
-                    footer:{text:`Submitted by ${currentUserData.callsign} • 505th Expeditionary Force`},
-                    timestamp:new Date().toISOString()
-                };
-                try{
-                    await fetch(AAR_WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'505th Command Terminal',avatar_url:'https://'+location.host+'/images/logo.png',embeds:[embed]})});
-                }catch(we){console.warn('Webhook failed (non-critical):',we);}
-            }
-            st.style.color='#7FFF7F';st.textContent='✓ REPORT SUBMITTED';notify('AAR SUBMITTED');
-            ['aarTitle','aarCommander','aarPersonnel','aarCasualties','aarSummary','aarNotable','aarLessons','aarCommendations'].forEach(id=>{document.getElementById(id).value='';});
-            document.getElementById('aarOpType').value='';
-            document.querySelectorAll('input[name="aarResult"],input[name="aarUnit"]').forEach(r=>r.checked=false);
-            aarObjectives=[];renderAARObjs();await loadRecentAARs();
-        }catch(e){st.style.color='#FF4444';st.textContent='✗ FAILED: '+e.message;}
-        btn.disabled=0;btn.textContent='SUBMIT REPORT';};
-        window.deleteAAR=async function(id){if(!confirm('DELETE THIS AAR?'))return;await deleteDoc(doc(db,'aars',id));logAction('AAR_DELETE','Deleted AAR '+id);notify('AAR DELETED');loadRecentAARs();};
+        window.aarAddAttachment=function(){const row=document.createElement('div');row.className='upload-row';row.style.marginBottom='6px';row.innerHTML='<input type="url" class="aar-attachment-input" placeholder="https://... (image URL)" style="flex:1;padding:8px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:\'Share Tech Mono\',monospace;font-size:11px;outline:none"><button onclick="this.parentElement.remove()" style="background:none;border:1px solid #333;color:#555;padding:8px 10px;cursor:pointer;margin-left:6px">✕</button>';document.getElementById('aarAttachmentsList').appendChild(row);};
+        window.aarClearForm=function(){if(!confirm('Clear all form data?'))return;['aarTitle','aarAuthor','aarCommander','aarFiledBy','aarLocation','aarMainObjective','aarSummary','aarUnitsInvolved','aarEnemyFaction','aarEnemyCasualties','aarEnemyTactics','aarEnemyDisposition','aarKeyMoments','aarSuccessfulManeuvers','aarMistakes','aarUnexpected','aarDetainee','aarInfoObtained','aarInterrogationSummary','aarObjectiveOutcome','aarRecommended','aarMiscComments'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('aarPersonnel').value='';document.getElementById('aarCasualties').value='';document.getElementById('aarOpType').value='';document.querySelectorAll('input[name="aarResult"],input[name="aarUnit"]').forEach(r=>r.checked=false);aarUnitChange();aarResultChange();document.getElementById('aarSubmitStatus').textContent='';};
+        window.submitAAR=async function(){
+            const g=id=>document.getElementById(id)?.value.trim()||'';
+            const title=g('aarTitle'),dateVal=g('aarDate'),opType=g('aarOpType'),commander=g('aarCommander'),
+                  filedBy=g('aarFiledBy'),author=g('aarAuthor'),location=g('aarLocation'),
+                  mainObjective=g('aarMainObjective'),summary=g('aarSummary'),
+                  unitsInvolved=g('aarUnitsInvolved'),personnel=parseInt(document.getElementById('aarPersonnel').value)||null,
+                  casualties=parseInt(document.getElementById('aarCasualties').value)||0,
+                  enemyFaction=g('aarEnemyFaction'),enemyCasualties=g('aarEnemyCasualties'),
+                  enemyTactics=g('aarEnemyTactics'),enemyDisposition=g('aarEnemyDisposition'),
+                  keyMoments=g('aarKeyMoments'),successfulManeuvers=g('aarSuccessfulManeuvers'),
+                  mistakes=g('aarMistakes'),unexpected=g('aarUnexpected'),
+                  detainee=g('aarDetainee'),infoObtained=g('aarInfoObtained'),interrogationSummary=g('aarInterrogationSummary'),
+                  objectiveOutcome=g('aarObjectiveOutcome'),recommended=g('aarRecommended'),miscComments=g('aarMiscComments'),
+                  result=document.querySelector('input[name="aarResult"]:checked')?.value||'',
+                  unit=document.querySelector('input[name="aarUnit"]:checked')?.value||'',
+                  st=document.getElementById('aarSubmitStatus'),btn=document.getElementById('aarSubmitBtn');
+            const attachments=[...document.querySelectorAll('.aar-attachment-input')].map(i=>i.value.trim()).filter(Boolean);
+            if(!title||!dateVal||!opType||!commander||!result||!unit||!summary){st.style.color='#FF4444';st.textContent='\u26a0 FILL REQUIRED FIELDS: UNIT, RESULT, MISSION NAME, DATE, CO, TYPE, SUMMARY';return;}
+            btn.disabled=1;btn.textContent='SUBMITTING...';st.style.color='var(--accent)';st.textContent='SUBMITTING...';
+            try{
+                await addDoc(collection(db,'aars'),{
+                    title,operationType:opType,commander,filedBy,author,location,mainObjective,summary,
+                    unitsInvolved,personnel,casualties,enemyFaction,enemyCasualties,enemyTactics,enemyDisposition,
+                    keyMoments,successfulManeuvers,mistakes,unexpected,
+                    detainee,infoObtained,interrogationSummary,
+                    objectiveOutcome,recommended,miscComments,
+                    result,unit,attachments,date:new Date(dateVal),
+                    submittedBy:currentUser.uid,submittedByName:currentUserData.callsign,submittedAt:new Date().toISOString()
+                });
+                logAction('AAR_SUBMIT',`${title} (${OP_LABELS[opType]||opType}) \u2014 ${UNIT_LABELS[unit]||unit} \u2014 ${RES_LABELS[result]||result}`);
+                if(AAR_WEBHOOK_URL&&AAR_WEBHOOK_URL!=='https://discord.com/api/webhooks/1482209258534862961/FLgLtV9APIGOwsNZJWHaT8_ErfEuafl1R59M6aUKbJRqVU6nNVe8sBz0U_YNm7iFf0oY'){
+                    const LOGO_URL='https://i.ibb.co/d0Gn5M5R/505-TH-Logo.png';
+                    const RC={success:0x00FF41,partial:0xFFD700,failure:0xFF4444};
+                    const RI={success:'\u2705 Mission Success',partial:'\U0001F7E1 Partial Success',failure:'\u274C Mission Failure'};
+                    const OI={major:'\U0001F534 Major Deployment',regular:'\U0001F7E2 Regular Deployment',patrol:'\U0001F535 Sector Patrol',recon:'\U0001F50D Reconnaissance',ambush:'\u26A1 Ambush',assault:'\u2694\uFE0F Assault',defence:'\U0001F6E1 Defence'};
+                    let desc='**CLASSIFICATION: CL-5 // BATTALION AFTER ACTION REPORT**\n';
+                    desc+=`*Issued by authority of the ${UNIT_LABELS[unit]||unit} Commander — 505th Expeditionary Force*\n\n`;
+                    desc+='**\U0001F4CB Operation Details**\n';
+                    desc+=`\u2022 **Type:** ${OI[opType]||opType}\n`;
+                    desc+=`\u2022 **Date:** ${new Date(dateVal).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}\n`;
+                    desc+=`\u2022 **Location:** ${location||'Not specified'}\n`;
+                    desc+=`\u2022 **Result:** ${RI[result]||result}\n\n`;
+                    desc+=`**\U0001F4DD Summary of Events**\n${summary}`;
+                    const fields=[];
+                    fields.push({name:'\U0001F464 Command',value:`**CO:** ${commander}\n**Filed By:** ${filedBy||author||currentUserData.callsign}`,inline:true});
+                    fields.push({name:'\U0001FAA6 Unit',value:`${UNIT_LABELS[unit]||unit}${unitsInvolved?'\n*'+unitsInvolved+'*':''}`,inline:true});
+                    fields.push({name:'\U0001F465 Strength / Casualties',value:`${personnel??'\u2014'} deployed \u00b7 **${casualties}** KIA/WIA`,inline:true});
+                    if(mainObjective) fields.push({name:'\U0001F3AF Main Objective',value:mainObjective,inline:false});
+                    if(enemyFaction||enemyCasualties||enemyDisposition){let ef=`**Faction:** ${enemyFaction||'Unknown'}\n**Est. Casualties:** ${enemyCasualties||'Unknown'}`;if(enemyDisposition)ef+=`\n**Disposition:** ${enemyDisposition}`;fields.push({name:'\u26A0\uFE0F Enemy Forces',value:ef.slice(0,1024),inline:false});}
+                    if(enemyTactics) fields.push({name:'\U0001F50E Enemy Tactics',value:enemyTactics.slice(0,512),inline:false});
+                    if(keyMoments||successfulManeuvers){let tn='';if(keyMoments)tn+=`**Key Moments:**\n${keyMoments}\n\n`;if(successfulManeuvers)tn+=`**Successful Maneuvers:**\n${successfulManeuvers}`;fields.push({name:'\u26A1 Tactical Notes',value:tn.slice(0,1024),inline:false});}
+                    if(mistakes||unexpected){let mi='';if(mistakes)mi+=`**Mistakes/Failures:**\n${mistakes}\n\n`;if(unexpected)mi+=`**Unexpected:**\n${unexpected}`;fields.push({name:'\U0001F4CB After Action Review',value:mi.slice(0,1024),inline:false});}
+                    if(detainee||interrogationSummary) fields.push({name:'\U0001F512 Interrogation Report',value:`**Detainee:** ${detainee||'N/A'}\n${interrogationSummary||''}${infoObtained?'\n**Intel:** '+infoObtained:''}`.slice(0,1024),inline:false});
+                    if(objectiveOutcome||recommended){let con='';if(objectiveOutcome)con+=`**Outcome:**\n${objectiveOutcome}\n\n`;if(recommended)con+=`**Recommended Actions:**\n${recommended}`;fields.push({name:'\U0001F3C1 Conclusion',value:con.slice(0,1024),inline:false});}
+                    if(miscComments) fields.push({name:'\U0001F4AC Misc. Comments',value:miscComments.slice(0,512),inline:false});
+                    const embeds=[{author:{name:'505th Expeditionary Force',icon_url:LOGO_URL},title:`\U0001F4D8 After Action Report \u2014 ${title}`,description:desc.slice(0,4096),color:RC[result]||0x2b2d31,thumbnail:{url:LOGO_URL},fields,footer:{text:`505th Expeditionary Force \u2022 After Action Reports \u2022 Submitted by ${currentUserData.callsign}`},timestamp:new Date().toISOString()}];
+                    attachments.slice(0,8).forEach(url=>embeds.push({url,image:{url},color:RC[result]||0x2b2d31}));
+                    try{await fetch(AAR_WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'505th Command Terminal',avatar_url:LOGO_URL,embeds})});}catch(we){console.warn('Webhook:',we);}
+                }
+                st.style.color='#7FFF7F';st.textContent='\u2713 REPORT SUBMITTED';notify('AAR SUBMITTED');
+                aarClearForm();await loadRecentAARs();
+            }catch(e){st.style.color='#FF4444';st.textContent='\u2717 FAILED: '+e.message;}
+            btn.disabled=0;btn.textContent='SUBMIT REPORT';
+        };
+                window.deleteAAR=async function(id){if(!confirm('DELETE THIS AAR?'))return;await deleteDoc(doc(db,'aars',id));logAction('AAR_DELETE','Deleted AAR '+id);notify('AAR DELETED');loadRecentAARs();};
 
         function notify(m,err){const n=document.getElementById('notification');n.textContent=m;n.className='notification show'+(err?' error':'');setTimeout(()=>n.className='notification',3000);}
     </script>
@@ -519,15 +547,140 @@
                     <div style="margin-top:16px"><button class="action-btn approve-btn" onclick="loadAnalytics()">&#8635; REFRESH</button></div>
                 </div>
                 <div class="panel hidden" id="panel-aar">
-                    <div class="panel-title">SUBMIT AFTER ACTION REPORT</div>
-                    <p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:20px">NCO+ ACCESS // PUBLISHED TO resources-aar.html IMMEDIATELY</p>
-                    <div class="upload-area" style="margin-bottom:12px"><div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">01 // OPERATION INFORMATION</div><div class="upload-row"><div class="upload-field"><label>OPERATION NAME *</label><input type="text" id="aarTitle" placeholder="e.g. Operation IRON TIDE"></div><div class="upload-field" style="max-width:160px"><label>DATE *</label><input type="date" id="aarDate"></div><div class="upload-field" style="max-width:180px"><label>OPERATION TYPE *</label><select id="aarOpType"><option value="">— SELECT —</option><option value="major">Major Deployment</option><option value="regular">Regular Deployment</option><option value="patrol">Sector Patrol</option></select></div></div><div class="upload-row" style="margin-top:8px"><div class="upload-field"><label>COMMANDING OFFICER *</label><input type="text" id="aarCommander" placeholder="e.g. Lt Gen Drake Oliver"></div><div class="upload-field" style="max-width:120px"><label>PERSONNEL</label><input type="number" id="aarPersonnel" placeholder="Count" min="0"></div><div class="upload-field" style="max-width:120px"><label>CASUALTIES (KIA+WIA)</label><input type="number" id="aarCasualties" placeholder="0" min="0"></div></div></div>
-                    <div class="upload-area" style="margin-bottom:12px"><div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">02 // UNIT / ELEMENT *</div><div style="display:flex;gap:8px;flex-wrap:wrap"><label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="alpha" style="display:none" onchange="aarUnitChange()"><div id="uo-alpha" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/Alpha Company.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">ALPHA CO.</div></div></label><label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="forcerecon" style="display:none" onchange="aarUnitChange()"><div id="uo-forcerecon" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/Stalker_Patch.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">FORCE RECON</div></div></label><label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="corpsman" style="display:none" onchange="aarUnitChange()"><div id="uo-corpsman" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/Hospital_Corpsman.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">CORPSMAN</div></div></label><label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="airwing" style="display:none" onchange="aarUnitChange()"><div id="uo-airwing" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/54th Air Wing.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">54TH AIR WING</div></div></label><label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="combined" style="display:none" onchange="aarUnitChange()"><div id="uo-combined" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logo.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">COMBINED</div></div></label></div></div>
-                    <div class="upload-area" style="margin-bottom:12px"><div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">03 // MISSION RESULT *</div><div style="display:flex;gap:8px"><label style="flex:1;cursor:pointer"><input type="radio" name="aarResult" value="success" style="display:none" onchange="aarResultChange()"><div id="ropt-success" style="text-align:center;padding:10px;border:2px solid #7FFF7F40;color:#7FFF7F66;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;transition:all .2s">✓ SUCCESS</div></label><label style="flex:1;cursor:pointer"><input type="radio" name="aarResult" value="partial" style="display:none" onchange="aarResultChange()"><div id="ropt-partial" style="text-align:center;padding:10px;border:2px solid #FFD70040;color:#FFD70066;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;transition:all .2s">◐ PARTIAL</div></label><label style="flex:1;cursor:pointer"><input type="radio" name="aarResult" value="failure" style="display:none" onchange="aarResultChange()"><div id="ropt-failure" style="text-align:center;padding:10px;border:2px solid #FF444440;color:#FF444466;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;transition:all .2s">✗ FAILURE</div></label></div></div>
-                    <div class="upload-area" style="margin-bottom:12px"><div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">04 // EXECUTIVE SUMMARY *</div><textarea id="aarSummary" placeholder="Overview of the operation — objectives, theatre, key events, and outcome." style="width:100%;min-height:90px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
-                    <div class="upload-area" style="margin-bottom:12px"><div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">05 // MISSION OBJECTIVES</div><div id="aarObjList"></div><button class="upload-btn" onclick="aarAddObj()" style="margin-top:6px;width:100%;font-size:10px">+ ADD OBJECTIVE</button></div>
-                    <div class="upload-area" style="margin-bottom:12px"><div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">06 // AFTER ACTION DETAILS</div><div class="upload-field" style="margin-bottom:10px"><label>NOTABLE EVENTS / HIGHLIGHTS</label><textarea id="aarNotable" placeholder="Key moments, contact, breaches, notable actions..." style="width:100%;min-height:70px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div><div class="upload-field" style="margin-bottom:10px"><label>AREAS FOR IMPROVEMENT</label><textarea id="aarLessons" placeholder="What failed? Communication, tactics, execution..." style="width:100%;min-height:70px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div><div class="upload-field"><label>COMMENDATIONS</label><textarea id="aarCommendations" placeholder="Recognise outstanding personnel..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div></div>
-                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:30px"><button class="upload-btn" id="aarSubmitBtn" onclick="submitAAR()">SUBMIT REPORT</button><span id="aarSubmitStatus" style="font-size:10px;letter-spacing:2px"></span></div>
+                    <div class="panel-title">BATTALION AFTER ACTION REPORT</div>
+                    <p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:20px">NCO+ ACCESS // CLASSIFICATION: CL-5 // PUBLISHED TO resources-aar.html ON SUBMIT</p>
+
+                    <!-- SECTION 1: PLATOON / CLASSIFICATION -->
+                    <div class="upload-area" style="margin-bottom:12px">
+                        <div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">01 // PLATOON & CLASSIFICATION</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="alpha" style="display:none" onchange="aarUnitChange()"><div id="uo-alpha" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/Alpha Company.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">ALPHA CO.</div></div></label>
+                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="forcerecon" style="display:none" onchange="aarUnitChange()"><div id="uo-forcerecon" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/Stalker_Patch.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">FORCE RECON</div></div></label>
+                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="corpsman" style="display:none" onchange="aarUnitChange()"><div id="uo-corpsman" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/Hospital_Corpsman.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">CORPSMAN</div></div></label>
+                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="airwing" style="display:none" onchange="aarUnitChange()"><div id="uo-airwing" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/54th Air Wing.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">54TH AIR WING</div></div></label>
+                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="combined" style="display:none" onchange="aarUnitChange()"><div id="uo-combined" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logo.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">COMBINED</div></div></label>
+                        </div>
+                        <div class="upload-row">
+                            <div class="upload-field" style="max-width:160px"><label>CLASSIFICATION</label><input type="text" id="aarClassification" value="CL-5" readonly style="color:var(--accent);letter-spacing:2px;font-weight:700"></div>
+                            <div class="upload-field"><label>AUTHOR *</label><input type="text" id="aarAuthor" placeholder="Full name / callsign of report author"></div>
+                        </div>
+                    </div>
+
+                    <!-- DOCUMENT HEADER PREVIEW -->
+                    <div style="background:rgba(0,0,0,.5);border:1px solid rgba(0,217,255,.12);padding:14px 18px;margin-bottom:12px;text-align:center;line-height:2">
+                        <div style="color:rgba(0,217,255,.6);font-size:8px;letter-spacing:3px">CLASSIFICATION: CL-5</div>
+                        <div style="color:#888;font-size:8px;letter-spacing:2px;margin-top:4px">PLATOON AFTER ACTION REPORT</div>
+                        <div style="color:#555;font-size:8px;letter-spacing:1px;margin-top:2px">THIS DOCUMENT IS ISSUED BY THE AUTHORITY OF THE PLATOON COMMANDER</div>
+                        <div style="color:#555;font-size:8px;letter-spacing:1px">UNDER THE COMMAND OF LIEUTENANT GENERAL OF THE 505TH EXPEDITIONARY FORCE</div>
+                        <div style="color:#444;font-size:7px;letter-spacing:1px;margin-top:4px">DISTRIBUTION OF THE FOLLOWING DOCUMENT OUTSIDE OF 505TH CLASSIFIED DOCUMENT AUTHORITY IS STRICTLY PROHIBITED</div>
+                    </div>
+
+                    <!-- SECTION 2: BATTALION AAR HEADER -->
+                    <div class="upload-area" style="margin-bottom:12px">
+                        <div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">02 // BATTALION AFTER ACTION REPORT</div>
+                        <div class="upload-row">
+                            <div class="upload-field"><label>COMMANDING OFFICER *</label><input type="text" id="aarCommander" placeholder="Rank + Name"></div>
+                            <div class="upload-field"><label>REPORT FILED BY *</label><input type="text" id="aarFiledBy" placeholder="Rank + Name"></div>
+                        </div>
+                        <div class="upload-row" style="margin-top:8px">
+                            <div class="upload-field" style="max-width:160px"><label>DATE OF ENGAGEMENT *</label><input type="date" id="aarDate"></div>
+                            <div class="upload-field"><label>LOCATION</label><input type="text" id="aarLocation" placeholder="e.g. Altis, Sector 7-Bravo"></div>
+                            <div class="upload-field"><label>OPERATION / MISSION NAME *</label><input type="text" id="aarTitle" placeholder="e.g. Operation IRON TIDE"></div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: ENGAGEMENT OVERVIEW -->
+                    <div class="upload-area" style="margin-bottom:12px">
+                        <div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">03 // ENGAGEMENT OVERVIEW</div>
+                        <div class="upload-row">
+                            <div class="upload-field" style="max-width:220px"><label>TYPE OF ENGAGEMENT *</label><select id="aarOpType" style="width:100%;padding:9px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none"><option value="">— SELECT —</option><option value="major">Major Deployment</option><option value="regular">Regular Deployment</option><option value="patrol">Sector Patrol</option><option value="recon">Reconnaissance</option><option value="ambush">Ambush</option><option value="assault">Assault</option><option value="defence">Defence</option></select></div>
+                            <div class="upload-field"><label>MAIN OBJECTIVE</label><input type="text" id="aarMainObjective" placeholder="Primary mission objective"></div>
+                        </div>
+                        <div class="upload-field" style="margin-top:8px"><label>SUMMARY OF EVENTS *</label><textarea id="aarSummary" placeholder="Chronological account of what occurred during the engagement..." style="width:100%;min-height:90px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                    </div>
+
+                    <!-- SECTION 4: FRIENDLY FORCES -->
+                    <div class="upload-area" style="margin-bottom:12px">
+                        <div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">04 // FRIENDLY FORCES</div>
+                        <div class="upload-row">
+                            <div class="upload-field"><label>UNITS INVOLVED</label><input type="text" id="aarUnitsInvolved" placeholder="e.g. Alpha Co., JTF-23, 54th Air Wing"></div>
+                            <div class="upload-field" style="max-width:140px"><label>INITIAL STRENGTH</label><input type="number" id="aarPersonnel" placeholder="Personnel count" min="0"></div>
+                            <div class="upload-field" style="max-width:140px"><label>TOTAL CASUALTIES (KIA+WIA)</label><input type="number" id="aarCasualties" placeholder="0" min="0"></div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 5: ENEMY FORCES -->
+                    <div class="upload-area" style="margin-bottom:12px">
+                        <div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">05 // ENEMY FORCES</div>
+                        <div class="upload-row">
+                            <div class="upload-field"><label>ENEMY FACTION</label><input type="text" id="aarEnemyFaction" placeholder="e.g. Insurrectionists, Ironveil PMC"></div>
+                            <div class="upload-field" style="max-width:180px"><label>EST. ENEMY CASUALTIES</label><input type="text" id="aarEnemyCasualties" placeholder="e.g. 12 KIA, 3 captured"></div>
+                        </div>
+                        <div class="upload-row" style="margin-top:8px">
+                            <div class="upload-field"><label>ENEMY TACTICS AS OBSERVED</label><textarea id="aarEnemyTactics" placeholder="Flanking maneuvers, use of cover, vehicle tactics..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                            <div class="upload-field"><label>ENEMY DISPOSITION</label><textarea id="aarEnemyDisposition" placeholder="Defensive, aggressive, retreating, fortified..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 6: MISSION RESULT -->
+                    <div class="upload-area" style="margin-bottom:12px">
+                        <div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">06 // MISSION RESULT *</div>
+                        <div style="display:flex;gap:8px">
+                            <label style="flex:1;cursor:pointer"><input type="radio" name="aarResult" value="success" style="display:none" onchange="aarResultChange()"><div id="ropt-success" style="text-align:center;padding:10px;border:2px solid #7FFF7F40;color:#7FFF7F66;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;transition:all .2s">✓ SUCCESS</div></label>
+                            <label style="flex:1;cursor:pointer"><input type="radio" name="aarResult" value="partial" style="display:none" onchange="aarResultChange()"><div id="ropt-partial" style="text-align:center;padding:10px;border:2px solid #FFD70040;color:#FFD70066;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;transition:all .2s">◐ PARTIAL</div></label>
+                            <label style="flex:1;cursor:pointer"><input type="radio" name="aarResult" value="failure" style="display:none" onchange="aarResultChange()"><div id="ropt-failure" style="text-align:center;padding:10px;border:2px solid #FF444440;color:#FF444466;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;transition:all .2s">✗ FAILURE</div></label>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 7: TACTICAL NOTES & EVENTS -->
+                    <div class="upload-area" style="margin-bottom:12px">
+                        <div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">07 // TACTICAL NOTES &amp; EVENTS</div>
+                        <div class="upload-row">
+                            <div class="upload-field"><label>KEY MOMENTS</label><textarea id="aarKeyMoments" placeholder="Critical turning points in the engagement..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                            <div class="upload-field"><label>SUCCESSFUL MANEUVERS</label><textarea id="aarSuccessfulManeuvers" placeholder="Tactics and maneuvers that worked well..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                        </div>
+                        <div class="upload-row" style="margin-top:8px">
+                            <div class="upload-field"><label>MISTAKES / FAILURES</label><textarea id="aarMistakes" placeholder="What went wrong? Communication failures, tactical errors..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                            <div class="upload-field"><label>UNEXPECTED OCCURRENCES</label><textarea id="aarUnexpected" placeholder="Anything that deviated from the plan or mission brief..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 8: INTERROGATION REPORT -->
+                    <div class="upload-area" style="margin-bottom:12px">
+                        <div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">08 // INTERROGATION REPORT <span style="color:#555;font-size:8px">(IF APPLICABLE)</span></div>
+                        <div class="upload-row">
+                            <div class="upload-field" style="max-width:220px"><label>DETAINEE</label><input type="text" id="aarDetainee" placeholder="Name / designation if known"></div>
+                            <div class="upload-field"><label>INFORMATION OBTAINED</label><input type="text" id="aarInfoObtained" placeholder="Key intel gathered"></div>
+                        </div>
+                        <div class="upload-field" style="margin-top:8px"><label>INTERROGATION SUMMARY</label><textarea id="aarInterrogationSummary" placeholder="Summary of interrogation proceedings and findings..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                    </div>
+
+                    <!-- SECTION 9: CONCLUSION -->
+                    <div class="upload-area" style="margin-bottom:12px">
+                        <div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">09 // CONCLUSION</div>
+                        <div class="upload-field" style="margin-bottom:8px"><label>OBJECTIVE OUTCOME</label><textarea id="aarObjectiveOutcome" placeholder="Were objectives achieved? What was secured/lost/neutralised?" style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                        <div class="upload-field" style="margin-bottom:8px"><label>RECOMMENDED ACTIONS / FOLLOW UP</label><textarea id="aarRecommended" placeholder="Next steps, follow-on operations, training recommendations..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                        <div class="upload-field"><label>MISC. COMMENTS</label><textarea id="aarMiscComments" placeholder="Commendations, additional observations, admin notes..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                    </div>
+
+                    <!-- SECTION 10: ATTACHMENTS -->
+                    <div class="upload-area" style="margin-bottom:12px">
+                        <div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">10 // ATTACHMENTS</div>
+                        <p style="color:#555;font-size:9px;letter-spacing:1px;margin-bottom:10px">PASTE IMAGE / SCREENSHOT URLS — WILL BE INCLUDED IN DISCORD EMBED</p>
+                        <div id="aarAttachmentsList">
+                            <div class="upload-row" style="margin-bottom:6px"><input type="url" class="aar-attachment-input" placeholder="https://... (image URL)" style="flex:1;padding:8px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none"><button onclick="this.parentElement.remove()" style="background:none;border:1px solid #333;color:#555;padding:8px 10px;cursor:pointer;margin-left:6px;font-family:'Share Tech Mono',monospace;font-size:11px">✕</button></div>
+                        </div>
+                        <button class="upload-btn" onclick="aarAddAttachment()" style="width:100%;font-size:10px;margin-top:6px">+ ADD ATTACHMENT URL</button>
+                    </div>
+
+                    <!-- SUBMIT -->
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:30px">
+                        <button class="upload-btn" id="aarSubmitBtn" onclick="submitAAR()">SUBMIT REPORT</button>
+                        <button class="action-btn remove-btn" onclick="aarClearForm()">CLEAR</button>
+                        <span id="aarSubmitStatus" style="font-size:10px;letter-spacing:2px"></span>
+                    </div>
+
+                    <!-- RECENT -->
                     <div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">RECENT SUBMISSIONS</div>
                     <div id="aarRecentList"><div class="empty-state">LOADING...</div></div>
                 </div>
