@@ -126,8 +126,14 @@
                 if (userData.status === 'pending') { await signOut(auth); showError(errorMsg, 'AWAITING COMMANDER APPROVAL'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
                 if (userData.status === 'denied') { await signOut(auth); showError(errorMsg, 'ACCESS DENIED BY COMMAND'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
 
-                // Redirect to boot animation page
-                window.location.href = 'boot.html';
+                // Redirect: go back to where they came from, or home.html
+                const returnTo = sessionStorage.getItem('loginReturnTo');
+                sessionStorage.removeItem('loginReturnTo');
+                if (returnTo && !returnTo.includes('login.html')) {
+                    window.location.href = returnTo;
+                } else {
+                    window.location.href = 'home.html';
+                }
 
             } catch (error) {
                 let message = 'AUTHENTICATION FAILED';
@@ -144,12 +150,14 @@
 
         
 
-                // Auto-redirect if already logged in
+                // Auto-redirect if already logged in — go home
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 if (userDoc.exists() && userDoc.data().status === 'approved') {
-                    window.location.href = 'boot.html';
+                    const returnTo = sessionStorage.getItem('loginReturnTo');
+                    sessionStorage.removeItem('loginReturnTo');
+                    window.location.href = (returnTo && !returnTo.includes('login.html')) ? returnTo : 'home.html';
                 }
             }
         });

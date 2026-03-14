@@ -14,6 +14,32 @@ const firebaseConfig = {
     appId: "1:1046139150142:web:01f409ae4a38c4f79d966f"
 };
 
+// Pages that require login — key=filename, value='any'|role name
+const ROLE_GATED_PAGES = {
+    'resources-roster.html':       'any',    // any registered user
+    'resources-roadmap.html':      'staff_nco', // staff_nco+
+    'resources-field-lexicon.html':'public', // public
+    'resources-keybinds.html':     'public', // public
+};
+const ROLE_ORDER = ['enlistee','marine','recruiter','nco','staff_nco','commander','developer'];
+function roleAllowed(userRole, required) {
+    if (required === 'any') return true;
+    return ROLE_ORDER.indexOf(userRole) >= ROLE_ORDER.indexOf(required);
+}
+function checkRoleGate(userRole) {
+    const page = window.location.pathname.split('/').pop() || '';
+    const required = ROLE_GATED_PAGES[page];
+    if (!required || required === 'public') return; // public page, no gate
+    if (!userRole) {
+        sessionStorage.setItem('loginReturnTo', window.location.href);
+        window.location.href = 'login.html';
+        return;
+    }
+    if (!roleAllowed(userRole, required)) {
+        window.location.href = 'home.html';
+    }
+}
+
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -31,6 +57,9 @@ onAuthStateChanged(auth, async (user) => {
             const userDoc = await getDoc(doc(db, "users", user.uid));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
+
+                // Check role gate for this page
+                checkRoleGate(userData.role);
 
                 // Update navbar button
                 authBtn.innerHTML = `<span class="auth-callsign">${escapeHtml(userData.callsign)}</span>`;
@@ -69,7 +98,7 @@ onAuthStateChanged(auth, async (user) => {
 
                 if (['commander','developer','staff_nco','nco','recruiter'].includes(userData.role)) {
                     dropdownHTML += `
-                        <a href="admin.html" class="auth-dropdown-item">
+                        <a href="boot.html" class="auth-dropdown-item">
                             <span>⚙</span> COMMAND PANEL
                         </a>`;
                 }
@@ -107,7 +136,7 @@ onAuthStateChanged(auth, async (user) => {
 
                     if (['commander','developer','staff_nco','nco','recruiter'].includes(userData.role)) {
                         menuHTML += `
-                        <a href="admin.html" class="submenu-item">
+                        <a href="boot.html" class="submenu-item">
                             <span class="submenu-bullet">&#9655;</span>
                             Command Panel
                         </a>`;
@@ -133,7 +162,10 @@ onAuthStateChanged(auth, async (user) => {
             console.error('Auth state error:', err);
         }
     } else {
-        // Not logged in
+        // Not logged in — check if this page requires login
+        checkRoleGate(null);
+
+        // Not logged in — show LOGIN button
         authBtn.innerHTML = 'LOGIN';
         authBtn.classList.remove('logged-in');
         authBtn.href = 'login.html';
