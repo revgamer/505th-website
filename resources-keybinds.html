@@ -159,6 +159,7 @@
         .kb-change  { color: #FFD700; border-color: #FFD700; }
         .kb-bind    { color: #7FFF7F; border-color: #7FFF7F; }
         .kb-unbind  { color: #FF8888; border-color: #FF8888; }
+        .kb-default { color: rgba(0,217,255,0.7); border-color: rgba(0,217,255,0.4); }
 
         @media (max-width: 600px) {
             .kb-desc { display: none; }
@@ -286,11 +287,16 @@
                             <th style="text-align:left;padding:0.6rem 0.8rem;font-size:0.68rem;letter-spacing:0.15em;color:rgba(0,217,255,0.6);font-weight:700;">WHERE TO FIND</th>
                         </tr>
                     </thead>
-                    <tbody id="kbTableBody">
+                    <tbody>
+
+                        <!-- ── REQUIRED CHANGES ── -->
+                        <tr>
+                            <td colspan="4" style="padding:0.8rem 0.8rem 0.4rem;font-size:0.65rem;letter-spacing:0.2em;color:var(--accent);font-weight:700;border-bottom:1px solid rgba(0,217,255,0.2);">⚙ REQUIRED CHANGES</td>
+                        </tr>
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
                             <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-change">CHANGE</span></td>
-                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;">Throw = <span class="key">2×G</span></td>
-                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">To prevent mass casualty accidents</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;">Throw = <span class="key">G</span><span class="key">G</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Double-tap G to throw grenade — prevents accidental mass casualty events</td>
                             <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Weapons</td>
                         </tr>
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
@@ -299,18 +305,125 @@
                             <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Easy and fast mounting of vehicles</td>
                             <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Addons → ACE Movement</td>
                         </tr>
+
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-unbind">UNBIND</span></td>
-                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;">Last Help</td>
-                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Removes conflict with ACE medical menu</td>
-                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Common</td>
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-bind">BIND</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;">Webknights Melee = <span style="color:rgba(0,217,255,0.6);font-style:italic;font-size:0.82rem;">Your preferred key</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Set to any key of your choice — avoid F (fire mode) and G (grenade)</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Addons → Webknights Melee</td>
                         </tr>
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
                             <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-unbind">UNBIND</span></td>
-                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;">Push-to-Talk</td>
-                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Removes conflict with TFAR</td>
-                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Multiplayer</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;">Lago Melee</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Remove to prevent conflict with Webknights Melee</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Addons → Lago Melee</td>
                         </tr>
+
+                        <!-- ── MOVEMENT ── -->
+                        <tr>
+                            <td colspan="4" style="padding:0.8rem 0.8rem 0.4rem;font-size:0.65rem;letter-spacing:0.2em;color:var(--accent);font-weight:700;border-bottom:1px solid rgba(0,217,255,0.2);">⬆ MOVEMENT</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Move forward, left, back, right</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Movement</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">Shift</span><span style="color:rgba(255,255,255,0.3);font-size:0.7rem;margin:0 2px;">+</span><span class="key">W</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Sprint — hold Shift while moving forward</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Movement</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">C</span><span class="key">C</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Double-tap C — toggle between walk and jog speed</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Movement</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">Z</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Go prone — reduces profile, increases accuracy</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Movement</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">X</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Crouch</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Movement</td>
+                        </tr>
+
+                        <!-- ── COMBAT ── -->
+                        <tr>
+                            <td colspan="4" style="padding:0.8rem 0.8rem 0.4rem;font-size:0.65rem;letter-spacing:0.2em;color:var(--accent);font-weight:700;border-bottom:1px solid rgba(0,217,255,0.2);">🎯 COMBAT & WEAPONS</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">LMB</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Fire weapon</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Weapons</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">RMB</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Aim down sights / use optic</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Weapons</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">Ctrl</span><span class="key">Ctrl</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Double-tap Ctrl — lower / raise weapon</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Weapons</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">R</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Reload</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Weapons</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">G</span><span class="key">G</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Throw grenade — double-tap to prevent accidents</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Weapons</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">8</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Cycle grenade / throw mode selection</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Weapons</td>
+                        </tr>
+
+                        <!-- ── WEAPON SLOTS ── -->
+                        <tr>
+                            <td colspan="4" style="padding:0.8rem 0.8rem 0.4rem;font-size:0.65rem;letter-spacing:0.2em;color:var(--accent);font-weight:700;border-bottom:1px solid rgba(0,217,255,0.2);">🔫 WEAPON SLOTS</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">1</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Primary weapon (rifle / LMG)</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Weapons</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">2</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Secondary weapon (pistol / sidearm)</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Weapons</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">3</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Launcher (rocket / AT weapon)</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Weapons</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-default">DEFAULT</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;"><span class="key">0</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Holster — put weapon away to belt/sling</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Weapons</td>
+                        </tr>
+
                     </tbody>
                 </table>
             </div>
