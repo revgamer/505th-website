@@ -439,17 +439,6 @@
             ucData = ucData || {};
             let html = '';
 
-            // Battalion Command (static — not in Firestore)
-            html += `<div class="formation-block">
-                <div class="formation-header cmd-hdr"><img src="images/logo.png" alt="">505th Expeditionary Force — Battalion Command</div>
-                <div class="staff-card">
-                    <div class="staff-title">COMMAND STAFF</div>
-                    <div class="plt-row"><span class="plt-pos">Commanding Officer</span><span class="plt-open">OPEN</span></div>
-                    <div class="plt-row"><span class="plt-pos">Executive Officer</span><span class="plt-open">OPEN</span></div>
-                    <div class="plt-row"><span class="plt-pos">Sergeant Major</span><span class="plt-open">OPEN</span></div>
-                </div>
-            </div>`;
-
             for (const [unit, cfg] of Object.entries(STRUCTURE)) {
                 let lastSubHeader = null;
                 let platoonCardHtml = '';
