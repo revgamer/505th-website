@@ -30,7 +30,16 @@
         .view-toggle { display:flex; gap:8px; margin-bottom:28px; flex-wrap:wrap; }
         .vt-btn { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:2px; padding:8px 18px; background:transparent; border:1px solid rgba(0,217,255,.15); color:#555; cursor:pointer; transition:.2s; }
         .vt-btn:hover, .vt-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(0,217,255,.05); }
-        #treeView { overflow-x:auto; padding-bottom:24px; }
+        #treeView {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: auto;
+            background: rgba(0,0,0,.2);
+            border: 1px solid rgba(0,217,255,.08);
+            border-radius: 2px;
+            padding-bottom: 12px;
+        }
+        #svgCanvas { display: block; }
         #cardView  { display:none; }
 
         /* Card view */
@@ -141,8 +150,9 @@
                 <button class="vt-btn"        id="btnCard" onclick="setView('card')">UNIT CARDS</button>
                        <!-- ══ HIERARCHY SVG ══ -->
             <div id="treeView">
+            <div id="svgCanvas">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 430"
-                 style="width:100%;min-width:1200px;display:block;"
+                 width="2400" height="645"
                  font-family="'Share Tech Mono',monospace">
             <defs><style>
                 .conn{stroke:rgba(0,217,255,.18);stroke-width:1;fill:none}
@@ -287,6 +297,7 @@
                 505TH EXPEDITIONARY FORCE // ORDER OF BATTLE // FOUO // POSITIONS SHOWN WITHOUT NAMES BY DESIGN
             </text>
             </svg>
+            </div><!-- end svgCanvas -->
             </div>
 
             <!-- ══ CARD VIEW ══ -->
