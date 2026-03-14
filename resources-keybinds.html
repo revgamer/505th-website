@@ -145,6 +145,21 @@
         }
         .kb-highlight { background: rgba(0,217,255,0.15); }
 
+        /* Action type badges */
+        .kb-action-badge {
+            display: inline-block;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            padding: 0.2rem 0.55rem;
+            border: 1px solid;
+            font-family: 'Rajdhani', sans-serif;
+            white-space: nowrap;
+        }
+        .kb-change  { color: #FFD700; border-color: #FFD700; }
+        .kb-bind    { color: #7FFF7F; border-color: #7FFF7F; }
+        .kb-unbind  { color: #FF8888; border-color: #FF8888; }
+
         @media (max-width: 600px) {
             .kb-desc { display: none; }
             .kb-action { width: 60%; }
@@ -247,30 +262,64 @@
                     CONTROL REFERENCE
                     <span class="header-line"></span>
                 </h1>
-                <p class="keybind-header-sub">STANDARD KEYBINDINGS FOR 505TH OPERATIONS // ARMA 3 + ACE3 + OPTRE</p>
+                <p class="keybind-header-sub">REQUIRED CONTROL CHANGES FOR 505TH OPERATIONS // ARMA 3 + ACE3 + OPTRE</p>
             </section>
 
             <div class="keybind-note">
-                <strong>★ Starred</strong> entries are critical binds every member must know before deploying.
-                Keybinds listed here reflect the 505th standard loadout with <strong>ACE3</strong>, <strong>CBA</strong>, <strong>OPTRE</strong>, and the <strong>505th Aux Mod</strong>.
-                Some binds may differ — always check your personal Arma 3 keybinds menu. Default Arma 3 binds are noted where applicable.
+                This page lists the keybind changes required before joining 505th operations.
+                Apply these in your Arma 3 options under the listed path. More keybinds will be added as documentation is completed.
+                <br><strong>Note:</strong> "Unbind" means remove the existing bind entirely to prevent conflicts.
             </div>
 
-            <!-- Tabs -->
-            <div class="kb-tabs">
-                <button class="kb-tab active" data-section="all">All</button>
-                <button class="kb-tab" data-section="movement">Movement</button>
-                <button class="kb-tab" data-section="combat">Combat</button>
-                <button class="kb-tab" data-section="ace">ACE3 Medical</button>
-                <button class="kb-tab" data-section="ace-interact">ACE3 Interact</button>
-                <button class="kb-tab" data-section="comms">Comms / ACRE</button>
-                <button class="kb-tab" data-section="vehicle">Vehicle</button>
-                <button class="kb-tab" data-section="aux">505th Aux</button>
+            <div style="background:rgba(0,217,255,0.04);border:1px solid rgba(0,217,255,0.15);padding:0.5rem 1.2rem;margin-bottom:2rem;font-size:0.78rem;letter-spacing:0.08em;color:rgba(0,217,255,0.6);">
+                🚧 &nbsp;MORE KEYBINDS BEING DOCUMENTED — PAGE WILL BE UPDATED
             </div>
 
-            <input type="text" class="kb-search" id="kbSearch" placeholder="Search keybinds...">
-
-            <div id="kbBody"></div>
+            <!-- Table -->
+            <div style="overflow-x:auto;">
+                <table class="kb-table" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="border-bottom:2px solid rgba(0,217,255,0.3);">
+                            <th style="text-align:left;padding:0.6rem 0.8rem;font-size:0.68rem;letter-spacing:0.15em;color:rgba(0,217,255,0.6);font-weight:700;width:90px;">ACTION</th>
+                            <th style="text-align:left;padding:0.6rem 0.8rem;font-size:0.68rem;letter-spacing:0.15em;color:rgba(0,217,255,0.6);font-weight:700;width:200px;">KEYBIND</th>
+                            <th style="text-align:left;padding:0.6rem 0.8rem;font-size:0.68rem;letter-spacing:0.15em;color:rgba(0,217,255,0.6);font-weight:700;">EXPLANATION</th>
+                            <th style="text-align:left;padding:0.6rem 0.8rem;font-size:0.68rem;letter-spacing:0.15em;color:rgba(0,217,255,0.6);font-weight:700;">WHERE TO FIND</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kbTableBody">
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-change">CHANGE</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;">Throw = <span class="key">2×G</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">To prevent mass casualty accidents</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Weapons</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-bind">BIND</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;">Vehicle Quick Mount</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Easy and fast mounting of vehicles</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Addons → ACE Movement</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-unbind">UNBIND</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;">Last Help</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Removes conflict with ACE medical menu</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Common</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-bind">BIND</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;">All-in-One Action</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Enables Enhanced Movement climbing/jumping</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Addons → Enhanced Movement Rework</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:0.75rem 0.8rem;"><span class="kb-action-badge kb-unbind">UNBIND</span></td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.9rem;color:var(--text-primary);font-weight:600;letter-spacing:0.03em;">Push-to-Talk</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Removes conflict with ACRE PTT 1</td>
+                            <td style="padding:0.75rem 0.8rem;font-size:0.82rem;color:rgba(0,217,255,0.55);letter-spacing:0.03em;">Controls → Multiplayer</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
         </div>
     </main>
@@ -284,163 +333,5 @@
     <script type="module" src="js/auth.js"></script>
     <script type="module" src="js/cms.js"></script>
     <script type="module" src="js/site-tracking.js"></script>
-
-    <script>
-    function key(...keys) {
-        return `<div class="key-combo">${keys.map(k =>
-            k === '+' ? `<span class="key-sep">+</span>` : `<span class="key">${k}</span>`
-        ).join('')}</div>`;
-    }
-
-    const SECTIONS = [
-        {
-            id: 'movement',
-            label: '⬆ Movement & Stances',
-            rows: [
-                { action: '★ Sprint',                    keys: key('Shift','+',' W'),     desc: 'Hold Shift while moving forward to sprint.',         important: true },
-                { action: '★ Prone',                     keys: key('Z'),                  desc: 'Toggle prone position. Reduces profile significantly.', important: true },
-                { action: '★ Crouch',                    keys: key('X'),                  desc: 'Toggle crouch stance.',                              important: true },
-                { action: 'Adjust Stance Up/Down',       keys: key('Ctrl','+',' W / S'),  desc: 'Fine-tune stance height while prone or crouched.'    },
-                { action: 'Walk / Jog Toggle',           keys: key('Caps Lock'),          desc: 'Toggle between walk and jog speed.'                  },
-                { action: '★ Jump',                      keys: key('V'),                  desc: 'Jump or vault over low obstacles.',                  important: true },
-                { action: 'Peek Left / Right',           keys: key('Q') + ' / ' + key('E'), desc: 'Lean out from cover.'                             },
-                { action: 'Freelook',                    keys: key('Alt'),                desc: 'Hold to look around without moving weapon.'          },
-            ]
-        },
-        {
-            id: 'combat',
-            label: '🎯 Combat',
-            rows: [
-                { action: '★ Fire / Shoot',              keys: key('LMB'),                desc: 'Left Mouse Button. Fire weapon.',                    important: true },
-                { action: '★ Aim Down Sights',           keys: key('RMB'),                desc: 'Right Mouse Button. ADS / Iron Sights.',             important: true },
-                { action: '★ Reload',                    keys: key('R'),                  desc: 'Reload current weapon.',                             important: true },
-                { action: 'Switch Fire Mode',            keys: key('F'),                  desc: 'Cycle between single, burst, and automatic.',        },
-                { action: 'Switch Weapon',               keys: key('F'),                  desc: 'Hold to bring up weapon selection.'                  },
-                { action: '★ Grenade',                   keys: key('G'),                  desc: 'Throw selected grenade.',                            important: true },
-                { action: 'Select Grenade Type',         keys: key('Ctrl','+',' G'),      desc: 'Cycle through carried grenades.'                     },
-                { action: 'Zeroing +/-',                 keys: key('Page Up') + ' / ' + key('Page Dn'), desc: 'Increase or decrease weapon zeroing.' },
-                { action: 'Laser / Light Toggle',        keys: key('L'),                  desc: 'Toggle laser designator or weapon light.'            },
-                { action: 'Night Vision',                keys: key('N'),                  desc: 'Toggle NVGs if equipped.'                            },
-                { action: 'Suppress (Hold Breath)',      keys: key('Shift'),              desc: 'Hold while aiming to steady weapon for precise shot.'},
-                { action: 'Fire Underbarrel',            keys: key('Ctrl','+',' RMB'),    desc: 'Switch to underbarrel grenade launcher or device.'   },
-            ]
-        },
-        {
-            id: 'ace',
-            label: '⚕ ACE3 Medical',
-            rows: [
-                { action: '★ Self-Treat',                keys: key('Ctrl','+',' Alt','+',' W'), desc: 'Open ACE medical menu on yourself.',           important: true },
-                { action: '★ Treat Other',               keys: key('Win'),                desc: 'ACE self-interact (Windows key) to open medical on self; use ACE interact for others.', important: true },
-                { action: 'Apply Tourniquet',            keys: key('ACE Interact'),       desc: 'Interact with a downed player → Medical → Apply Tourniquet on limb.' },
-                { action: 'Apply Bandage',               keys: key('ACE Interact'),       desc: 'Select wound type and bandage from ACE medical menu.' },
-                { action: 'CPR',                         keys: key('ACE Interact'),       desc: 'Interact → Medical → CPR on unconscious patient.'    },
-                { action: 'Drag Casualty',               keys: key('ACE Interact'),       desc: 'Interact → Drag to move downed player to cover.'     },
-                { action: 'Carry Casualty',              keys: key('ACE Interact'),       desc: 'Interact → Carry for faster movement of a patient.'  },
-                { action: '★ Check Pulse / Status',      keys: key('ACE Interact'),       desc: 'Interact → Medical → Check Pulse to assess patient status.', important: true },
-            ]
-        },
-        {
-            id: 'ace-interact',
-            label: '⚙ ACE3 Interactions',
-            rows: [
-                { action: '★ ACE Interact (Others)',     keys: key('Windows'),            desc: 'Opens interaction menu on nearby players and objects.', important: true },
-                { action: '★ ACE Self-Interact',         keys: key('Ctrl','+',' Windows'),desc: 'Opens self-interaction menu (medical, earplugs, etc).', important: true },
-                { action: 'Use ACE Item',                keys: key('Ctrl','+',' \\'),     desc: 'Use quick-use ACE item (morphine, etc.).'            },
-                { action: 'Inspect',                     keys: key('ACE Interact'),       desc: 'Look at objects, examine intel items, check vehicle status.' },
-                { action: 'Earplugs',                    keys: key('Self Interact'),      desc: 'Self Interact → Insert/Remove earplugs to reduce hearing damage.' },
-                { action: 'Attach Items',                keys: key('ACE Interact'),       desc: 'Interact with compatible equipment to attach accessories.' },
-                { action: 'Fortify / Build',             keys: key('ACE Interact'),       desc: 'Interact with engineer toolkit → place fortifications via ACE Fortify.' },
-                { action: 'Surrender',                   keys: key('Alt','+',' S'),       desc: 'Raise hands and surrender to an enemy player.'       },
-            ]
-        },
-        {
-            id: 'comms',
-            label: '📻 Comms / ACRE2',
-            rows: [
-                { action: '★ Short Range Radio (SRR)',   keys: key('Caps Lock'),          desc: 'Default PTT for short-range radio (PRC-343). Squad net.', important: true },
-                { action: '★ Long Range Radio (LRR)',    keys: key('Ctrl','+',' Caps'),   desc: 'Default PTT for long-range radio (PRC-152/117F). Command net.', important: true },
-                { action: 'Open Radio GUI',              keys: key('Ctrl','+',' ~'),      desc: 'Open the ACRE2 radio interface to change frequency.'   },
-                { action: 'Whisper (ACRE)',              keys: key('Shift','+',' SRR PTT'),desc: 'Hold Shift + SRR PTT to speak in a whisper (shorter range).' },
-                { action: 'Yell (ACRE)',                 keys: key('Shift','+',' Y'),     desc: 'Hold Shift + Y to yell — heard at greater distance.'   },
-                { action: 'Direct Speech (no radio)',    keys: key('Caps Lock'),          desc: 'Without radio equipped, Caps Lock is direct speech — heard close range only.' },
-                { action: 'Radio Volume',                keys: key('ACE Interact'),       desc: 'Self Interact → ACRE → Adjust radio volume.'          },
-            ]
-        },
-        {
-            id: 'vehicle',
-            label: '🚗 Vehicle',
-            rows: [
-                { action: 'Get In (nearest)',            keys: key('V'),                  desc: 'Board the nearest vehicle.'                          },
-                { action: 'Get Out',                     keys: key('V'),                  desc: 'Exit vehicle.'                                       },
-                { action: 'Throttle Up / Down',          keys: key('W') + ' / ' + key('S'), desc: 'Accelerate and brake/reverse.'                     },
-                { action: 'Turn Left / Right',           keys: key('A') + ' / ' + key('D'), desc: 'Steer vehicle.'                                    },
-                { action: 'Handbrake',                   keys: key('Space'),              desc: 'Apply handbrake for sharp turns or skidding.'        },
-                { action: 'Change Seat',                 keys: key('Ctrl','+',' 1-9'),    desc: 'Move to specific seat number inside a vehicle.'      },
-                { action: 'Flares / Countermeasures',    keys: key('L'),                  desc: 'Fire countermeasures if equipped on aircraft/vehicle.'},
-                { action: 'Engine On/Off',               keys: key('ACE Interact'),       desc: 'ACE Interact with vehicle → Engine On/Off to conserve fuel.' },
-                { action: 'Hover Mode (VTOL)',           keys: key('Ctrl','+',' Space'),  desc: 'Toggle VTOL/hover mode on compatible aircraft.'      },
-            ]
-        },
-        {
-            id: 'aux',
-            label: '🛡 505th Aux Mod',
-            rows: [
-                { action: '★ Tactical Tablet',           keys: key('U'),                  desc: 'Open 505th Tactical Tablet — squad roster, ACE medical overview, map tools.', important: true },
-                { action: 'Chat Wheel',                  keys: key('\\'),                 desc: 'Open Chat Wheel Redux for quick voice lines and callouts.' },
-                { action: 'Reload Callout',              keys: key('Auto'),               desc: 'Automatic callout triggered when reloading. No manual input required.' },
-                { action: 'Grenade Callout',             keys: key('Auto'),               desc: 'Automatic audio/text callout when throwing a grenade.' },
-                { action: 'Medical Scanner',             keys: key('Hold RMB'),           desc: 'If wearing scanner glasses, hold RMB to scan nearby personnel for triage status.' },
-                { action: 'Team Colour',                 keys: key('Tablet'),             desc: 'Open Tactical Tablet → Team Colours to set your icon colour on the map.' },
-                { action: 'Numpad Callouts',             keys: key('Num 1-9'),            desc: 'Quick callout shortcuts — configured via CBA keybind menu.' },
-            ]
-        },
-    ];
-
-    let activeSection = 'all';
-
-    function renderKB(search = '') {
-        const q = search.toLowerCase();
-        const body = document.getElementById('kbBody');
-        let html = '';
-        let anyResult = false;
-
-        SECTIONS.forEach(section => {
-            if (activeSection !== 'all' && section.id !== activeSection) return;
-            const filtered = section.rows.filter(r =>
-                !q || r.action.toLowerCase().includes(q) || r.desc.toLowerCase().includes(q)
-            );
-            if (!filtered.length) return;
-            anyResult = true;
-            html += `<div class="kb-section" id="kb-${section.id}">
-                <div class="kb-section-title">${section.label}</div>
-                <table class="kb-table">
-                ${filtered.map(r => `
-                <tr>
-                    <td class="kb-action">${r.important ? '<span class="kb-star">★</span>' : ''}${r.action}</td>
-                    <td class="kb-key-cell">${r.keys}</td>
-                    <td class="kb-desc">${r.desc}</td>
-                </tr>`).join('')}
-                </table>
-            </div>`;
-        });
-
-        body.innerHTML = anyResult ? html : '<div class="kb-empty">No keybinds match your search.</div>';
-    }
-
-    document.querySelectorAll('.kb-tab').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.kb-tab').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            activeSection = this.dataset.section;
-            renderKB(document.getElementById('kbSearch').value);
-        });
-    });
-
-    document.getElementById('kbSearch').addEventListener('input', function() {
-        renderKB(this.value);
-    });
-
-    renderKB();
-    </script>
 </body>
 </html>
