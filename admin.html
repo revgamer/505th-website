@@ -20,11 +20,11 @@
 
         const ADMIN_ROLES = ['commander','developer','staff_nco','nco','recruiter'];
         const ROLE_PERMISSIONS = {
-            'commander': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1},
-            'developer': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1},
-            'staff_nco': {personnel:1,media:1,content:1,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1},
-            'nco':       {personnel:1,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0},
-            'recruiter': {personnel:1,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0},
+            'commander': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1},
+            'developer': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1},
+            'staff_nco': {personnel:1,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1,roster:1},
+            'nco':       {personnel:1,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0,roster:1},
+            'recruiter': {personnel:1,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0,roster:0},
         };
         function P() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
@@ -91,7 +91,7 @@
             const p=P();
             document.getElementById('nav-personnel').style.display=p.personnel?'':'none';
             document.getElementById('nav-media').style.display=p.media?'':'none';
-            document.getElementById('nav-aar').style.display=p.aar?'':'none';
+            document.getElementById('nav-aar').style.display=p.aar||p.roster?'':'none';
             document.getElementById('nav-content').style.display=p.content?'':'none';
             document.getElementById('nav-settings').style.display=p.settings||p.pages||p.auditLog||p.discordLink?'':'none';
             // Granular settings sub-links
@@ -100,6 +100,11 @@
             if(p.pages)        {const el=document.getElementById('navlink-pagemanager');if(el)el.style.display='';}
             if(p.auditLog)     {const el=document.getElementById('navlink-auditlog');if(el)el.style.display='';}
             if(p.settings)     {['navlink-discord-tracking','navlink-analytics'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});}
+            // Roster sub-link
+            const rosterNavLink=document.getElementById('navlink-roster');
+            if(rosterNavLink) rosterNavLink.style.display=p.roster?'':'none';
+            const aarNavLink=document.getElementById('navlink-aar');
+            if(aarNavLink) aarNavLink.style.display=p.aar?'':'none';
             // Promote panel role options
             const roleOpts=['enlistee','marine','nco','recruiter','staff_nco'];
             window._allowedRoleOpts=p.canChangeRoles?roleOpts:[];
@@ -126,6 +131,7 @@
             if(id==='panel-auditlog') loadAuditLog();
             if(id==='panel-analytics') loadAnalytics();
             if(id==='panel-aar') loadAARPanel();
+            if(id==='panel-roster') loadRosterPanel();
         };
         window.handleLogout=async function(){await signOut(auth);window.location.href='home.html';};
 
@@ -329,6 +335,117 @@
         };
                 window.deleteAAR=async function(id){if(!confirm('DELETE THIS AAR?'))return;await deleteDoc(doc(db,'aars',id));logAction('AAR_DELETE','Deleted AAR '+id);notify('AAR DELETED');loadRecentAARs();};
 
+        // ── ROSTER ──────────────────────────────────────────────────────────
+        let rosterData=[];
+        function calcPeriod(dateStr){if(!dateStr)return'—';const d=new Date(dateStr),now=new Date();let m=(now.getFullYear()-d.getFullYear())*12+(now.getMonth()-d.getMonth());const y=Math.floor(m/12),r=m%12;return(y>0?y+' year'+(y!==1?'s ':' '):'')+r+' month'+(r!==1?'s':'');}
+        async function loadRosterPanel(){
+            const c=document.getElementById('rosterList');
+            if(c)c.innerHTML='<div class="empty-state">LOADING...</div>';
+            try{
+                const s=await getDocs(query(collection(db,'roster'),orderBy('name','asc')));
+                rosterData=[];s.forEach(d=>rosterData.push({id:d.id,...d.data()}));
+                renderRosterTable();
+            }catch(e){if(c)c.innerHTML='<div class="empty-state">ERROR: '+e.message+'</div>';}
+        }
+        function renderRosterTable(){
+            const c=document.getElementById('rosterList');if(!c)return;
+            const active=rosterData.filter(r=>r.platoon!=='Reserves');
+            const reserves=rosterData.filter(r=>r.platoon==='Reserves');
+            const tot=document.getElementById('rosterTotal'),act=document.getElementById('rosterActiveCount'),res=document.getElementById('rosterReservesCount');
+            if(tot)tot.textContent=rosterData.length;
+            if(act)act.textContent=active.length;
+            if(res)res.textContent=reserves.length;
+            if(!rosterData.length){c.innerHTML='<div class="empty-state">NO ROSTER ENTRIES — ADD YOUR FIRST MEMBER</div>';return;}
+            c.innerHTML=rosterData.map(r=>{
+                const att=r.attendance||0;
+                const attColor=att>=3?'var(--success)':att>=2?'#FFD700':'var(--accent)';
+                return`<div class="roster-row">
+                    <div class="roster-cell roster-name">${esc(r.name)}</div>
+                    <div class="roster-cell"><span style="font-size:9px;padding:2px 6px;border:1px solid rgba(0,217,255,.2);color:var(--accent)">${esc(r.platoon||'—')}</span></div>
+                    <div class="roster-cell" style="font-size:9px;color:#666">${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-GB'):'—'}</div>
+                    <div class="roster-cell" style="font-size:9px;color:#888">${calcPeriod(r.joinedPlatoon)}</div>
+                    <div class="roster-cell" style="font-size:9px">${esc(r.rankGrade||'—')}</div>
+                    <div class="roster-cell" style="font-size:9px;color:#666">${r.graduation?new Date(r.graduation).toLocaleDateString('en-GB'):'—'}</div>
+                    <div class="roster-cell">
+                        <div style="display:flex;align-items:center;gap:6px">
+                            <span style="color:${attColor};font-weight:700;font-size:13px;min-width:22px">${att}/3</span>
+                            <input type="checkbox" onchange="markAttendance('${r.id}',this)" title="Mark attendance (+1)" style="cursor:pointer;width:15px;height:15px;accent-color:var(--accent)">
+                        </div>
+                    </div>
+                    <div class="roster-cell" style="font-size:9px;color:#888">${calcPeriod(r.graduation)}</div>
+                    <div class="roster-cell"><span style="color:var(--accent);font-weight:700;font-size:14px">${r.promotionTracker||0}</span></div>
+                    <div class="roster-cell" style="display:flex;gap:4px;flex-wrap:wrap">
+                        <button class="action-btn approve-btn small" onclick="openRosterEdit('${r.id}')">EDIT</button>
+                        <button class="action-btn remove-btn small" onclick="deleteRosterEntry('${r.id}','${esc(r.name)}')">DEL</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        window.markAttendance=async function(id,cb){
+            cb.checked=false;
+            const r=rosterData.find(x=>x.id===id);if(!r)return;
+            let att=(r.attendance||0)+1,pt=r.promotionTracker||0;
+            if(att>=3){att=0;pt++;notify('\u2713 3 ATTENDANCE \u2192 PROMOTION TRACKER +1');}
+            else{notify('ATTENDANCE: '+att+'/3');}
+            r.attendance=att;r.promotionTracker=pt;
+            await updateDoc(doc(db,'roster',id),{attendance:att,promotionTracker:pt,updatedAt:new Date().toISOString()});
+            logAction('ROSTER_ATT',r.name+' att='+att+' PT='+pt);
+            renderRosterTable();
+        };
+        window.deleteRosterEntry=async function(id,name){
+            if(!confirm('DELETE '+name+' FROM ROSTER?'))return;
+            await deleteDoc(doc(db,'roster',id));
+            logAction('ROSTER_DEL','Deleted '+name);
+            notify(name+' REMOVED');
+            rosterData=rosterData.filter(x=>x.id!==id);
+            renderRosterTable();
+        };
+        window.openRosterAdd=function(){
+            document.getElementById('rosterEntryId').value='';
+            document.getElementById('rosterModalTitle').textContent='ADD ROSTER ENTRY';
+            ['rosterName','rosterJoinedPlatoon','rosterGraduation'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+            document.getElementById('rosterPlatoon').value='';
+            document.getElementById('rosterRankGrade').value='';
+            document.getElementById('rosterAttendance').value='0';
+            document.getElementById('rosterPT').value='0';
+            document.getElementById('rosterModal').classList.add('active');
+        };
+        window.openRosterEdit=function(id){
+            const r=rosterData.find(x=>x.id===id);if(!r)return;
+            document.getElementById('rosterEntryId').value=id;
+            document.getElementById('rosterModalTitle').textContent='EDIT: '+r.name;
+            document.getElementById('rosterName').value=r.name||'';
+            document.getElementById('rosterPlatoon').value=r.platoon||'';
+            document.getElementById('rosterRankGrade').value=r.rankGrade||'';
+            document.getElementById('rosterJoinedPlatoon').value=r.joinedPlatoon?r.joinedPlatoon.split('T')[0]:'';
+            document.getElementById('rosterGraduation').value=r.graduation?r.graduation.split('T')[0]:'';
+            document.getElementById('rosterAttendance').value=r.attendance||0;
+            document.getElementById('rosterPT').value=r.promotionTracker||0;
+            document.getElementById('rosterModal').classList.add('active');
+        };
+        window.closeRosterModal=function(){document.getElementById('rosterModal').classList.remove('active');};
+        window.saveRosterEntry=async function(){
+            const name=document.getElementById('rosterName').value.trim();
+            const platoon=document.getElementById('rosterPlatoon').value;
+            if(!name||!platoon){notify('NAME & PLATOON REQUIRED',1);return;}
+            const id=document.getElementById('rosterEntryId').value;
+            const data={
+                name,platoon,
+                rankGrade:document.getElementById('rosterRankGrade').value,
+                joinedPlatoon:document.getElementById('rosterJoinedPlatoon').value||null,
+                graduation:document.getElementById('rosterGraduation').value||null,
+                attendance:parseInt(document.getElementById('rosterAttendance').value)||0,
+                promotionTracker:parseInt(document.getElementById('rosterPT').value)||0,
+                updatedAt:new Date().toISOString()
+            };
+            if(id){await updateDoc(doc(db,'roster',id),data);logAction('ROSTER_EDIT','Edited '+name);}
+            else{data.createdAt=new Date().toISOString();await addDoc(collection(db,'roster'),data);logAction('ROSTER_ADD','Added '+name);}
+            notify(id?'ENTRY UPDATED':'ENTRY ADDED');
+            closeRosterModal();
+            await loadRosterPanel();
+        };
+        // ── END ROSTER ───────────────────────────────────────────────────────
+
         function notify(m,err){const n=document.getElementById('notification');n.textContent=m;n.className='notification show'+(err?' error':'');setTimeout(()=>n.className='notification',3000);}
     </script>
 
@@ -453,7 +570,12 @@
         .audit-time{color:#555}.audit-user{color:#888}.audit-action{color:var(--accent);letter-spacing:1px}.audit-details{color:#666}
         .audit-header{display:grid;grid-template-columns:160px 200px 120px 1fr;gap:8px;padding:8px 12px;color:rgba(0,217,255,.4);font-size:9px;letter-spacing:2px;border-bottom:1px solid rgba(0,217,255,.1)}
         .notification{position:fixed;top:60px;right:20px;background:rgba(8,10,14,.97);border:1px solid var(--accent);color:var(--accent);padding:12px 20px;font-size:11px;letter-spacing:2px;z-index:200;opacity:0;transform:translateX(20px);transition:all .3s;pointer-events:none}.notification.show{opacity:1;transform:translateX(0)}.notification.error{border-color:#ef4444;color:#ef4444}
-        @media(max-width:768px){.hamburger{display:flex;align-items:center;justify-content:center}.sidebar{position:fixed;top:0;left:-260px;width:260px;height:100vh;z-index:50;transition:left .3s;padding-top:60px}.sidebar.open{left:0}.stats-row{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.table-header,.table-row{grid-template-columns:1fr 1fr;font-size:9px}.audit-entry,.audit-header{grid-template-columns:1fr;font-size:9px}}
+        .roster-header{display:grid;grid-template-columns:1.6fr 1fr .8fr 1fr 1.4fr .8fr .65fr 1fr .45fr .75fr;gap:0;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.12);border-bottom:2px solid rgba(0,217,255,.2);padding:8px 12px;font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.7);margin-bottom:1px;user-select:none}
+        .roster-row{display:grid;grid-template-columns:1.6fr 1fr .8fr 1fr 1.4fr .8fr .65fr 1fr .45fr .75fr;gap:0;border-bottom:1px solid rgba(255,255,255,.04);padding:7px 12px;align-items:center;transition:background .15s}
+        .roster-row:hover{background:rgba(0,217,255,.025)}
+        .roster-cell{font-size:10px;letter-spacing:.5px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:4px}
+        .roster-name{color:#d0d0d0;font-weight:600;letter-spacing:1px}
+        @media(max-width:768px){.hamburger{display:flex;align-items:center;justify-content:center}.sidebar{position:fixed;top:0;left:-260px;width:260px;height:100vh;z-index:50;transition:left .3s;padding-top:60px}.sidebar.open{left:0}.stats-row{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.table-header,.table-row{grid-template-columns:1fr 1fr;font-size:9px}.audit-entry,.audit-header{grid-template-columns:1fr;font-size:9px}.roster-header,.roster-row{grid-template-columns:1.6fr 1fr;font-size:8px}.roster-cell:nth-child(n+3){display:none}}
     </style>
 </head>
 <body>
@@ -462,6 +584,98 @@
     <div class="notification" id="notification"></div>
     <div class="media-picker-modal" id="mediaPickerModal"><div class="picker-content"><div class="picker-header"><h3>SELECT MEDIA</h3><button class="picker-close" onclick="closeMediaPicker()">&times;</button></div><div class="picker-grid" id="pickerGrid"></div></div></div>
     <div class="edit-modal" id="editUserModal"><div class="edit-modal-content"><div class="edit-modal-title">EDIT OPERATIVE</div><input type="hidden" id="editUserId"><div class="edit-field"><label>CALLSIGN</label><input type="text" id="editCallsign"></div><div class="edit-field"><label>FIRST NAME</label><input type="text" id="editFirstName"></div><div class="edit-field"><label>LAST NAME</label><input type="text" id="editLastName"></div><div class="edit-field"><label>RANK</label><input type="text" id="editRank" placeholder="e.g. Private, Corporal, Sergeant..."></div><div class="edit-field"><label>DATE JOINED</label><input type="date" id="editJoinedAt"></div><div class="edit-modal-actions"><button class="action-btn approve-btn" onclick="saveUserEdit()">SAVE CHANGES</button><button class="action-btn remove-btn" onclick="closeEditModal()">CANCEL</button></div></div></div>
+    <div class="edit-modal" id="rosterModal">
+        <div class="edit-modal-content" style="max-width:620px;width:95%">
+            <div class="edit-modal-title" id="rosterModalTitle">ADD ROSTER ENTRY</div>
+            <input type="hidden" id="rosterEntryId">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
+                <div class="edit-field" style="grid-column:1/-1"><label>FULL NAME *</label><input type="text" id="rosterName" placeholder="e.g. John H. Burns"></div>
+                <div class="edit-field"><label>PLATOON *</label>
+                    <select id="rosterPlatoon" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
+                        <option value="">— SELECT PLATOON —</option>
+                        <option value="Command">Command</option>
+                        <option value="1st Platoon">1st Platoon</option>
+                        <option value="2nd Platoon">2nd Platoon</option>
+                        <option value="3rd Platoon">3rd Platoon</option>
+                        <option value="Force Recon">Force Recon</option>
+                        <option value="Corpsmen">Corpsmen</option>
+                        <option value="Pilot">Pilot</option>
+                        <option value="Reserves">Reserves</option>
+                    </select>
+                </div>
+                <div class="edit-field"><label>RANK AND GRADE</label>
+                    <select id="rosterRankGrade" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
+                        <option value="">— SELECT RANK —</option>
+                        <optgroup label="── E9 ──">
+                            <option value="E9 / Sergeant Major">E9 / Sergeant Major</option>
+                            <option value="E9 / Master Gunnery Sergeant">E9 / Master Gunnery Sergeant</option>
+                            <option value="E9 / Master Chief Hospital Corpsman">E9 / Master Chief Hospital Corpsman</option>
+                            <option value="E9 / First Sergeant">E9 / First Sergeant</option>
+                        </optgroup>
+                        <optgroup label="── E8 ──">
+                            <option value="E8 / Senior Chief Corpsman">E8 / Senior Chief Corpsman</option>
+                            <option value="E8 / Master Sergeant">E8 / Master Sergeant</option>
+                        </optgroup>
+                        <optgroup label="── E7 ──">
+                            <option value="E7 / Chief Corpsman">E7 / Chief Corpsman</option>
+                            <option value="E7 / Gunnery Sergeant">E7 / Gunnery Sergeant</option>
+                        </optgroup>
+                        <optgroup label="── E6 ──">
+                            <option value="E6 / Technical Sergeant">E6 / Technical Sergeant</option>
+                            <option value="E6 / Corpsman First Class">E6 / Corpsman First Class</option>
+                            <option value="E6 / Staff Sergeant">E6 / Staff Sergeant</option>
+                        </optgroup>
+                        <optgroup label="── E5 ──">
+                            <option value="E5 / Corpsman Second Class">E5 / Corpsman Second Class</option>
+                            <option value="E5 / Staff Sergeant">E5 / Staff Sergeant</option>
+                            <option value="E5 / Sergeant">E5 / Sergeant</option>
+                        </optgroup>
+                        <optgroup label="── E4 ──">
+                            <option value="E4 / Corpsman Third Class">E4 / Corpsman Third Class</option>
+                            <option value="E4 / Senior Airman">E4 / Senior Airman</option>
+                            <option value="E4 / Corporal">E4 / Corporal</option>
+                        </optgroup>
+                        <optgroup label="── E3 ──">
+                            <option value="E3 / Hospitalman">E3 / Hospitalman</option>
+                            <option value="E3 / Airman First Class">E3 / Airman First Class</option>
+                            <option value="E3 / Lance Corporal">E3 / Lance Corporal</option>
+                        </optgroup>
+                        <optgroup label="── E2 ──">
+                            <option value="E2 / Hospitalman Apprentice">E2 / Hospitalman Apprentice</option>
+                            <option value="E2 / Airman">E2 / Airman</option>
+                            <option value="E2 / Private First Class">E2 / Private First Class</option>
+                        </optgroup>
+                        <optgroup label="── E1 ──">
+                            <option value="E1 / Airman Basic">E1 / Airman Basic</option>
+                            <option value="E1 / Private">E1 / Private</option>
+                        </optgroup>
+                        <optgroup label="── OTHER ──">
+                            <option value="Reservist">Reservist</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="edit-field"><label>JOINED PLATOON (DATE)</label><input type="date" id="rosterJoinedPlatoon"></div>
+                <div class="edit-field"><label>GRADUATION DATE <span style="color:#555;font-size:8px">(PROMOTED PVT→PFC)</span></label><input type="date" id="rosterGraduation"></div>
+                <div class="edit-field"><label>CURRENT ATTENDANCE</label>
+                    <select id="rosterAttendance" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
+                        <option value="0">0 / 3</option>
+                        <option value="1">1 / 3</option>
+                        <option value="2">2 / 3</option>
+                        <option value="3">3 / 3</option>
+                    </select>
+                </div>
+                <div class="edit-field"><label>PROMOTION TRACKER (PT)</label><input type="number" id="rosterPT" min="0" value="0" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;outline:none"></div>
+            </div>
+            <div style="color:#444;font-size:9px;letter-spacing:1.5px;margin:8px 0 16px;padding:8px;border:1px dashed rgba(0,217,255,.08)">
+                &#9432; ATTENDANCE: USE CHECKBOX ON ROSTER TABLE TO INCREMENT (+1). REACHING 3 AUTO-INCREMENTS PT AND RESETS TO 0.<br>
+                &#9432; TIME IN UNIT IS AUTO-CALCULATED FROM GRADUATION DATE.
+            </div>
+            <div class="edit-modal-actions">
+                <button class="action-btn approve-btn" onclick="saveRosterEntry()">SAVE ENTRY</button>
+                <button class="action-btn remove-btn" onclick="closeRosterModal()">CANCEL</button>
+            </div>
+        </div>
+    </div>
     <div id="adminApp" class="hidden">
         <div class="top-bar"><div class="top-bar-left"><button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button><img src="images/logo.png" alt="505th"><span class="top-bar-title">COMMAND TERMINAL_</span></div><div class="top-bar-right"><div class="user-identity"><div id="topbarName">---</div><div id="topbarRole">---</div></div><a href="profile.html" class="top-btn">&#9823; PROFILE</a><a href="home.html" class="top-btn">&#8962; HOME</a><button class="top-btn logout-btn" onclick="handleLogout()">&#9211; LOGOUT</button></div></div>
         <div class="app-layout">
@@ -470,7 +684,7 @@
                 <hr class="sidebar-divider">
                 <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> PERSONNEL <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">Active Personnel</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')">Register Panel</div><div class="sub-link" data-panel="panel-promote" onclick="showPanel('panel-promote')">Promote Ranks</div></div></div>
                 <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> MEDIA LIBRARY <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
-                <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9998;</span> OPERATIONS <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div></div></div>
+                <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> BATTALION RECORDS <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div></div></div>
                 <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PAGE CONTENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div></div></div>
                 <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> SITE SETTINGS <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-discord" class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div id="navlink-pagemanager" class="sub-link" data-panel="panel-pagemanager" onclick="showPanel('panel-pagemanager')">Page Manager</div><div id="navlink-auditlog" class="sub-link" data-panel="panel-auditlog" onclick="showPanel('panel-auditlog')">Admin Audit Log</div><div id="navlink-discord-tracking" class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Discord Tracking</div><div id="navlink-analytics" class="sub-link" data-panel="panel-analytics" onclick="showPanel('panel-analytics')">Site Analytics</div></div></div>
                 <hr class="sidebar-divider">
@@ -490,7 +704,7 @@
                             <span class="role-badge role-marine" style="align-self:center">MARINE</span><span style="color:#555">Profile edit only. No admin access.</span>
                             <span class="role-badge role-recruiter" style="align-self:center">RECRUITER</span><span style="color:#555">Personnel panel — approve &amp; deny registrations.</span>
                             <span class="role-badge role-nco" style="align-self:center">NCO</span><span style="color:#555">Personnel (approve/deny) + full Media Library + After Action Reports.</span>
-                            <span class="role-badge role-staff_nco" style="align-self:center">STAFF NCO</span><span style="color:#555">Full Personnel + full Media + Page Content + Discord Invite Link + AAR.</span>
+                            <span class="role-badge role-staff_nco" style="align-self:center">STAFF NCO</span><span style="color:#555">Full Personnel + full Media + Page Content + Page Manager + Discord Invite Link + AAR + Roster.</span>
                             <span class="role-badge role-developer" style="align-self:center">DEVELOPER</span><span style="color:#555">Full access to all panels including Settings, Audit Log &amp; Analytics.</span>
                             <span class="role-badge role-commander" style="align-self:center">COMMANDER</span><span style="color:#555">Full access. Highest authority — outranks Developer.</span>
                         </div>
@@ -666,6 +880,26 @@
                     <!-- RECENT -->
                     <div style="color:rgba(0,217,255,.4);font-size:9px;letter-spacing:3px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">RECENT SUBMISSIONS</div>
                     <div id="aarRecentList"><div class="empty-state">LOADING...</div></div>
+                </div>
+                <div class="panel hidden" id="panel-roster">
+                    <div class="panel-title">BATTALION ROSTER</div>
+                    <p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">NCO+ ACCESS // UNIT STRENGTH &bull; ATTENDANCE &bull; PROMOTION TRACKING</p>
+                    <div class="stats-row" style="margin-bottom:16px">
+                        <div class="stat-card"><div class="stat-number" id="rosterTotal">0</div><div class="stat-label">TOTAL ENTRIES</div></div>
+                        <div class="stat-card"><div class="stat-number" id="rosterActiveCount">0</div><div class="stat-label">ACTIVE</div></div>
+                        <div class="stat-card"><div class="stat-number" id="rosterReservesCount">0</div><div class="stat-label">RESERVES</div></div>
+                    </div>
+                    <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <button class="upload-btn" onclick="openRosterAdd()">+ ADD ENTRY</button>
+                        <button class="action-btn approve-btn" onclick="loadRosterPanel()">&#8635; REFRESH</button>
+                        <span style="color:#444;font-size:9px;letter-spacing:2px;margin-left:8px">&#9998; CHECKBOX = +1 ATTENDANCE &nbsp;|&nbsp; 3 ATTENDANCE = +1 PT &amp; RESET</span>
+                    </div>
+                    <div class="roster-header">
+                        <div>NAME</div><div>PLATOON</div><div>JOINED</div><div>PLATOON SERVICE</div>
+                        <div>RANK / GRADE</div><div>GRADUATION</div><div>ATT.</div>
+                        <div>TIME IN UNIT</div><div>PT</div><div>ACTIONS</div>
+                    </div>
+                    <div id="rosterList"><div class="empty-state">LOADING...</div></div>
                 </div>
                 <div class="panel hidden" id="panel-discord-tracking">
                     <div class="panel-title">DISCORD TRACKING</div>
