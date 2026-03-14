@@ -279,7 +279,7 @@
         const AAR_WEBHOOK_URL = 'https://discord.com/api/webhooks/1482237463224258632/mDIN6irczttLRoxE1vk81dloso5pLKJ74_vARw2C0rUUyw5vBvsaO_LxaN6nKrxMVLP5';
 
         window.aarAddAttachment=function(){const row=document.createElement('div');row.className='upload-row';row.style.marginBottom='6px';row.innerHTML='<input type="url" class="aar-attachment-input" placeholder="https://... (image URL)" style="flex:1;padding:8px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:\'Share Tech Mono\',monospace;font-size:11px;outline:none"><button onclick="this.parentElement.remove()" style="background:none;border:1px solid #333;color:#555;padding:8px 10px;cursor:pointer;margin-left:6px">✕</button>';document.getElementById('aarAttachmentsList').appendChild(row);};
-        window.aarClearForm=function(){if(!confirm('Clear all form data?'))return;['aarTitle','aarAuthor','aarCommander','aarFiledBy','aarLocation','aarMainObjective','aarSummary','aarUnitsInvolved','aarEnemyFaction','aarEnemyCasualties','aarEnemyTactics','aarEnemyDisposition','aarKeyMoments','aarSuccessfulManeuvers','aarMistakes','aarUnexpected','aarDetainee','aarInfoObtained','aarInterrogationSummary','aarObjectiveOutcome','aarRecommended','aarMiscComments'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('aarPersonnel').value='';document.getElementById('aarCasualties').value='';document.getElementById('aarOpType').value='';document.querySelectorAll('input[name="aarResult"],input[name="aarUnit"]').forEach(r=>r.checked=false);aarUnitChange();aarResultChange();document.getElementById('aarSubmitStatus').textContent='';};
+        window.aarClearForm=function(skipConfirm){if(!skipConfirm&&!confirm('Clear all form data?'))return;['aarTitle','aarAuthor','aarCommander','aarFiledBy','aarLocation','aarMainObjective','aarSummary','aarUnitsInvolved','aarEnemyFaction','aarEnemyCasualties','aarEnemyTactics','aarEnemyDisposition','aarKeyMoments','aarSuccessfulManeuvers','aarMistakes','aarUnexpected','aarDetainee','aarInfoObtained','aarInterrogationSummary','aarObjectiveOutcome','aarRecommended','aarMiscComments'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('aarPersonnel').value='';document.getElementById('aarCasualties').value='';document.getElementById('aarOpType').value='';document.querySelectorAll('input[name="aarResult"],input[name="aarUnit"]').forEach(r=>r.checked=false);aarUnitChange();aarResultChange();document.getElementById('aarSubmitStatus').textContent='';};
         window.submitAAR=async function(){
             const g=id=>document.getElementById(id)?.value.trim()||'';
             const title=g('aarTitle'),dateVal=g('aarDate'),opType=g('aarOpType'),commander=g('aarCommander'),
@@ -311,38 +311,19 @@
                 });
                 logAction('AAR_SUBMIT',`${title} (${OP_LABELS[opType]||opType}) \u2014 ${UNIT_LABELS[unit]||unit} \u2014 ${RES_LABELS[result]||result}`);
                 if(AAR_WEBHOOK_URL){
-                    const LOGO_URL='https://i.ibb.co/d0Gn5M5R/505-TH-Logo.png';
-                    const RC={success:0x00FF41,partial:0xFFD700,failure:0xFF4444};
-                    const RI={success:'✅ Mission Success',partial:'🟡 Partial Success',failure:'❌ Mission Failure'};
-                    const OI={major:'🔴 Major Deployment',regular:'🟢 Regular Deployment',patrol:'🔵 Sector Patrol',recon:'🔍 Reconnaissance',ambush:'⚡ Ambush',assault:'⚔️ Assault',defence:'🛡 Defence'};
-                    const aarPageUrl='https://505expeditinaryforce.com/resources-aar.html';
-                    const embed={
-                        author:{name:'505th Expeditionary Force — Operations',icon_url:LOGO_URL},
-                        title:'📘 New After Action Report Submitted',
-                        description:`**${title}**
-
-`+
-                            `• **Submitted by:** ${filedBy||currentUserData.callsign}
-`+
-                            `• **Unit:** ${UNIT_LABELS[unit]||unit}
-`+
-                            `• **Type:** ${OI[opType]||opType}
-`+
-                            `• **Date:** ${new Date(dateVal).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}
-`+
-                            `• **Result:** ${RI[result]||result}
-
-`+
-                            `[📄 Click here to view the full report](${aarPageUrl})`,
-                        color:RC[result]||0x2b2d31,
-                        thumbnail:{url:LOGO_URL},
-                        footer:{text:'505th Expeditionary Force • After Action Reports'},
-                        timestamp:new Date().toISOString()
-                    };
-                    try{await fetch(AAR_WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'505th Command Terminal',avatar_url:LOGO_URL,embeds:[embed]})});}catch(we){console.warn('Webhook:',we);}
+                    try{
+                        const LOGO_URL='https://i.ibb.co/d0Gn5M5R/505-TH-Logo.png';
+                        const RC={success:0x00FF41,partial:0xFFD700,failure:0xFF4444};
+                        const RI={success:'✅ Mission Success',partial:'🟡 Partial Success',failure:'❌ Mission Failure'};
+                        const OI={major:'🔴 Major Deployment',regular:'🟢 Regular Deployment',patrol:'🔵 Sector Patrol',recon:'🔍 Reconnaissance',ambush:'⚡ Ambush',assault:'⚔️ Assault',defence:'🛡 Defence'};
+                        const desc='**'+title+'**\n\n• **Submitted by:** '+(filedBy||currentUserData.callsign)+'\n• **Unit:** '+(UNIT_LABELS[unit]||unit)+'\n• **Type:** '+(OI[opType]||opType)+'\n• **Date:** '+new Date(dateVal).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})+'\n• **Result:** '+(RI[result]||result)+'\n\n[📄 Click here to view the full report](https://505expeditinaryforce.com/resources-aar.html)';
+                        const payload=JSON.stringify({username:'505th Command Terminal',avatar_url:LOGO_URL,embeds:[{author:{name:'505th Expeditionary Force — Operations',icon_url:LOGO_URL},title:'📘 New After Action Report Submitted',description:desc,color:RC[result]||0x2b2d31,thumbnail:{url:LOGO_URL},footer:{text:'505th Expeditionary Force • After Action Reports'},timestamp:new Date().toISOString()}]});
+                        const whr=await fetch(AAR_WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:payload});
+                        if(!whr.ok){const err=await whr.text();console.error('Webhook failed:',whr.status,err);}
+                    }catch(we){console.error('Webhook error:',we);}
                 }
                 st.style.color='#7FFF7F';st.textContent='\u2713 REPORT SUBMITTED';notify('AAR SUBMITTED');
-                aarClearForm();await loadRecentAARs();
+                aarClearForm(true);await loadRecentAARs();
             }catch(e){st.style.color='#FF4444';st.textContent='\u2717 FAILED: '+e.message;}
             btn.disabled=0;btn.textContent='SUBMIT REPORT';
         };
