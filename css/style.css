@@ -510,6 +510,16 @@ a {
     margin-bottom: 0;
 }
 
+.about-quote {
+    margin-top: 1.2rem;
+    font-size: 0.85rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    opacity: 0.75;
+    font-style: italic;
+    text-align: right !important;
+}
+
 /* ===== VIDEO SECTION ===== */
 .video-section {
     margin-bottom: 5rem;
