@@ -686,11 +686,12 @@
                 container.innerHTML='<div class="empty-state">LOADING...</div>';
                 let items=[];
                 try {
-                    const snap=await getDocs(query(collection(db,cfg.collection),orderBy('_order','asc')));
+                    const snap=await getDocs(collection(db,cfg.collection));
                     snap.forEach(d=>items.push({id:d.id,...d.data()}));
+                    // Sort by _order if present, else by first field
+                    items.sort((a,b)=>(a._order||0)-(b._order||0));
                 } catch(e) {
-                    // If _order field doesn't exist, try without ordering
-                    try { const snap2=await getDocs(collection(db,cfg.collection)); snap2.forEach(d=>items.push({id:d.id,...d.data()})); } catch(e2){}
+                    console.warn('Dynamic list load ('+cfg.collection+'):', e.message);
                 }
                 window['_dynItems_'+pageId]=items;
                 renderDynamicList(pageId);
@@ -710,7 +711,7 @@
         // ── Dynamic list renderer ────────────────────────────────────────
         function renderDynamicList(pageId) {
             const cfg=PAGE_SLOTS[pageId]; if(!cfg||cfg.type!=='dynamic_list') return;
-            const container=document.querySelector(`#panel-page-${pageId} .page-editor-container`); if(!container) return;
+            const container=document.querySelector(`.page-editor-container[data-page="${pageId}"]`); if(!container) return;
             const items=window['_dynItems_'+pageId]||[];
 
             let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
