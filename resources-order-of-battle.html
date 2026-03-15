@@ -131,6 +131,17 @@
             color: #445566;
             margin-top: 5px;
         }
+        /* Slot list inside hierarchy nodes */
+        .h-slots { margin-top:7px; border-top:1px solid rgba(255,255,255,.06); padding-top:6px; }
+        .h-slot-row { display:flex; justify-content:space-between; align-items:baseline;
+            font-family:'Share Tech Mono',monospace; font-size:7px; letter-spacing:.8px;
+            padding:2px 0; border-bottom:1px solid rgba(255,255,255,.03); gap:4px; }
+        .h-slot-label { color:#445; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+        .h-slot-open   { color:rgba(0,217,255,.6); flex-shrink:0; }
+        .h-slot-filled { color:#8aad44; font-weight:700; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:80px; }
+        .h-slot-closed { color:#333; flex-shrink:0; }
+        .h-squad-hdr { color:rgba(0,217,255,.2); font-family:'Share Tech Mono',monospace;
+            font-size:7px; letter-spacing:1.5px; padding:4px 0 2px; display:block; }
         .h-node-children-indicator {
             position: absolute;
             bottom: -10px;
@@ -236,6 +247,16 @@
         }
 
         #cardView  { display:none; }
+        #hierCardSection { display:none; margin-top:40px; }
+        .hier-section-divider {
+            display:flex; align-items:center; gap:16px;
+            max-width:1060px; margin:0 auto 28px;
+            font-family:'Share Tech Mono',monospace; font-size:9px;
+            letter-spacing:4px; color:rgba(0,217,255,.25);
+        }
+        .hier-section-divider::before, .hier-section-divider::after {
+            content:''; flex:1; border-top:1px solid rgba(0,217,255,.08);
+        }
 
 
         /* Card view */
@@ -373,6 +394,10 @@
             <div id="cardView">
                 <div id="cardViewInner"><div style="text-align:center;padding:3rem;color:#555;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px">LOADING...</div></div>
             </div><!-- end cardView -->
+            <div id="hierCardSection">
+                <div class="hier-section-divider">UNIT CARDS</div>
+                <div id="hierCardInner"><div style="text-align:center;padding:3rem;color:#555;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px">LOADING...</div></div>
+            </div>
 
         </div>
     </main>
@@ -407,60 +432,93 @@
         children:[
             {
                 id:'alpha', name:'Alpha Company', sub:'MARINE INFANTRY // LR: 40',
-                tag:'INF', branch:'infantry',
+                tag:'INF', branch:'infantry', _col:true,
                 children:[
-                    { id:'kj',   name:'1st Platoon',  sub:'KILLJOY // SR 100', tag:'PLT', branch:'infantry' },
-                    { id:'plt2', name:'2nd Platoon',   sub:'SR 120',            tag:'PLT', branch:'infantry' },
-                    { id:'plt3', name:'3rd Platoon',   sub:'SR 140',            tag:'PLT', branch:'infantry' },
+                    {
+                        id:'kj', name:'1st Platoon', sub:'KILLJOY // SR 100', tag:'PLT', branch:'infantry',
+                        children:[
+                            { id:'kj1', name:'KJ 1-1', sub:'SQL + 8 MARINES', tag:'SQ', branch:'infantry' },
+                            { id:'kj2', name:'KJ 1-2', sub:'SQL + 8 MARINES', tag:'SQ', branch:'infantry' },
+                            { id:'kj3', name:'KJ 1-3', sub:'SQL + 8 MARINES', tag:'SQ', branch:'infantry' },
+                        ]
+                    },
+                    {
+                        id:'plt2', name:'2nd Platoon', sub:'SR 120', tag:'PLT', branch:'infantry',
+                        children:[
+                            { id:'a21', name:'Alpha 2-1', sub:'SQL + 8 MARINES', tag:'SQ', branch:'infantry' },
+                            { id:'b22', name:'Bravo 2-2', sub:'SQL + 8 MARINES', tag:'SQ', branch:'infantry' },
+                            { id:'c23', name:'Charlie 2-3', sub:'SQL + 8 MARINES', tag:'SQ', branch:'infantry' },
+                        ]
+                    },
+                    {
+                        id:'plt3', name:'3rd Platoon', sub:'SR 140', tag:'PLT', branch:'infantry',
+                        children:[
+                            { id:'a31', name:'Alpha 3-1', sub:'SQL + 8 MARINES', tag:'SQ', branch:'infantry' },
+                            { id:'b32', name:'Bravo 3-2', sub:'SQL + 8 MARINES', tag:'SQ', branch:'infantry' },
+                            { id:'c33', name:'Charlie 3-3', sub:'SQL + 8 MARINES', tag:'SQ', branch:'infantry' },
+                        ]
+                    },
                 ]
             },
             {
                 id:'jsotf', name:'JSOTF-23', sub:'JOINT SPECIAL OPS TASK FORCE',
-                tag:'SOF', branch:'specops',
+                tag:'SOF', branch:'specops', _col:true,
                 children:[
                     {
-                        id:'msoc', name:'Marine SOC', sub:'MARINE SPECIAL OPS COMPONENT',
-                        tag:'SOC', branch:'specops',
+                        id:'recon', name:'1st PLT', sub:'MARINE RECON', tag:'PLT', branch:'specops',
                         children:[
-                            { id:'recon',   name:'1st PLT',  sub:'MARINE RECON',     tag:'PLT', branch:'specops' },
-                            { id:'raiders', name:'2nd PLT',  sub:'MARINE RAIDERS',   tag:'PLT', branch:'specops' },
-                            { id:'tactics', name:'3rd PLT',  sub:'SPECIAL TACTICS',  tag:'PLT', branch:'specops' },
+                            { id:'stk10', name:'Stalker 1-0', sub:'SQL + 6 MARINES', tag:'FT', branch:'specops' },
+                            { id:'stk20', name:'Stalker 2-0', sub:'SQL + 6 MARINES', tag:'FT', branch:'specops' },
                         ]
                     },
                     {
-                        id:'afsoc', name:'Air Force SOC', sub:'AIR FORCE SPECIAL OPS COMPONENT',
-                        tag:'SOC', branch:'specops',
+                        id:'raiders', name:'2nd PLT', sub:'MARINE RAIDERS', tag:'PLT', branch:'specops',
                         children:[
-                            { id:'para', name:'4th PLT', sub:'PARARESCUE SQ', tag:'PLT', branch:'specops' },
+                            { id:'bv10', name:'Bravo 1-0', sub:'SQL + 6 MARINES', tag:'FT', branch:'specops' },
+                            { id:'bv20', name:'Bravo 2-0', sub:'SQL + 6 MARINES', tag:'FT', branch:'specops' },
                         ]
-                    }
+                    },
+                    {
+                        id:'tactics', name:'3rd PLT', sub:'SPECIAL TACTICS', tag:'PLT', branch:'specops',
+                        children:[
+                            { id:'ch10', name:'Charlie 1-0', sub:'SQL + 6 MARINES', tag:'FT', branch:'specops' },
+                            { id:'ch20', name:'Charlie 2-0', sub:'SQL + 6 MARINES', tag:'FT', branch:'specops' },
+                        ]
+                    },
+                    {
+                        id:'para', name:'4th PLT', sub:'PARARESCUE SQ', tag:'PLT', branch:'specops',
+                        children:[
+                            { id:'dl10', name:'Delta 1-0', sub:'SQL + 6 MARINES', tag:'FT', branch:'specops' },
+                            { id:'dl20', name:'Delta 2-0', sub:'SQL + 6 MARINES', tag:'FT', branch:'specops' },
+                        ]
+                    },
                 ]
             },
             {
                 id:'air', name:'54th Air Wing', sub:'PILOT // LR: 70',
                 tag:'AIR', branch:'airwing',
                 children:[
-                    { id:'air1', name:'22nd Air Mobility Sq', sub:'ATG LR: 71', tag:'SQ', branch:'airwing' },
-                    { id:'air2', name:'31st Fighter Sq',      sub:'ATG LR: 71', tag:'SQ', branch:'airwing' },
-                    { id:'air3', name:'5th Special Ops Sq',   sub:'ATG LR: 71', tag:'SQ', branch:'airwing' },
+                    { id:'air1', name:'22nd Air Mobility Sq', sub:'SQ LDR + 15 PILOTS', tag:'SQ', branch:'airwing' },
+                    { id:'air2', name:'31st Fighter Sq',      sub:'SQ LDR + 15 PILOTS', tag:'SQ', branch:'airwing' },
+                    { id:'air3', name:'5th Special Ops Sq',   sub:'SQ LDR + 15 PILOTS', tag:'SQ', branch:'airwing' },
                 ]
             },
             {
                 id:'support', name:'Support Company', sub:'MEDICAL & RESERVES',
                 tag:'MED', branch:'support',
                 children:[
-                    { id:'med', name:'Hospital Corpsman', sub:'EMER. NET: 333', tag:'MED', branch:'support' },
-                    { id:'res', name:'Reserves',          sub:'6 SLOTS',        tag:'RES', branch:'support' },
+                    { id:'med', name:'Hospital Corpsman', sub:'OVERSEER + 9 CORPSMAN', tag:'MED', branch:'support' },
+                    { id:'res', name:'Reserves',          sub:'6 SLOTS',               tag:'RES', branch:'support' },
                 ]
             },
         ]
     };
 
     // ── Layout constants ───────────────────────────────────────────────────
-    const NW  = 190;  // node width
-    const NH  = 72;   // node height (root = 82)
-    const HG  = 36;   // horizontal gap between siblings
-    const VG  = 100;  // vertical gap between levels
+    const NW  = 160;  // node width
+    const NH  = 68;   // node height (root = 80)
+    const HG  = 20;   // horizontal gap between siblings
+    const VG  = 85;   // vertical gap between levels
 
     // ── Layout engine ──────────────────────────────────────────────────────
     // Pass 1: compute subtree widths bottom-up
@@ -571,10 +629,19 @@
                 `box-shadow: inset 0 0 0 1px rgba(255,255,255,.05), 0 0 ${n.root?16:8}px ${b.glow}`,
             ].join(';');
 
+            const slotHtml = buildSlotHtml(n.id, window._ucNodeData||{});
             el.innerHTML = `
               <div class="h-node-tag" style="color:${b.color}">${n.tag||''}</div>
               <div class="h-node-name" style="color:${b.color}">${n.name}</div>
-              ${n.sub?`<div class="h-node-sub">${n.sub}</div>`:''}`;
+              ${n.sub?`<div class="h-node-sub">${n.sub}</div>`:''}
+              ${slotHtml}`;
+            // Expand node height to fit slots
+            if (slotHtml) {
+                const slotCount = (slotHtml.match(/h-slot-row/g)||[]).length;
+                el.style.height = 'auto';
+                n._nh = Math.max(68, 58 + slotCount * 16);
+                el.style.minHeight = n._nh + 'px';
+            }
 
             // Collapse toggle if has children
             if (n.children && n.children.length) {
@@ -696,6 +763,7 @@
     // ── Hook into setView ──────────────────────────────────────────────────
     window._hierInit = init;
     window._hierInited = false;
+    window._hierRerender = function() { if (typeof render === 'function') render(); };
 
     })(); // end IIFE
 
@@ -813,6 +881,12 @@
         function makeKey(unit, section, slot) {
             return `${unit}__${section}__${slot}`.split(' ').join('_');
         }
+
+        // Expose slot lists to the hierarchy IIFE for buildSlotHtml
+        window._hierStructure = {};
+        for (const [unit, cfg] of Object.entries(STRUCTURE)) {
+            window._hierStructure[unit] = cfg.sections;
+        }
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
         // Squad label prefixes — if a slot starts with these it's a squad header
@@ -918,6 +992,8 @@
             </div>`;
 
             document.getElementById('cardViewInner').innerHTML = html;
+            const hci = document.getElementById('hierCardInner');
+            if (hci) hci.innerHTML = html;
         }
 
         // ── Load data and render ───────────────────────────────────────────────
@@ -925,7 +1001,15 @@
             renderCardView({}); // render with all OPEN first
             try {
                 const snap = await getDoc(doc(db, 'settings', 'unit_cards'));
-                if (snap.exists()) renderCardView(snap.data());
+                const ucData = snap.exists() ? snap.data() : {};
+                // Store for hierarchy nodes and re-render hierarchy if active
+                window._ucNodeData = ucData;
+                renderCardView(ucData);
+                // If hierarchy is visible, re-render it with fresh slot data
+                if (document.getElementById('treeView').style.display !== 'none' && window._hierInited) {
+                    // Access the render function via the IIFE's exposed re-render hook
+                    if (window._hierRerender) window._hierRerender();
+                }
             } catch(e) {
                 console.warn('Unit card data unavailable:', e.message);
             }
