@@ -20,11 +20,11 @@
 
         const ADMIN_ROLES = ['commander','developer','staff_nco','nco','recruiter'];
         const ROLE_PERMISSIONS = {
-            'commander': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,roadmap:1},
-            'developer': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,roadmap:1},
-            'staff_nco': {personnel:1,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1,roster:1,roadmap:0},
-            'nco':       {personnel:1,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0,roster:1,roadmap:0},
-            'recruiter': {personnel:1,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0,roster:0,roadmap:0},
+            'commander': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1},
+            'developer': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1},
+            'staff_nco': {personnel:1,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1,roster:1},
+            'nco':       {personnel:1,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0,roster:1},
+            'recruiter': {personnel:1,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0,roster:0},
         };
         function P() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
@@ -93,265 +93,7 @@
                 {id:'section_4_title',label:'Section 4 Title',type:'text',description:''},{id:'section_4_body',label:'Section 4 Body',type:'richtext',description:''},
                 {id:'section_5_title',label:'Section 5 Title',type:'text',description:''},{id:'section_5_body',label:'Section 5 Body',type:'richtext',description:''},
                 {id:'section_6_title',label:'Section 6 Title',type:'text',description:''},{id:'section_6_body',label:'Section 6 Body',type:'richtext',description:''}
-            ]},
-            'resources-roadmap': { name:'Development Roadmap', slots:[
-                {id:'intro',label:'Introduction Text',type:'richtext',description:''},
-                {id:'item_1_title',label:'Item 1 Title',type:'text',description:''},{id:'item_1_status',label:'Item 1 Status',type:'text',description:'PLANNED / IN PROGRESS / DONE'},{id:'item_1_desc',label:'Item 1 Description',type:'richtext',description:''},
-                {id:'item_2_title',label:'Item 2 Title',type:'text',description:''},{id:'item_2_status',label:'Item 2 Status',type:'text',description:''},{id:'item_2_desc',label:'Item 2 Description',type:'richtext',description:''},
-                {id:'item_3_title',label:'Item 3 Title',type:'text',description:''},{id:'item_3_status',label:'Item 3 Status',type:'text',description:''},{id:'item_3_desc',label:'Item 3 Description',type:'richtext',description:''},
-                {id:'item_4_title',label:'Item 4 Title',type:'text',description:''},{id:'item_4_status',label:'Item 4 Status',type:'text',description:''},{id:'item_4_desc',label:'Item 4 Description',type:'richtext',description:''},
-                {id:'item_5_title',label:'Item 5 Title',type:'text',description:''},{id:'item_5_status',label:'Item 5 Status',type:'text',description:''},{id:'item_5_desc',label:'Item 5 Description',type:'richtext',description:''},
-                {id:'item_6_title',label:'Item 6 Title',type:'text',description:''},{id:'item_6_status',label:'Item 6 Status',type:'text',description:''},{id:'item_6_desc',label:'Item 6 Description',type:'richtext',description:''},
-                {id:'item_7_title',label:'Item 7 Title',type:'text',description:''},{id:'item_7_status',label:'Item 7 Status',type:'text',description:''},{id:'item_7_desc',label:'Item 7 Description',type:'richtext',description:''},
-                {id:'item_8_title',label:'Item 8 Title',type:'text',description:''},{id:'item_8_status',label:'Item 8 Status',type:'text',description:''},{id:'item_8_desc',label:'Item 8 Description',type:'richtext',description:''}
-            ]},
-            'resources-lexicon': { name:'Field Lexicon', slots:[
-                {id:'intro',label:'Introduction Text',type:'richtext',description:''},
-                {id:'term_1',label:'Term 1',type:'text',description:''},{id:'def_1',label:'Definition 1',type:'richtext',description:''},
-                {id:'term_2',label:'Term 2',type:'text',description:''},{id:'def_2',label:'Definition 2',type:'richtext',description:''},
-                {id:'term_3',label:'Term 3',type:'text',description:''},{id:'def_3',label:'Definition 3',type:'richtext',description:''},
-                {id:'term_4',label:'Term 4',type:'text',description:''},{id:'def_4',label:'Definition 4',type:'richtext',description:''},
-                {id:'term_5',label:'Term 5',type:'text',description:''},{id:'def_5',label:'Definition 5',type:'richtext',description:''},
-                {id:'term_6',label:'Term 6',type:'text',description:''},{id:'def_6',label:'Definition 6',type:'richtext',description:''},
-                {id:'term_7',label:'Term 7',type:'text',description:''},{id:'def_7',label:'Definition 7',type:'richtext',description:''},
-                {id:'term_8',label:'Term 8',type:'text',description:''},{id:'def_8',label:'Definition 8',type:'richtext',description:''},
-                {id:'term_9',label:'Term 9',type:'text',description:''},{id:'def_9',label:'Definition 9',type:'richtext',description:''},
-                {id:'term_10',label:'Term 10',type:'text',description:''},{id:'def_10',label:'Definition 10',type:'richtext',description:''}
-            ]},
-            'resources-keybinds': { name:'Control Reference', slots:[
-                {id:'intro',label:'Introduction Text',type:'richtext',description:''},
-                {id:'section_1_title',label:'Section 1 Title',type:'text',description:'e.g. Movement'},{id:'section_1_body',label:'Section 1 Keybinds',type:'richtext',description:'Format: Key — Action, one per line'},
-                {id:'section_2_title',label:'Section 2 Title',type:'text',description:''},{id:'section_2_body',label:'Section 2 Keybinds',type:'richtext',description:''},
-                {id:'section_3_title',label:'Section 3 Title',type:'text',description:''},{id:'section_3_body',label:'Section 3 Keybinds',type:'richtext',description:''},
-                {id:'section_4_title',label:'Section 4 Title',type:'text',description:''},{id:'section_4_body',label:'Section 4 Keybinds',type:'richtext',description:''},
-                {id:'section_5_title',label:'Section 5 Title',type:'text',description:''},{id:'section_5_body',label:'Section 5 Keybinds',type:'richtext',description:''},
-                {id:'section_6_title',label:'Section 6 Title',type:'text',description:''},{id:'section_6_body',label:'Section 6 Keybinds',type:'richtext',description:''}
-            ]}
-        };
-
-        // PAGE_ROLE_GATES: which minimum role can VIEW this page publicly
-        // guest = not logged in; enlistee < marine < nco < recruiter < staff_nco < commander/developer
-        const PAGE_ROLE_GATES = {
-            'resources-roster':  'enlistee',  // must be at least enlistee (registered)
-            'resources-roadmap': 'marine',    // must be at least marine
-            'resources-lexicon': 'marine',
-            'resources-keybinds':'enlistee',
-        };
-        const ROLE_ORDER = ['guest','enlistee','marine','recruiter','nco','staff_nco','commander','developer'];
-        function roleAllowed(userRole, required) {
-            const ui = ROLE_ORDER.indexOf(userRole||'guest');
-            const ri = ROLE_ORDER.indexOf(required);
-            return ui >= ri;
-        }
-
-        const sitePages=[
-            {id:'home',file:'home.html',name:'Home Page',section:'main'},
-            {id:'about-505th',file:'about-505th.html',name:'505th Expeditionary Force',section:'about'},
-            {id:'about-alpha',file:'about-alpha-company.html',name:'Alpha Company',section:'about'},
-            {id:'about-stalker',file:'about-stalker.html',name:'JTF Force Recon',section:'about'},
-            {id:'about-corpsman',file:'about-corpsman.html',name:'Hospital Corpsman',section:'about'},
-            {id:'about-54th',file:'about-54th-air-wing.html',name:'54th Air Wing',section:'about'},
-            {id:'media-gallery',file:'media-gallery.html',name:'Gallery',section:'media'},
-            {id:'media-videos',file:'media-videos.html',name:'Videos',section:'media'},
-            {id:'resources-rules',file:'resources-discord-rules.html',name:'Discord Rules',section:'resources'},
-            {id:'resources-handbook',file:'resources-handbook.html',name:'General Handbook',section:'resources'},
-            {id:'resources-roster',file:'resources-roster.html',name:'Roster',section:'resources',roleGate:'enlistee'},
-            {id:'resources-roadmap',file:'resources-roadmap.html',name:'Development Roadmap',section:'resources',roleGate:'marine'},
-            {id:'resources-aar',file:'resources-aar.html',name:'After Action Reports',section:'resources'},
-            {id:'resources-lexicon',file:'resources-field-lexicon.html',name:'Field Lexicon',section:'resources',roleGate:'marine'},
-            {id:'resources-keybinds',file:'resources-keybinds.html',name:'Control Reference',section:'resources',roleGate:'enlistee'},
-            {id:'resources-oob',file:'resources-order-of-battle.html',name:'Order of Battle',section:'resources'},
-        ];
-
-        // AUTH
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) { window.location.href='login.html'; return; }
-            const ud = await getDoc(doc(db,"users",user.uid));
-            if (!ud.exists()) { window.location.href='login.html'; return; }
-            const d = ud.data();
-            if (!ADMIN_ROLES.includes(d.role)) { window.location.href='home.html'; return; }
-            currentUser=user; currentUserData=d;
-            document.getElementById('topbarName').textContent=d.callsign;
-            document.getElementById('topbarRole').textContent=d.role.toUpperCase().replace('_',' ');
-            document.getElementById('loadingScreen').classList.add('hidden');
-            document.getElementById('adminApp').classList.remove('hidden');
-            const p=P();
-            document.getElementById('nav-personnel').style.display=p.personnel?'':'none';
-            document.getElementById('nav-media').style.display=p.media?'':'none';
-            document.getElementById('nav-aar').style.display=p.aar||p.roster?'':'none';
-            document.getElementById('nav-content').style.display=p.content?'':'none';
-            document.getElementById('nav-settings').style.display=p.settings||p.pages||p.auditLog||p.discordLink?'':'none';
-            // Granular settings sub-links
-            ['navlink-discord','navlink-pagemanager','navlink-auditlog','navlink-discord-tracking','navlink-analytics'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
-            if(p.discordLink)  {const el=document.getElementById('navlink-discord');if(el)el.style.display='';}
-            if(p.pages)        {const el=document.getElementById('navlink-pagemanager');if(el)el.style.display='';}
-            if(p.auditLog)     {const el=document.getElementById('navlink-auditlog');if(el)el.style.display='';}
-            if(p.settings)     {['navlink-discord-tracking','navlink-analytics'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});}
-            // Roster sub-link
-            const rosterNavLink=document.getElementById('navlink-roster');
-            if(rosterNavLink) rosterNavLink.style.display=p.roster?'':'none';
-            const aarNavLink=document.getElementById('navlink-aar');
-            if(aarNavLink) aarNavLink.style.display=p.aar?'':'none';
-            const roadmapNavLink=document.getElementById('navlink-roadmap-editor');
-            if(roadmapNavLink) roadmapNavLink.style.display=p.roadmap?'':'none';
-            // Promote panel role options
-            const roleOpts=['enlistee','marine','nco','recruiter','staff_nco'];
-            window._allowedRoleOpts=p.canChangeRoles?roleOpts:[];
-            logAction('LOGIN','Accessed Command Terminal');
-            loadDashboard();
-        });
-
-        // NAV
-        window.toggleDropdown=function(id){document.getElementById(id).classList.toggle('open');};
-        window.showPanel=function(id){
-            document.querySelectorAll('.panel').forEach(p=>p.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            document.querySelectorAll('.sub-link').forEach(l=>l.classList.remove('active'));
-            const al=document.querySelector('[data-panel="'+id+'"]'); if(al) al.classList.add('active');
-            if(id==='panel-dashboard') loadDashboard();
-            if(id==='panel-active') loadActivePersonnel();
-            if(id==='panel-register') loadPendingUsers();
-            if(id==='panel-promote') loadPromotePanel();
-            if(id==='panel-gallery') loadGalleryMedia();
-            if(id==='panel-videos') loadVideoMedia();
-            if(id.startsWith('panel-page-')) loadPageContent();
-            if(id==='panel-discord') loadSiteSettings();
-            if(id==='panel-pagemanager') loadPages();
-            if(id==='panel-auditlog') loadAuditLog();
-            if(id==='panel-analytics') loadAnalytics();
-            if(id==='panel-aar') loadAARPanel();
-            if(id==='panel-roster') loadRosterPanel();
-            if(id==='panel-unitcards') loadUnitCards();
-            if(id==='panel-roadmap-editor') loadRoadmapEditor();
-        };
-        window.handleLogout=async function(){await signOut(auth);window.location.href='home.html';};
-
-        // DASHBOARD
-        async function loadDashboard(){try{
-            const s=await getDocs(query(collection(db,"users"),orderBy("registeredAt","desc")));
-            allUsers=[];s.forEach(d=>allUsers.push({uid:d.id,...d.data()}));
-            const pend=allUsers.filter(u=>u.status==='pending'),appr=allUsers.filter(u=>u.status==='approved');
-            document.getElementById('dashPending').textContent=pend.length;
-            document.getElementById('dashActive').textContent=appr.length;
-            document.getElementById('dashTotal').textContent=allUsers.length;
-            const pc=document.getElementById('dashPendingList');
-            pc.innerHTML=!pend.length?'<div class="empty-state">NO PENDING</div>':pend.map(u=>`<div class="dash-card pending-card"><div><strong>${esc(u.callsign)}</strong> <span style="color:#555">${esc(u.email)}</span></div><div style="font-size:9px;color:#555;margin-top:4px">Registered: ${new Date(u.registeredAt).toLocaleDateString()}</div><div style="margin-top:8px"><button class="action-btn approve-btn small" onclick="approveUser('${u.uid}','${esc(u.callsign)}')">APPROVE</button> <button class="action-btn deny-btn small" onclick="denyUser('${u.uid}','${esc(u.callsign)}')">DENY</button></div></div>`).join('');
-            const rc=document.getElementById('dashRecentJoins');
-            const recent=appr.slice(0,5);
-            rc.innerHTML=!recent.length?'<div class="empty-state">NO RECENT JOINS</div>':recent.map(u=>`<div class="dash-card"><div><strong>${esc(u.callsign)}</strong> <span class="role-badge role-${u.role}">${u.role.toUpperCase().replace('_',' ')}</span></div><div style="font-size:9px;color:#555;margin-top:2px">${u.rank||'No Rank'} &bull; Joined: ${u.joinedAt?new Date(u.joinedAt).toLocaleDateString():'N/A'}</div></div>`).join('');
-        }catch(e){console.error(e);}}
-
-        // ACTIVE PERSONNEL
-        async function loadActivePersonnel(){
-            if(!allUsers.length){const s=await getDocs(query(collection(db,"users"),orderBy("registeredAt","desc")));allUsers=[];s.forEach(d=>allUsers.push({uid:d.id,...d.data()}));}
-            const appr=allUsers.filter(u=>u.status==='approved'),c=document.getElementById('activeList');
-            if(!appr.length){c.innerHTML='<div class="empty-state">NO ACTIVE PERSONNEL</div>';return;}
-            c.innerHTML=`<div class="user-table"><div class="table-header"><span>NAME</span><span>STATUS</span><span>ROLE</span><span>RANK</span><span>JOINED</span><span>ACTIONS</span></div>${appr.map(u=>`<div class="table-row"><span class="name-cell"><strong>${esc(u.callsign)}</strong><br><small>${u.firstName?esc(u.firstName)+' '+esc(u.lastName||''):esc(u.email)}</small></span><span><span class="status-badge status-${u.status}">${u.status.toUpperCase()}</span></span><span><span class="role-badge role-${u.role}">${u.role.toUpperCase().replace('_',' ')}</span></span><span>${u.rank||'N/A'}</span><span>${u.joinedAt?new Date(u.joinedAt).toLocaleDateString():'N/A'}</span><span class="action-cell">${P().canEditProfiles?`<button class="action-btn small" style="color:var(--accent);border-color:rgba(0,217,255,.3)" onclick="openEditModal('${u.uid}')">EDIT</button>`:''} ${u.role!=='commander'&&u.role!=='developer'&&P().canChangeRoles?`<button class="action-btn remove-btn small" onclick="removeUser('${u.uid}','${esc(u.callsign)}')">REMOVE</button>`:''}</span></div>`).join('')}</div>`;
-        }
-
-        // PENDING
-        async function loadPendingUsers(){
-            if(!allUsers.length){const s=await getDocs(query(collection(db,"users"),orderBy("registeredAt","desc")));allUsers=[];s.forEach(d=>allUsers.push({uid:d.id,...d.data()}));}
-            const pend=allUsers.filter(u=>u.status==='pending'),denied=allUsers.filter(u=>u.status==='denied'),c=document.getElementById('registerList');
-            if(!pend.length&&!denied.length){c.innerHTML='<div class="empty-state">NO PENDING OR DENIED</div>';return;}
-            let h='';
-            if(pend.length){h+='<div class="section-label">PENDING APPROVAL</div>';h+=pend.map(u=>`<div class="user-card pending-card"><div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-email">${esc(u.email)}</div><div class="user-date">Registered: ${new Date(u.registeredAt).toLocaleDateString()}</div></div><div class="user-actions"><button class="action-btn approve-btn small" onclick="approveUser('${u.uid}','${esc(u.callsign)}')">APPROVE</button><button class="action-btn deny-btn small" onclick="denyUser('${u.uid}','${esc(u.callsign)}')">DENY</button></div></div>`).join('');}
-            if(denied.length){h+='<div class="section-label" style="margin-top:20px">DENIED</div>';h+=denied.map(u=>`<div class="user-card status-denied"><div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div><div class="user-actions"><button class="action-btn approve-btn small" onclick="approveUser('${u.uid}','${esc(u.callsign)}')">RE-APPROVE</button><button class="action-btn remove-btn small" onclick="removeUser('${u.uid}','${esc(u.callsign)}')">REMOVE</button></div></div>`).join('');}
-            c.innerHTML=h;
-        }
-
-        // PROMOTE
-        async function loadPromotePanel(){
-            if(!allUsers.length){const s=await getDocs(query(collection(db,"users"),orderBy("registeredAt","desc")));allUsers=[];s.forEach(d=>allUsers.push({uid:d.id,...d.data()}));}
-            const c=document.getElementById('promoteList'),el=allUsers.filter(u=>u.status==='approved'&&u.role!=='commander'&&u.role!=='developer');
-            if(!el.length){c.innerHTML='<div class="empty-state">NO ELIGIBLE PERSONNEL</div>';return;}
-            c.innerHTML=el.map(u=>`<div class="user-card"><div class="user-info"><div class="user-callsign">${esc(u.callsign)} <span class="role-badge role-${u.role}">${u.role.toUpperCase().replace('_',' ')}</span></div><div style="font-size:10px;color:#555;margin-top:4px">Current Rank: <span style="color:var(--accent)">${u.rank||'N/A'}</span></div></div><div class="user-actions">${P().canChangeRoles?`<select class="role-select" onchange="changeRole('${u.uid}',this.value)">${['enlistee','marine','nco','recruiter','staff_nco'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase().replace('_',' ')}</option>`).join('')}</select>`:''} ${P().canEditProfiles?`<input type="text" class="slot-text-input" style="max-width:160px" placeholder="New rank..." id="rank_${u.uid}" value="${esc(u.rank||'')}"><button class="action-btn approve-btn small" onclick="updateRank('${u.uid}')">SET RANK</button>`:''}</div></div>`).join('');
-        }
-        window.updateRank=async function(uid){const r=document.getElementById('rank_'+uid).value.trim();if(!r)return;const u=allUsers.find(x=>x.uid===uid);const rh=u.rankHistory||[];rh.push({rank:r,date:new Date().toISOString(),by:currentUserData.callsign});await updateDoc(doc(db,"users",uid),{rank:r,rankHistory:rh});logAction('PROMOTE',`${u?.callsign}: ${u?.rank||'None'} -> ${r}`);notify('RANK UPDATED');allUsers=[];loadPromotePanel();};
-
-        // USER ACTIONS
-        window.approveUser=async(uid,name)=>{if(!confirm('APPROVE '+name+'?'))return;await updateDoc(doc(db,"users",uid),{status:"approved",approvedBy:currentUserData.callsign,approvedAt:new Date().toISOString()});logAction('APPROVE','Approved '+name);notify(name+' APPROVED');allUsers=[];loadDashboard();};
-        window.denyUser=async(uid,name)=>{if(!confirm('DENY '+name+'?'))return;await updateDoc(doc(db,"users",uid),{status:"denied"});logAction('DENY','Denied '+name);notify(name+' DENIED');allUsers=[];loadDashboard();};
-        window.changeRole=async(uid,role)=>{const u=allUsers.find(x=>x.uid===uid);await updateDoc(doc(db,"users",uid),{role});logAction('ROLE_CHANGE',`${u?.callsign}: ${u?.role} -> ${role}`);notify('ROLE: '+role.toUpperCase());allUsers=[];};
-        window.removeUser=async(uid,name)=>{if(!confirm('REMOVE '+name+'?'))return;await deleteDoc(doc(db,"users",uid));logAction('REMOVE','Removed '+name);notify(name+' REMOVED');allUsers=[];};
-        window.openEditModal=function(uid){const u=allUsers.find(x=>x.uid===uid);if(!u)return;document.getElementById('editUserId').value=uid;document.getElementById('editCallsign').value=u.callsign||'';document.getElementById('editFirstName').value=u.firstName||'';document.getElementById('editLastName').value=u.lastName||'';document.getElementById('editRank').value=u.rank||'';document.getElementById('editJoinedAt').value=u.joinedAt?u.joinedAt.split('T')[0]:'';document.getElementById('editUserModal').classList.add('active');};
-        window.closeEditModal=function(){document.getElementById('editUserModal').classList.remove('active');};
-        window.saveUserEdit=async function(){const uid=document.getElementById('editUserId').value;const u={callsign:document.getElementById('editCallsign').value.trim(),firstName:document.getElementById('editFirstName').value.trim(),lastName:document.getElementById('editLastName').value.trim(),rank:document.getElementById('editRank').value.trim(),joinedAt:document.getElementById('editJoinedAt').value?new Date(document.getElementById('editJoinedAt').value).toISOString():null};await updateDoc(doc(db,"users",uid),u);logAction('EDIT_USER','Edited '+u.callsign);notify('UPDATED');closeEditModal();allUsers=[];loadActivePersonnel();};
-
-        // MEDIA
-        async function loadAllMedia(){const s=await getDocs(query(collection(db,"media"),orderBy("uploadedAt","desc")));allMedia=[];s.forEach(d=>allMedia.push({id:d.id,...d.data()}));}
-        async function loadGalleryMedia(){await loadAllMedia();const imgs=allMedia.filter(m=>m.type==='image');document.getElementById('galleryCount').textContent=imgs.length;renderMediaGrid('galleryGrid',imgs);}
-        async function loadVideoMedia(){await loadAllMedia();const vids=allMedia.filter(m=>m.type==='video');document.getElementById('videoCount').textContent=vids.length;renderMediaGrid('videoGrid',vids);}
-        function renderMediaGrid(containerId,items){const c=document.getElementById(containerId);if(!items.length){c.innerHTML='<div class="empty-state">NO MEDIA</div>';return;}c.innerHTML=items.map(m=>`<div class="media-card">${m.type==='video'?'<div class="media-thumb video-thumb"><span>&#9654;</span></div>':`<div class="media-thumb" style="background-image:url('${m.url}')"></div>`}<div class="media-info"><div class="media-name">${esc(m.name)}</div>${m.description?`<div class="media-desc">${esc(m.description)}</div>`:''}<div class="media-meta">${m.category.toUpperCase()}</div></div><div class="media-actions"><a href="${m.url}" target="_blank" class="action-btn approve-btn small">VIEW</a><button class="action-btn remove-btn small" onclick="deleteMedia('${m.id}')">DELETE</button></div></div>`).join('');}
-
-        window.handleUpload=async function(type){const sfx=type==='video'?'Vid':'Img';const fi=document.getElementById('upload'+sfx+'File');if(!fi.files.length){notify('SELECT FILES',1);return;}const cat=document.getElementById('upload'+sfx+'Cat').value,desc=document.getElementById('upload'+sfx+'Desc').value.trim(),btn=document.getElementById('upload'+sfx+'Btn');btn.disabled=1;btn.textContent='UPLOADING...';let n=0;for(const f of fi.files){try{const fd=new FormData();fd.append('file',f);fd.append('upload_preset',UPLOAD_PRESET);fd.append('api_key',CLOUDINARY_API_KEY);const rt=f.type.startsWith('video/')?'video':'image';const r=await(await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${rt}/upload`,{method:'POST',body:fd})).json();if(r.error)throw new Error(r.error.message);await setDoc(doc(db,"media",`media_${Date.now()}_${Math.random().toString(36).substr(2,5)}`),{name:f.name,description:desc,url:r.secure_url,publicId:r.public_id,type:rt,format:r.format,width:r.width||null,height:r.height||null,size:r.bytes,category:cat,uploadedBy:currentUserData.callsign,uploadedAt:new Date().toISOString()});n++;}catch(e){notify('FAILED: '+f.name,1);}}btn.disabled=0;btn.textContent='UPLOAD';fi.value='';document.getElementById('upload'+sfx+'Desc').value='';logAction('UPLOAD',`Uploaded ${n} ${type}(s)`);notify(n+' FILE(S) UPLOADED');if(type==='video')loadVideoMedia();else loadGalleryMedia();};
-        window.deleteMedia=async function(id){if(!confirm('DELETE?'))return;await deleteDoc(doc(db,"media",id));logAction('DELETE_MEDIA','Deleted '+id);notify('DELETED');allMedia=[];};
-
-        // PAGE CONTENT
-        async function loadPageContent(){try{const d=await getDoc(doc(db,"settings","page_content"));pageContentData=d.exists()?d.data():{};}catch(e){pageContentData={};}if(!allMedia.length)await loadAllMedia();document.querySelectorAll('.page-editor-container').forEach(el=>{const pg=el.dataset.page;if(pg&&PAGE_SLOTS[pg])renderPageSlots(el,pg);});}
-        function renderPageSlots(c,pid){const cfg=PAGE_SLOTS[pid];let h='';cfg.slots.forEach(s=>{const k=`${pid}__${s.id}`,v=pageContentData[k]||null;const curVal=v?(typeof v==='string'?v:v.text||v.url||''):'';h+=`<div class="editor-slot"><div class="editor-slot-label">${s.label}</div>${s.description?`<div class="editor-slot-desc">${s.description}</div>`:''}<div class="editor-slot-preview">`;if(v){if(s.type==='image')h+=`<img src="${v.url}"><div class="preview-name">${esc(v.name||'')}</div>`;else h+=`<div class="preview-text">${esc(curVal)}</div>`;}else h+='<div class="preview-empty">NOT SET</div>';h+='</div><div class="editor-slot-actions">';if(s.type==='image'){h+=`<button class="action-btn approve-btn small" onclick="pickMedia('${k}','image')">SELECT IMAGE</button>`;}else if(s.type==='richtext'){h+=`<textarea class="slot-text-input" id="input_${k}" placeholder="Enter content..." rows="4" style="resize:vertical;width:100%;min-height:80px">${esc(curVal)}</textarea><button class="action-btn approve-btn small" onclick="saveSlotText('${k}')">SAVE</button>`;}else{h+=`<input type="text" class="slot-text-input" id="input_${k}" placeholder="Enter text..." value="${esc(curVal)}"><button class="action-btn approve-btn small" onclick="saveSlotText('${k}')">SAVE</button>`;}if(v)h+=`<button class="action-btn remove-btn small" onclick="clearSlot('${k}')">CLEAR</button>`;h+='</div></div>';});c.innerHTML=h;}
-        window.pickMedia=function(sk,t){const m=document.getElementById('mediaPickerModal'),g=document.getElementById('pickerGrid');m.classList.add('active');m.dataset.slotKey=sk;const f=allMedia.filter(x=>x.type===t);if(!f.length){g.innerHTML='<div class="empty-state">NO IMAGES</div>';return;}g.innerHTML=f.map(x=>`<div class="picker-item" onclick="selectMedia('${x.id}')"><div class="picker-thumb" style="background-image:url('${x.url}')"></div><div class="picker-name">${esc(x.name)}</div></div>`).join('');};
-        window.closeMediaPicker=function(){document.getElementById('mediaPickerModal').classList.remove('active');};
-        window.selectMedia=async function(mid){const m=document.getElementById('mediaPickerModal'),sk=m.dataset.slotKey,media=allMedia.find(x=>x.id===mid);if(!media)return;pageContentData[sk]={url:media.url,name:media.name,mediaId:media.id};await setDoc(doc(db,"settings","page_content"),pageContentData);logAction('ASSIGN','Assigned '+media.name+' to '+sk);notify('ASSIGNED');loadPageContent();closeMediaPicker();};
-        window.saveSlotText=async function(sk){const el=document.getElementById('input_'+sk);if(!el)return;const v=el.value.trim();if(!v)return;pageContentData[sk]={url:v,text:v};await setDoc(doc(db,"settings","page_content"),pageContentData);notify('SAVED');loadPageContent();};
-        window.clearSlot=async function(sk){if(!confirm('Clear?'))return;delete pageContentData[sk];await setDoc(doc(db,"settings","page_content"),pageContentData);notify('CLEARED');loadPageContent();};
-
-        // SITE SETTINGS
-        async function loadSiteSettings(){try{const d=await getDoc(doc(db,"settings","site"));const s=d.exists()?d.data():{};const i=document.getElementById('discordLinkInput');if(i&&s.discord_invite)i.value=s.discord_invite;const c=document.getElementById('currentDiscordLink');if(c){c.textContent=s.discord_invite||'NOT SET';c.href=s.discord_invite||'#';}}catch(e){}}
-        window.saveDiscordLink=async function(){const u=document.getElementById('discordLinkInput').value.trim();if(!u||!u.includes('discord')){notify('INVALID',1);return;}const d=await getDoc(doc(db,"settings","site"));let s=d.exists()?d.data():{};s.discord_invite=u;await setDoc(doc(db,"settings","site"),s);logAction('DISCORD','Updated Discord link');notify('DISCORD LINK UPDATED');loadSiteSettings();};
-
-        // PAGE MANAGER
-        async function loadPages(){const c=document.getElementById('pagesList');let ps={};try{const d=await getDoc(doc(db,"settings","pages"));if(d.exists())ps=d.data();}catch(e){}const sec={main:'MAIN',about:'ABOUT US',media:'MEDIA',resources:'RESOURCES'};let h='';for(const[sk,sn]of Object.entries(sec)){h+=`<div class="section-label">${sn}</div>`;sitePages.filter(p=>p.section===sk).forEach(p=>{const on=ps[p.id]!==false;const gate=p.roleGate?`<span style="font-size:8px;padding:1px 6px;border:1px solid rgba(255,165,0,.4);color:#f5a623;letter-spacing:1px;margin-left:6px">${p.roleGate.toUpperCase()}+</span>`:'<span style="font-size:8px;padding:1px 6px;border:1px solid rgba(0,217,255,.15);color:#555;letter-spacing:1px;margin-left:6px">PUBLIC</span>';h+=`<div class="page-item ${on?'':'page-disabled'}"><div><div style="color:#ccc;font-size:12px">${p.name}${gate}</div><div style="color:#444;font-size:9px">${p.file}</div></div><div style="display:flex;gap:10px;align-items:center"><a href="${p.file}" target="_blank" class="action-btn approve-btn small">OPEN</a><label class="toggle-switch"><input type="checkbox" ${on?'checked':''} onchange="togglePage('${p.id}',this.checked)"><span class="toggle-slider"></span></label></div></div>`;});}c.innerHTML=h;}
-        window.togglePage=async function(id,on){const d=await getDoc(doc(db,"settings","pages"));let ps=d.exists()?d.data():{};ps[id]=on;await setDoc(doc(db,"settings","pages"),ps);logAction('TOGGLE_PAGE',id+': '+(on?'enabled':'disabled'));notify('PAGE '+(on?'ENABLED':'DISABLED'));loadPages();};
-
-        // AUDIT LOG
-        async function loadAuditLog(){const c=document.getElementById('auditList');c.innerHTML='<div class="empty-state">LOADING...</div>';try{const s=await getDocs(query(collection(db,"audit_log"),orderBy("timestamp","desc")));const logs=[];s.forEach(d=>logs.push(d.data()));if(!logs.length){c.innerHTML='<div class="empty-state">NO ENTRIES</div>';return;}c.innerHTML=logs.slice(0,100).map(l=>`<div class="audit-entry"><div class="audit-time">${new Date(l.timestamp).toLocaleString()}</div><div class="audit-user"><span class="role-badge role-${l.userRole}">${l.userRole.toUpperCase().replace('_',' ')}</span> ${esc(l.userCallsign)}</div><div class="audit-action">${esc(l.action)}</div><div class="audit-details">${esc(l.details)}</div></div>`).join('');}catch(e){c.innerHTML='<div class="empty-state">ERROR: '+e.message+'</div>';}}
-
-        // SITE ANALYTICS
-        async function loadAnalytics() {
-            const el = id => document.getElementById(id);
-            ['analyticsToday','analyticsWeek','analyticsTotal'].forEach(i => { const e = el(i); if(e) e.textContent = '...'; });
-            const recentEl = el('analyticsRecent'), pagesEl = el('analyticsPages');
-            if(recentEl) recentEl.innerHTML = '<div class="empty-state">LOADING...</div>';
-            if(pagesEl)  pagesEl.innerHTML  = '<div class="empty-state">LOADING...</div>';
-            try {
-                const snap = await getDocs(query(collection(db,'page_views'), orderBy('timestamp','desc'), limit(500)));
-                const views = [];
-                snap.forEach(d => views.push({id:d.id,...d.data()}));
-                if(!views.length) {
-                    if(recentEl) recentEl.innerHTML = '<div class="empty-state">NO DATA YET — ADD site-tracking.js TO YOUR PUBLIC PAGES</div>';
-                    if(pagesEl)  pagesEl.innerHTML  = '<div class="empty-state">NO DATA</div>';
-                    ['analyticsToday','analyticsWeek','analyticsTotal'].forEach(i => { const e = el(i); if(e) e.textContent = '0'; });
-                    return;
-                }
-                const now = new Date();
-                const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
-                const weekStart  = new Date(now); weekStart.setDate(now.getDate()-7);
-                const todayViews = views.filter(v => new Date(v.timestamp) >= todayStart);
-                const weekViews  = views.filter(v => new Date(v.timestamp) >= weekStart);
-                if(el('analyticsToday')) el('analyticsToday').textContent = todayViews.length;
-                if(el('analyticsWeek'))  el('analyticsWeek').textContent  = weekViews.length;
-                if(el('analyticsTotal')) el('analyticsTotal').textContent = views.length;
-                function getLabel(v) {
-                    if(!v.userId) return '<span style="color:#444">GUEST</span>';
-                    const u = allUsers.find(x => x.uid === v.userId);
-                    if(u) return `<span class="role-badge role-${u.role}">${u.role.toUpperCase().replace('_',' ')}</span> <strong>${esc(u.callsign)}</strong>`;
-                    return `<span style="color:#666">UID:${v.userId.substr(0,8)}&hellip;</span>`;
-                }
-                if(recentEl) {
-                    recentEl.innerHTML = views.slice(0,100).map(v => `<div class="audit-entry"><div class="audit-time">${new Date(v.timestamp).toLocaleString()}</div><div class="audit-user">${getLabel(v)}</div><div class="audit-action">${esc(v.page.toUpperCase())}</div><div class="audit-details" style="color:#444;font-size:9px">${v.referrer?'&#8617; '+esc(v.referrer.substring(0,50)):'DIRECT'}</div></div>`).join('');
-                }
-                const pageCounts = {};
-                views.forEach(v => { pageCounts[v.page] = (pageCounts[v.page]||0)+1; });
-                const sortedPages = Object.entries(pageCounts).sort((a,b) => b[1]-a[1]);
-                const maxCount = sortedPages[0]?.[1]||1;
-                if(pagesEl) {
-                    pagesEl.innerHTML = sortedPages.map(([page,count]) => {
-                        const pct = Math.round((count/maxCount)*100);
-                        return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="color:#ccc;font-size:10px;letter-spacing:1px">${esc(page.toUpperCase())}</span><span style="color:var(--accent);font-size:11px;font-family:'Rajdhani',sans-serif">${count}</span></div><div style="background:rgba(0,217,255,.07);height:4px;border-radius:2px"><div style="width:${pct}%;background:var(--accent);height:100%;border-radius:2px;transition:width .4s"></div></div></div>`;
-                    }).join('');
-                }
-            } catch(e) {
+            ]},catch(e) {
                 if(recentEl) recentEl.innerHTML = `<div class="empty-state">ERROR: ${esc(e.message)}</div>`;
                 console.error('Analytics error:',e);
             }
@@ -680,128 +422,6 @@
         // ── END UNIT CARDS ────────────────────────────────────────────────────
 
 
-        // ── ROADMAP EDITOR ─────────────────────────────────────────────────────
-        const ROADMAP_STATUSES = ['planned','in-progress','complete','cancelled'];
-        const ROADMAP_CATS = ['Arma 3 Mod','Website','Discord Bot','Other'];
-        const STATUS_LABELS = {planned:'PLANNED','in-progress':'IN PROGRESS',complete:'COMPLETE',cancelled:'CANCELLED'};
-        const STATUS_COLORS = {planned:'#555','in-progress':'#FFD700',complete:'var(--success)',cancelled:'#ef4444'};
-        let roadmapItems = [];
-
-        async function loadRoadmapEditor() {
-            const c = document.getElementById('roadmapEditorList');
-            if(c) c.innerHTML = '<div class="empty-state">LOADING...</div>';
-            try {
-                const snap = await getDoc(doc(db,'settings','roadmap'));
-                roadmapItems = snap.exists() ? (snap.data().items || []) : [];
-            } catch(e) { roadmapItems = []; }
-            renderRoadmapEditor();
-        }
-
-        function renderRoadmapEditor() {
-            const c = document.getElementById('roadmapEditorList');
-            if(!c) return;
-            if(!roadmapItems.length) { c.innerHTML = '<div class="empty-state">NO ROADMAP ITEMS — ADD YOUR FIRST</div>'; return; }
-            const total = roadmapItems.length;
-            c.innerHTML = roadmapItems.map((item,i) => {
-                const col = STATUS_COLORS[item.status]||'#555';
-                return `<div class="roadmap-item-row" data-id="${item.id}" style="display:flex;gap:0;align-items:stretch">
-                    <div style="display:flex;flex-direction:column;gap:2px;padding:6px 4px;background:rgba(0,0,0,.3);border-right:1px solid rgba(0,217,255,.06)">
-                        <span style="font-size:9px;color:#333;font-family:'Share Tech Mono',monospace;padding:2px 6px;text-align:center">${i+1}</span>
-                        <button onclick="rmMove('${item.id}',-1)" ${i===0?'disabled':''} style="background:none;border:none;color:${i===0?'#222':'rgba(0,217,255,.4)'};cursor:${i===0?'default':'pointer'};font-size:14px;line-height:1;padding:2px 6px" title="Move up">▲</button>
-                        <button onclick="rmMove('${item.id}',1)"  ${i===total-1?'disabled':''} style="background:none;border:none;color:${i===total-1?'#222':'rgba(0,217,255,.4)'};cursor:${i===total-1?'default':'pointer'};font-size:14px;line-height:1;padding:2px 6px" title="Move down">▼</button>
-                    </div>
-                    <div style="flex:1;padding:10px 14px">
-                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                            <span style="font-size:8px;padding:2px 8px;border:1px solid ${col};color:${col};letter-spacing:2px">${STATUS_LABELS[item.status]||item.status}</span>
-                            <span style="font-size:9px;color:rgba(0,217,255,.4);letter-spacing:1px">${esc(item.category||'')}</span>
-                            <div style="margin-left:auto;display:flex;gap:6px">
-                                <button class="action-btn approve-btn small" onclick="openRoadmapEdit('${item.id}')">EDIT</button>
-                                <button class="action-btn remove-btn small" onclick="deleteRoadmapItem('${item.id}','${esc(item.title||'')}')">DEL</button>
-                            </div>
-                        </div>
-                        <div style="color:#ccc;font-size:11px;letter-spacing:1px;font-weight:600">${esc(item.title)}</div>
-                        ${item.description?`<div style="color:#555;font-size:9px;letter-spacing:.5px;margin-top:4px;line-height:1.6">${esc(item.description)}</div>`:''}
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        window.rmMove = async function(id, dir) {
-            const i = roadmapItems.findIndex(x=>x.id===id);
-            if(i<0) return;
-            const j = i + dir;
-            if(j<0 || j>=roadmapItems.length) return;
-            // Swap
-            [roadmapItems[i], roadmapItems[j]] = [roadmapItems[j], roadmapItems[i]];
-            await saveRoadmapItems();
-            notify(dir<0?'MOVED UP':'MOVED DOWN');
-            renderRoadmapEditor();
-        };
-
-        async function saveRoadmapItems() {
-            await setDoc(doc(db,'settings','roadmap'), {items: roadmapItems, updatedAt: new Date().toISOString()});
-            logAction('ROADMAP_SAVE', roadmapItems.length + ' items saved');
-        }
-
-        window.openRoadmapAdd = function() {
-            document.getElementById('rmModalTitle').textContent = 'ADD ROADMAP ITEM';
-            document.getElementById('rmItemId').value = '';
-            document.getElementById('rmTitle').value = '';
-            document.getElementById('rmCategory').value = 'Arma 3 Mod';
-            document.getElementById('rmStatus').value = 'planned';
-            document.getElementById('rmDescription').value = '';
-            document.getElementById('rmModal').classList.add('active');
-        };
-
-        window.openRoadmapEdit = function(id) {
-            const item = roadmapItems.find(x=>x.id===id);
-            if(!item) return;
-            document.getElementById('rmModalTitle').textContent = 'EDIT ITEM';
-            document.getElementById('rmItemId').value = id;
-            document.getElementById('rmTitle').value = item.title||'';
-            document.getElementById('rmCategory').value = item.category||'Arma 3 Mod';
-            document.getElementById('rmStatus').value = item.status||'planned';
-            document.getElementById('rmDescription').value = item.description||'';
-            document.getElementById('rmModal').classList.add('active');
-        };
-
-        window.closeRoadmapModal = function() { document.getElementById('rmModal').classList.remove('active'); };
-
-        window.saveRoadmapItem = async function() {
-            const id    = document.getElementById('rmItemId').value;
-            const title = document.getElementById('rmTitle').value.trim();
-            if(!title) { notify('TITLE REQUIRED',1); return; }
-            const data = {
-                id: id || 'rm_' + Date.now(),
-                title,
-                category: document.getElementById('rmCategory').value,
-                status:   document.getElementById('rmStatus').value,
-                description: document.getElementById('rmDescription').value.trim(),
-                updatedAt: new Date().toISOString()
-            };
-            if(id) {
-                const idx = roadmapItems.findIndex(x=>x.id===id);
-                if(idx>-1) roadmapItems[idx] = data; else roadmapItems.push(data);
-            } else {
-                data.createdAt = new Date().toISOString();
-                roadmapItems.push(data);
-            }
-            await saveRoadmapItems();
-            logAction('ROADMAP_'+(id?'EDIT':'ADD'), title);
-            notify(id?'ITEM UPDATED':'ITEM ADDED');
-            closeRoadmapModal();
-            renderRoadmapEditor();
-        };
-
-        window.deleteRoadmapItem = async function(id, title) {
-            if(!confirm('DELETE "'+title+'"?')) return;
-            roadmapItems = roadmapItems.filter(x=>x.id!==id);
-            await saveRoadmapItems();
-            logAction('ROADMAP_DEL', title);
-            notify('ITEM DELETED');
-            renderRoadmapEditor();
-        };
-        // ── END ROADMAP EDITOR ────────────────────────────────────────────────
 
         function notify(m,err){const n=document.getElementById('notification');n.textContent=m;n.className='notification show'+(err?' error':'');setTimeout(()=>n.className='notification',3000);}
     </script>
@@ -932,9 +552,7 @@
         .roster-row:hover{background:rgba(0,217,255,.025)}
         .roster-cell{font-size:10px;letter-spacing:.5px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:4px}
         .roster-name{color:#d0d0d0;font-weight:600;letter-spacing:1px}
-        .roadmap-item-row{padding:12px 14px;border:1px solid rgba(0,217,255,.08);background:rgba(0,0,0,.25);margin-bottom:6px;transition:background .15s}
-        .roadmap-item-row:hover{background:rgba(0,217,255,.03)}
-                @media(max-width:768px){.hamburger{display:flex;align-items:center;justify-content:center}.sidebar{position:fixed;top:0;left:-260px;width:260px;height:100vh;z-index:50;transition:left .3s;padding-top:60px}.sidebar.open{left:0}.stats-row{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.table-header,.table-row{grid-template-columns:1fr 1fr;font-size:9px}.audit-entry,.audit-header{grid-template-columns:1fr;font-size:9px}.roster-header,.roster-row{grid-template-columns:1.6fr 1fr;font-size:8px}.roster-cell:nth-child(n+3){display:none}}
+        @media(max-width:768px){.hamburger{display:flex;align-items:center;justify-content:center}.sidebar{position:fixed;top:0;left:-260px;width:260px;height:100vh;z-index:50;transition:left .3s;padding-top:60px}.sidebar.open{left:0}.stats-row{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.table-header,.table-row{grid-template-columns:1fr 1fr;font-size:9px}.audit-entry,.audit-header{grid-template-columns:1fr;font-size:9px}.roster-header,.roster-row{grid-template-columns:1.6fr 1fr;font-size:8px}.roster-cell:nth-child(n+3){display:none}}
     </style>
 </head>
 <body>
@@ -1057,7 +675,7 @@
                 <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> PERSONNEL <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">Active Personnel</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')">Register Panel</div><div class="sub-link" data-panel="panel-promote" onclick="showPanel('panel-promote')">Promote Ranks</div></div></div>
                 <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> MEDIA LIBRARY <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
                 <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> UNIT MANAGEMENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div><div class="sub-link" data-panel="panel-unitcards" onclick="showPanel('panel-unitcards')">Unit Cards</div></div></div>
-                <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PAGE CONTENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">ABOUT US</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:8px 0 3px 4px">RESOURCES</div><div id="navlink-roadmap-editor" class="sub-link" data-panel="panel-roadmap-editor" onclick="showPanel('panel-roadmap-editor')">Development Roadmap</div><div class="sub-link" data-panel="panel-page-rules" onclick="showPanel('panel-page-rules')">Discord Rules</div><div class="sub-link" data-panel="panel-page-handbook" onclick="showPanel('panel-page-handbook')">General Handbook</div><div class="sub-link" data-panel="panel-page-lexicon" onclick="showPanel('panel-page-lexicon')">Field Lexicon</div><div class="sub-link" data-panel="panel-page-keybinds" onclick="showPanel('panel-page-keybinds')">Control Reference</div></div></div>
+                <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PAGE CONTENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">ABOUT US</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:8px 0 3px 4px">RESOURCES</div><div class="sub-link" data-panel="panel-page-rules" onclick="showPanel('panel-page-rules')">Discord Rules</div><div class="sub-link" data-panel="panel-page-handbook" onclick="showPanel('panel-page-handbook')">General Handbook</div><div class="sub-link" data-panel="panel-page-lexicon" onclick="showPanel('panel-page-lexicon')">Field Lexicon</div><div class="sub-link" data-panel="panel-page-keybinds" onclick="showPanel('panel-page-keybinds')">Control Reference</div></div></div>
                 <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> SITE SETTINGS <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-discord" class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div id="navlink-pagemanager" class="sub-link" data-panel="panel-pagemanager" onclick="showPanel('panel-pagemanager')">Page Manager</div><div id="navlink-auditlog" class="sub-link" data-panel="panel-auditlog" onclick="showPanel('panel-auditlog')">Admin Audit Log</div><div id="navlink-discord-tracking" class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Discord Tracking</div><div id="navlink-analytics" class="sub-link" data-panel="panel-analytics" onclick="showPanel('panel-analytics')">Site Analytics</div></div></div>
                 <hr class="sidebar-divider">
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
@@ -1093,7 +711,7 @@
                 <div class="panel hidden" id="panel-page-54th"><div class="panel-title">54TH AIR WING</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 AIR ASSET CARDS</p><div class="page-editor-container" data-page="about-54th"></div></div>
                 <div class="panel hidden" id="panel-page-rules"><div class="panel-title">DISCORD RULES</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">EDIT RULE TITLES AND BODY TEXT</p><div class="page-editor-container" data-page="resources-rules"></div></div>
                 <div class="panel hidden" id="panel-page-handbook"><div class="panel-title">GENERAL HANDBOOK</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">EDIT HANDBOOK SECTIONS</p><div class="page-editor-container" data-page="resources-handbook"></div></div>
-                <div class="panel hidden" id="panel-page-roadmap"><div class="panel-title">DEVELOPMENT ROADMAP</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">VISIBLE TO MARINE+ // EDIT ROADMAP ITEMS &amp; STATUSES</p><div class="page-editor-container" data-page="resources-roadmap"></div></div>
+                
                 <div class="panel hidden" id="panel-page-lexicon"><div class="panel-title">FIELD LEXICON</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">VISIBLE TO MARINE+ // EDIT TERMS &amp; DEFINITIONS</p><div class="page-editor-container" data-page="resources-lexicon"></div></div>
                 <div class="panel hidden" id="panel-page-keybinds"><div class="panel-title">CONTROL REFERENCE</div><p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">VISIBLE TO ENLISTEE+ // EDIT KEYBIND SECTIONS</p><div class="page-editor-container" data-page="resources-keybinds"></div></div>
                 <div class="panel hidden" id="panel-discord"><div class="panel-title">DISCORD INVITE LINK</div><div class="upload-area"><p style="color:#555;font-size:9px;letter-spacing:1px;margin-bottom:12px">CHANGE ONCE - ALL PAGES UPDATE AUTOMATICALLY</p><div style="color:#444;font-size:9px;letter-spacing:2px;margin-bottom:8px">CURRENT: <a id="currentDiscordLink" href="#" target="_blank" style="color:var(--accent);text-decoration:none">NOT SET</a></div><div class="upload-row"><div class="upload-field"><input type="url" id="discordLinkInput" placeholder="https://discord.gg/XXXXXXXX"></div><button class="upload-btn" onclick="saveDiscordLink()">SAVE LINK</button></div></div></div>
@@ -1288,22 +906,6 @@
                     </div>
                     <div id="unitCardsList"><div class="empty-state">LOADING...</div></div>
                 </div>
-                <div class="panel hidden" id="panel-roadmap-editor">
-                    <div class="panel-title">DEVELOPMENT ROADMAP</div>
-                    <p style="color:#555;font-size:10px;letter-spacing:2px;margin-bottom:16px">COMMANDER &amp; DEVELOPER ACCESS // ADD, EDIT, DELETE AND REORDER ROADMAP ITEMS</p>
-                    <div style="margin-bottom:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                        <button class="upload-btn" onclick="openRoadmapAdd()" style="font-size:10px;letter-spacing:2px">+ ADD ITEM</button>
-                        <button class="action-btn approve-btn" onclick="loadRoadmapEditor()">&#8635; REFRESH</button>
-                        <span style="color:#444;font-size:9px;letter-spacing:2px">&#9432; SORTED AUTOMATICALLY BY STATUS</span>
-                    </div>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;font-family:'Share Tech Mono',monospace;font-size:9px">
-                        <span style="padding:2px 8px;border:1px solid #FFD700;color:#FFD700">IN PROGRESS</span>
-                        <span style="padding:2px 8px;border:1px solid #555;color:#555">PLANNED</span>
-                        <span style="padding:2px 8px;border:1px solid var(--success);color:var(--success)">COMPLETE</span>
-                        <span style="padding:2px 8px;border:1px solid #ef4444;color:#ef4444">CANCELLED</span>
-                    </div>
-                    <div id="roadmapEditorList"><div class="empty-state">LOADING...</div></div>
-                </div>
                 <div class="panel hidden" id="panel-discord-tracking">
                     <div class="panel-title">DISCORD TRACKING</div>
                     <div style="text-align:center;padding:60px 20px;">
@@ -1328,39 +930,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    <!-- Roadmap Item Modal -->
-    <div class="edit-modal" id="rmModal">
-        <div class="edit-modal-content" style="max-width:540px;width:95%">
-            <div class="edit-modal-title" id="rmModalTitle">ADD ROADMAP ITEM</div>
-            <input type="hidden" id="rmItemId">
-            <div class="edit-field"><label>TITLE *</label><input type="text" id="rmTitle" placeholder="e.g. Medical Scanner System"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
-                <div class="edit-field"><label>CATEGORY</label>
-                    <select id="rmCategory" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
-                        <option value="Arma 3 Mod">Arma 3 Mod</option>
-                        <option value="Website">Website</option>
-                        <option value="Discord Bot">Discord Bot</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div class="edit-field"><label>STATUS</label>
-                    <select id="rmStatus" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
-                        <option value="planned">PLANNED</option>
-                        <option value="in-progress">IN PROGRESS</option>
-                        <option value="complete">COMPLETE</option>
-                        <option value="cancelled">CANCELLED</option>
-                    </select>
-                </div>
-            </div>
-            <div class="edit-field"><label>DESCRIPTION</label>
-                <textarea id="rmDescription" rows="4" placeholder="Brief description of this roadmap item..." style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;resize:vertical;line-height:1.6"></textarea>
-            </div>
-            <div class="edit-modal-actions">
-                <button class="action-btn approve-btn" onclick="saveRoadmapItem()">SAVE ITEM</button>
-                <button class="action-btn remove-btn" onclick="closeRoadmapModal()">CANCEL</button>
             </div>
         </div>
     </div>

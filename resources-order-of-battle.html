@@ -31,19 +31,212 @@
         .vt-btn { font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:600; letter-spacing:3px; padding:10px 28px; background:transparent; border:1px solid rgba(0,217,255,.2); color:#666; cursor:pointer; transition:all .2s; text-transform:uppercase; height:42px; display:inline-flex; align-items:center; }
         .vt-btn:hover { border-color:var(--accent); color:var(--accent); }
         .vt-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(0,217,255,.08); box-shadow:0 0 12px rgba(0,217,255,.12); }
+        /* ── HIERARCHY MAP CANVAS ─────────────────────────────────────────── */
         #treeView {
             width: 100%;
             max-width: 1060px;
             margin: 0 auto;
-            overflow-x: auto;
-            overflow-y: auto;
-            background: rgba(0,0,0,.2);
-            border: 1px solid rgba(0,217,255,.08);
-            border-radius: 2px;
-            padding-bottom: 12px;
+            height: 560px;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, rgba(0,20,30,.6) 0%, rgba(0,0,0,.4) 100%);
+            border: 1px solid rgba(0,217,255,.12);
+            border-radius: 3px;
+            cursor: grab;
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
-        #svgCanvas { display: block; }
+        #treeView.dragging { cursor: grabbing; }
+
+        /* Faint watermark inside the canvas */
+        #treeView::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: 320px; height: 320px;
+            background-image: url('images/logo.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Pan/zoom canvas */
+        #hierCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+
+        /* SVG connector layer */
+        #hierSVG {
+            position: absolute;
+            top: 0; left: 0;
+            pointer-events: none;
+            overflow: visible;
+        }
+
+        /* Hierarchy node card */
+        .h-node {
+            position: absolute;
+            width: 190px;
+            background: rgba(5,12,18,.85);
+            border: 1px solid rgba(255,255,255,.08);
+            border-top-width: 2px;
+            padding: 10px 14px 9px;
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: box-shadow .2s, background .2s, border-color .2s;
+            clip-path: polygon(8px 0%, 100% 0%, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0% 100%, 0% 8px);
+        }
+        .h-node:hover {
+            background: rgba(10,20,30,.95);
+            z-index: 10;
+        }
+        .h-node.h-root {
+            width: 220px;
+            padding: 13px 16px 12px;
+        }
+        .h-node.h-collapsed .h-node-children-indicator {
+            opacity: 1;
+        }
+
+        /* Node text content */
+        .h-node-tag {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 7.5px;
+            letter-spacing: 3px;
+            opacity: .45;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .h-node-name {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #e8eef2;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+        .h-node-sub {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 8px;
+            letter-spacing: 1.5px;
+            color: #445566;
+            margin-top: 5px;
+        }
+        .h-node-children-indicator {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 8px;
+            font-family: 'Share Tech Mono', monospace;
+            letter-spacing: 1px;
+            padding: 1px 6px;
+            border: 1px solid;
+            background: rgba(0,0,0,.8);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s;
+            z-index: 5;
+            white-space: nowrap;
+        }
+        .h-node.h-collapsed .h-node-children-indicator { opacity: 1; }
+
+        /* Collapse toggle dot */
+        .h-toggle {
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,.2);
+            background: rgba(0,0,0,.9);
+            cursor: pointer;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: rgba(255,255,255,.4);
+            transition: all .2s;
+        }
+        .h-toggle:hover {
+            border-color: rgba(255,255,255,.6);
+            color: rgba(255,255,255,.8);
+        }
+
+        /* Map overlay controls */
+        #hierControls {
+            position: absolute;
+            bottom: 14px;
+            right: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            z-index: 100;
+        }
+        .hier-btn {
+            width: 30px;
+            height: 30px;
+            background: rgba(0,5,10,.85);
+            border: 1px solid rgba(0,217,255,.25);
+            color: var(--accent);
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            transition: all .18s;
+            clip-path: polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px);
+        }
+        .hier-btn:hover {
+            background: rgba(0,217,255,.12);
+            border-color: var(--accent);
+            box-shadow: 0 0 8px rgba(0,217,255,.3);
+        }
+
+        /* Coordinates/scale readout */
+        #hierReadout {
+            position: absolute;
+            bottom: 14px;
+            left: 14px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 8px;
+            letter-spacing: 2px;
+            color: rgba(0,217,255,.2);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Hint fade */
+        #hierHint {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 8.5px;
+            letter-spacing: 3px;
+            color: rgba(0,217,255,.2);
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 100;
+            transition: opacity 1.2s;
+        }
+
         #cardView  { display:none; }
+
 
         /* Card view */
         .formation-block { margin-bottom:36px; max-width:1060px; margin-left:auto; margin-right:auto; }
@@ -157,155 +350,24 @@
 
             <!-- ══ HIERARCHY SVG ══ -->
             <div id="treeView">
-            <div id="svgCanvas">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 430"
-                 width="2400" height="645"
-                 font-family="'Share Tech Mono',monospace">
-            <defs><style>
-                .conn{stroke:rgba(0,217,255,.18);stroke-width:1;fill:none}
-                .t  {font-size:9.5px;letter-spacing:1.5px;text-anchor:middle;dominant-baseline:middle}
-                .ts {font-size:8px;  letter-spacing:1px;  text-anchor:middle;dominant-baseline:middle;opacity:.65}
-                .tx {font-size:7.5px;letter-spacing:.8px; text-anchor:middle;dominant-baseline:middle;opacity:.45}
-                .txx{font-size:7px;  letter-spacing:.5px; text-anchor:middle;dominant-baseline:middle;opacity:.35}
-            </style></defs>
-
-            <!-- ══ BATTALION COMMAND ══ -->
-            <rect x="720" y="16" width="200" height="46" rx="1" fill="rgba(201,162,39,.08)" stroke="#C9A227" stroke-width="1"/>
-            <text x="820" y="33" class="t"  fill="#C9A227">505TH EXPEDITIONARY FORCE</text>
-            <text x="820" y="51" class="ts" fill="#C9A227">BATTALION COMMAND</text>
-            <line x1="820" y1="62"  x2="820" y2="76"   class="conn"/>
-            <line x1="220" y1="76"  x2="1420" y2="76"  class="conn"/>
-            <line x1="220"  y1="76" x2="220"  y2="94"  class="conn"/>
-            <line x1="640"  y1="76" x2="640"  y2="94"  class="conn"/>
-            <line x1="1080" y1="76" x2="1080" y2="94"  class="conn"/>
-            <line x1="1420" y1="76" x2="1420" y2="94"  class="conn"/>
-
-            <!-- ══ ALPHA COMPANY ══ -->
-            <rect x="120" y="94" width="200" height="46" rx="1" fill="rgba(74,93,35,.12)" stroke="#4A5D23" stroke-width="1"/>
-            <text x="220" y="111" class="t"  fill="#8aad44">ALPHA COMPANY</text>
-            <text x="220" y="128" class="ts" fill="#8aad44">MARINE INFANTRY // CO LR: 40</text>
-            <line x1="220" y1="140" x2="220" y2="156" class="conn"/>
-            <line x1="90"  y1="156" x2="350" y2="156" class="conn"/>
-            <line x1="90"  y1="156" x2="90"  y2="170" class="conn"/>
-            <line x1="220" y1="156" x2="220" y2="170" class="conn"/>
-            <line x1="350" y1="156" x2="350" y2="170" class="conn"/>
-
-            <!-- Alpha: 1st Plt -->
-            <rect x="40"  y="170" w="100" width="100" height="54" rx="1" fill="rgba(74,93,35,.09)" stroke="rgba(74,93,35,.5)" stroke-width="1"/>
-            <text x="90"  y="185" class="t"  fill="#6a9436" font-size="8.5px">1ST PLT — KILLJOY</text>
-            <text x="90"  y="200" class="tx" fill="#6a9436">PLT NET: SR 100</text>
-            <text x="90"  y="213" class="txx" fill="rgba(0,217,255,.5)">KJ 1-1 · KJ 1-2 · KJ 1-3</text>
-
-            <!-- Alpha: 2nd Plt -->
-            <rect x="170" y="170" width="100" height="54" rx="1" fill="rgba(74,93,35,.09)" stroke="rgba(74,93,35,.5)" stroke-width="1"/>
-            <text x="220" y="185" class="t"  fill="#6a9436" font-size="8.5px">2ND PLATOON</text>
-            <text x="220" y="200" class="tx" fill="#6a9436">PLT NET: SR 120</text>
-            <text x="220" y="213" class="txx" fill="rgba(0,217,255,.5)">A 2-1 · B 2-2 · C 2-3</text>
-
-            <!-- Alpha: 3rd Plt -->
-            <rect x="300" y="170" width="100" height="54" rx="1" fill="rgba(74,93,35,.09)" stroke="rgba(74,93,35,.5)" stroke-width="1"/>
-            <text x="350" y="185" class="t"  fill="#6a9436" font-size="8.5px">3RD PLATOON</text>
-            <text x="350" y="200" class="tx" fill="#6a9436">PLT NET: SR 140</text>
-            <text x="350" y="213" class="txx" fill="rgba(0,217,255,.5)">A 3-1 · B 3-2 · C 3-3</text>
-
-            <!-- ══ JSOTF-23 ══ -->
-            <rect x="540" y="94" width="200" height="46" rx="1" fill="rgba(107,63,160,.1)" stroke="#6B3FA0" stroke-width="1"/>
-            <text x="640" y="111" class="t"  fill="#a47de0">JSOTF-23</text>
-            <text x="640" y="128" class="ts" fill="#a47de0">JOINT SPECIAL OPS TASK FORCE</text>
-            <line x1="640" y1="140" x2="640" y2="154" class="conn"/>
-            <line x1="540" y1="154" x2="760" y2="154" class="conn"/>
-            <line x1="540" y1="154" x2="540" y2="164" class="conn"/>
-            <line x1="760" y1="154" x2="760" y2="164" class="conn"/>
-
-            <!-- MSOC header -->
-            <rect x="430" y="164" width="220" height="22" rx="1" fill="rgba(107,63,160,.07)" stroke="rgba(107,63,160,.3)" stroke-width="1"/>
-            <text x="540" y="175" class="tx" fill="#a47de0">MARINE SPECIAL OPS COMPONENT</text>
-            <line x1="540" y1="186" x2="540" y2="196" class="conn"/>
-            <line x1="455" y1="196" x2="625" y2="196" class="conn"/>
-            <line x1="455" y1="196" x2="455" y2="208" class="conn"/>
-            <line x1="540" y1="196" x2="540" y2="208" class="conn"/>
-            <line x1="625" y1="196" x2="625" y2="208" class="conn"/>
-
-            <!-- MSOC: 1st PLT Recon -->
-            <rect x="410" y="208" width="90" height="54" rx="1" fill="rgba(107,63,160,.08)" stroke="rgba(107,63,160,.35)" stroke-width="1"/>
-            <text x="455" y="223" class="t"  fill="#8860c0" font-size="8.5px">1ST PLT</text>
-            <text x="455" y="237" class="ts" fill="#8860c0">MARINE RECON</text>
-            <text x="455" y="251" class="txx" fill="rgba(164,125,224,.5)">STK 1-0 · STK 2-0</text>
-
-            <!-- MSOC: 2nd PLT Raiders -->
-            <rect x="496" y="208" width="90" height="54" rx="1" fill="rgba(107,63,160,.08)" stroke="rgba(107,63,160,.35)" stroke-width="1"/>
-            <text x="541" y="223" class="t"  fill="#8860c0" font-size="8.5px">2ND PLT</text>
-            <text x="541" y="237" class="ts" fill="#8860c0">MARINE RAIDERS</text>
-
-            <!-- MSOC: 3rd PLT Sp.Tact -->
-            <rect x="582" y="208" width="90" height="54" rx="1" fill="rgba(107,63,160,.08)" stroke="rgba(107,63,160,.35)" stroke-width="1"/>
-            <text x="627" y="223" class="t"  fill="#8860c0" font-size="8.5px">3RD PLT</text>
-            <text x="627" y="237" class="ts" fill="#8860c0">SPECIAL TACTICS</text>
-
-            <!-- AFSOC header -->
-            <rect x="700" y="164" width="120" height="22" rx="1" fill="rgba(107,63,160,.07)" stroke="rgba(107,63,160,.3)" stroke-width="1"/>
-            <text x="760" y="175" class="tx" fill="#a47de0">AIR FORCE SOC COMPONENT</text>
-            <line x1="760" y1="186" x2="760" y2="208" class="conn"/>
-
-            <!-- AFSOC: 4th PLT Pararescue -->
-            <rect x="715" y="208" width="90" height="54" rx="1" fill="rgba(107,63,160,.08)" stroke="rgba(107,63,160,.35)" stroke-width="1"/>
-            <text x="760" y="223" class="t"  fill="#8860c0" font-size="8.5px">4TH PLT</text>
-            <text x="760" y="237" class="ts" fill="#8860c0">PARARESCUE SQ</text>
-            <text x="760" y="251" class="txx" fill="rgba(164,125,224,.4)">AIR FORCE SOC</text>
-
-            <!-- ══ 54TH AIR WING ══ -->
-            <rect x="980" y="94" width="200" height="46" rx="1" fill="rgba(0,122,112,.1)" stroke="#007A70" stroke-width="1"/>
-            <text x="1080" y="111" class="t"  fill="#00c4b7">54TH AIR WING</text>
-            <text x="1080" y="128" class="ts" fill="#00c4b7">PILOT // AIR WING LR: 70</text>
-            <line x1="1080" y1="140" x2="1080" y2="156" class="conn"/>
-            <line x1="970"  y1="156" x2="1190" y2="156" class="conn"/>
-            <line x1="970"  y1="156" x2="970"  y2="170" class="conn"/>
-            <line x1="1080" y1="156" x2="1080" y2="170" class="conn"/>
-            <line x1="1190" y1="156" x2="1190" y2="170" class="conn"/>
-
-            <!-- 22nd Air Mobility -->
-            <rect x="915" y="170" width="110" height="50" rx="1" fill="rgba(0,122,112,.08)" stroke="rgba(0,122,112,.4)" stroke-width="1"/>
-            <text x="970"  y="185" class="t"  fill="#00a89e" font-size="8.5px">22ND AIR MOBILITY SQ</text>
-            <text x="970"  y="200" class="tx" fill="#00a89e">ATG LR: 71</text>
-
-            <!-- 31st Fighter -->
-            <rect x="1025" y="170" width="110" height="50" rx="1" fill="rgba(0,122,112,.08)" stroke="rgba(0,122,112,.4)" stroke-width="1"/>
-            <text x="1080" y="185" class="t"  fill="#00a89e" font-size="8.5px">31ST FIGHTER SQ</text>
-            <text x="1080" y="200" class="tx" fill="#00a89e">ATG LR: 71</text>
-
-            <!-- 5th Special Ops -->
-            <rect x="1135" y="170" width="110" height="50" rx="1" fill="rgba(0,122,112,.08)" stroke="rgba(0,122,112,.4)" stroke-width="1"/>
-            <text x="1190" y="185" class="t"  fill="#00a89e" font-size="8.5px">5TH SPECIAL OPS SQ</text>
-            <text x="1190" y="200" class="tx" fill="#00a89e">ATG LR: 71</text>
-
-            <!-- ══ SUPPORT COMPANY ══ -->
-            <rect x="1320" y="94" width="200" height="46" rx="1" fill="rgba(139,26,26,.08)" stroke="#8B1A1A" stroke-width="1"/>
-            <text x="1420" y="111" class="t"  fill="#e05a4a">SUPPORT COMPANY</text>
-            <text x="1420" y="128" class="ts" fill="#e05a4a">HOSPITAL CORPSMAN &amp; RESERVES</text>
-            <line x1="1420" y1="140" x2="1420" y2="156" class="conn"/>
-            <line x1="1330" y1="156" x2="1510" y2="156" class="conn"/>
-            <line x1="1330" y1="156" x2="1330" y2="170" class="conn"/>
-            <line x1="1510" y1="156" x2="1510" y2="170" class="conn"/>
-
-            <!-- Hospital Corpsman -->
-            <rect x="1270" y="170" width="120" height="60" rx="1" fill="rgba(139,26,26,.07)" stroke="rgba(139,26,26,.4)" stroke-width="1"/>
-            <text x="1330" y="185" class="t"  fill="#c05a4a" font-size="8.5px">HOSPITAL CORPSMAN</text>
-            <text x="1330" y="200" class="tx" fill="#c05a4a">EMER. NET: 333</text>
-            <text x="1330" y="213" class="txx" fill="rgba(224,90,74,.4)">OVERSEER · SUPERVISOR</text>
-            <text x="1330" y="224" class="txx" fill="rgba(224,90,74,.35)">HEAD OF TRAINING</text>
-
-            <!-- Reserves -->
-            <rect x="1450" y="170" width="120" height="60" rx="1" fill="rgba(139,26,26,.07)" stroke="rgba(139,26,26,.4)" stroke-width="1"/>
-            <text x="1510" y="185" class="t"  fill="#c05a4a" font-size="8.5px">RESERVES</text>
-            <text x="1510" y="200" class="ts" fill="#c05a4a">STANDBY PERSONNEL</text>
-
-            <!-- footer -->
-            <text x="820" y="418" class="txx" fill="rgba(0,217,255,.15)" font-size="7.5">
-                505TH EXPEDITIONARY FORCE // ORDER OF BATTLE // FOUO // POSITIONS SHOWN WITHOUT NAMES BY DESIGN
-            </text>
-            </svg>
-            </div><!-- end svgCanvas -->
+                <!-- hint -->
+                <div id="hierHint">DRAG TO PAN &nbsp;·&nbsp; SCROLL TO ZOOM &nbsp;·&nbsp; CLICK NODES TO COLLAPSE</div>
+                <!-- zoom controls -->
+                <div id="hierControls">
+                    <button class="hier-btn" onclick="hierZoomBtn(1.25)" title="Zoom in">+</button>
+                    <button class="hier-btn" onclick="hierZoomBtn(0.8)"  title="Zoom out">−</button>
+                    <button class="hier-btn" onclick="hierReset()"       title="Reset view" style="font-size:10px;letter-spacing:0">⌖</button>
+                </div>
+                <!-- scale readout -->
+                <div id="hierReadout">ZOOM: <span id="hierZoomVal">100%</span></div>
+                <!-- pan/zoom canvas -->
+                <div id="hierCanvas">
+                    <!-- SVG connectors (behind nodes) -->
+                    <svg id="hierSVG"></svg>
+                    <!-- nodes injected here by JS -->
+                </div>
             </div>
+
 
             <!-- ══ CARD VIEW ══ -->
             <div id="cardView">
@@ -322,15 +384,344 @@
     <script type="module" src="js/auth.js"></script>
     <script type="module" src="js/site-tracking.js"></script>
     <script>
-        function setView(v){
-            document.getElementById('treeView').style.display = v==='tree'?'block':'none';
-            document.getElementById('cardView').style.display  = v==='card' ?'block':'none';
-            document.getElementById('btnTree').classList.toggle('active',v==='tree');
-            document.getElementById('btnCard').classList.toggle('active',v==='card');
-            // Trigger card data load on first switch to card view
-            if(v==='card' && window._oobCardLoad) { window._oobCardLoad(); window._oobCardLoad=null; }
+    // ═══════════════════════════════════════════════════════════════════════
+    //  505th TACTICAL HIERARCHY — INTERACTIVE MAP CANVAS
+    //  Pan · Zoom · Collapse · Auto-layout
+    // ═══════════════════════════════════════════════════════════════════════
+
+    (function() {
+
+    // ── Branch colour system ───────────────────────────────────────────────
+    const BRANCH = {
+        command:  { color:'#C9A227', glow:'rgba(201,162,39,.5)',  bg:'rgba(139,122,26,.18)' },
+        infantry: { color:'#8aad44', glow:'rgba(138,173,68,.45)', bg:'rgba(74,93,35,.18)'   },
+        specops:  { color:'#a47de0', glow:'rgba(164,125,224,.45)',bg:'rgba(107,63,160,.18)'  },
+        airwing:  { color:'#00c4b7', glow:'rgba(0,196,183,.45)',  bg:'rgba(0,122,112,.18)'   },
+        support:  { color:'#e05a4a', glow:'rgba(224,90,74,.45)',  bg:'rgba(139,26,26,.18)'   },
+    };
+
+    // ── Hierarchy data ─────────────────────────────────────────────────────
+    const ROOT = {
+        id:'root', name:'505th Expeditionary Force', sub:'BATTALION COMMAND',
+        tag:'HQ', branch:'command', root:true,
+        children:[
+            {
+                id:'alpha', name:'Alpha Company', sub:'MARINE INFANTRY // LR: 40',
+                tag:'INF', branch:'infantry',
+                children:[
+                    { id:'kj',   name:'1st Platoon',  sub:'KILLJOY // SR 100', tag:'PLT', branch:'infantry' },
+                    { id:'plt2', name:'2nd Platoon',   sub:'SR 120',            tag:'PLT', branch:'infantry' },
+                    { id:'plt3', name:'3rd Platoon',   sub:'SR 140',            tag:'PLT', branch:'infantry' },
+                ]
+            },
+            {
+                id:'jsotf', name:'JSOTF-23', sub:'JOINT SPECIAL OPS TASK FORCE',
+                tag:'SOF', branch:'specops',
+                children:[
+                    {
+                        id:'msoc', name:'Marine SOC', sub:'MARINE SPECIAL OPS COMPONENT',
+                        tag:'SOC', branch:'specops',
+                        children:[
+                            { id:'recon',   name:'1st PLT',  sub:'MARINE RECON',     tag:'PLT', branch:'specops' },
+                            { id:'raiders', name:'2nd PLT',  sub:'MARINE RAIDERS',   tag:'PLT', branch:'specops' },
+                            { id:'tactics', name:'3rd PLT',  sub:'SPECIAL TACTICS',  tag:'PLT', branch:'specops' },
+                        ]
+                    },
+                    {
+                        id:'afsoc', name:'Air Force SOC', sub:'AIR FORCE SPECIAL OPS COMPONENT',
+                        tag:'SOC', branch:'specops',
+                        children:[
+                            { id:'para', name:'4th PLT', sub:'PARARESCUE SQ', tag:'PLT', branch:'specops' },
+                        ]
+                    }
+                ]
+            },
+            {
+                id:'air', name:'54th Air Wing', sub:'PILOT // LR: 70',
+                tag:'AIR', branch:'airwing',
+                children:[
+                    { id:'air1', name:'22nd Air Mobility Sq', sub:'ATG LR: 71', tag:'SQ', branch:'airwing' },
+                    { id:'air2', name:'31st Fighter Sq',      sub:'ATG LR: 71', tag:'SQ', branch:'airwing' },
+                    { id:'air3', name:'5th Special Ops Sq',   sub:'ATG LR: 71', tag:'SQ', branch:'airwing' },
+                ]
+            },
+            {
+                id:'support', name:'Support Company', sub:'MEDICAL & RESERVES',
+                tag:'MED', branch:'support',
+                children:[
+                    { id:'med', name:'Hospital Corpsman', sub:'EMER. NET: 333', tag:'MED', branch:'support' },
+                    { id:'res', name:'Reserves',          sub:'6 SLOTS',        tag:'RES', branch:'support' },
+                ]
+            },
+        ]
+    };
+
+    // ── Layout constants ───────────────────────────────────────────────────
+    const NW  = 190;  // node width
+    const NH  = 72;   // node height (root = 82)
+    const HG  = 36;   // horizontal gap between siblings
+    const VG  = 100;  // vertical gap between levels
+
+    // ── Layout engine ──────────────────────────────────────────────────────
+    // Pass 1: compute subtree widths bottom-up
+    function calcWidths(node) {
+        const nw = node.root ? 220 : NW;
+        if (!node.children || !node.children.length || node._col) {
+            node._tw = nw; return;
         }
+        for (const c of node.children) calcWidths(c);
+        const total = node.children.reduce((s,c)=>s+c._tw, 0)
+                    + HG * (node.children.length - 1);
+        node._tw = Math.max(nw, total);
+    }
+
+    // Pass 2: assign absolute x,y top-down
+    function assignPos(node, ox, oy, out) {
+        const nw = node.root ? 220 : NW;
+        const nh = node.root ? 82  : NH;
+        node._x = ox + node._tw / 2 - nw / 2;
+        node._y = oy;
+        node._nw = nw;
+        node._nh = nh;
+        out.push(node);
+        if (node.children && node.children.length && !node._col) {
+            const total = node.children.reduce((s,c)=>s+c._tw,0)
+                        + HG*(node.children.length-1);
+            let cx = ox + node._tw/2 - total/2;
+            for (const c of node.children) {
+                assignPos(c, cx, oy + nh + VG, out);
+                cx += c._tw + HG;
+            }
+        }
+    }
+
+    // ── DOM state ─────────────────────────────────────────────────────────
+    let tx=0, ty=0, scale=1;
+    const MIN_S=0.18, MAX_S=2.5;
+    let dragging=false, sx=0, sy=0, stx=0, sty=0;
+    let p0=0, ps=1, pmx=0, pmy=0;
+    let viewport, canvas, svg, readout;
+    let allNodes=[];
+
+    function applyT() {
+        canvas.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+        if (readout) readout.textContent = 'ZOOM: ' + Math.round(scale*100) + '%';
+    }
+
+    function clampS(s) { return Math.min(MAX_S, Math.max(MIN_S, s)); }
+
+    function zoomAt(px, py, f) {
+        const ns = clampS(scale * f);
+        tx = px - (px - tx) * (ns / scale);
+        ty = py - (py - ty) * (ns / scale);
+        scale = ns;
+        applyT();
+    }
+
+    // ── Render ─────────────────────────────────────────────────────────────
+    function render() {
+        // Clear old nodes (keep SVG)
+        Array.from(canvas.querySelectorAll('.h-node')).forEach(el=>el.remove());
+
+        calcWidths(ROOT);
+        allNodes = [];
+        assignPos(ROOT, 0, 0, allNodes);
+
+        // Canvas bounding box
+        const maxX = Math.max(...allNodes.map(n=>n._x+n._nw));
+        const maxY = Math.max(...allNodes.map(n=>n._y+n._nh));
+        canvas.style.width  = (maxX + 60) + 'px';
+        canvas.style.height = (maxY + 60) + 'px';
+        svg.setAttribute('width',  maxX + 60);
+        svg.setAttribute('height', maxY + 60);
+
+        // Draw connector paths
+        const paths = [];
+        for (const n of allNodes) {
+            if (!n.children || !n.children.length || n._col) continue;
+            const b = BRANCH[n.branch] || BRANCH.command;
+            const px = n._x + n._nw/2;
+            const py = n._y + n._nh;
+            for (const c of n.children) {
+                const cx = c._x + c._nw/2;
+                const cy = c._y;
+                const my = py + (cy-py)*0.5;
+                paths.push(
+                  `<path d="M${px},${py} C${px},${my} ${cx},${my} ${cx},${cy}"
+                   stroke="${b.color}" stroke-opacity="0.3" stroke-width="1.5"
+                   fill="none"/>`
+                );
+            }
+        }
+        svg.innerHTML = `<defs>
+          <filter id="glow-cmd"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>` + paths.join('');
+
+        // Render nodes
+        for (const n of allNodes) {
+            const b = BRANCH[n.branch] || BRANCH.command;
+            const el = document.createElement('div');
+            el.className = 'h-node' + (n.root?' h-root':'');
+            el.dataset.id = n.id;
+            el.style.cssText = [
+                `left:${n._x}px`, `top:${n._y}px`,
+                `width:${n._nw}px`,
+                `border-top-color:${b.color}`,
+                `background:${b.bg}`,
+                `box-shadow: inset 0 0 0 1px rgba(255,255,255,.05), 0 0 ${n.root?16:8}px ${b.glow}`,
+            ].join(';');
+
+            el.innerHTML = `
+              <div class="h-node-tag" style="color:${b.color}">${n.tag||''}</div>
+              <div class="h-node-name" style="color:${b.color}">${n.name}</div>
+              ${n.sub?`<div class="h-node-sub">${n.sub}</div>`:''}`;
+
+            // Collapse toggle if has children
+            if (n.children && n.children.length) {
+                const tog = document.createElement('div');
+                tog.className = 'h-toggle';
+                tog.style.cssText = `border-color:${b.color};color:${b.color};box-shadow:0 0 6px ${b.glow}`;
+                tog.textContent = n._col ? '+' : '−';
+                tog.title = n._col ? 'Expand' : 'Collapse';
+                tog.addEventListener('click', e => {
+                    e.stopPropagation();
+                    n._col = !n._col;
+                    render(); // re-layout
+                });
+                el.appendChild(tog);
+            }
+
+            canvas.appendChild(el);
+        }
+    }
+
+    // ── Auto-center ────────────────────────────────────────────────────────
+    function autoCenter() {
+        const vw = viewport.clientWidth;
+        const vh = viewport.clientHeight;
+        calcWidths(ROOT);
+        const cw = ROOT._tw + 60;
+        const root = allNodes.find(n=>n.root) || allNodes[0];
+        const ch = root ? (Math.max(...allNodes.map(n=>n._y+n._nh)) + 60) : 500;
+        // Fit to width with padding, then center vertically
+        scale = clampS((vw / cw) * 0.88);
+        tx = (vw - cw * scale) / 2;
+        ty = Math.min(60, (vh - ch * scale) / 2);
+        applyT();
+    }
+
+    // ── Expose zoom/reset ──────────────────────────────────────────────────
+    window.hierZoomBtn = function(f) {
+        zoomAt(viewport.clientWidth/2, viewport.clientHeight/2, f);
+    };
+    window.hierReset = autoCenter;
+
+    // ── Keyboard shortcuts ─────────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+        if (!viewport || viewport.closest('#treeView').style.display === 'none') return;
+        if (e.key === '=' || e.key === '+') hierZoomBtn(1.2);
+        if (e.key === '-' || e.key === '_') hierZoomBtn(0.83);
+        if (e.key === 'r' || e.key === 'R') hierReset();
+    });
+
+    // ── Init ───────────────────────────────────────────────────────────────
+    function init() {
+        viewport = document.getElementById('treeView');
+        canvas   = document.getElementById('hierCanvas');
+        svg      = document.getElementById('hierSVG');
+        readout  = document.getElementById('hierZoomVal');
+        if (!viewport || !canvas || !svg) return;
+
+        render();
+        setTimeout(autoCenter, 30);
+
+        // Fade out hint
+        const hint = document.getElementById('hierHint');
+        if (hint) setTimeout(()=>{ hint.style.opacity='0'; }, 3500);
+
+        // ── Mouse ──
+        viewport.addEventListener('mousedown', e => {
+            if (e.button!==0) return;
+            dragging=true; sx=e.clientX; sy=e.clientY; stx=tx; sty=ty;
+            viewport.classList.add('dragging');
+            e.preventDefault();
+        });
+        window.addEventListener('mousemove', e => {
+            if (!dragging) return;
+            tx=stx+(e.clientX-sx); ty=sty+(e.clientY-sy); applyT();
+        });
+        window.addEventListener('mouseup', ()=>{ dragging=false; viewport.classList.remove('dragging'); });
+
+        // ── Wheel ──
+        viewport.addEventListener('wheel', e => {
+            e.preventDefault();
+            const r=viewport.getBoundingClientRect();
+            zoomAt(e.clientX-r.left, e.clientY-r.top, e.deltaY<0?1.1:0.91);
+        }, {passive:false});
+
+        // ── Touch ──
+        viewport.addEventListener('touchstart', e => {
+            if (e.touches.length===1) {
+                dragging=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY; stx=tx; sty=ty;
+            } else if (e.touches.length===2) {
+                dragging=false;
+                const dx=e.touches[0].clientX-e.touches[1].clientX;
+                const dy=e.touches[0].clientY-e.touches[1].clientY;
+                p0=Math.hypot(dx,dy); ps=scale;
+                const r=viewport.getBoundingClientRect();
+                pmx=((e.touches[0].clientX+e.touches[1].clientX)/2)-r.left;
+                pmy=((e.touches[0].clientY+e.touches[1].clientY)/2)-r.top;
+            }
+            e.preventDefault();
+        }, {passive:false});
+
+        viewport.addEventListener('touchmove', e => {
+            if (e.touches.length===1 && dragging) {
+                tx=stx+(e.touches[0].clientX-sx); ty=sty+(e.touches[0].clientY-sy); applyT();
+            } else if (e.touches.length===2) {
+                const dx=e.touches[0].clientX-e.touches[1].clientX;
+                const dy=e.touches[0].clientY-e.touches[1].clientY;
+                const d=Math.hypot(dx,dy);
+                const ns=clampS(ps*(d/p0));
+                tx=pmx-(pmx-tx)*(ns/scale);
+                ty=pmy-(pmy-ty)*(ns/scale);
+                scale=ns; applyT();
+            }
+            e.preventDefault();
+        }, {passive:false});
+
+        viewport.addEventListener('touchend', ()=>{ dragging=false; });
+    }
+
+    // ── Hook into setView ──────────────────────────────────────────────────
+    window._hierInit = init;
+    window._hierInited = false;
+
+    })(); // end IIFE
+
+    // ── setView (replaces old one) ─────────────────────────────────────────
+    function setView(v) {
+        document.getElementById('treeView').style.display  = v==='tree'?'block':'none';
+        document.getElementById('cardView').style.display  = v==='card' ?'block':'none';
+        document.getElementById('btnTree').classList.toggle('active',v==='tree');
+        document.getElementById('btnCard').classList.toggle('active', v==='card');
+        if (v==='tree' && !window._hierInited) {
+            window._hierInited = true;
+            setTimeout(window._hierInit, 40);
+        }
+        if (v==='card' && window._oobCardLoad) { window._oobCardLoad(); window._oobCardLoad=null; }
+    }
+
+    // Auto-init on load if tree view is default
+    document.addEventListener('DOMContentLoaded', () => {
+        const tv = document.getElementById('treeView');
+        if (tv && tv.style.display !== 'none') {
+            window._hierInited = true;
+            setTimeout(window._hierInit, 40);
+        }
+    });
     </script>
+
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
