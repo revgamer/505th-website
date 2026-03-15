@@ -246,7 +246,6 @@
         }
 
         #cardView  { display:none; }
-        #hierCardSection { display:none; margin-top:40px; }
         .hier-section-divider { display:flex; align-items:center; gap:16px; max-width:1060px; margin:0 auto 28px; font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:4px; color:rgba(0,217,255,.25); }
         .hier-section-divider::before,.hier-section-divider::after { content:''; flex:1; border-top:1px solid rgba(0,217,255,.08); }
 
@@ -386,9 +385,7 @@
             <div id="cardView">
                 <div id="cardViewInner"><div style="text-align:center;padding:3rem;color:#555;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px">LOADING...</div></div>
             </div><!-- end cardView -->
-            <div id="hierCardSection">
-                <div class="hier-section-divider">UNIT CARDS</div>
-                <div id="hierCardInner"><div style="text-align:center;padding:3rem;color:#555;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px">LOADING...</div></div>
+</div>
             </div>
 
         </div>
@@ -818,8 +815,6 @@
     function setView(v) {
         document.getElementById('treeView').style.display         = v==='tree'?'block':'none';
         document.getElementById('cardView').style.display          = v==='card' ?'block':'none';
-        const hcs = document.getElementById('hierCardSection');
-        if (hcs) hcs.style.display = v==='tree'?'block':'none';
         document.getElementById('btnTree').classList.toggle('active', v==='tree');
         document.getElementById('btnCard').classList.toggle('active', v==='card');
         if (v==='tree' && !window._hierInited) { window._hierInited=true; setTimeout(window._hierInit,40); }
@@ -832,8 +827,6 @@
         if (!tv) { setTimeout(tryInit, 50); return; }
         tv.style.display = 'block';
         document.getElementById('cardView').style.display = 'none';
-        const hcs = document.getElementById('hierCardSection');
-        if (hcs) hcs.style.display = 'block';
         const bt = document.getElementById('btnTree');
         const bc = document.getElementById('btnCard');
         if (bt) bt.classList.add('active');
@@ -1045,8 +1038,6 @@
             </div>`;
 
             document.getElementById('cardViewInner').innerHTML = html;
-            const hci = document.getElementById('hierCardInner');
-            if (hci) hci.innerHTML = html;
         }
 
         // ── Load data and render ───────────────────────────────────────────────
