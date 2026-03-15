@@ -816,24 +816,33 @@
 
     // ── setView (replaces old one) ─────────────────────────────────────────
     function setView(v) {
-        document.getElementById('treeView').style.display  = v==='tree'?'block':'none';
-        document.getElementById('cardView').style.display  = v==='card' ?'block':'none';
-        document.getElementById('btnTree').classList.toggle('active',v==='tree');
+        document.getElementById('treeView').style.display         = v==='tree'?'block':'none';
+        document.getElementById('cardView').style.display          = v==='card' ?'block':'none';
+        const hcs = document.getElementById('hierCardSection');
+        if (hcs) hcs.style.display = v==='tree'?'block':'none';
+        document.getElementById('btnTree').classList.toggle('active', v==='tree');
         document.getElementById('btnCard').classList.toggle('active', v==='card');
         if (v==='tree' && !window._hierInited) {
             window._hierInited = true;
             setTimeout(window._hierInit, 40);
         }
-        if (v==='card' && window._oobCardLoad) { window._oobCardLoad(); window._oobCardLoad=null; }
+        // Load card data for both views
+        if (window._oobCardLoad) { window._oobCardLoad(); window._oobCardLoad=null; }
     }
 
-    // Auto-init on load if tree view is default
+    // Auto-init hierarchy on load — hierarchy is default view
     document.addEventListener('DOMContentLoaded', () => {
+        // Ensure hierarchy is visible and card view hidden
         const tv = document.getElementById('treeView');
-        if (tv && tv.style.display !== 'none') {
-            window._hierInited = true;
-            setTimeout(window._hierInit, 40);
-        }
+        const cv = document.getElementById('cardView');
+        const hcs = document.getElementById('hierCardSection');
+        if (tv)  tv.style.display  = 'block';
+        if (cv)  cv.style.display  = 'none';
+        if (hcs) hcs.style.display = 'block';
+        document.getElementById('btnTree')?.classList.add('active');
+        document.getElementById('btnCard')?.classList.remove('active');
+        window._hierInited = true;
+        setTimeout(window._hierInit, 40);
     });
     </script>
 
@@ -1059,9 +1068,8 @@
             }
         }
 
-        // Register for lazy load when user clicks Unit Cards tab
+        // Always keep _oobCardLoad available (not null after first call)
         window._oobCardLoad = loadUnitCardData;
-        // Also load immediately so it's ready if they switch straight away
         loadUnitCardData();
     </script>
 </body>
