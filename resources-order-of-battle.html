@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="css/auth.css">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
+        /* Suppress pages.css background watermark — OOB has its own inside the tree canvas */
+        .page-content::before { display: none !important; }
         :root {
             --accent:#00D9FF; --gold:#C9A227;
             --green:#4A5D23; --green-l:#8aad44;

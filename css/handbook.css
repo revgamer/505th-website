@@ -213,10 +213,12 @@
     display: block;
     margin-bottom: 0.4rem;
     letter-spacing: 0.5px;
+    text-shadow: 0 0 10px var(--accent-glow);
 }
 
 .info-box.warning strong {
     color: #FFB800;
+    text-shadow: 0 0 10px rgba(255, 184, 0, 0.4);
 }
 
 .info-box p {
