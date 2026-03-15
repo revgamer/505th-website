@@ -424,6 +424,398 @@
 
 
         function notify(m,err){const n=document.getElementById('notification');n.textContent=m;n.className='notification show'+(err?' error':'');setTimeout(()=>n.className='notification',3000);}
+
+        // ── CORE UI ───────────────────────────────────────────────────────────
+        function showPanel(id) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.sub-link').forEach(l => l.classList.remove('active'));
+            const panel = document.getElementById(id);
+            if (panel) panel.classList.remove('hidden');
+            const link = document.querySelector(`[data-panel="${id}"]`);
+            if (link) link.classList.add('active');
+            // Lazy loaders
+            if (id==='panel-active' || id==='panel-register') loadAllUsers();
+            if (id==='panel-dashboard')  loadDashboard();
+            if (id==='panel-gallery')    loadMedia('image');
+            if (id==='panel-videos')     loadMedia('video');
+            if (id==='panel-aar')        loadAARs();
+            if (id==='panel-roster')     loadRoster();
+            if (id==='panel-unitcards')  loadUnitCards();
+            if (id==='panel-pagemanager') loadPages();
+            if (id==='panel-auditlog')   loadAuditLog();
+            if (id==='panel-analytics')  loadAnalytics();
+            if (id==='panel-discord-tracking') loadDiscordTracking();
+            if (id.startsWith('panel-page-')) loadPageContent(id.replace('panel-page-',''));
+            if (id==='panel-promote') loadPromotePanel();
+        }
+
+        function toggleDropdown(navId) {
+            const item = document.getElementById(navId);
+            if (!item) return;
+            const isOpen = item.classList.contains('open');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('open'));
+            if (!isOpen) item.classList.add('open');
+        }
+
+        async function loadDashboard() {
+            try {
+                const snap = await getDocs(collection(db,'users'));
+                let pending=0, active=0;
+                snap.forEach(d => {
+                    const r = d.data().status;
+                    if (r==='pending') pending++;
+                    else active++;
+                });
+                const pEl=document.getElementById('dashPending');
+                const aEl=document.getElementById('dashActive');
+                const tEl=document.getElementById('dashTotal');
+                if(pEl) pEl.textContent=pending;
+                if(aEl) aEl.textContent=active;
+                if(tEl) tEl.textContent=pending+active;
+
+                // Pending list
+                const pl = document.getElementById('dashPendingList');
+                if(pl) {
+                    const pUsers=[];
+                    snap.forEach(d=>{ if(d.data().status==='pending') pUsers.push({id:d.id,...d.data()}); });
+                    pl.innerHTML = pUsers.length ? pUsers.map(u=>`
+                        <div class="user-card status-pending">
+                            <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
+                            <div class="user-actions">
+                                <button class="action-btn approve-btn small" onclick="approveUser('${u.id}','${esc(u.callsign)}')">APPROVE</button>
+                                <button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">DENY</button>
+                            </div>
+                        </div>`).join('') : '<div class="empty-state">NO PENDING REGISTRATIONS</div>';
+                }
+
+                // Recent joins
+                const rj = document.getElementById('dashRecentJoins');
+                if(rj) {
+                    const recent=[];
+                    snap.forEach(d=>{ if(d.data().status!=='pending') recent.push({id:d.id,...d.data()}); });
+                    recent.sort((a,b)=>(b.joinedAt||'').localeCompare(a.joinedAt||''));
+                    rj.innerHTML = recent.slice(0,5).map(u=>`
+                        <div class="user-card">
+                            <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-role">${(u.role||'').toUpperCase()}</div></div>
+                        </div>`).join('') || '<div class="empty-state">NO RECENT JOINS</div>';
+                }
+            } catch(e) { console.error('Dashboard error:',e); }
+        }
+
+        async function loadAllUsers() {
+            if (allUsers.length) { renderUsers(); return; }
+            try {
+                const snap = await getDocs(query(collection(db,'users'), orderBy('callsign','asc')));
+                allUsers = [];
+                snap.forEach(d => allUsers.push({id:d.id,...d.data()}));
+                renderUsers();
+            } catch(e) { console.error('loadAllUsers error:',e); }
+        }
+
+        function renderUsers() {
+            const activeList  = document.getElementById('activeList');
+            const registerList = document.getElementById('registerList');
+            const active  = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied');
+            const pending = allUsers.filter(u=>u.status==='pending');
+            const denied  = allUsers.filter(u=>u.status==='denied');
+
+            if(activeList) {
+                activeList.innerHTML = active.length ? active.map(u=>`
+                    <div class="user-card status-active">
+                        <div class="user-info">
+                            <div class="user-callsign">${esc(u.callsign)}</div>
+                            <div class="user-email">${esc(u.email)}</div>
+                            <div class="user-role">${(u.role||'').toUpperCase()}</div>
+                        </div>
+                        <div class="user-actions">
+                            ${P().canEditProfiles?`<button class="action-btn approve-btn small" onclick="openEditUser('${u.id}')">EDIT</button>`:''}
+                            ${P().canChangeRoles?`<select onchange="changeRole('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace">
+                                ${['enlistee','marine','recruiter','nco','staff_nco','commander','developer'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+                            </select>`:''}
+                            ${P().canEditProfiles?`<button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>`:''}
+                        </div>
+                    </div>`).join('') : '<div class="empty-state">NO ACTIVE PERSONNEL</div>';
+            }
+
+            if(registerList) {
+                let h='';
+                if(pending.length) { h+='<div class="section-label">PENDING</div>'+pending.map(u=>`
+                    <div class="user-card status-pending">
+                        <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
+                        <div class="user-actions">
+                            <button class="action-btn approve-btn small" onclick="approveUser('${u.id}','${esc(u.callsign)}')">APPROVE</button>
+                            <button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">DENY</button>
+                        </div>
+                    </div>`).join(''); }
+                if(denied.length) { h+='<div class="section-label" style="margin-top:20px">DENIED</div>'+denied.map(u=>`
+                    <div class="user-card status-denied">
+                        <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
+                        <div class="user-actions">
+                            <button class="action-btn approve-btn small" onclick="approveUser('${u.id}','${esc(u.callsign)}')">RE-APPROVE</button>
+                            <button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>
+                        </div>
+                    </div>`).join('');}
+                registerList.innerHTML = h || '<div class="empty-state">NO PENDING OR DENIED</div>';
+            }
+        }
+
+        window.approveUser = async function(uid, callsign) {
+            try { await updateDoc(doc(db,'users',uid),{status:'active',role:'enlistee'}); logAction('APPROVE',callsign); notify('APPROVED: '+callsign); allUsers=[]; loadAllUsers(); loadDashboard(); } catch(e){notify('ERROR',1);}
+        };
+        window.removeUser = async function(uid, callsign) {
+            if(!confirm('REMOVE '+callsign+'?')) return;
+            try { await deleteDoc(doc(db,'users',uid)); logAction('REMOVE',callsign); notify('REMOVED: '+callsign); allUsers=[]; loadAllUsers(); loadDashboard(); } catch(e){notify('ERROR',1);}
+        };
+        window.changeRole = async function(uid, role) {
+            try { await updateDoc(doc(db,'users',uid),{role}); logAction('ROLE_CHANGE',uid+' → '+role); notify('ROLE UPDATED'); allUsers=[]; loadAllUsers(); } catch(e){notify('ERROR',1);}
+        };
+        window.openEditUser = function(uid) {
+            const u = allUsers.find(x=>x.id===uid); if(!u) return;
+            document.getElementById('editUserId').value=uid;
+            document.getElementById('editCallsign').value=u.callsign||'';
+            document.getElementById('editFirstName').value=u.firstName||'';
+            document.getElementById('editLastName').value=u.lastName||'';
+            document.getElementById('editRank').value=u.rank||'';
+            const jEl=document.getElementById('editJoinedAt');
+            if(jEl) jEl.value=u.joinedAt?u.joinedAt.split('T')[0]:'';
+            document.getElementById('editUserModal').classList.add('active');
+        };
+        window.saveUserEdit = async function() {
+            const uid=document.getElementById('editUserId').value;
+            const data={callsign:document.getElementById('editCallsign').value,firstName:document.getElementById('editFirstName').value,lastName:document.getElementById('editLastName').value,rank:document.getElementById('editRank').value};
+            const jEl=document.getElementById('editJoinedAt');
+            if(jEl&&jEl.value) data.joinedAt=jEl.value+'T00:00:00.000Z';
+            try { await updateDoc(doc(db,'users',uid),data); notify('SAVED'); logAction('EDIT_USER',uid); closeEditModal(); allUsers=[]; loadAllUsers(); } catch(e){notify('ERROR',1);}
+        };
+        window.closeEditModal = function(){ document.getElementById('editUserModal').classList.remove('active'); };
+
+        async function loadPromotePanel() {
+            const c=document.getElementById('promoteList'); if(!c) return;
+            c.innerHTML='<div class="empty-state">LOADING...</div>';
+            if(!allUsers.length) await loadAllUsers();
+            const active=allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied');
+            c.innerHTML=active.map(u=>`
+                <div class="user-card">
+                    <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-role">${(u.role||'').toUpperCase()}</div></div>
+                    <div class="user-actions">
+                        <select onchange="changeRole('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace">
+                            ${['enlistee','marine','recruiter','nco','staff_nco','commander','developer'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>`).join('') || '<div class="empty-state">NO PERSONNEL</div>';
+        }
+
+        async function loadPageContent(pageId) {
+            if(!pageContentData[pageId]) {
+                try { const s=await getDoc(doc(db,'settings','page_content')); if(s.exists()) pageContentData=s.data(); } catch(e){}
+            }
+            const cfg=PAGE_SLOTS[pageId]; if(!cfg) return;
+            const container=document.querySelector(`#panel-page-${pageId} .page-editor-container`); if(!container) return;
+            container.innerHTML=cfg.slots.map(slot=>{
+                const key=`${pageId}__${slot.id}`;
+                const val=pageContentData[key]||{};
+                if(slot.type==='image') return `<div class="upload-field"><label>${slot.label}</label><div class="image-preview" id="prev-${key}">${val.url?`<img src="${val.url}" style="max-width:200px;max-height:120px;object-fit:cover;">`:'<span style="color:#555">No image</span>'}</div><button class="upload-btn" onclick="openMediaPicker('${key}','image')">SELECT IMAGE</button></div>`;
+                if(slot.type==='video') return `<div class="upload-field"><label>${slot.label}</label><input type="text" id="input-${key}" value="${esc(val.url||val.value||'')}" placeholder="YouTube/video URL" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none"></div>`;
+                return `<div class="upload-field"><label>${slot.label}</label><textarea id="input-${key}" rows="3" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;resize:vertical">${esc(val.value||val.text||'')}</textarea></div>`;
+            }).join('')+`<button class="upload-btn" onclick="savePageContent('${pageId}')" style="margin-top:12px">SAVE CHANGES</button>`;
+        }
+        window.savePageContent = async function(pageId) {
+            const cfg=PAGE_SLOTS[pageId]; if(!cfg) return;
+            for(const slot of cfg.slots) {
+                const key=`${pageId}__${slot.id}`;
+                if(slot.type!=='image') {
+                    const el=document.getElementById('input-'+key);
+                    if(el) { if(!pageContentData[key]) pageContentData[key]={}; pageContentData[key].value=el.value; }
+                }
+            }
+            try { await setDoc(doc(db,'settings','page_content'),pageContentData); notify('SAVED'); logAction('PAGE_CONTENT',pageId); } catch(e){notify('ERROR',1);}
+        };
+        window.openMediaPicker = function(key, type) {
+            window._pickerTarget=key; window._pickerType=type;
+            const grid=document.getElementById('pickerGrid');
+            grid.innerHTML='<div class="empty-state">LOADING...</div>';
+            document.getElementById('mediaPickerModal').classList.add('active');
+            getDocs(query(collection(db,'media'),orderBy('uploadedAt','desc'))).then(snap=>{
+                const items=[];
+                snap.forEach(d=>{ if(!type||d.data().type===type) items.push({id:d.id,...d.data()}); });
+                grid.innerHTML=items.map(m=>`<div class="picker-item" onclick="selectMedia('${m.id}','${m.url}')"><img src="${m.url}" loading="lazy"><div class="picker-name">${esc(m.name||'')}</div></div>`).join('')||'<div class="empty-state">NO MEDIA</div>';
+            }).catch(()=>{ grid.innerHTML='<div class="empty-state">ERROR</div>'; });
+        };
+        window.selectMedia = async function(id, url) {
+            const key=window._pickerTarget; if(!key) return;
+            if(!pageContentData[key]) pageContentData[key]={};
+            pageContentData[key].url=url; pageContentData[key].mediaId=id;
+            const prev=document.getElementById('prev-'+key);
+            if(prev) prev.innerHTML=`<img src="${url}" style="max-width:200px;max-height:120px;object-fit:cover;">`;
+            document.getElementById('mediaPickerModal').classList.remove('active');
+        };
+        window.closeMediaPicker = function(){ document.getElementById('mediaPickerModal').classList.remove('active'); };
+
+        async function loadMedia(type) {
+            const gridId=type==='image'?'galleryGrid':'videoGrid';
+            const c=document.getElementById(gridId); if(!c) return;
+            c.innerHTML='<div class="empty-state">LOADING...</div>';
+            try {
+                const snap=await getDocs(query(collection(db,'media'),orderBy('uploadedAt','desc')));
+                const items=[]; snap.forEach(d=>{ if(d.data().type===type) items.push({id:d.id,...d.data()}); });
+                c.innerHTML=items.map(m=>`
+                    <div class="media-item">
+                        ${type==='image'?`<img src="${m.url}" loading="lazy" style="width:100%;height:140px;object-fit:cover;">`:`<div style="padding:8px;font-size:10px;color:#666;word-break:break-all">${esc(m.url)}</div>`}
+                        <div style="padding:8px"><div style="color:#ccc;font-size:10px">${esc(m.name||'')}</div>
+                        <button class="action-btn remove-btn small" style="margin-top:6px" onclick="deleteMedia('${m.id}')">DELETE</button></div>
+                    </div>`).join('')||'<div class="empty-state">NO MEDIA</div>';
+            } catch(e){ c.innerHTML='<div class="empty-state">ERROR</div>'; }
+        }
+        window.deleteMedia = async function(id) {
+            if(!confirm('DELETE?')) return;
+            try { await deleteDoc(doc(db,'media',id)); notify('DELETED'); loadMedia(id); } catch(e){notify('ERROR',1);}
+        };
+
+        async function loadAARs() {
+            const c=document.getElementById('aarList'); if(!c) return;
+            c.innerHTML='<div class="empty-state">LOADING...</div>';
+            try {
+                const snap=await getDocs(query(collection(db,'aars'),orderBy('date','desc')));
+                const items=[]; snap.forEach(d=>items.push({id:d.id,...d.data()}));
+                c.innerHTML=items.map(a=>`
+                    <div class="user-card">
+                        <div class="user-info"><div class="user-callsign">${esc(a.title||'AAR')}</div><div class="user-role">${esc(a.date||'')} — ${esc(a.commander||'')}</div></div>
+                        <div class="user-actions"><button class="action-btn remove-btn small" onclick="deleteAAR('${a.id}')">DELETE</button></div>
+                    </div>`).join('')||'<div class="empty-state">NO AARS</div>';
+            } catch(e){ c.innerHTML='<div class="empty-state">ERROR</div>'; }
+        }
+        window.deleteAAR = async function(id) {
+            if(!confirm('DELETE AAR?')) return;
+            try { await deleteDoc(doc(db,'aars',id)); notify('DELETED'); loadAARs(); } catch(e){notify('ERROR',1);}
+        };
+        window.submitAAR = async function() {
+            const title=document.getElementById('aarTitle')?.value;
+            const date=document.getElementById('aarDate')?.value;
+            const commander=document.getElementById('aarCommander')?.value;
+            const filedBy=document.getElementById('aarFiledBy')?.value;
+            const summary=document.getElementById('aarSummary')?.value;
+            if(!title||!date) { notify('TITLE AND DATE REQUIRED',1); return; }
+            try {
+                await addDoc(collection(db,'aars'),{title,date,commander,filedBy,summary,submittedAt:new Date().toISOString(),submittedBy:currentUser.uid});
+                notify('AAR SUBMITTED'); logAction('AAR_SUBMIT',title); loadAARs();
+            } catch(e){ notify('ERROR',1); }
+        };
+
+        async function loadAuditLog() {
+            const c=document.getElementById('auditList'); if(!c) return;
+            c.innerHTML='<div class="empty-state">LOADING...</div>';
+            try {
+                const snap=await getDocs(query(collection(db,'audit_log'),orderBy('timestamp','desc'),limit(50)));
+                const items=[]; snap.forEach(d=>items.push(d.data()));
+                c.innerHTML=items.map(a=>`
+                    <div style="padding:8px 12px;border-bottom:1px solid rgba(0,217,255,.05);font-family:'Share Tech Mono',monospace;font-size:9px">
+                        <span style="color:var(--accent)">${(a.timestamp||'').substring(0,16).replace('T',' ')}</span>
+                        &nbsp;·&nbsp;<span style="color:#888">${esc(a.userCallsign||'')}</span>
+                        &nbsp;·&nbsp;<span style="color:#ccc">${esc(a.action||'')}</span>
+                        ${a.details?`&nbsp;·&nbsp;<span style="color:#555">${esc(a.details)}</span>`:''}
+                    </div>`).join('')||'<div class="empty-state">NO LOG ENTRIES</div>';
+            } catch(e){ c.innerHTML='<div class="empty-state">ERROR</div>'; }
+        }
+
+        async function loadAnalytics() {
+            const c=document.getElementById('analyticsList'); if(!c) return;
+            c.innerHTML='<div class="empty-state">LOADING...</div>';
+            try {
+                const snap=await getDocs(query(collection(db,'page_views'),orderBy('count','desc'),limit(20)));
+                const items=[]; snap.forEach(d=>items.push({id:d.id,...d.data()}));
+                c.innerHTML=items.map(a=>`
+                    <div style="display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid rgba(0,217,255,.05);font-family:'Share Tech Mono',monospace;font-size:9px">
+                        <span style="color:#888">${esc(a.page||a.id)}</span>
+                        <span style="color:var(--accent)">${a.count||0} VIEWS</span>
+                    </div>`).join('')||'<div class="empty-state">NO ANALYTICS DATA</div>';
+            } catch(e){ c.innerHTML='<div class="empty-state">ERROR</div>'; }
+        }
+
+        async function loadDiscordTracking() {
+            const c=document.getElementById('discordTrackingList'); if(!c) return;
+            c.innerHTML='<div class="empty-state">LOADING...</div>';
+            try {
+                const snap=await getDocs(query(collection(db,'discord_tracking'),orderBy('joinedAt','desc'),limit(30)));
+                const items=[]; snap.forEach(d=>items.push({id:d.id,...d.data()}));
+                c.innerHTML=items.map(a=>`
+                    <div style="display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid rgba(0,217,255,.05);font-family:'Share Tech Mono',monospace;font-size:9px">
+                        <span style="color:#ccc">${esc(a.username||a.id)}</span>
+                        <span style="color:#555">${(a.joinedAt||'').substring(0,10)}</span>
+                    </div>`).join('')||'<div class="empty-state">NO TRACKING DATA</div>';
+            } catch(e){ c.innerHTML='<div class="empty-state">ERROR</div>'; }
+        }
+
+        async function loadDiscordLink() {
+            try { const s=await getDoc(doc(db,'settings','site')); if(s.exists()&&s.data().discord_invite) { const el=document.getElementById('discordLinkInput'); if(el) el.value=s.data().discord_invite; } } catch(e){}
+        }
+        window.saveDiscordLink = async function() {
+            const val=document.getElementById('discordLinkInput')?.value;
+            try { await setDoc(doc(db,'settings','site'),{discord_invite:val},{merge:true}); notify('SAVED'); logAction('DISCORD_LINK','updated'); } catch(e){notify('ERROR',1);}
+        };
+
+        async function loadPages() {
+            const c=document.getElementById('pagesList'); if(!c) return;
+            let ps={};
+            try { const d=await getDoc(doc(db,'settings','pages')); if(d.exists()) ps=d.data(); } catch(e){}
+            const sec={main:'MAIN',about:'ABOUT US',media:'MEDIA',resources:'RESOURCES'};
+            let h='';
+            for(const[sk,sn] of Object.entries(sec)){
+                h+=`<div class="section-label">${sn}</div>`;
+                sitePages.filter(p=>p.section===sk).forEach(p=>{
+                    const on=ps[p.id]!==false;
+                    const gate=p.roleGate?`<span style="font-size:8px;padding:1px 6px;border:1px solid rgba(255,165,0,.4);color:#f5a623;letter-spacing:1px;margin-left:6px">${p.roleGate.toUpperCase()}+</span>`:'<span style="font-size:8px;padding:1px 6px;border:1px solid rgba(0,217,255,.15);color:#555;letter-spacing:1px;margin-left:6px">PUBLIC</span>';
+                    h+=`<div class="page-item ${on?'':'page-disabled'}"><div><div style="color:#ccc;font-size:12px">${p.name}${gate}</div><div style="color:#444;font-size:9px">${p.file}</div></div><div style="display:flex;gap:10px;align-items:center"><a href="${p.file}" target="_blank" class="action-btn approve-btn small">OPEN</a><label class="toggle-switch"><input type="checkbox" ${on?'checked':''} onchange="togglePage('${p.id}',this.checked)"><span class="toggle-slider"></span></label></div></div>`;
+                });
+            }
+            c.innerHTML=h;
+        }
+        window.togglePage = async function(id, on) {
+            try { await setDoc(doc(db,'settings','pages'),{[id]:on},{merge:true}); notify(on?'PAGE ENABLED':'PAGE DISABLED'); logAction('PAGE_TOGGLE',id+' → '+(on?'on':'off')); } catch(e){notify('ERROR',1);}
+        };
+
+        window.handleLogout = async function() {
+            try { await signOut(auth); window.location.href='login.html'; } catch(e){}
+        };
+
+        // ── onAuthStateChanged — hides loading, shows admin ───────────────
+        onAuthStateChanged(auth, async user => {
+            if (!user) { window.location.href = 'login.html'; return; }
+
+            const snap = await getDoc(doc(db, 'users', user.uid));
+            if (!snap.exists() || !ADMIN_ROLES.includes(snap.data()?.role)) {
+                window.location.href = 'home.html'; return;
+            }
+
+            currentUser     = user;
+            currentUserData = snap.data();
+
+            // Apply nav visibility
+            const p = P();
+            const navMap = {'nav-personnel':'personnel','nav-media':'media','nav-aar':'aar','nav-content':'content','nav-settings':'settings'};
+            for(const [id,perm] of Object.entries(navMap)) {
+                const el=document.getElementById(id);
+                if(el) el.style.display=p[perm]?'':'none';
+            }
+            const aarLink=document.getElementById('navlink-aar');
+            if(aarLink) aarLink.style.display=p.aar?'':'none';
+            const rosterLink=document.getElementById('navlink-roster');
+            if(rosterLink) rosterLink.style.display=p.roster?'':'none';
+
+            // Topbar user info
+            const tn=document.getElementById('topbarName');
+            if(tn) tn.textContent=currentUserData.callsign||'';
+            const tr=document.getElementById('topbarRole');
+            if(tr) tr.textContent=(currentUserData.role||'').toUpperCase();
+
+            // Reveal admin
+            document.getElementById('loadingScreen').style.display='none';
+            document.getElementById('adminApp').classList.remove('hidden');
+
+            // Load Discord link and default panel
+            loadDiscordLink();
+            showPanel('panel-dashboard');
+        });
+
     </script>
 
     <style>
