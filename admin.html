@@ -361,31 +361,80 @@
         function renderUnitCards() {
             const c = document.getElementById('unitCardsList');
             if(!c) return;
+
+            // Squad prefixes — if a slot starts with one of these it belongs to a squad group
+            const SQUAD_PREFIXES = ['KJ','Alpha','Bravo','Charlie','Stalker','Delta'];
+            function getSquadGroup(slot) {
+                for (const pfx of SQUAD_PREFIXES) {
+                    if (slot.startsWith(pfx)) {
+                        // Extract squad name: everything before " SQL" / " Marine" etc
+                        // e.g. "KJ 1-1 SQL" → "KJ 1-1", "KJ 1-1 Marine 3" → "KJ 1-1"
+                        const parts = slot.split(' ');
+                        // Squad name is first 2 tokens (e.g. "KJ 1-1", "Alpha 2-1", "Stalker 1-0")
+                        return parts.slice(0,2).join(' ');
+                    }
+                }
+                return null;
+            }
+
+            function renderSlotCard(unit, section, slot) {
+                const key = (`${unit}__${section}__${slot}`).split(' ').join('_');
+                const val = unitCardData[key] || {status:'open',name:''};
+                const statusColor = val.status==='closed'?'#333':val.status==='filled'?'#4A5D23':'rgba(0,217,255,.35)';
+                return `<div style="display:flex;flex-direction:column;gap:4px;background:rgba(0,0,0,.4);border:1px solid ${statusColor};padding:8px 10px;min-width:160px;flex:1;max-width:220px">
+                    <div style="font-size:9px;letter-spacing:1px;color:#888;margin-bottom:2px">${slot}</div>
+                    <select data-uc-key="${key}" data-uc-field="status" onchange="ucLocalChange(this)" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;outline:none">
+                        <option value="open" ${val.status==='open'?'selected':''}>OPEN</option>
+                        <option value="closed" ${val.status==='closed'?'selected':''}>CLOSED</option>
+                        <option value="filled" ${val.status==='filled'?'selected':''}>FILLED</option>
+                    </select>
+                    <input type="text" data-uc-key="${key}" data-uc-field="name" placeholder="Name (when filled)..." value="${esc(val.name||'')}" 
+                        oninput="ucLocalChange(this)"
+                        style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.08);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;outline:none;${val.status!=='filled'?'opacity:.35':''}">
+                </div>`;
+            }
+
             let html = '';
             for(const [unit, cfg] of Object.entries(UNIT_CARD_STRUCTURE)) {
                 html += `<div style="margin-bottom:20px;border:1px solid ${cfg.color}33;padding:14px 16px;background:rgba(0,0,0,.25)">`;
                 html += `<div style="color:${cfg.accent};font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:4px;margin-bottom:12px">${unit.toUpperCase()}</div>`;
+
                 for(const [section, slots] of Object.entries(cfg.sections)) {
                     html += `<div style="color:#777;font-size:9px;letter-spacing:2px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.04)">${section}</div>`;
-                    html += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
-                    slots.forEach(slot => {
-                        const key = (`${unit}__${section}__${slot}`).split(' ').join('_');
-                        const val = unitCardData[key] || {status:'open',name:''};
-                        const statusColor = val.status==='closed'?'#333':val.status==='filled'?'#4A5D23':'rgba(0,217,255,.35)';
-                        const statusLabel = val.status==='closed'?'CLOSED':val.status==='filled'?(val.name||'FILLED'):'OPEN';
-                        html += `<div style="display:flex;flex-direction:column;gap:4px;background:rgba(0,0,0,.4);border:1px solid ${statusColor};padding:8px 10px;min-width:160px;flex:1;max-width:220px">`;
-                        html += `<div style="font-size:9px;letter-spacing:1px;color:#888;margin-bottom:2px">${slot}</div>`;
-                        html += `<select data-uc-key="${key}" data-uc-field="status" onchange="ucLocalChange(this)" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;outline:none">
-                            <option value="open" ${val.status==='open'?'selected':''}>OPEN</option>
-                            <option value="closed" ${val.status==='closed'?'selected':''}>CLOSED</option>
-                            <option value="filled" ${val.status==='filled'?'selected':''}>FILLED</option>
-                        </select>`;
-                        html += `<input type="text" data-uc-key="${key}" data-uc-field="name" placeholder="Name (when filled)..." value="${esc(val.name||'')}" 
-                            oninput="ucLocalChange(this)"
-                            style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.08);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;outline:none;${val.status!=='filled'?'opacity:.35':''}">`;
+
+                    // Separate staff slots from squad slots
+                    const staffSlots = [];
+                    const squadGroups = {};  // squadName → [slots]
+                    const squadOrder = [];   // preserve insertion order
+
+                    for (const slot of slots) {
+                        const sq = getSquadGroup(slot);
+                        if (sq) {
+                            if (!squadGroups[sq]) { squadGroups[sq] = []; squadOrder.push(sq); }
+                            squadGroups[sq].push(slot);
+                        } else {
+                            staffSlots.push(slot);
+                        }
+                    }
+
+                    // Render staff slots (Platoon Commander, Platoon Sergeant, etc.)
+                    if (staffSlots.length) {
+                        html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">`;
+                        staffSlots.forEach(slot => { html += renderSlotCard(unit, section, slot); });
                         html += `</div>`;
-                    });
-                    html += `</div>`;
+                    }
+
+                    // Render each squad as its own labelled block
+                    for (const sqName of squadOrder) {
+                        const sqSlots = squadGroups[sqName];
+                        html += `<div style="margin:8px 0 10px;padding:8px 10px;border-left:2px solid ${cfg.accent}44;background:rgba(0,0,0,.15)">`;
+                        html += `<div style="font-size:8px;letter-spacing:2px;color:${cfg.accent};opacity:.6;margin-bottom:6px">${sqName.toUpperCase()}</div>`;
+                        html += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
+                        sqSlots.forEach(slot => { html += renderSlotCard(unit, section, slot); });
+                        html += `</div></div>`;
+                    }
+
+                    // If no squads (e.g. Wing HQ, Reserves), staff already rendered above — nothing else needed
                 }
                 html += `</div>`;
             }
