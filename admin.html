@@ -93,7 +93,43 @@
         // DISCORD WEBHOOK — paste your webhook URL here
         const AAR_WEBHOOK_URL = 'https://discord.com/api/webhooks/1482237463224258632/mDIN6irczttLRoxE1vk81dloso5pLKJ74_vARw2C0rUUyw5vBvsaO_LxaN6nKrxMVLP5';
 
-        window.aarAddAttachment=function(){const row=document.createElement('div');row.className='upload-row';row.style.marginBottom='6px';row.innerHTML='<input type="url" class="aar-attachment-input" placeholder="https://... (image URL)" style="flex:1;padding:8px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:\'Share Tech Mono\',monospace;font-size:11px;outline:none"><button onclick="this.parentElement.remove()" style="background:none;border:1px solid #333;color:#aaa;padding:8px 10px;cursor:pointer;margin-left:6px">✕</button>';document.getElementById('aarAttachmentsList').appendChild(row);};
+        window.aarAddAttachment=function(){
+            const row=document.createElement('div');
+            row.className='upload-row';
+            row.style.marginBottom='8px';
+            row.style.alignItems='center';
+            row.innerHTML=`
+                <div style="flex:1;display:flex;gap:8px;align-items:center">
+                    <input type="file" accept="image/*" class="aar-file-input" style="flex:1;padding:6px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.15);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:10px">
+                    <div class="aar-upload-preview" style="display:none;width:60px;height:60px;overflow:hidden;border:1px solid rgba(0,217,255,.2)"><img style="width:100%;height:100%;object-fit:cover"></div>
+                    <input type="hidden" class="aar-attachment-input" value="">
+                    <span class="aar-upload-status" style="font-size:9px;letter-spacing:1px;color:#999;min-width:60px"></span>
+                </div>
+                <button onclick="this.parentElement.remove()" style="background:none;border:1px solid #555;color:#aaa;padding:6px 10px;cursor:pointer;font-size:12px">✕</button>`;
+            // Auto-upload on file select
+            row.querySelector('.aar-file-input').addEventListener('change',async function(e){
+                const file=e.target.files[0]; if(!file)return;
+                const status=row.querySelector('.aar-upload-status');
+                const preview=row.querySelector('.aar-upload-preview');
+                const hidden=row.querySelector('.aar-attachment-input');
+                status.textContent='UPLOADING...'; status.style.color='var(--accent)';
+                try{
+                    const fd=new FormData();
+                    fd.append('file',file);
+                    fd.append('upload_preset',UPLOAD_PRESET);
+                    fd.append('folder','505th_aar');
+                    const res=await fetch('https://api.cloudinary.com/v1_1/'+CLOUD_NAME+'/image/upload',{method:'POST',body:fd});
+                    const data=await res.json();
+                    if(data.secure_url){
+                        hidden.value=data.secure_url;
+                        preview.style.display='block';
+                        preview.querySelector('img').src=data.secure_url;
+                        status.textContent='UPLOADED ✓'; status.style.color='#7FFF7F';
+                    }else{throw new Error(data.error?.message||'Upload failed');}
+                }catch(err){status.textContent='FAILED'; status.style.color='#FF4444'; console.error(err);}
+            });
+            document.getElementById('aarAttachmentsList').appendChild(row);
+        };
         window.aarClearForm=function(skipConfirm){if(!skipConfirm&&!confirm('Clear all form data?'))return;['aarTitle','aarAuthor','aarCommander','aarFiledBy','aarLocation','aarMainObjective','aarSummary','aarUnitsInvolved','aarEnemyFaction','aarEnemyCasualties','aarEnemyTactics','aarEnemyDisposition','aarKeyMoments','aarSuccessfulManeuvers','aarMistakes','aarUnexpected','aarDetainee','aarInfoObtained','aarInterrogationSummary','aarObjectiveOutcome','aarRecommended','aarMiscComments'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('aarPersonnel').value='';document.getElementById('aarCasualties').value='';document.getElementById('aarOpType').value='';document.querySelectorAll('input[name="aarResult"],input[name="aarUnit"]').forEach(r=>r.checked=false);aarUnitChange();aarResultChange();document.getElementById('aarSubmitStatus').textContent='';};
         window.submitAAR=async function(){
             const g=id=>document.getElementById(id)?.value.trim()||'';
@@ -151,6 +187,7 @@
             const c=document.getElementById('rosterList');
             if(c)c.innerHTML='<div class="empty-state">LOADING...</div>';
             try{
+                await checkMonthlyReset();
                 const s=await getDocs(query(collection(db,'roster'),orderBy('name','asc')));
                 rosterData=[];s.forEach(d=>rosterData.push({id:d.id,...d.data()}));
                 renderRosterTable();
@@ -167,22 +204,30 @@
             if(!rosterData.length){c.innerHTML='<div class="empty-state">NO ROSTER ENTRIES — ADD YOUR FIRST MEMBER</div>';return;}
             c.innerHTML=rosterData.map(r=>{
                 const att=r.attendance||0;
-                const attColor=att>=3?'var(--success)':att>=2?'#FFD700':'var(--accent)';
+                const pt=r.promotionTracker||0;
+                const attColor=att>=3?'#7FFF7F':att>=2?'#FFD700':'var(--accent)';
+                const ptReady=att>=3;
+                const ptStyle=ptReady?'color:#7FFF7F;font-weight:700;font-size:14px;text-shadow:0 0 8px rgba(127,255,127,.6);animation:ptGlow 1s ease-in-out infinite':'color:var(--accent);font-weight:700;font-size:14px';
                 return`<div class="roster-row">
                     <div class="roster-cell roster-name">${esc(r.name)}</div>
                     <div class="roster-cell"><span style="font-size:9px;padding:2px 6px;border:1px solid rgba(0,217,255,.35);color:var(--accent)">${esc(r.platoon||'—')}</span></div>
-                    <div class="roster-cell" style="font-size:9px;color:#666">${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-GB'):'—'}</div>
-                    <div class="roster-cell" style="font-size:9px;color:#888">${calcPeriod(r.joinedPlatoon)}</div>
+                    <div class="roster-cell" style="font-size:9px;color:#aaa">${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-GB'):'—'}</div>
+                    <div class="roster-cell" style="font-size:9px;color:#bbb">${calcPeriod(r.joinedPlatoon)}</div>
                     <div class="roster-cell" style="font-size:9px">${esc(r.rankGrade||'—')}</div>
-                    <div class="roster-cell" style="font-size:9px;color:#666">${r.graduation?new Date(r.graduation).toLocaleDateString('en-GB'):'—'}</div>
+                    <div class="roster-cell" style="font-size:9px;color:#aaa">${r.graduation?new Date(r.graduation).toLocaleDateString('en-GB'):'—'}</div>
                     <div class="roster-cell">
                         <div style="display:flex;align-items:center;gap:6px">
                             <span style="color:${attColor};font-weight:700;font-size:13px;min-width:22px">${att}/3</span>
-                            <input type="checkbox" onchange="markAttendance('${r.id}',this)" title="Mark attendance (+1)" style="cursor:pointer;width:15px;height:15px;accent-color:var(--accent)">
+                            ${att<3?`<input type="checkbox" onchange="markAttendance('${r.id}',this)" title="Mark attendance (+1)" style="cursor:pointer;width:15px;height:15px;accent-color:var(--accent)">`:'<span style="color:#7FFF7F;font-size:8px;letter-spacing:1px">FULL</span>'}
                         </div>
                     </div>
-                    <div class="roster-cell" style="font-size:9px;color:#888">${calcPeriod(r.graduation)}</div>
-                    <div class="roster-cell"><span style="color:var(--accent);font-weight:700;font-size:14px">${r.promotionTracker||0}</span></div>
+                    <div class="roster-cell" style="font-size:9px;color:#bbb">${calcPeriod(r.graduation)}</div>
+                    <div class="roster-cell">
+                        <div style="display:flex;align-items:center;gap:6px">
+                            <span style="${ptStyle}">${pt}</span>
+                            ${ptReady?`<button class="action-btn approve-btn small" onclick="promotePT('${r.id}')" style="font-size:8px;padding:2px 8px;animation:ptGlow 1s ease-in-out infinite">+1 PT</button>`:''}
+                        </div>
+                    </div>
                     <div class="roster-cell" style="display:flex;gap:4px;flex-wrap:wrap">
                         <button class="action-btn approve-btn small" onclick="openRosterEdit('${r.id}')">EDIT</button>
                         <button class="action-btn remove-btn small" onclick="deleteRosterEntry('${r.id}','${esc(r.name)}')">DEL</button>
@@ -190,17 +235,70 @@
                 </div>`;
             }).join('');
         }
+        // PT glow animation
+        if(!document.getElementById('ptGlowStyle')){
+            const s=document.createElement('style');s.id='ptGlowStyle';
+            s.textContent='@keyframes ptGlow{0%,100%{text-shadow:0 0 8px rgba(127,255,127,.6)}50%{text-shadow:0 0 18px rgba(127,255,127,.9),0 0 30px rgba(127,255,127,.4)}}';
+            document.head.appendChild(s);
+        }
+
         window.markAttendance=async function(id,cb){
             cb.checked=false;
             const r=rosterData.find(x=>x.id===id);if(!r)return;
-            let att=(r.attendance||0)+1,pt=r.promotionTracker||0;
-            if(att>=3){att=0;pt++;notify('\u2713 3 ATTENDANCE \u2192 PROMOTION TRACKER +1');}
-            else{notify('ATTENDANCE: '+att+'/3');}
-            r.attendance=att;r.promotionTracker=pt;
-            await updateDoc(doc(db,'roster',id),{attendance:att,promotionTracker:pt,updatedAt:new Date().toISOString()});
-            logAction('ROSTER_ATT',r.name+' att='+att+' PT='+pt);
+            let att=(r.attendance||0)+1;
+            if(att>3)att=3;
+            r.attendance=att;
+            await updateDoc(doc(db,'roster',id),{attendance:att,updatedAt:new Date().toISOString()});
+            if(att>=3) notify(r.name+' — 3/3 ATTENDANCE REACHED — READY FOR PT PROMOTION');
+            else notify(r.name+' — ATTENDANCE: '+att+'/3');
             renderRosterTable();
         };
+
+        window.promotePT=async function(id){
+            const r=rosterData.find(x=>x.id===id);if(!r)return;
+            const pt=(r.promotionTracker||0)+1;
+            r.promotionTracker=pt;
+            r.attendance=0;
+            await updateDoc(doc(db,'roster',id),{promotionTracker:pt,attendance:0,updatedAt:new Date().toISOString()});
+            notify(r.name+' — PT +1 (NOW '+pt+') — ATTENDANCE RESET');
+            renderRosterTable();
+        };
+
+        // ── Monthly attendance reset ────────────────────────────────────
+        async function checkMonthlyReset(){
+            try{
+                const settingsSnap=await getDoc(doc(db,'settings','roster_meta'));
+                const meta=settingsSnap.exists()?settingsSnap.data():{};
+                const lastReset=meta.lastAttendanceReset||'';
+                const now=new Date();
+                const currentMonth=now.getFullYear()+'-'+(now.getMonth()+1).toString().padStart(2,'0');
+                if(lastReset===currentMonth) return; // Already reset this month
+
+                // Auto-promote anyone at 3/3 before resetting (staff didn't do it)
+                const snap=await getDocs(collection(db,'roster'));
+                const batch=[];
+                snap.forEach(d=>{
+                    const data=d.data();
+                    if((data.attendance||0)>=3){
+                        batch.push({id:d.id,pt:(data.promotionTracker||0)+1});
+                    }
+                });
+                for(const b of batch){
+                    await updateDoc(doc(db,'roster',b.id),{promotionTracker:b.pt,attendance:0,updatedAt:now.toISOString()});
+                }
+                // Reset all remaining attendance to 0
+                const snap2=await getDocs(collection(db,'roster'));
+                snap2.forEach(async d=>{
+                    if((d.data().attendance||0)>0){
+                        await updateDoc(doc(db,'roster',d.id),{attendance:0,updatedAt:now.toISOString()});
+                    }
+                });
+                // Record reset
+                await setDoc(doc(db,'settings','roster_meta'),{lastAttendanceReset:currentMonth},{merge:true});
+                if(batch.length) notify('MONTHLY RESET: '+batch.length+' MEMBER(S) AUTO-PROMOTED BEFORE RESET');
+                else notify('MONTHLY ATTENDANCE RESET COMPLETE');
+            }catch(e){console.warn('Monthly reset check:',e.message);}
+        }
         window.deleteRosterEntry=async function(id,name){
             if(!confirm('DELETE '+name+' FROM ROSTER?'))return;
             await deleteDoc(doc(db,'roster',id));
@@ -1077,7 +1175,8 @@
                 <div class="edit-field"><label>PROMOTION TRACKER (PT)</label><input type="number" id="rosterPT" min="0" value="0" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;outline:none"></div>
             </div>
             <div style="color:#bbb;font-size:9px;letter-spacing:1.5px;margin:8px 0 16px;padding:8px;border:1px dashed rgba(0,217,255,.08)">
-                &#9432; ATTENDANCE: USE CHECKBOX ON ROSTER TABLE TO INCREMENT (+1). REACHING 3 AUTO-INCREMENTS PT AND RESETS TO 0.<br>
+                &#9432; ATTENDANCE: USE CHECKBOX ON ROSTER TABLE TO INCREMENT (+1). AT 3/3, PT GLOWS — STAFF MUST CLICK +1 PT TO PROMOTE.<br>
+                &#9432; ATTENDANCE AUTO-RESETS ON 1ST OF EACH MONTH. UNPROMOTED 3/3 MEMBERS AUTO-PROMOTE BEFORE RESET.<br>
                 &#9432; TIME IN UNIT IS AUTO-CALCULATED FROM GRADUATION DATE.
             </div>
             <div class="edit-modal-actions">
@@ -1285,11 +1384,9 @@
                     <!-- SECTION 10: ATTACHMENTS -->
                     <div class="upload-area" style="margin-bottom:12px">
                         <div style="color:rgba(0,217,255,.6);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">10 // ATTACHMENTS</div>
-                        <p style="color:#aaa;font-size:9px;letter-spacing:1px;margin-bottom:10px">PASTE IMAGE / SCREENSHOT URLS — WILL BE INCLUDED IN DISCORD EMBED</p>
-                        <div id="aarAttachmentsList">
-                            <div class="upload-row" style="margin-bottom:6px"><input type="url" class="aar-attachment-input" placeholder="https://... (image URL)" style="flex:1;padding:8px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none"><button onclick="this.parentElement.remove()" style="background:none;border:1px solid #333;color:#aaa;padding:8px 10px;cursor:pointer;margin-left:6px;font-family:'Share Tech Mono',monospace;font-size:11px">✕</button></div>
-                        </div>
-                        <button class="upload-btn" onclick="aarAddAttachment()" style="width:100%;font-size:10px;margin-top:6px">+ ADD ATTACHMENT URL</button>
+                        <p style="color:#aaa;font-size:9px;letter-spacing:1px;margin-bottom:10px">UPLOAD IMAGES DIRECTLY — STORED VIA CLOUDINARY // NOT CONNECTED TO MEDIA LIBRARY</p>
+                        <div id="aarAttachmentsList"></div>
+                        <button class="upload-btn" onclick="aarAddAttachment()" style="width:100%;font-size:10px;margin-top:6px">+ ADD IMAGE ATTACHMENT</button>
                     </div>
 
                     <!-- SUBMIT -->
@@ -1315,7 +1412,7 @@
                         <button class="upload-btn" onclick="openRosterAdd()">+ ADD ENTRY</button>
                         <button class="action-btn approve-btn" onclick="loadRosterPanel()">&#8635; REFRESH</button>
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
-                        <span style="color:#bbb;font-size:9px;letter-spacing:2px;margin-left:8px">&#9998; CHECKBOX = +1 ATTENDANCE &nbsp;|&nbsp; 3 ATTENDANCE = +1 PT &amp; RESET</span>
+                        <span style="color:#bbb;font-size:9px;letter-spacing:2px;margin-left:8px">&#9998; CHECKBOX = +1 ATT &nbsp;|&nbsp; 3/3 = GLOWING PT — STAFF CLICKS +1 PT TO PROMOTE &nbsp;|&nbsp; RESETS MONTHLY</span>
                     </div>
                     <div class="roster-header">
                         <div>NAME</div><div>PLATOON</div><div>JOINED</div><div>PLATOON SERVICE</div>
