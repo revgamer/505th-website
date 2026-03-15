@@ -93,6 +93,8 @@
             cursor: pointer;
             transition: box-shadow .2s, background .2s, border-color .2s;
             clip-path: polygon(8px 0%, 100% 0%, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0% 100%, 0% 8px);
+            height: auto;
+            min-height: 68px;
         }
         .h-node:hover {
             background: rgba(10,20,30,.95);
@@ -536,7 +538,7 @@
     // Pass 2: assign absolute x,y top-down
     function assignPos(node, ox, oy, out) {
         const nw = node.root ? 220 : NW;
-        const nh = node.root ? 82  : NH;
+        const nh = node._nh || (node.root ? 82 : NH); // use pre-computed height if available
         node._x = ox + node._tw / 2 - nw / 2;
         node._y = oy;
         node._nw = nw;
@@ -581,6 +583,14 @@
         // Clear old nodes (keep SVG)
         Array.from(canvas.querySelectorAll('.h-node')).forEach(el=>el.remove());
 
+        // Pre-assign heights based on slot counts so layout is accurate
+        (function preHeights(node) {
+            const slots = buildSlotHtml(node.id, window._ucNodeData||{});
+            const slotCount = slots ? (slots.match(/h-slot-row/g)||[]).length : 0;
+            node._nh = node.root ? Math.max(82, 72 + slotCount * 16)
+                                 : Math.max(68, 58 + slotCount * 16);
+            if (node.children) node.children.forEach(preHeights);
+        })(ROOT);
         calcWidths(ROOT);
         allNodes = [];
         assignPos(ROOT, 0, 0, allNodes);
@@ -635,13 +645,6 @@
               <div class="h-node-name" style="color:${b.color}">${n.name}</div>
               ${n.sub?`<div class="h-node-sub">${n.sub}</div>`:''}
               ${slotHtml}`;
-            // Expand node height to fit slots
-            if (slotHtml) {
-                const slotCount = (slotHtml.match(/h-slot-row/g)||[]).length;
-                el.style.height = 'auto';
-                n._nh = Math.max(68, 58 + slotCount * 16);
-                el.style.minHeight = n._nh + 'px';
-            }
 
             // Collapse toggle if has children
             if (n.children && n.children.length) {
