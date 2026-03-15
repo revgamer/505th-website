@@ -18,24 +18,24 @@ const db = getFirestore(app);
 
 (async function initCMS() {
     try {
-        const settingsDoc = await getDoc(doc(db, "settings", "site"));
-        const settings = settingsDoc.exists() ? settingsDoc.data() : {};
-
-        // 1. Replace ALL Discord links on the page
-        if (settings.discord_invite) {
-            document.querySelectorAll('a[href*="discord.gg"], a[href*="discord.com/invite"]').forEach(link => {
-                link.href = settings.discord_invite;
-            });
+        // Only query settings/site if there are Discord links to update
+        const discordLinks = document.querySelectorAll('a[href*="discord.gg"], a[href*="discord.com/invite"]');
+        if (discordLinks.length) {
+            const settingsDoc = await getDoc(doc(db, "settings", "site"));
+            const settings = settingsDoc.exists() ? settingsDoc.data() : {};
+            if (settings.discord_invite) {
+                discordLinks.forEach(link => { link.href = settings.discord_invite; });
+            }
         }
 
-        // 2. Page content slots
+        // Only query page_content if this page has CMS slots
         const pageId = document.body.getAttribute('data-cms-page');
-        if (pageId) {
+        if (pageId && document.querySelectorAll('[data-cms-slot]').length) {
             const contentDoc = await getDoc(doc(db, "settings", "page_content"));
             if (contentDoc.exists()) applyCmsSlots(contentDoc.data(), pageId);
         }
 
-        // 3. Dynamic media pages
+        // Dynamic media pages — only if flagged
         const mediaType = document.body.getAttribute('data-cms-media');
         if (mediaType) await loadDynamicMedia(mediaType);
 
@@ -94,7 +94,7 @@ async function loadDynamicMedia(mediaType) {
         const items = [];
         snapshot.forEach(function(d) {
             const data = d.data();
-            if (mediaType === 'all' || data.type === mediaType) items.push(data);
+            if ((mediaType === 'all' || data.type === mediaType) && data.enabled !== false) items.push(data);
         });
 
         if (!items.length) {
