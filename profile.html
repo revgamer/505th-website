@@ -95,8 +95,8 @@
     <style>
         :root{--accent:#00D9FF;--accent-glow:rgba(0,217,255,.5);--success:#00FF41}
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Share Tech Mono',monospace;background:linear-gradient(180deg,#0A0E12,#050709);color:#a0a0a0;min-height:100vh}
-        body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 50px,rgba(0,217,255,.03) 50px,rgba(0,217,255,.03) 51px),repeating-linear-gradient(90deg,transparent,transparent 50px,rgba(0,217,255,.03) 50px,rgba(0,217,255,.03) 51px);opacity:.3;pointer-events:none;z-index:0}
+        body{font-family:'Share Tech Mono',monospace;background:linear-gradient(180deg,#0A0E12,#050709);color:#c0c0c0;min-height:100vh}
+        body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 50px,rgba(0,217,255,.03) 50px,rgba(0,217,255,.03) 51px),repeating-linear-gradient(90deg,transparent,transparent 50px,rgba(0,217,255,.03) 50px,rgba(0,217,255,.03) 51px);opacity:.5;pointer-events:none;z-index:0}
         .scanlines{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(0,0,0,.12),rgba(0,0,0,.12) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:9999}
         .hidden{display:none!important}
         .loading-screen{display:flex;justify-content:center;align-items:center;height:100vh;color:var(--accent);font-size:14px;letter-spacing:4px;z-index:10}
@@ -106,7 +106,7 @@
         .top-bar-left img{width:32px;height:32px;filter:drop-shadow(0 0 8px var(--accent-glow))}
         .top-bar-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:16px;font-weight:700;letter-spacing:3px;text-shadow:0 0 10px var(--accent-glow)}
         .top-bar-right{display:flex;align-items:center;gap:12px}
-        .top-btn{background:transparent;border:1px solid rgba(0,217,255,.2);color:#666;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;padding:7px 14px;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+        .top-btn{background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;padding:7px 14px;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
         .top-btn:hover{border-color:var(--accent);color:var(--accent)}
         .logout-btn:hover{border-color:#ef4444;color:#ef4444}
         .profile-container{max-width:700px;margin:40px auto;padding:0 20px;position:relative;z-index:1}
@@ -114,21 +114,21 @@
         .profile-card{background:rgba(8,10,14,.8);border:1px solid rgba(0,217,255,.1);padding:24px;margin-bottom:16px}
         .card-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:14px;font-weight:700;letter-spacing:3px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid rgba(0,217,255,.08)}
         .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.02)}
-        .info-label{color:#555;font-size:10px;letter-spacing:2px}
-        .info-value{color:#ccc;font-size:12px}
-        .role-badge{font-size:10px;letter-spacing:2px;padding:2px 8px;border:1px solid #333;color:#888}
+        .info-label{color:#aaa;font-size:10px;letter-spacing:2px}
+        .info-value{color:#e0e0e0;font-size:12px}
+        .role-badge{font-size:10px;letter-spacing:2px;padding:2px 8px;border:1px solid #333;color:#bbb}
         .role-commander{color:#f59e0b;border-color:#f59e0b}.role-developer{color:#a78bfa;border-color:#a78bfa}.role-staff_nco{color:#2DD4BF;border-color:#2DD4BF}.role-recruiter{color:#fb923c;border-color:#fb923c}.role-nco{color:#34d399;border-color:#34d399}.role-marine{color:#94a3b8;border-color:#94a3b8}
         .edit-field{margin-bottom:12px}
-        .edit-field label{display:block;color:#555;font-size:9px;letter-spacing:2px;margin-bottom:4px}
-        .edit-field input{width:100%;padding:10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none}
+        .edit-field label{display:block;color:#ccc;font-size:9px;letter-spacing:2px;margin-bottom:4px}
+        .edit-field input{width:100%;padding:10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none}
         .edit-field input:focus{border-color:var(--accent)}
         .edit-field input:disabled{opacity:.5;cursor:not-allowed}
         .name-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
         .save-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;padding:12px 30px;cursor:pointer;transition:all .3s;margin-top:8px}
         .save-btn:hover{background:rgba(0,217,255,.1);box-shadow:0 0 20px rgba(0,217,255,.15)}
         .rh-entry{display:flex;gap:16px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px}
-        .rh-rank{color:var(--accent);min-width:120px}.rh-date{color:#555}.rh-by{color:#444;font-style:italic}
-        .empty-state{text-align:center;padding:20px;color:#333;font-size:11px;letter-spacing:3px}
+        .rh-rank{color:var(--accent);min-width:120px}.rh-date{color:#aaa}.rh-by{color:#999;font-style:italic}
+        .empty-state{text-align:center;padding:20px;color:#bbb;font-size:11px;letter-spacing:3px}
         .notification{position:fixed;top:60px;right:20px;background:rgba(8,10,14,.97);border:1px solid var(--accent);color:var(--accent);padding:12px 20px;font-size:11px;letter-spacing:2px;z-index:200;opacity:0;transform:translateX(20px);transition:all .3s;pointer-events:none}.notification.show{opacity:1;transform:translateX(0)}.notification.error{border-color:#ef4444;color:#ef4444}
         @media(max-width:640px){.name-row{grid-template-columns:1fr}}
     </style>

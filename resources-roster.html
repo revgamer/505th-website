@@ -29,7 +29,7 @@
         }
         #authGate .gate-icon { font-size:52px; opacity:.25; }
         #authGate h2 { font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:22px; letter-spacing:4px; }
-        #authGate p  { color:#555; font-size:11px; letter-spacing:2px; }
+        #authGate p  { color:#aaa; font-size:11px; letter-spacing:2px; }
         #authGate a  { color:var(--accent); text-decoration:none; border:1px solid rgba(0,217,255,.3); padding:9px 24px; font-size:11px; letter-spacing:3px; transition:.2s; }
         #authGate a:hover { background:rgba(0,217,255,.08); }
 
@@ -50,7 +50,7 @@
         }
         .roster-header-block .subtitle {
             font-family:'Share Tech Mono',monospace; font-size:11px;
-            color:#555; letter-spacing:3px;
+            color:#aaa; letter-spacing:3px;
         }
         .header-rule { border:none; border-top:1px solid rgba(0,217,255,.15); margin:16px 0 0; }
 
@@ -63,7 +63,7 @@
             padding:10px 20px; font-family:'Share Tech Mono',monospace; display:flex; flex-direction:column; gap:2px;
         }
         .stat-pill .val { font-size:22px; color:var(--accent); font-weight:700; line-height:1; }
-        .stat-pill .lbl { font-size:9px; letter-spacing:3px; color:#555; }
+        .stat-pill .lbl { font-size:9px; letter-spacing:3px; color:#aaa; }
 
         /* ── FILTER BAR ── */
         .filter-bar {
@@ -87,7 +87,7 @@
             border-left:3px solid var(--accent); border-bottom:1px solid rgba(0,217,255,.12);
             margin-bottom:2px; display:flex; justify-content:space-between; align-items:center;
         }
-        .platoon-count { font-size:10px; color:#555; letter-spacing:2px; }
+        .platoon-count { font-size:10px; color:#aaa; letter-spacing:2px; }
 
         /* ── TABLE ── */
         .roster-table-wrap { overflow-x:auto; }
@@ -118,10 +118,10 @@
         .att-pip.filled-2 { background:var(--warn); border-color:var(--warn); }
         .att-pip.filled-3 { background:var(--success); border-color:var(--success); }
         .pt-val { color:var(--accent); font-weight:700; font-size:13px; }
-        .time-val { color:#666; }
+        .time-val { color:#aaa; }
         .no-data {
             font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:3px;
-            color:#333; text-align:center; padding:32px; border:1px dashed rgba(0,217,255,.08);
+            color:#bbb; text-align:center; padding:32px; border:1px dashed rgba(0,217,255,.08);
             margin-bottom:28px;
         }
         .loading-state {
@@ -133,7 +133,7 @@
         .roster-notice {
             margin-top:32px; padding:14px 18px;
             border:1px dashed rgba(0,217,255,.1); background:rgba(0,0,0,.3);
-            font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:2px; color:#444;
+            font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:2px; color:#999;
             line-height:2;
         }
         .roster-notice a {
@@ -340,7 +340,7 @@
                 const cls = att>=i ? `filled-${att}` : '';
                 html += `<div class="att-pip ${cls}"></div>`;
             }
-            html += `<span style="font-size:9px;color:#555;margin-left:4px">${att}/3</span></div>`;
+            html += `<span style="font-size:9px;color:#aaa;margin-left:4px">${att}/3</span></div>`;
             return html;
         }
 
