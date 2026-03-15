@@ -126,8 +126,14 @@
                 if (userData.status === 'pending') { await signOut(auth); showError(errorMsg, 'AWAITING COMMANDER APPROVAL'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
                 if (userData.status === 'denied') { await signOut(auth); showError(errorMsg, 'ACCESS DENIED BY COMMAND'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
 
-                // Redirect to boot animation page
-                window.location.href = 'boot.html';
+                // Redirect — return to previous page if set, otherwise boot animation
+                const returnTo = sessionStorage.getItem('loginReturnTo');
+                if (returnTo) {
+                    sessionStorage.removeItem('loginReturnTo');
+                    window.location.href = returnTo;
+                } else {
+                    window.location.href = 'boot.html';
+                }
 
             } catch (error) {
                 let message = 'AUTHENTICATION FAILED';
@@ -149,7 +155,13 @@
             if (user) {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 if (userDoc.exists() && userDoc.data().status === 'approved') {
-                    window.location.href = 'boot.html';
+                    const returnTo = sessionStorage.getItem('loginReturnTo');
+                    if (returnTo) {
+                        sessionStorage.removeItem('loginReturnTo');
+                        window.location.href = returnTo;
+                    } else {
+                        window.location.href = 'boot.html';
+                    }
                 }
             }
         });

@@ -25,19 +25,10 @@ function roleAllowed(userRole, required) {
     if (required === 'any') return true;
     return ROLE_ORDER.indexOf(userRole) >= ROLE_ORDER.indexOf(required);
 }
-function checkRoleGate(userRole) {
-    const page = window.location.pathname.split('/').pop() || '';
-    const required = ROLE_GATED_PAGES[page];
-    if (!required || required === 'public') return; // public page, no gate
-    if (!userRole) {
-        sessionStorage.setItem('loginReturnTo', window.location.href);
-        window.location.href = 'login.html';
-        return;
-    }
-    if (!roleAllowed(userRole, required)) {
-        window.location.href = 'home.html';
-    }
-}
+
+// Expose auth state globally for pages with their own auth gates
+// NO redirects — pages handle their own restricted access UI
+window._505authState = { ready: false, user: null, role: null };
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -58,7 +49,7 @@ onAuthStateChanged(auth, async (user) => {
                 const userData = userDoc.data();
 
                 // Check role gate for this page
-                checkRoleGate(userData.role);
+                window._505authState = { ready: true, user: userData, role: userData.role };
 
                 // Update navbar button
                 authBtn.innerHTML = `<span class="auth-callsign">${escapeHtml(userData.callsign)}</span>`;
@@ -161,8 +152,8 @@ onAuthStateChanged(auth, async (user) => {
             console.error('Auth state error:', err);
         }
     } else {
-        // Not logged in — check if this page requires login
-        checkRoleGate(null);
+        // Not logged in
+        window._505authState = { ready: true, user: null, role: null };
 
         // Not logged in — show LOGIN button
         authBtn.innerHTML = 'LOGIN';
