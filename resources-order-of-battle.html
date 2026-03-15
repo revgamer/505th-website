@@ -246,11 +246,6 @@
         }
 
         #cardView  { display:none; }
-        #hierCardSection { display:none; margin-top:40px; }
-        .hier-section-divider { display:flex; align-items:center; gap:16px; max-width:1060px; margin:0 auto 28px; font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:4px; color:rgba(0,217,255,.25); }
-        .hier-section-divider::before,.hier-section-divider::after { content:''; flex:1; border-top:1px solid rgba(0,217,255,.08); }
-
-
         /* Card view */
         .formation-block { margin-bottom:36px; max-width:1060px; margin-left:auto; margin-right:auto; }
         .formation-header { font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; letter-spacing:5px; text-transform:uppercase; padding:10px 16px; margin-bottom:2px; display:flex; align-items:center; gap:12px; }
@@ -386,10 +381,7 @@
             <div id="cardView">
                 <div id="cardViewInner"><div style="text-align:center;padding:3rem;color:#555;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px">LOADING...</div></div>
             </div><!-- end cardView -->
-            <div id="hierCardSection">
-                <div class="hier-section-divider">UNIT CARDS</div>
-                <div id="hierCardInner"><div style="text-align:center;padding:3rem;color:#555;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px">LOADING...</div></div>
-            </div>
+            <!-- hierCardSection removed — cards only render in Unit Cards tab -->
 
         </div>
     </main>
@@ -590,7 +582,7 @@
     // Pass 2: assign absolute x,y top-down
     function assignPos(node, ox, oy, out) {
         const nw = node.root ? 220 : NW;
-        const nh = node.root ? 82  : NH;
+        const nh = node._measuredH || (node.root ? 82 : NH);
         node._x = ox + node._tw / 2 - nw / 2;
         node._y = oy;
         node._nw = nw;
@@ -634,42 +626,15 @@
     function render() {
         // Clear old nodes (keep SVG)
         Array.from(canvas.querySelectorAll('.h-node')).forEach(el=>el.remove());
+        svg.innerHTML = '';
 
+        // ── Pass 1: layout with default (or previously measured) heights ──
         calcWidths(ROOT);
         allNodes = [];
         assignPos(ROOT, 0, 0, allNodes);
 
-        // Canvas bounding box
-        const maxX = Math.max(...allNodes.map(n=>n._x+n._nw));
-        const maxY = Math.max(...allNodes.map(n=>n._y+n._nh));
-        canvas.style.width  = (maxX + 60) + 'px';
-        canvas.style.height = (maxY + 60) + 'px';
-        svg.setAttribute('width',  maxX + 60);
-        svg.setAttribute('height', maxY + 60);
-
-        // Draw connector paths
-        const paths = [];
-        for (const n of allNodes) {
-            if (!n.children || !n.children.length || n._col) continue;
-            const b = BRANCH[n.branch] || BRANCH.command;
-            const px = n._x + n._nw/2;
-            const py = n._y + n._nh;
-            for (const c of n.children) {
-                const cx = c._x + c._nw/2;
-                const cy = c._y;
-                const my = py + (cy-py)*0.5;
-                paths.push(
-                  `<path d="M${px},${py} C${px},${my} ${cx},${my} ${cx},${cy}"
-                   stroke="${b.color}" stroke-opacity="0.3" stroke-width="1.5"
-                   fill="none"/>`
-                );
-            }
-        }
-        svg.innerHTML = `<defs>
-          <filter id="glow-cmd"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-        </defs>` + paths.join('');
-
-        // Render nodes
+        // ── Render nodes into DOM so we can measure them ──────────────────
+        const nodeEls = {};
         for (const n of allNodes) {
             const b = BRANCH[n.branch] || BRANCH.command;
             const el = document.createElement('div');
@@ -706,7 +671,63 @@
             }
 
             canvas.appendChild(el);
+            nodeEls[n.id] = el;
         }
+
+        // ── Pass 2: measure actual DOM heights, re-layout if needed ───────
+        let needsRelayout = false;
+        for (const n of allNodes) {
+            const el = nodeEls[n.id];
+            if (!el) continue;
+            const ah = el.offsetHeight;
+            if (Math.abs(ah - n._nh) > 4) {
+                n._measuredH = ah;
+                needsRelayout = true;
+            }
+        }
+
+        if (needsRelayout) {
+            allNodes = [];
+            assignPos(ROOT, 0, 0, allNodes);
+            // Reposition all node elements
+            for (const n of allNodes) {
+                const el = nodeEls[n.id];
+                if (el) {
+                    el.style.left = n._x + 'px';
+                    el.style.top  = n._y + 'px';
+                }
+            }
+        }
+
+        // ── Update canvas bounding box ────────────────────────────────────
+        const maxX = Math.max(...allNodes.map(n=>n._x+n._nw));
+        const maxY = Math.max(...allNodes.map(n=>n._y+n._nh));
+        canvas.style.width  = (maxX + 60) + 'px';
+        canvas.style.height = (maxY + 60) + 'px';
+        svg.setAttribute('width',  maxX + 60);
+        svg.setAttribute('height', maxY + 60);
+
+        // ── Draw connector paths using actual heights ─────────────────────
+        const paths = [];
+        for (const n of allNodes) {
+            if (!n.children || !n.children.length || n._col) continue;
+            const b = BRANCH[n.branch] || BRANCH.command;
+            const px = n._x + n._nw/2;
+            const py = n._y + n._nh;
+            for (const c of n.children) {
+                const cx = c._x + c._nw/2;
+                const cy = c._y;
+                const my = py + (cy-py)*0.5;
+                paths.push(
+                  `<path d="M${px},${py} C${px},${my} ${cx},${my} ${cx},${cy}"
+                   stroke="${b.color}" stroke-opacity="0.3" stroke-width="1.5"
+                   fill="none"/>`
+                );
+            }
+        }
+        svg.innerHTML = `<defs>
+          <filter id="glow-cmd"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>` + paths.join('');
     }
 
     // ── Auto-center ────────────────────────────────────────────────────────
@@ -818,8 +839,6 @@
     function setView(v) {
         document.getElementById('treeView').style.display         = v==='tree'?'block':'none';
         document.getElementById('cardView').style.display          = v==='card' ?'block':'none';
-        const hcs = document.getElementById('hierCardSection');
-        if (hcs) hcs.style.display = v==='tree'?'block':'none';
         document.getElementById('btnTree').classList.toggle('active', v==='tree');
         document.getElementById('btnCard').classList.toggle('active', v==='card');
         if (v==='tree' && !window._hierInited) { window._hierInited=true; setTimeout(window._hierInit,40); }
@@ -832,8 +851,6 @@
         if (!tv) { setTimeout(tryInit, 50); return; }
         tv.style.display = 'block';
         document.getElementById('cardView').style.display = 'none';
-        const hcs = document.getElementById('hierCardSection');
-        if (hcs) hcs.style.display = 'block';
         const bt = document.getElementById('btnTree');
         const bc = document.getElementById('btnCard');
         if (bt) bt.classList.add('active');
@@ -1045,8 +1062,6 @@
             </div>`;
 
             document.getElementById('cardViewInner').innerHTML = html;
-            const hci = document.getElementById('hierCardInner');
-            if (hci) hci.innerHTML = html;
         }
 
         // ── Load data and render ───────────────────────────────────────────────
