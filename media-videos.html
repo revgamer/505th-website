@@ -138,6 +138,45 @@
     <script src="js/nav.js"></script>
     <script src="js/scroll.js"></script>
     <script type="module" src="js/auth.js"></script>
-    <script type="module" src="js/cms.js"></script>
+    <script type="module">
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        const firebaseConfig = { apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg", authDomain:"th-website-91533.firebaseapp.com", projectId:"th-website-91533", storageBucket:"th-website-91533.firebasestorage.app", messagingSenderId:"1046139150142", appId:"1:1046139150142:web:01f409ae4a38c4f79d966f" };
+        const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const grid = document.getElementById('dynamicMediaGrid');
+        const countEl = document.getElementById('mediaItemCount');
+
+        function getVideoEmbed(url) {
+            if(!url) return null;
+            let m;
+            if((m=url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/))) return `https://www.youtube-nocookie.com/embed/${m[1]}`;
+            if((m=url.match(/youtube\.com\/embed\/([\w-]+)/))) return `https://www.youtube-nocookie.com/embed/${m[1]}`;
+            if((m=url.match(/twitch\.tv\/videos\/(\d+)/))) return `https://player.twitch.tv/?video=${m[1]}&parent=${location.hostname}`;
+            return null;
+        }
+
+        try {
+            const snap = await getDocs(query(collection(db,'media'),orderBy('uploadedAt','desc')));
+            const items = [];
+            snap.forEach(d => { const data = d.data(); if(data.type==='video' && data.enabled!==false) items.push(data); });
+            countEl.textContent = items.length;
+            if(!items.length) { grid.innerHTML = '<div class="no-media-msg">NO VIDEOS AVAILABLE</div>'; }
+            else {
+                const esc = s => { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; };
+                grid.innerHTML = items.map(m => {
+                    const embedUrl = getVideoEmbed(m.url);
+                    return `<div class="dyn-video-item">
+                        <div class="dyn-video-embed">${embedUrl?`<iframe src="${embedUrl}" frameborder="0" allowfullscreen loading="lazy"></iframe>`:`<video src="${m.url}" controls style="width:100%;height:100%"></video>`}</div>
+                        <div class="dyn-gallery-info">
+                            <div class="dyn-gallery-name">${esc(m.name||'')}</div>
+                            ${m.description?`<div class="dyn-gallery-desc">${esc(m.description)}</div>`:''}
+                            <div class="dyn-gallery-meta">${(m.category||'').toUpperCase()} &bull; ${m.uploadedAt?new Date(m.uploadedAt).toLocaleDateString('en-GB'):''}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+        } catch(e) { grid.innerHTML = '<div class="no-media-msg">ERROR LOADING VIDEOS</div>'; console.error(e); }
+    </script>
 </body>
 </html>

@@ -681,22 +681,85 @@
 
         window.loadMedia = async function(type) {
             const gridId=type==='image'?'galleryGrid':'videoGrid';
+            const countId=type==='image'?'galleryCount':'videoCount';
             const c=document.getElementById(gridId); if(!c) return;
             c.innerHTML='<div class="empty-state">LOADING...</div>';
             try {
                 const snap=await getDocs(query(collection(db,'media'),orderBy('uploadedAt','desc')));
                 const items=[]; snap.forEach(d=>{ if(d.data().type===type) items.push({id:d.id,...d.data()}); });
-                c.innerHTML=items.map(m=>`
-                    <div class="media-item">
-                        ${type==='image'?`<img src="${m.url}" loading="lazy" style="width:100%;height:140px;object-fit:cover;">`:`<div style="padding:8px;font-size:10px;color:#bbb;word-break:break-all">${esc(m.url)}</div>`}
-                        <div style="padding:8px"><div style="color:#ccc;font-size:10px">${esc(m.name||'')}</div>
-                        <button class="action-btn remove-btn small" style="margin-top:6px" onclick="deleteMedia('${m.id}')">DELETE</button></div>
-                    </div>`).join('')||'<div class="empty-state">NO MEDIA</div>';
-            } catch(e){ c.innerHTML='<div class="empty-state">ERROR</div>'; }
+                const countEl=document.getElementById(countId);
+                const enabledCount=items.filter(m=>m.enabled!==false).length;
+                if(countEl) countEl.innerHTML=`${enabledCount} VISIBLE <span style="color:#aaa">/ ${items.length} TOTAL</span>`;
+
+                if(!items.length) { c.innerHTML='<div class="empty-state">NO MEDIA UPLOADED YET</div>'; return; }
+
+                c.innerHTML=items.map(m=>{
+                    const isEnabled=m.enabled!==false;
+                    const cat=m.category||'uncategorised';
+                    const date=m.uploadedAt?(new Date(m.uploadedAt)).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—';
+                    const dimStyle=isEnabled?'':'opacity:.4;';
+
+                    if(type==='image') {
+                        return `<div class="media-card-v2" style="${dimStyle}">
+                            <div class="media-thumb-v2"><img src="${m.url}" loading="lazy"></div>
+                            <div class="media-body-v2">
+                                <div class="media-name-v2">${esc(m.name||'Untitled')}</div>
+                                ${m.description?`<div class="media-desc-v2">${esc(m.description)}</div>`:''}
+                                <div class="media-meta-v2">
+                                    <span class="media-cat-badge">${cat.toUpperCase()}</span>
+                                    <span>${date}</span>
+                                </div>
+                                <div class="media-actions-v2">
+                                    <label class="toggle-switch"><input type="checkbox" ${isEnabled?'checked':''} onchange="toggleMediaEnabled('${m.id}',this.checked,'${type}')"><span class="toggle-slider"></span></label>
+                                    <span style="font-size:9px;letter-spacing:1px;color:${isEnabled?'var(--success)':'#aaa'}">${isEnabled?'VISIBLE':'HIDDEN'}</span>
+                                    <button class="action-btn remove-btn small" onclick="deleteMedia('${m.id}','${type}')">DELETE</button>
+                                </div>
+                            </div>
+                        </div>`;
+                    } else {
+                        const embedUrl=getVideoEmbed(m.url);
+                        return `<div class="media-card-v2 media-card-video" style="${dimStyle}">
+                            <div class="media-video-preview">${embedUrl?`<iframe src="${embedUrl}" frameborder="0" allowfullscreen loading="lazy"></iframe>`:`<div style="padding:20px;color:#aaa;font-size:10px;word-break:break-all">${esc(m.url||'No URL')}</div>`}</div>
+                            <div class="media-body-v2">
+                                <div class="media-name-v2">${esc(m.name||'Untitled')}</div>
+                                ${m.description?`<div class="media-desc-v2">${esc(m.description)}</div>`:''}
+                                <div class="media-meta-v2">
+                                    <span class="media-cat-badge">${cat.toUpperCase()}</span>
+                                    <span>${date}</span>
+                                </div>
+                                <div class="media-actions-v2">
+                                    <label class="toggle-switch"><input type="checkbox" ${isEnabled?'checked':''} onchange="toggleMediaEnabled('${m.id}',this.checked,'${type}')"><span class="toggle-slider"></span></label>
+                                    <span style="font-size:9px;letter-spacing:1px;color:${isEnabled?'var(--success)':'#aaa'}">${isEnabled?'VISIBLE':'HIDDEN'}</span>
+                                    <button class="action-btn remove-btn small" onclick="deleteMedia('${m.id}','${type}')">DELETE</button>
+                                </div>
+                            </div>
+                        </div>`;
+                    }
+                }).join('');
+            } catch(e){ c.innerHTML=`<div class="empty-state">ERROR: ${esc(e.message)}</div>`; }
         }
-        window.deleteMedia = async function(id) {
-            if(!confirm('DELETE?')) return;
-            try { await deleteDoc(doc(db,'media',id)); notify('DELETED'); loadMedia(id); } catch(e){notify('ERROR',1);}
+
+        // YouTube/Twitch embed helper
+        function getVideoEmbed(url) {
+            if(!url) return null;
+            let m;
+            if((m=url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/))) return `https://www.youtube-nocookie.com/embed/${m[1]}`;
+            if((m=url.match(/youtube\.com\/embed\/([\w-]+)/))) return `https://www.youtube-nocookie.com/embed/${m[1]}`;
+            if((m=url.match(/twitch\.tv\/videos\/(\d+)/))) return `https://player.twitch.tv/?video=${m[1]}&parent=${location.hostname}`;
+            return null;
+        }
+
+        window.toggleMediaEnabled = async function(id, enabled, type) {
+            try {
+                await updateDoc(doc(db,'media',id),{enabled:enabled});
+                notify(enabled?'MEDIA VISIBLE ON SITE':'MEDIA HIDDEN FROM SITE');
+                loadMedia(type);
+            } catch(e) { notify('ERROR: '+e.message,1); }
+        };
+
+        window.deleteMedia = async function(id, type) {
+            if(!confirm('PERMANENTLY DELETE THIS MEDIA?')) return;
+            try { await deleteDoc(doc(db,'media',id)); notify('DELETED'); loadMedia(type); } catch(e){notify('ERROR',1);}
         };
 
         window.loadAARs = async function() {
@@ -923,6 +986,23 @@
         .roster-cell{font-size:10px;letter-spacing:.5px;color:#bbb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:4px}
         .roster-name{color:#e0e0e0;font-weight:600;letter-spacing:1px}
         @media(max-width:768px){.hamburger{display:flex;align-items:center;justify-content:center}.sidebar{position:fixed;top:0;left:-260px;width:260px;height:100vh;z-index:50;transition:left .3s;padding-top:60px}.sidebar.open{left:0}.stats-row{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.table-header,.table-row{grid-template-columns:1fr 1fr;font-size:9px}.audit-entry,.audit-header{grid-template-columns:1fr;font-size:9px}.roster-header,.roster-row{grid-template-columns:1.6fr 1fr;font-size:8px}.roster-cell:nth-child(n+3){display:none}}
+        /* ── Media Library v2 ── */
+        .media-grid-v2{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+        .media-card-v2{background:rgba(8,10,14,.85);border:1px solid rgba(0,217,255,.12);overflow:hidden;transition:all .2s}
+        .media-card-v2:hover{border-color:rgba(0,217,255,.35);box-shadow:0 0 12px rgba(0,217,255,.08)}
+        .media-thumb-v2{width:100%;height:180px;overflow:hidden;background:rgba(0,0,0,.4)}
+        .media-thumb-v2 img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+        .media-card-v2:hover .media-thumb-v2 img{transform:scale(1.03)}
+        .media-video-preview{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:rgba(0,0,0,.4)}
+        .media-video-preview iframe{position:absolute;top:0;left:0;width:100%;height:100%}
+        .media-body-v2{padding:10px 14px 12px}
+        .media-name-v2{color:#e0e0e0;font-size:11px;font-weight:600;letter-spacing:1px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .media-desc-v2{color:#aaa;font-size:9px;line-height:1.4;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .media-meta-v2{display:flex;align-items:center;gap:8px;font-size:8px;letter-spacing:1.5px;color:#999;margin-bottom:8px}
+        .media-cat-badge{padding:1px 6px;border:1px solid rgba(0,217,255,.2);color:var(--accent);font-size:8px;letter-spacing:1.5px}
+        .media-actions-v2{display:flex;align-items:center;gap:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.04)}
+        .media-card-video{min-height:auto}
+        @media(max-width:768px){.media-grid-v2{grid-template-columns:1fr}.media-thumb-v2{height:200px}}
     </style>
 </head>
 <body>
@@ -1071,8 +1151,42 @@
                     </div>
                     <div id="promoteList"><div class="empty-state">LOADING...</div></div>
                 </div>
-                <div class="panel hidden" id="panel-gallery"><div class="panel-title">GALLERY</div><div class="upload-area"><div class="upload-row"><div class="upload-field"><label>SELECT IMAGES</label><input type="file" id="uploadImgFile" multiple accept="image/*"></div><div class="upload-field" style="max-width:160px"><label>CATEGORY</label><select id="uploadImgCat"><option value="operations">OPERATIONS</option><option value="training">TRAINING</option><option value="events">EVENTS</option><option value="screenshots">SCREENSHOTS</option></select></div><button class="upload-btn" id="uploadImgBtn" onclick="handleUpload('image')">UPLOAD</button></div><div class="upload-field" style="margin-top:10px"><label>DESCRIPTION</label><input type="text" id="uploadImgDesc" placeholder="Describe..."></div></div><div style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:10px">TOTAL: <span id="galleryCount" style="color:var(--accent)">0</span></div><div class="media-grid" id="galleryGrid"><div class="empty-state">LOADING...</div></div></div>
-                <div class="panel hidden" id="panel-videos"><div class="panel-title">VIDEOS</div><div class="upload-area"><div class="upload-row"><div class="upload-field"><label>SELECT VIDEOS</label><input type="file" id="uploadVidFile" multiple accept="video/*"></div><div class="upload-field" style="max-width:160px"><label>CATEGORY</label><select id="uploadVidCat"><option value="operations">OPERATIONS</option><option value="training">TRAINING</option><option value="events">EVENTS</option><option value="other">OTHER</option></select></div><button class="upload-btn" id="uploadVidBtn" onclick="handleUpload('video')">UPLOAD</button></div><div class="upload-field" style="margin-top:10px"><label>DESCRIPTION</label><input type="text" id="uploadVidDesc" placeholder="Describe..."></div></div><div style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:10px">TOTAL: <span id="videoCount" style="color:var(--accent)">0</span></div><div class="media-grid" id="videoGrid"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-gallery">
+                    <div class="panel-title">GALLERY</div>
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">MANAGE IMAGES — TOGGLE VISIBILITY ON THE PUBLIC GALLERY PAGE</p>
+                    <div class="upload-area">
+                        <div style="color:rgba(0,217,255,.5);font-size:9px;letter-spacing:3px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">UPLOAD NEW IMAGE</div>
+                        <div class="upload-row">
+                            <div class="upload-field"><label>SELECT IMAGES</label><input type="file" id="uploadImgFile" multiple accept="image/*"></div>
+                            <div class="upload-field" style="max-width:160px"><label>CATEGORY</label><select id="uploadImgCat"><option value="operations">OPERATIONS</option><option value="training">TRAINING</option><option value="events">EVENTS</option><option value="screenshots">SCREENSHOTS</option></select></div>
+                            <button class="upload-btn" id="uploadImgBtn" onclick="handleUpload('image')">UPLOAD</button>
+                        </div>
+                        <div class="upload-field" style="margin-top:10px"><label>DESCRIPTION</label><input type="text" id="uploadImgDesc" placeholder="Describe the image..."></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                        <div style="color:#aaa;font-size:10px;letter-spacing:2px"><span id="galleryCount" style="color:var(--accent)">0</span></div>
+                        <button class="action-btn approve-btn" onclick="loadMedia('image')">&#8635; REFRESH</button>
+                    </div>
+                    <div class="media-grid-v2" id="galleryGrid"><div class="empty-state">LOADING...</div></div>
+                </div>
+                <div class="panel hidden" id="panel-videos">
+                    <div class="panel-title">VIDEOS</div>
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">MANAGE VIDEOS — TOGGLE VISIBILITY ON THE PUBLIC VIDEOS PAGE</p>
+                    <div class="upload-area">
+                        <div style="color:rgba(0,217,255,.5);font-size:9px;letter-spacing:3px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">UPLOAD NEW VIDEO</div>
+                        <div class="upload-row">
+                            <div class="upload-field"><label>SELECT VIDEOS</label><input type="file" id="uploadVidFile" multiple accept="video/*"></div>
+                            <div class="upload-field" style="max-width:160px"><label>CATEGORY</label><select id="uploadVidCat"><option value="operations">OPERATIONS</option><option value="training">TRAINING</option><option value="events">EVENTS</option><option value="other">OTHER</option></select></div>
+                            <button class="upload-btn" id="uploadVidBtn" onclick="handleUpload('video')">UPLOAD</button>
+                        </div>
+                        <div class="upload-field" style="margin-top:10px"><label>DESCRIPTION</label><input type="text" id="uploadVidDesc" placeholder="Describe the video..."></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                        <div style="color:#aaa;font-size:10px;letter-spacing:2px"><span id="videoCount" style="color:var(--accent)">0</span></div>
+                        <button class="action-btn approve-btn" onclick="loadMedia('video')">&#8635; REFRESH</button>
+                    </div>
+                    <div class="media-grid-v2" id="videoGrid"><div class="empty-state">LOADING...</div></div>
+                </div>
                 <div class="panel hidden" id="panel-page-home"><div class="panel-title">HOME PAGE</div><div class="page-editor-container" data-page="home"></div></div>
                 <div class="panel hidden" id="panel-page-505th"><div class="panel-title">505TH EXPEDITIONARY FORCE</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 MARINE PHOTO CARDS</p><div class="page-editor-container" data-page="about-505th"></div></div>
                 <div class="panel hidden" id="panel-page-alpha"><div class="panel-title">ALPHA COMPANY</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 OPERATION CARDS</p><div class="page-editor-container" data-page="about-alpha"></div></div>
