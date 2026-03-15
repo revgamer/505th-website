@@ -810,7 +810,7 @@
     // ── Hook into setView ──────────────────────────────────────────────────
     window._hierInit = init;
     window._hierInited = false;
-    window._hierRerender = render;  // expose directly from IIFE scope
+    window._hierRerender = render;
 
     })(); // end IIFE
 
@@ -822,27 +822,22 @@
         if (hcs) hcs.style.display = v==='tree'?'block':'none';
         document.getElementById('btnTree').classList.toggle('active', v==='tree');
         document.getElementById('btnCard').classList.toggle('active', v==='card');
-        if (v==='tree' && !window._hierInited) {
-            window._hierInited = true;
-            setTimeout(window._hierInit, 40);
-        }
-        // Load card data for both views
+        if (v==='tree' && !window._hierInited) { window._hierInited=true; setTimeout(window._hierInit,40); }
         if (window._oobCardLoad) window._oobCardLoad();
     }
 
-    // Auto-init hierarchy — script runs at bottom of body so DOM is ready
-    (function initHierarchy() {
+    // Script at bottom of body — DOM ready, init immediately
+    (function tryInit() {
         const tv  = document.getElementById('treeView');
-        const cv  = document.getElementById('cardView');
+        if (!tv) { setTimeout(tryInit, 50); return; }
+        tv.style.display = 'block';
+        document.getElementById('cardView').style.display = 'none';
         const hcs = document.getElementById('hierCardSection');
-        if (!tv) { setTimeout(initHierarchy, 50); return; } // retry if not ready
-        tv.style.display  = 'block';
-        cv.style.display  = 'none';
         if (hcs) hcs.style.display = 'block';
-        const btnT = document.getElementById('btnTree');
-        const btnC = document.getElementById('btnCard');
-        if (btnT) { btnT.classList.add('active'); }
-        if (btnC) { btnC.classList.remove('active'); }
+        const bt = document.getElementById('btnTree');
+        const bc = document.getElementById('btnCard');
+        if (bt) bt.classList.add('active');
+        if (bc) bc.classList.remove('active');
         window._hierInited = true;
         setTimeout(window._hierInit, 60);
     })();
@@ -944,7 +939,6 @@
         for (const [unit, cfg] of Object.entries(STRUCTURE)) {
             window._hierStructure[unit] = cfg.sections;
         }
-        // Hierarchy may have already rendered without slot data — re-render now
         if (window._hierRerender) window._hierRerender();
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
@@ -1070,7 +1064,7 @@
             }
         }
 
-        // Always keep _oobCardLoad available (not null after first call)
+        // Register for lazy load when user clicks Unit Cards tab
         window._oobCardLoad = loadUnitCardData;
         loadUnitCardData();
     </script>
