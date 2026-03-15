@@ -150,6 +150,7 @@
     list-style: none;
     padding: 0;
     margin-bottom: 1.5rem;
+    counter-reset: rule-counter;
 }
 
 .rule-list li {
@@ -160,11 +161,11 @@
     border-left: 4px solid var(--accent);
     position: relative;
     padding-left: 3rem;
+    counter-increment: rule-counter;
 }
 
 .rule-list li::before {
-    content: counter(list-item);
-    counter-increment: list-item;
+    content: counter(rule-counter);
     position: absolute;
     left: 1rem;
     color: var(--accent);
@@ -192,30 +193,37 @@
     font-size: 1.2rem;
 }
 
-/* Info Boxes */
+/* Info Boxes — Q&A style */
 .info-box {
-    background: var(--bg-card);
-    border: 2px solid var(--accent);
-    padding: 1.5rem;
+    background: transparent;
+    border: none;
+    border-left: 4px solid var(--accent);
+    padding: 0.8rem 0 0.8rem 1.5rem;
     margin-bottom: 1.5rem;
-    box-shadow: 0 0 15px var(--accent-glow);
+    box-shadow: none;
 }
 
 .info-box.warning {
-    border-color: #FFB800;
-    box-shadow: 0 0 15px rgba(255, 184, 0, 0.3);
+    border-left-color: #FFB800;
 }
 
 .info-box strong {
     color: var(--accent);
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.5px;
+}
+
+.info-box.warning strong {
+    color: #FFB800;
 }
 
 .info-box p {
     color: var(--text-secondary);
     margin-bottom: 0.5rem;
+    font-size: 1rem;
+    line-height: 1.7;
 }
 
 .example-box {
