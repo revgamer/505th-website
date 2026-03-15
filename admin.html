@@ -29,7 +29,7 @@
         function P() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
-        async function logAction(a, d) { try { await addDoc(collection(db,"audit_log"),{action:a,details:d,userId:currentUser.uid,userCallsign:currentUserData.callsign,userRole:currentUserData.role,timestamp:new Date().toISOString()}); } catch(e){} }
+        async function logAction(a, d) { /* disabled for performance */ }
 
         const PAGE_SLOTS = {
             'home': { name:'Home Page', slots:[{id:'enlist_photo',label:'Ready To Enlist Card Photo',type:'image',description:'Recruitment banner'},{id:'hero_video',label:'See Us In Action Video',type:'video',description:'YouTube or Twitch URL'},{id:'hero_video_description',label:'Video Description',type:'text',description:'Text below the video'}] },
@@ -73,44 +73,6 @@
                 {id:'air_2',label:'Air Asset Card 2 Photo',type:'image',description:''},{id:'air_2_title',label:'Air Asset 2 Title',type:'text',description:''},{id:'air_2_desc',label:'Air Asset 2 Description',type:'text',description:''},
                 {id:'air_3',label:'Air Asset Card 3 Photo',type:'image',description:''},{id:'air_3_title',label:'Air Asset 3 Title',type:'text',description:''},{id:'air_3_desc',label:'Air Asset 3 Description',type:'text',description:''}
             ]},
-            // ── RESOURCE PAGES ──────────────────────────────────────────────
-            'resources-lexicon': { name:'Field Lexicon', type:'dynamic_list', collection:'lexicon_terms',
-                fields:[
-                    {id:'abbr',label:'Abbreviation / Term',type:'text',placeholder:'e.g. CAS'},
-                    {id:'full',label:'Full Name',type:'text',placeholder:'e.g. Close Air Support'},
-                    {id:'def',label:'Definition',type:'text',placeholder:'Description of the term'},
-                    {id:'cat',label:'Category',type:'select',options:[
-                        {value:'general',label:'General Military'},
-                        {value:'unsc',label:'UNSC / Halo Lore'},
-                        {value:'arma',label:'Arma 3 / ACE'},
-                        {value:'optre',label:'OPTRE Mod'},
-                        {value:'comms',label:'Communications'},
-                        {value:'medical',label:'Medical'}
-                    ]}
-                ]
-            },
-            'resources-keybinds': { name:'Control Reference', type:'dynamic_list', collection:'keybind_entries',
-                fields:[
-                    {id:'action',label:'Action Type',type:'select',options:[
-                        {value:'CHANGE',label:'CHANGE (Required)'},
-                        {value:'BIND',label:'BIND (Required)'},
-                        {value:'UNBIND',label:'UNBIND (Required)'},
-                        {value:'DEFAULT',label:'DEFAULT (Reference)'}
-                    ]},
-                    {id:'keybind',label:'Keybind / Name',type:'text',placeholder:'e.g. G G or Shift+W'},
-                    {id:'explanation',label:'Explanation',type:'text',placeholder:'What this keybind does'},
-                    {id:'location',label:'Where To Find',type:'text',placeholder:'e.g. Controls → Weapons'},
-                    {id:'section',label:'Section',type:'select',options:[
-                        {value:'required',label:'⚙ Required Changes'},
-                        {value:'movement',label:'⬆ Movement'},
-                        {value:'combat',label:'🎯 Combat'},
-                        {value:'weapon_slots',label:'🔫 Weapon Slots'},
-                        {value:'interaction',label:'🤝 Interaction'},
-                        {value:'vehicles',label:'🚗 Vehicles'},
-                        {value:'comms',label:'📻 Communications'}
-                    ]}
-                ]
-            },
         };
 
         // AFTER ACTION REPORTS
@@ -502,9 +464,6 @@
             if (id==='panel-aar')        loadAARs();
             if (id==='panel-roster')     loadRosterPanel();
             if (id==='panel-unitcards')  loadUnitCards();
-            if (id==='panel-pagemanager') loadPages();
-            if (id==='panel-auditlog')   loadAuditLog();
-            if (id==='panel-analytics')  loadAnalytics();
             if (id==='panel-discord-tracking') loadDiscordTracking();
             if (id.startsWith('panel-page-')) {
                 // Resolve actual pageId from the container's data-page attribute
@@ -679,24 +638,6 @@
             const cfg=PAGE_SLOTS[pageId]; if(!cfg) return;
             const container=document.querySelector(`.page-editor-container[data-page="${pageId}"]`); if(!container) return;
 
-            // ── Dynamic list pages (lexicon, keybinds) ──
-            if(cfg.type==='dynamic_list') {
-                container.innerHTML='<div class="empty-state">LOADING...</div>';
-                let items=[];
-                try {
-                    const snap=await getDocs(collection(db,cfg.collection));
-                    snap.forEach(d=>items.push({id:d.id,...d.data()}));
-                    // Sort by _order if present, else by first field
-                    items.sort((a,b)=>(a._order||0)-(b._order||0));
-                } catch(e) {
-                    console.warn('Dynamic list load ('+cfg.collection+'):', e.message);
-                }
-                window['_dynItems_'+pageId]=items;
-                renderDynamicList(pageId);
-                return;
-            }
-
-            // ── Standard slot-based pages ──
             container.innerHTML=cfg.slots.map(slot=>{
                 const key=`${pageId}__${slot.id}`;
                 const val=pageContentData[key]||{};
@@ -706,90 +647,8 @@
             }).join('')+`<button class="upload-btn" onclick="savePageContent('${pageId}')" style="margin-top:12px">SAVE CHANGES</button>`;
         }
 
-        // ── Dynamic list renderer ────────────────────────────────────────
-        function renderDynamicList(pageId) {
-            const cfg=PAGE_SLOTS[pageId]; if(!cfg||cfg.type!=='dynamic_list') return;
-            const container=document.querySelector(`.page-editor-container[data-page="${pageId}"]`); if(!container) return;
-            const items=window['_dynItems_'+pageId]||[];
-
-            let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                <span style="color:#aaa;font-size:10px;letter-spacing:2px">${items.length} ENTRIES</span>
-                <button class="upload-btn" onclick="dynAddItem('${pageId}')">+ ADD NEW ENTRY</button>
-            </div>`;
-
-            // Add new entry form (hidden by default)
-            html+=`<div id="dynAddForm_${pageId}" style="display:none;background:rgba(0,0,0,.3);border:1px solid rgba(0,217,255,.2);padding:14px;margin-bottom:16px">
-                <div style="color:var(--accent);font-size:10px;letter-spacing:2px;margin-bottom:10px">NEW ENTRY</div>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">`;
-            for(const f of cfg.fields) {
-                if(f.type==='select') {
-                    html+=`<div class="upload-field"><label>${f.label}</label><select id="dynNew_${pageId}_${f.id}" style="width:100%;padding:8px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;outline:none">
-                        ${f.options.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}</select></div>`;
-                } else {
-                    html+=`<div class="upload-field"><label>${f.label}</label><input id="dynNew_${pageId}_${f.id}" type="text" placeholder="${f.placeholder||''}" style="width:100%;padding:8px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;outline:none"></div>`;
-                }
-            }
-            html+=`</div><div style="margin-top:10px;display:flex;gap:8px">
-                <button class="upload-btn" onclick="dynSaveNew('${pageId}')">SAVE ENTRY</button>
-                <button class="action-btn remove-btn small" onclick="document.getElementById('dynAddForm_${pageId}').style.display='none'">CANCEL</button>
-            </div></div>`;
-
-            // List existing items
-            if(!items.length) {
-                html+=`<div class="empty-state">NO ENTRIES YET — ADD ONE ABOVE</div>`;
-            } else {
-                for(const item of items) {
-                    html+=`<div style="background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.06);padding:10px 14px;margin-bottom:4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">`;
-                    for(const f of cfg.fields) {
-                        const val=item[f.id]||'';
-                        let displayVal=val;
-                        if(f.type==='select' && f.options) { const opt=f.options.find(o=>o.value===val); if(opt) displayVal=opt.label; }
-                        const maxW=f.id==='def'||f.id==='explanation'?'flex:2;min-width:200px':'flex:1;min-width:100px';
-                        html+=`<div style="${maxW}"><div style="color:#aaa;font-size:8px;letter-spacing:1.5px;margin-bottom:2px">${f.label}</div><div style="color:#ddd;font-size:10px;letter-spacing:.5px;word-break:break-word">${esc(displayVal)||'<span style="color:#444">—</span>'}</div></div>`;
-                    }
-                    html+=`<button class="action-btn remove-btn small" onclick="dynDeleteItem('${pageId}','${item.id}')">DELETE</button></div>`;
-                }
-            }
-
-            container.innerHTML=html;
-        }
-
-        window.dynAddItem=function(pageId) {
-            const form=document.getElementById('dynAddForm_'+pageId);
-            if(form) form.style.display='block';
-        };
-
-        window.dynSaveNew=async function(pageId) {
-            const cfg=PAGE_SLOTS[pageId]; if(!cfg) return;
-            const data={_order:Date.now()};
-            for(const f of cfg.fields) {
-                const el=document.getElementById('dynNew_'+pageId+'_'+f.id);
-                if(el) data[f.id]=el.value;
-            }
-            // Validate at least first field has content
-            const firstVal=data[cfg.fields[0].id];
-            if(!firstVal) { notify('FILL IN REQUIRED FIELDS',1); return; }
-            try {
-                await addDoc(collection(db,cfg.collection),data);
-                notify('ENTRY ADDED');
-                logAction('DYNAMIC_ADD',cfg.name+': '+firstVal);
-                loadPageContent(pageId);
-            } catch(e) { notify('ERROR: '+e.message,1); }
-        };
-
-        window.dynDeleteItem=async function(pageId,itemId) {
-            if(!confirm('DELETE THIS ENTRY?')) return;
-            const cfg=PAGE_SLOTS[pageId]; if(!cfg) return;
-            try {
-                await deleteDoc(doc(db,cfg.collection,itemId));
-                notify('DELETED');
-                logAction('DYNAMIC_DELETE',cfg.name+': '+itemId);
-                loadPageContent(pageId);
-            } catch(e) { notify('ERROR: '+e.message,1); }
-        };
-
         window.savePageContent = async function(pageId) {
-            const cfg=PAGE_SLOTS[pageId]; if(!cfg||cfg.type==='dynamic_list') return;
+            const cfg=PAGE_SLOTS[pageId]; if(!cfg) return;
             for(const slot of cfg.slots) {
                 const key=`${pageId}__${slot.id}`;
                 if(slot.type!=='image') {
@@ -870,36 +729,6 @@
             } catch(e){ notify('ERROR',1); }
         };
 
-        window.loadAuditLog = async function() {
-            const c=document.getElementById('auditList'); if(!c) return;
-            c.innerHTML='<div class="empty-state">LOADING...</div>';
-            try {
-                const snap=await getDocs(query(collection(db,'audit_log'),orderBy('timestamp','desc'),limit(50)));
-                const items=[]; snap.forEach(d=>items.push(d.data()));
-                c.innerHTML=items.map(a=>`
-                    <div style="padding:8px 12px;border-bottom:1px solid rgba(0,217,255,.05);font-family:'Share Tech Mono',monospace;font-size:9px">
-                        <span style="color:var(--accent)">${(a.timestamp||'').substring(0,16).replace('T',' ')}</span>
-                        &nbsp;·&nbsp;<span style="color:#888">${esc(a.userCallsign||'')}</span>
-                        &nbsp;·&nbsp;<span style="color:#ccc">${esc(a.action||'')}</span>
-                        ${a.details?`&nbsp;·&nbsp;<span style="color:#555">${esc(a.details)}</span>`:''}
-                    </div>`).join('')||'<div class="empty-state">NO LOG ENTRIES</div>';
-            } catch(e){ c.innerHTML='<div class="empty-state">ERROR</div>'; }
-        }
-
-        window.loadAnalytics = async function() {
-            const c=document.getElementById('analyticsList'); if(!c) return;
-            c.innerHTML='<div class="empty-state">LOADING...</div>';
-            try {
-                const snap=await getDocs(query(collection(db,'page_views'),orderBy('count','desc'),limit(20)));
-                const items=[]; snap.forEach(d=>items.push({id:d.id,...d.data()}));
-                c.innerHTML=items.map(a=>`
-                    <div style="display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid rgba(0,217,255,.05);font-family:'Share Tech Mono',monospace;font-size:9px">
-                        <span style="color:#888">${esc(a.page||a.id)}</span>
-                        <span style="color:var(--accent)">${a.count||0} VIEWS</span>
-                    </div>`).join('')||'<div class="empty-state">NO ANALYTICS DATA</div>';
-            } catch(e){ c.innerHTML='<div class="empty-state">ERROR</div>'; }
-        }
-
         window.loadDiscordTracking = async function() {
             const c=document.getElementById('discordTrackingList'); if(!c) return;
             c.innerHTML='<div class="empty-state">LOADING...</div>';
@@ -920,26 +749,6 @@
         window.saveDiscordLink = async function() {
             const val=document.getElementById('discordLinkInput')?.value;
             try { await setDoc(doc(db,'settings','site'),{discord_invite:val},{merge:true}); notify('SAVED'); logAction('DISCORD_LINK','updated'); } catch(e){notify('ERROR',1);}
-        };
-
-        window.loadPages = async function() {
-            const c=document.getElementById('pagesList'); if(!c) return;
-            let ps={};
-            try { const d=await getDoc(doc(db,'settings','pages')); if(d.exists()) ps=d.data(); } catch(e){}
-            const sec={main:'MAIN',about:'ABOUT US',media:'MEDIA',resources:'RESOURCES'};
-            let h='';
-            for(const[sk,sn] of Object.entries(sec)){
-                h+=`<div class="section-label">${sn}</div>`;
-                sitePages.filter(p=>p.section===sk).forEach(p=>{
-                    const on=ps[p.id]!==false;
-                    const gate=p.roleGate?`<span style="font-size:8px;padding:1px 6px;border:1px solid rgba(255,165,0,.4);color:#f5a623;letter-spacing:1px;margin-left:6px">${p.roleGate.toUpperCase()}+</span>`:'<span style="font-size:8px;padding:1px 6px;border:1px solid rgba(0,217,255,.15);color:#aaa;letter-spacing:1px;margin-left:6px">PUBLIC</span>';
-                    h+=`<div class="page-item ${on?'':'page-disabled'}"><div><div style="color:#ccc;font-size:12px">${p.name}${gate}</div><div style="color:#bbb;font-size:9px">${p.file}</div></div><div style="display:flex;gap:10px;align-items:center"><a href="${p.file}" target="_blank" class="action-btn approve-btn small">OPEN</a><label class="toggle-switch"><input type="checkbox" ${on?'checked':''} onchange="togglePage('${p.id}',this.checked)"><span class="toggle-slider"></span></label></div></div>`;
-                });
-            }
-            c.innerHTML=h;
-        }
-        window.togglePage = async function(id, on) {
-            try { await setDoc(doc(db,'settings','pages'),{[id]:on},{merge:true}); notify(on?'PAGE ENABLED':'PAGE DISABLED'); logAction('PAGE_TOGGLE',id+' → '+(on?'on':'off')); } catch(e){notify('ERROR',1);}
         };
 
         window.handleLogout = async function() {
@@ -1236,8 +1045,8 @@
                 <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> PERSONNEL <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">Active Personnel</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')">Register Panel</div><div class="sub-link" data-panel="panel-promote" onclick="showPanel('panel-promote')">Promote Ranks</div></div></div>
                 <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> MEDIA LIBRARY <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
                 <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> UNIT MANAGEMENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div><div class="sub-link" data-panel="panel-unitcards" onclick="showPanel('panel-unitcards')">Unit Cards</div></div></div>
-                <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PAGE CONTENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">ABOUT US</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:8px 0 3px 4px">RESOURCES</div><div class="sub-link" data-panel="panel-page-lexicon" onclick="showPanel('panel-page-lexicon')">Field Lexicon</div><div class="sub-link" data-panel="panel-page-keybinds" onclick="showPanel('panel-page-keybinds')">Control Reference</div></div></div>
-                <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> SITE SETTINGS <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-discord" class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div id="navlink-pagemanager" class="sub-link" data-panel="panel-pagemanager" onclick="showPanel('panel-pagemanager')">Page Manager</div><div id="navlink-auditlog" class="sub-link" data-panel="panel-auditlog" onclick="showPanel('panel-auditlog')">Admin Audit Log</div><div id="navlink-discord-tracking" class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Discord Tracking</div><div id="navlink-analytics" class="sub-link" data-panel="panel-analytics" onclick="showPanel('panel-analytics')">Site Analytics</div></div></div>
+                <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PAGE CONTENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">ABOUT US</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div></div></div>
+                <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> SITE SETTINGS <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-discord" class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div id="navlink-discord-tracking" class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Discord Tracking</div></div></div>
                 <hr class="sidebar-divider">
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
             </div>
@@ -1255,8 +1064,8 @@
                             <span class="role-badge role-marine" style="align-self:center">MARINE</span><span style="color:#555">Profile edit only. No admin access.</span>
                             <span class="role-badge role-recruiter" style="align-self:center">RECRUITER</span><span style="color:#555">Personnel panel — approve &amp; deny registrations.</span>
                             <span class="role-badge role-nco" style="align-self:center">NCO</span><span style="color:#555">Personnel (approve/deny) + full Media Library + After Action Reports.</span>
-                            <span class="role-badge role-staff_nco" style="align-self:center">STAFF NCO</span><span style="color:#555">Full Personnel + full Media + Page Content + Page Manager + Discord Invite Link + AAR + Roster.</span>
-                            <span class="role-badge role-developer" style="align-self:center">DEVELOPER</span><span style="color:#555">Full access to all panels including Settings, Audit Log &amp; Analytics.</span>
+                            <span class="role-badge role-staff_nco" style="align-self:center">STAFF NCO</span><span style="color:#555">Full Personnel + full Media + Page Content + Discord Invite Link + AAR + Roster.</span>
+                            <span class="role-badge role-developer" style="align-self:center">DEVELOPER</span><span style="color:#555">Full access to all panels including Settings.</span>
                             <span class="role-badge role-commander" style="align-self:center">COMMANDER</span><span style="color:#555">Full access. Highest authority — outranks Developer.</span>
                         </div>
                     </div>
@@ -1271,32 +1080,7 @@
                 <div class="panel hidden" id="panel-page-corpsman"><div class="panel-title">HOSPITAL CORPSMAN</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 EQUIPMENT CARDS</p><div class="page-editor-container" data-page="about-corpsman"></div></div>
                 <div class="panel hidden" id="panel-page-54th"><div class="panel-title">54TH AIR WING</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 AIR ASSET CARDS</p><div class="page-editor-container" data-page="about-54th"></div></div>
                 
-                <div class="panel hidden" id="panel-page-lexicon"><div class="panel-title">FIELD LEXICON</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">VISIBLE TO MARINE+ // EDIT TERMS &amp; DEFINITIONS</p><div class="page-editor-container" data-page="resources-lexicon"></div></div>
-                <div class="panel hidden" id="panel-page-keybinds"><div class="panel-title">CONTROL REFERENCE</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">VISIBLE TO ENLISTEE+ // EDIT KEYBIND SECTIONS</p><div class="page-editor-container" data-page="resources-keybinds"></div></div>
                 <div class="panel hidden" id="panel-discord"><div class="panel-title">DISCORD INVITE LINK</div><div class="upload-area"><p style="color:#aaa;font-size:9px;letter-spacing:1px;margin-bottom:12px">CHANGE ONCE - ALL PAGES UPDATE AUTOMATICALLY</p><div style="color:#bbb;font-size:9px;letter-spacing:2px;margin-bottom:8px">CURRENT: <a id="currentDiscordLink" href="#" target="_blank" style="color:var(--accent);text-decoration:none">NOT SET</a></div><div class="upload-row"><div class="upload-field"><input type="url" id="discordLinkInput" placeholder="https://discord.gg/XXXXXXXX"></div><button class="upload-btn" onclick="saveDiscordLink()">SAVE LINK</button></div></div></div>
-                <div class="panel hidden" id="panel-pagemanager"><div class="panel-title">PAGE MANAGER</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">ENABLE OR DISABLE SITE PAGES</p><div id="pagesList"><div class="empty-state">LOADING...</div></div></div>
-                <div class="panel hidden" id="panel-auditlog"><div class="panel-title">ADMIN AUDIT LOG</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">TRACKS ALL ADMIN ACTIONS &bull; CANNOT BE DELETED</p><div class="audit-header"><span>TIMESTAMP</span><span>USER</span><span>ACTION</span><span>DETAILS</span></div><div id="auditList"><div class="empty-state">LOADING...</div></div></div>
-                <div class="panel hidden" id="panel-analytics">
-                    <div class="panel-title">SITE ANALYTICS</div>
-                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">TRACKS WHO IS VIEWING THE 505TH WEBSITE &bull; MEMBERS IDENTIFIED BY CALLSIGN</p>
-                    <div class="stats-row" style="margin-bottom:20px">
-                        <div class="stat-card"><div class="stat-number" id="analyticsToday">-</div><div class="stat-label">TODAY</div></div>
-                        <div class="stat-card"><div class="stat-number" id="analyticsWeek">-</div><div class="stat-label">THIS WEEK</div></div>
-                        <div class="stat-card"><div class="stat-number" id="analyticsTotal">-</div><div class="stat-label">ALL TIME</div></div>
-                    </div>
-                    <div class="dash-grid">
-                        <div class="dash-section" style="flex:2">
-                            <div class="dash-section-title">RECENT VISITORS</div>
-                            <div class="audit-header"><span>TIMESTAMP</span><span>OPERATIVE</span><span>PAGE</span><span>REFERRER</span></div>
-                            <div id="analyticsRecent"><div class="empty-state">LOADING...</div></div>
-                        </div>
-                        <div class="dash-section" style="flex:1;min-width:200px">
-                            <div class="dash-section-title">VIEWS BY PAGE</div>
-                            <div id="analyticsPages"><div class="empty-state">LOADING...</div></div>
-                        </div>
-                    </div>
-                    <div style="margin-top:16px"><button class="action-btn approve-btn" onclick="loadAnalytics()">&#8635; REFRESH</button></div>
-                </div>
                 <div class="panel hidden" id="panel-aar">
                     <div class="panel-title">BATTALION AFTER ACTION REPORT</div>
                     <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:20px">NCO+ ACCESS // CLASSIFICATION: CL-5 // PUBLISHED TO resources-aar.html ON SUBMIT</p>
