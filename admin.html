@@ -471,11 +471,11 @@
             try {
                 await setDoc(doc(db,'settings','unit_cards'), unitCardData);
                 logAction('UNIT_CARDS_SAVE','Saved all unit card data');
-                notify('UNIT CARDS SAVED');
+                notify('UNIT CARDS SAVED — OOB PAGE WILL SHOW UPDATED DATA ON REFRESH');
                 if(btn) { btn.textContent='SAVED ✓'; btn.style.borderColor='var(--success)'; btn.style.color='var(--success)'; }
                 setTimeout(()=>{
                     if(btn){btn.textContent='SAVE CHANGES';btn.style.borderColor='';btn.style.color='';btn.disabled=false;}
-                }, 2000);
+                }, 3000);
                 renderUnitCards();
             } catch(e) {
                 notify('SAVE FAILED: '+e.message, 1);
@@ -1448,6 +1448,7 @@
                     <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <button class="upload-btn" onclick="openRosterAdd()">+ ADD ENTRY</button>
                         <button class="action-btn approve-btn" onclick="loadRosterPanel()">&#8635; REFRESH</button>
+                        <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
                         <span style="color:#bbb;font-size:9px;letter-spacing:2px;margin-left:8px">&#9998; CHECKBOX = +1 ATTENDANCE &nbsp;|&nbsp; 3 ATTENDANCE = +1 PT &amp; RESET</span>
                     </div>
                     <div class="roster-header">
@@ -1463,6 +1464,7 @@
                     <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <button id="ucSaveBtn" class="upload-btn" onclick="saveAllCards()" style="font-size:10px;letter-spacing:2px">SAVE CHANGES</button>
                         <button class="action-btn approve-btn" onclick="loadUnitCards()">&#8635; REFRESH</button>
+                        <a href="resources-order-of-battle.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW OOB PAGE</a>
                         <span style="color:#bbb;font-size:9px;letter-spacing:2px">&#9432; CHANGE STATUS / NAME THEN HIT SAVE</span>
                     </div>
                     <div id="unitCardsList"><div class="empty-state">LOADING...</div></div>
