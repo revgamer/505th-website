@@ -827,23 +827,25 @@
             setTimeout(window._hierInit, 40);
         }
         // Load card data for both views
-        if (window._oobCardLoad) { window._oobCardLoad(); window._oobCardLoad=null; }
+        if (window._oobCardLoad) window._oobCardLoad();
     }
 
-    // Auto-init hierarchy on load — hierarchy is default view
-    document.addEventListener('DOMContentLoaded', () => {
-        // Ensure hierarchy is visible and card view hidden
-        const tv = document.getElementById('treeView');
-        const cv = document.getElementById('cardView');
+    // Auto-init hierarchy — script runs at bottom of body so DOM is ready
+    (function initHierarchy() {
+        const tv  = document.getElementById('treeView');
+        const cv  = document.getElementById('cardView');
         const hcs = document.getElementById('hierCardSection');
-        if (tv)  tv.style.display  = 'block';
-        if (cv)  cv.style.display  = 'none';
+        if (!tv) { setTimeout(initHierarchy, 50); return; } // retry if not ready
+        tv.style.display  = 'block';
+        cv.style.display  = 'none';
         if (hcs) hcs.style.display = 'block';
-        document.getElementById('btnTree')?.classList.add('active');
-        document.getElementById('btnCard')?.classList.remove('active');
+        const btnT = document.getElementById('btnTree');
+        const btnC = document.getElementById('btnCard');
+        if (btnT) { btnT.classList.add('active'); }
+        if (btnC) { btnC.classList.remove('active'); }
         window._hierInited = true;
-        setTimeout(window._hierInit, 40);
-    });
+        setTimeout(window._hierInit, 60);
+    })();
     </script>
 
     <script type="module">
