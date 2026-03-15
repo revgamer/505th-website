@@ -426,7 +426,7 @@
         function notify(m,err){const n=document.getElementById('notification');n.textContent=m;n.className='notification show'+(err?' error':'');setTimeout(()=>n.className='notification',3000);}
 
         // ── CORE UI ───────────────────────────────────────────────────────────
-        function showPanel(id) {
+        window.showPanel = function(id) {
             document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
             document.querySelectorAll('.sub-link').forEach(l => l.classList.remove('active'));
             const panel = document.getElementById(id);
@@ -449,7 +449,7 @@
             if (id==='panel-promote') loadPromotePanel();
         }
 
-        function toggleDropdown(navId) {
+        window.toggleDropdown = function(navId) {
             const item = document.getElementById(navId);
             if (!item) return;
             const isOpen = item.classList.contains('open');
@@ -457,7 +457,7 @@
             if (!isOpen) item.classList.add('open');
         }
 
-        async function loadDashboard() {
+        window.loadDashboard = async function() {
             try {
                 const snap = await getDocs(collection(db,'users'));
                 let pending=0, active=0;
@@ -502,7 +502,7 @@
             } catch(e) { console.error('Dashboard error:',e); }
         }
 
-        async function loadAllUsers() {
+        window.loadAllUsers = async function() {
             if (allUsers.length) { renderUsers(); return; }
             try {
                 const snap = await getDocs(query(collection(db,'users'), orderBy('callsign','asc')));
@@ -512,7 +512,7 @@
             } catch(e) { console.error('loadAllUsers error:',e); }
         }
 
-        function renderUsers() {
+        window.renderUsers = function() {
             const activeList  = document.getElementById('activeList');
             const registerList = document.getElementById('registerList');
             const active  = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied');
@@ -589,7 +589,7 @@
         };
         window.closeEditModal = function(){ document.getElementById('editUserModal').classList.remove('active'); };
 
-        async function loadPromotePanel() {
+        window.loadPromotePanel = async function() {
             const c=document.getElementById('promoteList'); if(!c) return;
             c.innerHTML='<div class="empty-state">LOADING...</div>';
             if(!allUsers.length) await loadAllUsers();
@@ -605,7 +605,7 @@
                 </div>`).join('') || '<div class="empty-state">NO PERSONNEL</div>';
         }
 
-        async function loadPageContent(pageId) {
+        window.loadPageContent = async function(pageId) {
             if(!pageContentData[pageId]) {
                 try { const s=await getDoc(doc(db,'settings','page_content')); if(s.exists()) pageContentData=s.data(); } catch(e){}
             }
@@ -651,7 +651,7 @@
         };
         window.closeMediaPicker = function(){ document.getElementById('mediaPickerModal').classList.remove('active'); };
 
-        async function loadMedia(type) {
+        window.loadMedia = async function(type) {
             const gridId=type==='image'?'galleryGrid':'videoGrid';
             const c=document.getElementById(gridId); if(!c) return;
             c.innerHTML='<div class="empty-state">LOADING...</div>';
@@ -671,7 +671,7 @@
             try { await deleteDoc(doc(db,'media',id)); notify('DELETED'); loadMedia(id); } catch(e){notify('ERROR',1);}
         };
 
-        async function loadAARs() {
+        window.loadAARs = async function() {
             const c=document.getElementById('aarList'); if(!c) return;
             c.innerHTML='<div class="empty-state">LOADING...</div>';
             try {
@@ -701,7 +701,7 @@
             } catch(e){ notify('ERROR',1); }
         };
 
-        async function loadAuditLog() {
+        window.loadAuditLog = async function() {
             const c=document.getElementById('auditList'); if(!c) return;
             c.innerHTML='<div class="empty-state">LOADING...</div>';
             try {
@@ -717,7 +717,7 @@
             } catch(e){ c.innerHTML='<div class="empty-state">ERROR</div>'; }
         }
 
-        async function loadAnalytics() {
+        window.loadAnalytics = async function() {
             const c=document.getElementById('analyticsList'); if(!c) return;
             c.innerHTML='<div class="empty-state">LOADING...</div>';
             try {
@@ -731,7 +731,7 @@
             } catch(e){ c.innerHTML='<div class="empty-state">ERROR</div>'; }
         }
 
-        async function loadDiscordTracking() {
+        window.loadDiscordTracking = async function() {
             const c=document.getElementById('discordTrackingList'); if(!c) return;
             c.innerHTML='<div class="empty-state">LOADING...</div>';
             try {
@@ -745,7 +745,7 @@
             } catch(e){ c.innerHTML='<div class="empty-state">ERROR</div>'; }
         }
 
-        async function loadDiscordLink() {
+        window.loadDiscordLink = async function() {
             try { const s=await getDoc(doc(db,'settings','site')); if(s.exists()&&s.data().discord_invite) { const el=document.getElementById('discordLinkInput'); if(el) el.value=s.data().discord_invite; } } catch(e){}
         }
         window.saveDiscordLink = async function() {
@@ -753,7 +753,7 @@
             try { await setDoc(doc(db,'settings','site'),{discord_invite:val},{merge:true}); notify('SAVED'); logAction('DISCORD_LINK','updated'); } catch(e){notify('ERROR',1);}
         };
 
-        async function loadPages() {
+        window.loadPages = async function() {
             const c=document.getElementById('pagesList'); if(!c) return;
             let ps={};
             try { const d=await getDoc(doc(db,'settings','pages')); if(d.exists()) ps=d.data(); } catch(e){}
