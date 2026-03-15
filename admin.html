@@ -461,7 +461,7 @@
             if (id==='panel-dashboard')  loadDashboard();
             if (id==='panel-gallery')    loadMedia('image');
             if (id==='panel-videos')     loadMedia('video');
-            if (id==='panel-aar')        loadAARs();
+            if (id==='panel-aar')        loadAARPanel();
             if (id==='panel-roster')     loadRosterPanel();
             if (id==='panel-unitcards')  loadUnitCards();
             if (id==='panel-discord-tracking') loadDiscordTracking();
@@ -760,36 +760,6 @@
         window.deleteMedia = async function(id, type) {
             if(!confirm('PERMANENTLY DELETE THIS MEDIA?')) return;
             try { await deleteDoc(doc(db,'media',id)); notify('DELETED'); loadMedia(type); } catch(e){notify('ERROR',1);}
-        };
-
-        window.loadAARs = async function() {
-            const c=document.getElementById('aarList'); if(!c) return;
-            c.innerHTML='<div class="empty-state">LOADING...</div>';
-            try {
-                const snap=await getDocs(query(collection(db,'aars'),orderBy('date','desc')));
-                const items=[]; snap.forEach(d=>items.push({id:d.id,...d.data()}));
-                c.innerHTML=items.map(a=>`
-                    <div class="user-card">
-                        <div class="user-info"><div class="user-callsign">${esc(a.title||'AAR')}</div><div class="user-role">${esc(a.date||'')} — ${esc(a.commander||'')}</div></div>
-                        <div class="user-actions"><button class="action-btn remove-btn small" onclick="deleteAAR('${a.id}')">DELETE</button></div>
-                    </div>`).join('')||'<div class="empty-state">NO AARS</div>';
-            } catch(e){ c.innerHTML='<div class="empty-state">ERROR</div>'; }
-        }
-        window.deleteAAR = async function(id) {
-            if(!confirm('DELETE AAR?')) return;
-            try { await deleteDoc(doc(db,'aars',id)); notify('DELETED'); loadAARs(); } catch(e){notify('ERROR',1);}
-        };
-        window.submitAAR = async function() {
-            const title=document.getElementById('aarTitle')?.value;
-            const date=document.getElementById('aarDate')?.value;
-            const commander=document.getElementById('aarCommander')?.value;
-            const filedBy=document.getElementById('aarFiledBy')?.value;
-            const summary=document.getElementById('aarSummary')?.value;
-            if(!title||!date) { notify('TITLE AND DATE REQUIRED',1); return; }
-            try {
-                await addDoc(collection(db,'aars'),{title,date,commander,filedBy,summary,submittedAt:new Date().toISOString(),submittedBy:currentUser.uid});
-                notify('AAR SUBMITTED'); logAction('AAR_SUBMIT',title); loadAARs();
-            } catch(e){ notify('ERROR',1); }
         };
 
         window.loadDiscordTracking = async function() {
