@@ -51,10 +51,10 @@ Official website for the **505th Expeditionary Force**, a UNSC/Halo-themed Arma 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | HTML5, CSS3, Vanilla JavaScript |
-| Hosting | Firebase Hosting |
-| Database | Cloud Firestore |
+| Hosting | Vercel Hosting |
+| Database | Firebase Database |
 | Auth | Firebase Authentication |
-| Media Storage | Cloudinary (cloud `dwugtsdx`) |
+| Media Storage | Cloudinary |
 | Fonts | Google Fonts (Rajdhani, Share Tech Mono) |
 | Webhooks | Discord Webhooks (AAR notifications) |
 
