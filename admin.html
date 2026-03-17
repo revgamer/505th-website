@@ -210,14 +210,14 @@
                 const ptStyle=ptReady?'color:#7FFF7F;font-weight:700;font-size:14px;text-shadow:0 0 8px rgba(127,255,127,.6);animation:ptGlow 1s ease-in-out infinite':'color:var(--accent);font-weight:700;font-size:14px';
                 return`<div class="roster-row">
                     <div class="roster-cell roster-name">${esc(r.name)}</div>
-                    <div class="roster-cell"><span style="font-size:9px;padding:2px 6px;border:1px solid rgba(0,217,255,.35);color:var(--accent)">${esc(r.platoon||'—')}</span></div>
+                    <div class="roster-cell"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;padding:2px 8px;border:1px solid rgba(0,217,255,.35);color:var(--accent)">${esc(r.platoon||'—')}</span></div>
                     <div class="roster-cell" style="font-size:9px;color:#aaa">${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-GB'):'—'}</div>
                     <div class="roster-cell" style="font-size:9px;color:#bbb">${calcPeriod(r.joinedPlatoon)}</div>
                     <div class="roster-cell" style="font-size:9px">${esc(r.rankGrade||'—')}</div>
                     <div class="roster-cell" style="font-size:9px;color:#aaa">${r.graduation?new Date(r.graduation).toLocaleDateString('en-GB'):'—'}</div>
                     <div class="roster-cell">
                         <div style="display:flex;align-items:center;gap:6px">
-                            <span style="color:${attColor};font-weight:700;font-size:13px;min-width:22px">${att}/3</span>
+                            <span style="color:${attColor};font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;min-width:22px">${att}/3</span>
                             ${att<3?`<input type="checkbox" onchange="markAttendance('${r.id}',this)" title="Mark attendance (+1)" style="cursor:pointer;width:15px;height:15px;accent-color:var(--accent)">`:'<span style="color:#7FFF7F;font-size:8px;letter-spacing:1px">FULL</span>'}
                         </div>
                     </div>
@@ -454,25 +454,25 @@
                 const val = unitCardData[key] || {status:'open',name:''};
                 const statusColor = val.status==='closed'?'#556':val.status==='filled'?'#6a8d33':'rgba(0,217,255,.5)';
                 return `<div style="display:flex;flex-direction:column;gap:4px;background:rgba(0,0,0,.4);border:1px solid ${statusColor};padding:8px 10px;min-width:160px;flex:1;max-width:220px">
-                    <div style="font-size:10px;letter-spacing:1px;color:#bbb;margin-bottom:2px">${slot}</div>
-                    <select data-uc-key="${key}" data-uc-field="status" onchange="ucLocalChange(this)" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.18);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:5px 7px;outline:none">
+                    <div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;color:#ddd;margin-bottom:2px">${slot}</div>
+                    <select data-uc-key="${key}" data-uc-field="status" onchange="ucLocalChange(this)" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.18);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;padding:6px 8px;outline:none">
                         <option value="open" ${val.status==='open'?'selected':''}>OPEN</option>
                         <option value="closed" ${val.status==='closed'?'selected':''}>CLOSED</option>
                         <option value="filled" ${val.status==='filled'?'selected':''}>FILLED</option>
                     </select>
                     <input type="text" data-uc-key="${key}" data-uc-field="name" placeholder="Name (when filled)..." value="${esc(val.name||'')}" 
                         oninput="ucLocalChange(this)"
-                        style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:5px 7px;outline:none;${val.status!=='filled'?'opacity:.5':''}">
+                        style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;padding:6px 8px;outline:none;${val.status!=='filled'?'opacity:.5':''}">
                 </div>`;
             }
 
             let html = '';
             for(const [unit, cfg] of Object.entries(UNIT_CARD_STRUCTURE)) {
                 html += `<div style="margin-bottom:20px;border:1px solid ${cfg.color}55;padding:14px 16px;background:rgba(0,0,0,.25)">`;
-                html += `<div style="color:${cfg.accent};font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:4px;margin-bottom:12px">${unit.toUpperCase()}</div>`;
+                html += `<div style="color:${cfg.accent};font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:4px;margin-bottom:12px">${unit.toUpperCase()}</div>`;
 
                 for(const [section, slots] of Object.entries(cfg.sections)) {
-                    html += `<div style="color:#aaa;font-size:10px;letter-spacing:2px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)">${section}</div>`;
+                    html += `<div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)">${section}</div>`;
 
                     // Separate staff slots from squad slots
                     const staffSlots = [];
@@ -500,7 +500,7 @@
                     for (const sqName of squadOrder) {
                         const sqSlots = squadGroups[sqName];
                         html += `<div style="margin:8px 0 10px;padding:8px 10px;border-left:2px solid ${cfg.accent}88;background:rgba(0,0,0,.15)">`;
-                        html += `<div style="font-size:9px;letter-spacing:2px;color:${cfg.accent};opacity:.85;margin-bottom:6px">${sqName.toUpperCase()}</div>`;
+                        html += `<div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;color:${cfg.accent};opacity:.9;margin-bottom:6px">${sqName.toUpperCase()}</div>`;
                         html += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
                         sqSlots.forEach(slot => { html += renderSlotCard(unit, section, slot); });
                         html += `</div></div>`;
@@ -1071,6 +1071,56 @@
         .media-actions-v2{display:flex;align-items:center;gap:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.04)}
         .media-card-video{min-height:auto}
         @media(max-width:768px){.media-grid-v2{grid-template-columns:1fr}.media-thumb-v2{height:200px}}
+        /* ── Unit Management Readability ── */
+        #panel-aar .upload-field label,
+        #panel-roster .upload-field label,
+        #panel-unitcards .upload-field label {
+            font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;color:#ddd;
+        }
+        #panel-aar .upload-field input,
+        #panel-aar .upload-field select,
+        #panel-aar .upload-field textarea,
+        #panel-roster .upload-field input,
+        #panel-roster .upload-field select,
+        #panel-unitcards .upload-field input,
+        #panel-unitcards .upload-field select {
+            font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;color:#e8e8e8;padding:10px 12px;
+        }
+        #panel-aar .upload-area,
+        #panel-roster .upload-area {
+            border:1px solid rgba(0,217,255,.2);
+        }
+        #panel-aar p, #panel-roster p, #panel-unitcards p {
+            font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;color:#ccc;
+        }
+        #panel-aar .upload-btn,
+        #panel-roster .upload-btn,
+        #panel-unitcards .upload-btn {
+            font-size:13px;padding:10px 20px;
+        }
+        #panel-aar .action-btn,
+        #panel-roster .action-btn,
+        #panel-unitcards .action-btn {
+            font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;
+        }
+        /* Roster table readability */
+        #panel-roster .roster-header {
+            font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;color:rgba(0,217,255,.8);
+        }
+        #panel-roster .roster-row {
+            font-family:'Rajdhani',sans-serif;
+        }
+        #panel-roster .roster-cell {
+            font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:#ccc;
+        }
+        #panel-roster .roster-name {
+            font-size:13px;font-weight:700;color:#e8e8e8;
+        }
+        /* Unit cards readability */
+        #panel-unitcards .upload-field select,
+        #panel-unitcards .upload-field input {
+            font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;
+        }
     </style>
 </head>
 <body>
@@ -1174,7 +1224,7 @@
                 </div>
                 <div class="edit-field"><label>PROMOTION TRACKER (PT)</label><input type="number" id="rosterPT" min="0" value="0" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;outline:none"></div>
             </div>
-            <div style="color:#bbb;font-size:9px;letter-spacing:1.5px;margin:8px 0 16px;padding:8px;border:1px dashed rgba(0,217,255,.08)">
+            <div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:500;letter-spacing:1.5px;margin:8px 0 16px;padding:10px;border:1px dashed rgba(0,217,255,.12)">
                 &#9432; ATTENDANCE: USE CHECKBOX ON ROSTER TABLE TO INCREMENT (+1). AT 3/3, PT GLOWS — STAFF MUST CLICK +1 PT TO PROMOTE.<br>
                 &#9432; ATTENDANCE AUTO-RESETS ON 1ST OF EACH MONTH. UNPROMOTED 3/3 MEMBERS AUTO-PROMOTE BEFORE RESET.<br>
                 &#9432; TIME IN UNIT IS AUTO-CALCULATED FROM GRADUATION DATE.
@@ -1270,13 +1320,13 @@
 
                     <!-- SECTION 1: PLATOON / CLASSIFICATION -->
                     <div class="upload-area" style="margin-bottom:12px">
-                        <div style="color:rgba(0,217,255,.6);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">01 // PLATOON & CLASSIFICATION</div>
+                        <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.12)">01 // PLATOON & CLASSIFICATION</div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="alpha" style="display:none" onchange="aarUnitChange()"><div id="uo-alpha" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/Alpha Company.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">ALPHA CO.</div></div></label>
-                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="forcerecon" style="display:none" onchange="aarUnitChange()"><div id="uo-forcerecon" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/Stalker_Patch.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">FORCE RECON</div></div></label>
-                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="corpsman" style="display:none" onchange="aarUnitChange()"><div id="uo-corpsman" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/Hospital_Corpsman.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">CORPSMAN</div></div></label>
-                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="airwing" style="display:none" onchange="aarUnitChange()"><div id="uo-airwing" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/54th Air Wing.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">54TH AIR WING</div></div></label>
-                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="combined" style="display:none" onchange="aarUnitChange()"><div id="uo-combined" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logo.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-size:8px;letter-spacing:1px;color:#444">COMBINED</div></div></label>
+                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="alpha" style="display:none" onchange="aarUnitChange()"><div id="uo-alpha" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/Alpha Company.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;color:#bbb">ALPHA CO.</div></div></label>
+                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="forcerecon" style="display:none" onchange="aarUnitChange()"><div id="uo-forcerecon" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/Stalker_Patch.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;color:#bbb">FORCE RECON</div></div></label>
+                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="corpsman" style="display:none" onchange="aarUnitChange()"><div id="uo-corpsman" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/Hospital_Corpsman.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;color:#bbb">CORPSMAN</div></div></label>
+                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="airwing" style="display:none" onchange="aarUnitChange()"><div id="uo-airwing" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logos/54th Air Wing.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;color:#bbb">54TH AIR WING</div></div></label>
+                            <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="combined" style="display:none" onchange="aarUnitChange()"><div id="uo-combined" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logo.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;color:#bbb">COMBINED</div></div></label>
                         </div>
                         <div class="upload-row">
                             <div class="upload-field" style="max-width:160px"><label>CLASSIFICATION</label><div style="padding:9px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.35);color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;font-weight:700">CL-5</div></div>
@@ -1286,16 +1336,16 @@
 
                     <!-- DOCUMENT HEADER PREVIEW -->
                     <div style="background:rgba(0,0,0,.5);border:1px solid rgba(0,217,255,.12);padding:14px 18px;margin-bottom:12px;text-align:center;line-height:2">
-                        <div style="color:rgba(0,217,255,.6);font-size:8px;letter-spacing:3px">CLASSIFICATION: CL-5</div>
-                        <div style="color:#aaa;font-size:8px;letter-spacing:2px;margin-top:4px">PLATOON AFTER ACTION REPORT</div>
-                        <div style="color:#aaa;font-size:8px;letter-spacing:1px;margin-top:2px">THIS DOCUMENT IS ISSUED BY THE AUTHORITY OF THE PLATOON COMMANDER</div>
-                        <div style="color:#aaa;font-size:8px;letter-spacing:1px">UNDER THE COMMAND OF LIEUTENANT GENERAL OF THE 505TH EXPEDITIONARY FORCE</div>
-                        <div style="color:#bbb;font-size:7px;letter-spacing:1px;margin-top:4px">DISTRIBUTION OF THE FOLLOWING DOCUMENT OUTSIDE OF 505TH CLASSIFIED DOCUMENT AUTHORITY IS STRICTLY PROHIBITED</div>
+                        <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:3px">CLASSIFICATION: CL-5</div>
+                        <div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:500;letter-spacing:2px;margin-top:4px">PLATOON AFTER ACTION REPORT</div>
+                        <div style="color:#bbb;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:500;letter-spacing:1px;margin-top:2px">THIS DOCUMENT IS ISSUED BY THE AUTHORITY OF THE PLATOON COMMANDER</div>
+                        <div style="color:#bbb;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:500;letter-spacing:1px">UNDER THE COMMAND OF LIEUTENANT GENERAL OF THE 505TH EXPEDITIONARY FORCE</div>
+                        <div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:500;letter-spacing:1px;margin-top:4px">DISTRIBUTION OF THE FOLLOWING DOCUMENT OUTSIDE OF 505TH CLASSIFIED DOCUMENT AUTHORITY IS STRICTLY PROHIBITED</div>
                     </div>
 
                     <!-- SECTION 2: BATTALION AAR HEADER -->
                     <div class="upload-area" style="margin-bottom:12px">
-                        <div style="color:rgba(0,217,255,.6);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">02 // BATTALION AFTER ACTION REPORT</div>
+                        <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.12)">02 // BATTALION AFTER ACTION REPORT</div>
                         <div class="upload-row">
                             <div class="upload-field"><label>COMMANDING OFFICER *</label><input type="text" id="aarCommander" placeholder="Rank + Name"></div>
                             <div class="upload-field"><label>REPORT FILED BY *</label><input type="text" id="aarFiledBy" placeholder="Rank + Name"></div>
@@ -1309,17 +1359,17 @@
 
                     <!-- SECTION 3: ENGAGEMENT OVERVIEW -->
                     <div class="upload-area" style="margin-bottom:12px">
-                        <div style="color:rgba(0,217,255,.6);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">03 // ENGAGEMENT OVERVIEW</div>
+                        <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.12)">03 // ENGAGEMENT OVERVIEW</div>
                         <div class="upload-row">
-                            <div class="upload-field" style="max-width:220px"><label>TYPE OF ENGAGEMENT *</label><select id="aarOpType" style="width:100%;padding:9px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none"><option value="">— SELECT —</option><option value="major">Major Deployment</option><option value="regular">Regular Deployment</option><option value="patrol">Sector Patrol</option><option value="recon">Reconnaissance</option><option value="ambush">Ambush</option><option value="assault">Assault</option><option value="defence">Defence</option></select></div>
+                            <div class="upload-field" style="max-width:220px"><label>TYPE OF ENGAGEMENT *</label><select id="aarOpType" style="width:100%;padding:9px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;outline:none"><option value="">— SELECT —</option><option value="major">Major Deployment</option><option value="regular">Regular Deployment</option><option value="patrol">Sector Patrol</option><option value="recon">Reconnaissance</option><option value="ambush">Ambush</option><option value="assault">Assault</option><option value="defence">Defence</option></select></div>
                             <div class="upload-field"><label>MAIN OBJECTIVE</label><input type="text" id="aarMainObjective" placeholder="Primary mission objective"></div>
                         </div>
-                        <div class="upload-field" style="margin-top:8px"><label>SUMMARY OF EVENTS *</label><textarea id="aarSummary" placeholder="Chronological account of what occurred during the engagement..." style="width:100%;min-height:90px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                        <div class="upload-field" style="margin-top:8px"><label>SUMMARY OF EVENTS *</label><textarea id="aarSummary" placeholder="Chronological account of what occurred during the engagement..." style="width:100%;min-height:90px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;padding:11px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
                     </div>
 
                     <!-- SECTION 4: FRIENDLY FORCES -->
                     <div class="upload-area" style="margin-bottom:12px">
-                        <div style="color:rgba(0,217,255,.6);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">04 // FRIENDLY FORCES</div>
+                        <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.12)">04 // FRIENDLY FORCES</div>
                         <div class="upload-row">
                             <div class="upload-field"><label>UNITS INVOLVED</label><input type="text" id="aarUnitsInvolved" placeholder="e.g. Alpha Co., JTF-23, 54th Air Wing"></div>
                             <div class="upload-field" style="max-width:140px"><label>INITIAL STRENGTH</label><input type="number" id="aarPersonnel" placeholder="Personnel count" min="0"></div>
@@ -1329,20 +1379,20 @@
 
                     <!-- SECTION 5: ENEMY FORCES -->
                     <div class="upload-area" style="margin-bottom:12px">
-                        <div style="color:rgba(0,217,255,.6);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">05 // ENEMY FORCES</div>
+                        <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.12)">05 // ENEMY FORCES</div>
                         <div class="upload-row">
                             <div class="upload-field"><label>ENEMY FACTION</label><input type="text" id="aarEnemyFaction" placeholder="e.g. Insurrectionists, Unknown Hostiles"></div>
                             <div class="upload-field" style="max-width:180px"><label>EST. ENEMY CASUALTIES</label><input type="text" id="aarEnemyCasualties" placeholder="e.g. 12 KIA, 3 captured"></div>
                         </div>
                         <div class="upload-row" style="margin-top:8px">
-                            <div class="upload-field"><label>ENEMY TACTICS AS OBSERVED</label><textarea id="aarEnemyTactics" placeholder="Flanking maneuvers, use of cover, vehicle tactics..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
-                            <div class="upload-field"><label>ENEMY DISPOSITION</label><textarea id="aarEnemyDisposition" placeholder="Defensive, aggressive, retreating, fortified..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                            <div class="upload-field"><label>ENEMY TACTICS AS OBSERVED</label><textarea id="aarEnemyTactics" placeholder="Flanking maneuvers, use of cover, vehicle tactics..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;padding:11px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                            <div class="upload-field"><label>ENEMY DISPOSITION</label><textarea id="aarEnemyDisposition" placeholder="Defensive, aggressive, retreating, fortified..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;padding:11px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
                         </div>
                     </div>
 
                     <!-- SECTION 6: MISSION RESULT -->
                     <div class="upload-area" style="margin-bottom:12px">
-                        <div style="color:rgba(0,217,255,.6);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">06 // MISSION RESULT *</div>
+                        <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.12)">06 // MISSION RESULT *</div>
                         <div style="display:flex;gap:8px">
                             <label style="flex:1;cursor:pointer"><input type="radio" name="aarResult" value="success" style="display:none" onchange="aarResultChange()"><div id="ropt-success" style="text-align:center;padding:10px;border:2px solid #7FFF7F40;color:#7FFF7F66;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;transition:all .2s">✓ SUCCESS</div></label>
                             <label style="flex:1;cursor:pointer"><input type="radio" name="aarResult" value="partial" style="display:none" onchange="aarResultChange()"><div id="ropt-partial" style="text-align:center;padding:10px;border:2px solid #FFD70040;color:#FFD70066;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;transition:all .2s">◐ PARTIAL</div></label>
@@ -1352,38 +1402,38 @@
 
                     <!-- SECTION 7: TACTICAL NOTES & EVENTS -->
                     <div class="upload-area" style="margin-bottom:12px">
-                        <div style="color:rgba(0,217,255,.6);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">07 // TACTICAL NOTES &amp; EVENTS</div>
+                        <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.12)">07 // TACTICAL NOTES &amp; EVENTS</div>
                         <div class="upload-row">
-                            <div class="upload-field"><label>KEY MOMENTS</label><textarea id="aarKeyMoments" placeholder="Critical turning points in the engagement..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
-                            <div class="upload-field"><label>SUCCESSFUL MANEUVERS</label><textarea id="aarSuccessfulManeuvers" placeholder="Tactics and maneuvers that worked well..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                            <div class="upload-field"><label>KEY MOMENTS</label><textarea id="aarKeyMoments" placeholder="Critical turning points in the engagement..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;padding:11px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                            <div class="upload-field"><label>SUCCESSFUL MANEUVERS</label><textarea id="aarSuccessfulManeuvers" placeholder="Tactics and maneuvers that worked well..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;padding:11px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
                         </div>
                         <div class="upload-row" style="margin-top:8px">
-                            <div class="upload-field"><label>MISTAKES / FAILURES</label><textarea id="aarMistakes" placeholder="What went wrong? Communication failures, tactical errors..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
-                            <div class="upload-field"><label>UNEXPECTED OCCURRENCES</label><textarea id="aarUnexpected" placeholder="Anything that deviated from the plan or mission brief..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                            <div class="upload-field"><label>MISTAKES / FAILURES</label><textarea id="aarMistakes" placeholder="What went wrong? Communication failures, tactical errors..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;padding:11px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                            <div class="upload-field"><label>UNEXPECTED OCCURRENCES</label><textarea id="aarUnexpected" placeholder="Anything that deviated from the plan or mission brief..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;padding:11px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
                         </div>
                     </div>
 
                     <!-- SECTION 8: INTERROGATION REPORT -->
                     <div class="upload-area" style="margin-bottom:12px">
-                        <div style="color:rgba(0,217,255,.6);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">08 // INTERROGATION REPORT <span style="color:#aaa;font-size:8px">(IF APPLICABLE)</span></div>
+                        <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.12)">08 // INTERROGATION REPORT <span style="color:#aaa;font-size:8px">(IF APPLICABLE)</span></div>
                         <div class="upload-row">
                             <div class="upload-field" style="max-width:220px"><label>DETAINEE</label><input type="text" id="aarDetainee" placeholder="Name / designation if known"></div>
                             <div class="upload-field"><label>INFORMATION OBTAINED</label><input type="text" id="aarInfoObtained" placeholder="Key intel gathered"></div>
                         </div>
-                        <div class="upload-field" style="margin-top:8px"><label>INTERROGATION SUMMARY</label><textarea id="aarInterrogationSummary" placeholder="Summary of interrogation proceedings and findings..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                        <div class="upload-field" style="margin-top:8px"><label>INTERROGATION SUMMARY</label><textarea id="aarInterrogationSummary" placeholder="Summary of interrogation proceedings and findings..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;padding:11px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
                     </div>
 
                     <!-- SECTION 9: CONCLUSION -->
                     <div class="upload-area" style="margin-bottom:12px">
-                        <div style="color:rgba(0,217,255,.6);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">09 // CONCLUSION</div>
-                        <div class="upload-field" style="margin-bottom:8px"><label>OBJECTIVE OUTCOME</label><textarea id="aarObjectiveOutcome" placeholder="Were objectives achieved? What was secured/lost/neutralised?" style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
-                        <div class="upload-field" style="margin-bottom:8px"><label>RECOMMENDED ACTIONS / FOLLOW UP</label><textarea id="aarRecommended" placeholder="Next steps, follow-on operations, training recommendations..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
-                        <div class="upload-field"><label>MISC. COMMENTS</label><textarea id="aarMiscComments" placeholder="Commendations, additional observations, admin notes..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                        <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.12)">09 // CONCLUSION</div>
+                        <div class="upload-field" style="margin-bottom:8px"><label>OBJECTIVE OUTCOME</label><textarea id="aarObjectiveOutcome" placeholder="Were objectives achieved? What was secured/lost/neutralised?" style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;padding:11px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                        <div class="upload-field" style="margin-bottom:8px"><label>RECOMMENDED ACTIONS / FOLLOW UP</label><textarea id="aarRecommended" placeholder="Next steps, follow-on operations, training recommendations..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;padding:11px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
+                        <div class="upload-field"><label>MISC. COMMENTS</label><textarea id="aarMiscComments" placeholder="Commendations, additional observations, admin notes..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;padding:11px;outline:none;resize:vertical;line-height:1.6"></textarea></div>
                     </div>
 
                     <!-- SECTION 10: ATTACHMENTS -->
                     <div class="upload-area" style="margin-bottom:12px">
-                        <div style="color:rgba(0,217,255,.6);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">10 // ATTACHMENTS</div>
+                        <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.12)">10 // ATTACHMENTS</div>
                         <p style="color:#aaa;font-size:9px;letter-spacing:1px;margin-bottom:10px">UPLOAD IMAGES DIRECTLY — STORED VIA CLOUDINARY // NOT CONNECTED TO MEDIA LIBRARY</p>
                         <div id="aarAttachmentsList"></div>
                         <button class="upload-btn" onclick="aarAddAttachment()" style="width:100%;font-size:10px;margin-top:6px">+ ADD IMAGE ATTACHMENT</button>
@@ -1412,7 +1462,7 @@
                         <button class="upload-btn" onclick="openRosterAdd()">+ ADD ENTRY</button>
                         <button class="action-btn approve-btn" onclick="loadRosterPanel()">&#8635; REFRESH</button>
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
-                        <span style="color:#bbb;font-size:9px;letter-spacing:2px;margin-left:8px">&#9998; CHECKBOX = +1 ATT &nbsp;|&nbsp; 3/3 = GLOWING PT — STAFF CLICKS +1 PT TO PROMOTE &nbsp;|&nbsp; RESETS MONTHLY</span>
+                        <span style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;margin-left:8px">&#9998; CHECKBOX = +1 ATT &nbsp;|&nbsp; 3/3 = GLOWING PT — STAFF CLICKS +1 PT TO PROMOTE &nbsp;|&nbsp; RESETS MONTHLY</span>
                     </div>
                     <div class="roster-header">
                         <div>NAME</div><div>PLATOON</div><div>JOINED</div><div>PLATOON SERVICE</div>

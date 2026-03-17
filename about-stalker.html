@@ -638,6 +638,21 @@
             cursor: zoom-in;
         }
 
+
+        /* ── Unit Card Embed ── */
+        .unit-cards-section { margin: 3rem 0; }
+        .unit-cards-section h3 { font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:1.6rem; letter-spacing:4px; text-align:center; margin-bottom:1.5rem; text-shadow:0 0 10px var(--accent-glow); }
+        .uc-section { margin-bottom:1.5rem; }
+        .uc-section-title { font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:700; letter-spacing:3px; text-transform:uppercase; padding:8px 14px; margin-bottom:6px; background:rgba(0,0,0,.2); border-left:3px solid; }
+        .uc-grid { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+        .uc-slot { background:rgba(0,0,0,.3); border:1px solid; padding:8px 12px; min-width:140px; flex:1; max-width:200px; }
+        .uc-slot-name { font-family:'Share Tech Mono',monospace; font-size:10px; color:#ccc; letter-spacing:.5px; margin-bottom:3px; }
+        .uc-slot-status { font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:1px; }
+        .uc-open { color:rgba(0,217,255,.5); font-style:italic; }
+        .uc-filled { color:#b0d860; font-weight:600; }
+        .uc-closed { color:#888; }
+        .uc-squad-block { margin:6px 0 10px; padding:6px 10px; border-left:2px solid; background:rgba(0,0,0,.1); }
+        .uc-squad-label { font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:2px; opacity:.8; margin-bottom:4px; }
     </style>
     <!-- Accessibility: brighten text for low-vision / colour-blind users -->
     <style>
@@ -743,6 +758,7 @@
                             Discord Rules
                         </a>
                         <a href="resources-handbook.html" class="submenu-item">
+                        <a href="resources-hospital-corps-handbook.html" class="submenu-item"><span class="submenu-bullet">▸</span>Hospital Corps Handbook</a>
                             <span class="submenu-bullet">▸</span>
                             General Handbook
                         </a>
@@ -948,7 +964,66 @@
                 </div>
             </div>
 
+            
+            <!-- ══ UNIT CARDS (Live from Firestore) ══ -->
+            <section class="uc-section" style="margin:3rem 0">
+                <h3 style="font-family:'Rajdhani',sans-serif;color:#a47de0;font-size:1.3rem;letter-spacing:4px;text-align:center;margin-bottom:1.5rem;text-shadow:0 0 10px #a47de044">UNIT POSITIONS</h3>
+                <div id="unitCardsGrid" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px">
+                    <div style="text-align:center;padding:2rem;color:#999;font-size:11px;letter-spacing:3px">LOADING...</div>
+                </div>
+            </section>
+            <script type="module">
+            import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+            import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+            const fc = { apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",authDomain:"th-website-91533.firebaseapp.com",projectId:"th-website-91533",storageBucket:"th-website-91533.firebasestorage.app",messagingSenderId:"1046139150142",appId:"1:1046139150142:web:01f409ae4a38c4f79d966f" };
+            const app=getApps().length?getApps()[0]:initializeApp(fc);
+            const db=getFirestore(app);
+            const UNIT='JSOTF-23';
+            const SECTIONS={"1st Plt \u2014 Marine Recon": ["Platoon Commander", "Platoon Sergeant", "Platoon JTAC", "Stalker 1-0 SQL", "Stalker 1-0 Marine 1", "Stalker 1-0 Marine 2", "Stalker 1-0 Marine 3", "Stalker 1-0 Marine 4", "Stalker 1-0 Marine 5", "Stalker 1-0 Marine 6", "Stalker 2-0 SQL", "Stalker 2-0 Marine 1", "Stalker 2-0 Marine 2", "Stalker 2-0 Marine 3", "Stalker 2-0 Marine 4", "Stalker 2-0 Marine 5", "Stalker 2-0 Marine 6"], "2nd Plt \u2014 Marine Raiders": ["Platoon Commander", "Platoon Sergeant", "Platoon JTAC", "Bravo 1-0 SQL", "Bravo 1-0 Marine 1", "Bravo 1-0 Marine 2", "Bravo 1-0 Marine 3", "Bravo 1-0 Marine 4", "Bravo 1-0 Marine 5", "Bravo 1-0 Marine 6", "Bravo 2-0 SQL", "Bravo 2-0 Marine 1", "Bravo 2-0 Marine 2", "Bravo 2-0 Marine 3", "Bravo 2-0 Marine 4", "Bravo 2-0 Marine 5", "Bravo 2-0 Marine 6"], "3rd Plt \u2014 Special Tactics Sq": ["Platoon Commander", "Platoon Sergeant", "Platoon JTAC", "Charlie 1-0 SQL", "Charlie 1-0 Marine 1", "Charlie 1-0 Marine 2", "Charlie 1-0 Marine 3", "Charlie 1-0 Marine 4", "Charlie 1-0 Marine 5", "Charlie 1-0 Marine 6", "Charlie 2-0 SQL", "Charlie 2-0 Marine 1", "Charlie 2-0 Marine 2", "Charlie 2-0 Marine 3", "Charlie 2-0 Marine 4", "Charlie 2-0 Marine 5", "Charlie 2-0 Marine 6"], "4th Plt \u2014 Pararescue Sq": ["Platoon Commander", "Platoon Sergeant", "Platoon JTAC", "Delta 1-0 SQL", "Delta 1-0 Marine 1", "Delta 1-0 Marine 2", "Delta 1-0 Marine 3", "Delta 1-0 Marine 4", "Delta 1-0 Marine 5", "Delta 1-0 Marine 6", "Delta 2-0 SQL", "Delta 2-0 Marine 1", "Delta 2-0 Marine 2", "Delta 2-0 Marine 3", "Delta 2-0 Marine 4", "Delta 2-0 Marine 5", "Delta 2-0 Marine 6"]};
+            const SQUAD_PFX=['KJ','Alpha','Bravo','Charlie','Stalker','Delta'];
+            function getSq(s){ for(const p of SQUAD_PFX){ if(s.startsWith(p))return s.split(' ').slice(0,2).join(' '); } return null; }
+            function esc(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+            function makeKey(u,sec,sl){ return (u+'__'+sec+'__'+sl).split(' ').join('_'); }
+            try {
+                const snap=await getDoc(doc(db,'settings','unit_cards'));
+                const uc=snap.exists()?snap.data():{};
+                const grid=document.getElementById('unitCardsGrid');
+                let html='';
+                for(const [section,slots] of Object.entries(SECTIONS)) {
+                    let slotHtml='';
+                    const staff=[],squads={},sqOrder=[];
+                    for(const sl of slots){ const sq=getSq(sl); if(sq){ if(!squads[sq]){ squads[sq]=[];sqOrder.push(sq); } squads[sq].push(sl); } else staff.push(sl); }
+                    for(const sl of staff){
+                        const k=makeKey(UNIT,section,sl),v=uc[k]||{};
+                        const st=v.status==='filled'&&v.name?`<span style="color:#a0c850;font-weight:600">${esc(v.name)}</span>`:v.status==='closed'?'<span style="color:#999">CLOSED</span>':'<span style="color:rgba(0,217,255,.5);font-style:italic">OPEN</span>';
+                        slotHtml+=`<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);gap:8px"><span style="color:#ccc">${esc(sl)}</span>${st}</div>`;
+                    }
+                    for(const sq of sqOrder){
+                        slotHtml+=`<div style="color:rgba(0,217,255,.4);font-size:9px;padding:8px 0 3px;letter-spacing:1.5px">${sq.toUpperCase()}</div>`;
+                        for(const sl of squads[sq]){
+                            const k=makeKey(UNIT,section,sl),v=uc[k]||{};
+                            const label=sl.replace(sq+' ','');
+                            const st=v.status==='filled'&&v.name?`<span style="color:#a0c850;font-weight:600">${esc(v.name)}</span>`:v.status==='closed'?'<span style="color:#999">CLOSED</span>':'<span style="color:rgba(0,217,255,.5);font-style:italic">OPEN</span>';
+                            slotHtml+=`<div style="display:flex;justify-content:space-between;font-size:10px;padding:3px 0 3px 12px;border-bottom:1px solid rgba(255,255,255,.03);gap:8px"><span style="color:#bbb">${esc(label)}</span>${st}</div>`;
+                        }
+                    }
+                    html+=`<div style="font-family:'Share Tech Mono',monospace;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);padding:16px 18px;width:300px;flex-shrink:0;box-sizing:border-box">
+                        <div style="font-size:12px;letter-spacing:1.5px;color:#a47de0;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid rgba(255,255,255,.06)">${section}</div>
+                        ${slotHtml}
+                    </div>`;
+                }
+                grid.innerHTML=html||'<div style="color:#999;font-size:11px;letter-spacing:3px;padding:2rem">NO POSITION DATA</div>';
+            } catch(e){ console.warn('Unit cards:',e.message); }
+            </script>
+
             <!-- Call to Action -->
+            
+            <!-- Unit Cards (live from Firestore) -->
+            <section class="unit-cards-section">
+                <h3>JSOTF-23 — TASK FORCE STRENGTH</h3>
+                <div id="unitCardsEmbed" data-unit="JSOTF-23"></div>
+            </section>
+
             <div class="cta-box">
                 <h3>INTERESTED IN JOINING STALKER?</h3>
                 <p>JTF-23 Stalker accepts only the most dedicated and skilled operators. Join our Discord to learn about selection requirements and training pipelines.</p>
@@ -1078,5 +1153,6 @@
             }, 3000);
         })();
     </script>
+    <script type="module" src="js/unit-cards-embed.js"></script>
 </body>
 </html>
