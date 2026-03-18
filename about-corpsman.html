@@ -1177,6 +1177,7 @@
         })();
     </script>
 
+
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
@@ -1187,11 +1188,9 @@
         if(el){
             const UNIT='Support Company';
             const cfg={"accent": "#e05a4a", "sections": {"Hospital Corpsman": ["Hospital Overseer", "Hospital Supervisor", "Head of Training", "Corpsman 1", "Corpsman 2", "Corpsman 3", "Corpsman 4", "Corpsman 5", "Corpsman 6", "Corpsman 7", "Corpsman 8", "Corpsman 9"], "Reserves": ["Reserve 1", "Reserve 2", "Reserve 3", "Reserve 4", "Reserve 5", "Reserve 6"]}};
-            const PFX=['KJ','Alpha','Bravo','Charlie','Stalker','Delta'];
-            function sq(s){ for(const p of PFX){ if(s.startsWith(p))return s.split(' ').slice(0,2).join(' '); } return null; }
             function e(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
             function k(u,s,l){ return (u+'__'+s+'__'+l).split(' ').join('_'); }
-            function slot(nm,st,n,ac){
+            function slot(nm,st,n){
                 const sc=st==='closed'?'#667':st==='filled'?'#6a8d33':'rgba(0,217,255,.4)';
                 const tx=st==='closed'?'CLOSED':st==='filled'?e(n):'OPEN';
                 const cl=st==='filled'?'uc-filled':st==='closed'?'uc-closed':'uc-open';
@@ -1200,30 +1199,13 @@
             try{
                 const snap=await getDoc(doc(db,'settings','unit_cards'));
                 const uc=snap.exists()?snap.data():{};
-                let h='';
+                let h='<div class="uc-squads-row">';
                 for(const [sec,slots] of Object.entries(cfg.sections)){
-                    const staff=[],squads={},so=[];
-                    for(const s of slots){ const g=sq(s); if(g){ if(!squads[g]){ squads[g]=[];so.push(g); } squads[g].push(s); } else staff.push(s); }
-                    // Platoon header
-                    h+=`<div class="uc-section"><div class="uc-section-title" style="color:${cfg.accent}">${sec}</div>`;
-                    // Staff vertical list
-                    if(staff.length){
-                        h+='<div class="uc-staff">';
-                        for(const s of staff){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||'',cfg.accent); }
-                        h+='</div>';
-                    }
-                    // Squads side by side
-                    if(so.length){
-                        h+='<div class="uc-squads-row">';
-                        for(const sn of so){
-                            h+=`<div class="uc-squad-card"><div class="uc-squad-label" style="color:${cfg.accent}">${sn.toUpperCase()}</div>`;
-                            for(const s of squads[sn]){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||'',cfg.accent); }
-                            h+='</div>';
-                        }
-                        h+='</div>';
-                    }
+                    h+=`<div class="uc-squad-card"><div class="uc-squad-label" style="color:${cfg.accent}">${sec}</div>`;
+                    for(const s of slots){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||''); }
                     h+='</div>';
                 }
+                h+='</div>';
                 el.innerHTML=h;
             }catch(er){ console.warn('Unit cards:',er.message); }
         }

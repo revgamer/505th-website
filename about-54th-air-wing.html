@@ -1097,6 +1097,7 @@
         })();
     </script>
 
+
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
@@ -1107,11 +1108,9 @@
         if(el){
             const UNIT='54th Air Wing';
             const cfg={"accent": "#00c4b7", "sections": {"22nd Air Mobility Sq": ["Squadron Leader", "Squadron Assistant", "Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4", "Pilot 5", "Pilot 6", "Pilot 7", "Pilot 8", "Pilot 9", "Pilot 10", "Pilot 11", "Pilot 12", "Pilot 13", "Pilot 14", "Pilot 15"], "31st Fighter Sq": ["Squadron Leader", "Squadron Assistant", "Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4", "Pilot 5", "Pilot 6", "Pilot 7", "Pilot 8", "Pilot 9", "Pilot 10", "Pilot 11", "Pilot 12", "Pilot 13", "Pilot 14", "Pilot 15"], "5th Special Ops Sq": ["Squadron Leader", "Squadron Assistant", "Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4", "Pilot 5", "Pilot 6", "Pilot 7", "Pilot 8", "Pilot 9", "Pilot 10", "Pilot 11", "Pilot 12", "Pilot 13", "Pilot 14", "Pilot 15"]}};
-            const PFX=['KJ','Alpha','Bravo','Charlie','Stalker','Delta'];
-            function sq(s){ for(const p of PFX){ if(s.startsWith(p))return s.split(' ').slice(0,2).join(' '); } return null; }
             function e(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
             function k(u,s,l){ return (u+'__'+s+'__'+l).split(' ').join('_'); }
-            function slot(nm,st,n,ac){
+            function slot(nm,st,n){
                 const sc=st==='closed'?'#667':st==='filled'?'#6a8d33':'rgba(0,217,255,.4)';
                 const tx=st==='closed'?'CLOSED':st==='filled'?e(n):'OPEN';
                 const cl=st==='filled'?'uc-filled':st==='closed'?'uc-closed':'uc-open';
@@ -1120,30 +1119,13 @@
             try{
                 const snap=await getDoc(doc(db,'settings','unit_cards'));
                 const uc=snap.exists()?snap.data():{};
-                let h='';
+                let h='<div class="uc-squads-row">';
                 for(const [sec,slots] of Object.entries(cfg.sections)){
-                    const staff=[],squads={},so=[];
-                    for(const s of slots){ const g=sq(s); if(g){ if(!squads[g]){ squads[g]=[];so.push(g); } squads[g].push(s); } else staff.push(s); }
-                    // Platoon header
-                    h+=`<div class="uc-section"><div class="uc-section-title" style="color:${cfg.accent}">${sec}</div>`;
-                    // Staff vertical list
-                    if(staff.length){
-                        h+='<div class="uc-staff">';
-                        for(const s of staff){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||'',cfg.accent); }
-                        h+='</div>';
-                    }
-                    // Squads side by side
-                    if(so.length){
-                        h+='<div class="uc-squads-row">';
-                        for(const sn of so){
-                            h+=`<div class="uc-squad-card"><div class="uc-squad-label" style="color:${cfg.accent}">${sn.toUpperCase()}</div>`;
-                            for(const s of squads[sn]){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||'',cfg.accent); }
-                            h+='</div>';
-                        }
-                        h+='</div>';
-                    }
+                    h+=`<div class="uc-squad-card"><div class="uc-squad-label" style="color:${cfg.accent}">${sec}</div>`;
+                    for(const s of slots){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||''); }
                     h+='</div>';
                 }
+                h+='</div>';
                 el.innerHTML=h;
             }catch(er){ console.warn('Unit cards:',er.message); }
         }
