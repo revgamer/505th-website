@@ -639,17 +639,18 @@
         /* ── Unit Card Embed ── */
         .unit-cards-section { margin: 3rem 0; }
         .unit-cards-section h3 { font-family:'Rajdhani',sans-serif; color:var(--accent); font-size:1.8rem; letter-spacing:4px; text-align:center; margin-bottom:1.5rem; text-shadow:0 0 10px var(--accent-glow); }
-        .uc-section { margin-bottom:1.5rem; }
-        .uc-section-title { font-family:'Rajdhani',sans-serif; font-size:18px; font-weight:700; letter-spacing:3px; text-transform:uppercase; padding:8px 14px; margin-bottom:6px; background:rgba(0,0,0,.2); border-left:3px solid; }
-        .uc-grid { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
-        .uc-slot { background:rgba(0,0,0,.3); border:1px solid; padding:12px 16px; min-width:170px; flex:1; max-width:200px; }
-        .uc-slot-name { font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:600; color:#e8e8e8; letter-spacing:.5px; margin-bottom:3px; }
-        .uc-slot-status { font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:500; letter-spacing:1px; }
+        .uc-section { margin-bottom:2rem; }
+        .uc-section-title { font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:700; letter-spacing:3px; text-transform:uppercase; padding:10px 16px; margin-bottom:12px; background:rgba(0,0,0,.3); border:1px solid rgba(0,217,255,.15); border-left:3px solid; text-align:center; }
+        .uc-staff { margin-bottom:12px; padding:0 8px; }
+        .uc-slot { display:flex; justify-content:space-between; align-items:center; padding:6px 8px; border-bottom:1px solid rgba(255,255,255,.04); }
+        .uc-slot-name { font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:600; color:#e0e0e0; }
+        .uc-slot-status { font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:500; text-align:right; }
         .uc-open { color:rgba(0,217,255,.5); font-style:italic; }
         .uc-filled { color:#b0d860; font-weight:600; }
         .uc-closed { color:#888; }
-        .uc-squad-block { margin:6px 0 10px; padding:6px 10px; border-left:2px solid; background:rgba(0,0,0,.1); }
-        .uc-squad-label { font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:700; letter-spacing:2px; opacity:.8; margin-bottom:4px; }
+        .uc-squads-row { display:flex; flex-wrap:wrap; gap:16px; margin-bottom:12px; }
+        .uc-squad-card { flex:1; min-width:260px; padding:12px 16px; border:1px solid rgba(255,255,255,.08); background:rgba(0,0,0,.25); }
+        .uc-squad-label { font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; letter-spacing:2px; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,.06); }
     </style>
     <!-- Accessibility: brighten text for low-vision / colour-blind users -->
     <style>
@@ -959,58 +960,6 @@
             </div>
 
             
-            <!-- ══ UNIT CARDS (Live from Firestore) ══ -->
-            <section class="uc-section" style="margin:3rem 0">
-                <h3 style="font-family:'Rajdhani',sans-serif;color:#00c4b7;font-size:1.3rem;letter-spacing:4px;text-align:center;margin-bottom:1.5rem;text-shadow:0 0 10px #00c4b744">UNIT POSITIONS</h3>
-                <div id="unitCardsGrid" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px">
-                    <div style="text-align:center;padding:2rem;color:#999;font-size:11px;letter-spacing:3px">LOADING...</div>
-                </div>
-            </section>
-            <script type="module">
-            import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-            import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-            const fc = { apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",authDomain:"th-website-91533.firebaseapp.com",projectId:"th-website-91533",storageBucket:"th-website-91533.firebasestorage.app",messagingSenderId:"1046139150142",appId:"1:1046139150142:web:01f409ae4a38c4f79d966f" };
-            const app=getApps().length?getApps()[0]:initializeApp(fc);
-            const db=getFirestore(app);
-            const UNIT='54th Air Wing';
-            const SECTIONS={"22nd Air Mobility Sq": ["Squadron Leader", "Squadron Assistant", "Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4", "Pilot 5", "Pilot 6", "Pilot 7", "Pilot 8", "Pilot 9", "Pilot 10", "Pilot 11", "Pilot 12", "Pilot 13", "Pilot 14", "Pilot 15"], "31st Fighter Sq": ["Squadron Leader", "Squadron Assistant", "Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4", "Pilot 5", "Pilot 6", "Pilot 7", "Pilot 8", "Pilot 9", "Pilot 10", "Pilot 11", "Pilot 12", "Pilot 13", "Pilot 14", "Pilot 15"], "5th Special Ops Sq": ["Squadron Leader", "Squadron Assistant", "Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4", "Pilot 5", "Pilot 6", "Pilot 7", "Pilot 8", "Pilot 9", "Pilot 10", "Pilot 11", "Pilot 12", "Pilot 13", "Pilot 14", "Pilot 15"]};
-            const SQUAD_PFX=['KJ','Alpha','Bravo','Charlie','Stalker','Delta'];
-            function getSq(s){ for(const p of SQUAD_PFX){ if(s.startsWith(p))return s.split(' ').slice(0,2).join(' '); } return null; }
-            function esc(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
-            function makeKey(u,sec,sl){ return (u+'__'+sec+'__'+sl).split(' ').join('_'); }
-            try {
-                const snap=await getDoc(doc(db,'settings','unit_cards'));
-                const uc=snap.exists()?snap.data():{};
-                const grid=document.getElementById('unitCardsGrid');
-                let html='';
-                for(const [section,slots] of Object.entries(SECTIONS)) {
-                    let slotHtml='';
-                    const staff=[],squads={},sqOrder=[];
-                    for(const sl of slots){ const sq=getSq(sl); if(sq){ if(!squads[sq]){ squads[sq]=[];sqOrder.push(sq); } squads[sq].push(sl); } else staff.push(sl); }
-                    for(const sl of staff){
-                        const k=makeKey(UNIT,section,sl),v=uc[k]||{};
-                        const st=v.status==='filled'&&v.name?`<span style="color:#a0c850;font-weight:600">${esc(v.name)}</span>`:v.status==='closed'?'<span style="color:#999">CLOSED</span>':'<span style="color:rgba(0,217,255,.5);font-style:italic">OPEN</span>';
-                        slotHtml+=`<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);gap:8px"><span style="color:#ccc">${esc(sl)}</span>${st}</div>`;
-                    }
-                    for(const sq of sqOrder){
-                        slotHtml+=`<div style="color:rgba(0,217,255,.4);font-size:9px;padding:8px 0 3px;letter-spacing:1.5px">${sq.toUpperCase()}</div>`;
-                        for(const sl of squads[sq]){
-                            const k=makeKey(UNIT,section,sl),v=uc[k]||{};
-                            const label=sl.replace(sq+' ','');
-                            const st=v.status==='filled'&&v.name?`<span style="color:#a0c850;font-weight:600">${esc(v.name)}</span>`:v.status==='closed'?'<span style="color:#999">CLOSED</span>':'<span style="color:rgba(0,217,255,.5);font-style:italic">OPEN</span>';
-                            slotHtml+=`<div style="display:flex;justify-content:space-between;font-size:10px;padding:3px 0 3px 12px;border-bottom:1px solid rgba(255,255,255,.03);gap:8px"><span style="color:#bbb">${esc(label)}</span>${st}</div>`;
-                        }
-                    }
-                    html+=`<div style="font-family:'Share Tech Mono',monospace;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);padding:16px 18px;width:300px;flex-shrink:0;box-sizing:border-box">
-                        <div style="font-size:12px;letter-spacing:1.5px;color:#00c4b7;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid rgba(255,255,255,.06)">${section}</div>
-                        ${slotHtml}
-                    </div>`;
-                }
-                grid.innerHTML=html||'<div style="color:#999;font-size:11px;letter-spacing:3px;padding:2rem">NO POSITION DATA</div>';
-            } catch(e){ console.warn('Unit cards:',e.message); }
-            </script>
-
-            
             <!-- Unit Cards (live from Firestore) -->
             <section class="unit-cards-section">
                 <h3>54TH AIR WING — UNIT STRENGTH</h3>
@@ -1147,6 +1096,57 @@
             }, 3000);
         })();
     </script>
-    <script type="module" src="js/unit-cards-embed.js"></script>
+
+    <script type="module">
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        const fc={apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",authDomain:"th-website-91533.firebaseapp.com",projectId:"th-website-91533",storageBucket:"th-website-91533.firebasestorage.app",messagingSenderId:"1046139150142",appId:"1:1046139150142:web:01f409ae4a38c4f79d966f"};
+        const app=getApps().length?getApps()[0]:initializeApp(fc);
+        const db=getFirestore(app);
+        const el=document.getElementById('unitCardsEmbed');
+        if(el){
+            const UNIT='54th Air Wing';
+            const cfg={"accent": "#00c4b7", "sections": {"22nd Air Mobility Sq": ["Squadron Leader", "Squadron Assistant", "Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4", "Pilot 5", "Pilot 6", "Pilot 7", "Pilot 8", "Pilot 9", "Pilot 10", "Pilot 11", "Pilot 12", "Pilot 13", "Pilot 14", "Pilot 15"], "31st Fighter Sq": ["Squadron Leader", "Squadron Assistant", "Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4", "Pilot 5", "Pilot 6", "Pilot 7", "Pilot 8", "Pilot 9", "Pilot 10", "Pilot 11", "Pilot 12", "Pilot 13", "Pilot 14", "Pilot 15"], "5th Special Ops Sq": ["Squadron Leader", "Squadron Assistant", "Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4", "Pilot 5", "Pilot 6", "Pilot 7", "Pilot 8", "Pilot 9", "Pilot 10", "Pilot 11", "Pilot 12", "Pilot 13", "Pilot 14", "Pilot 15"]}};
+            const PFX=['KJ','Alpha','Bravo','Charlie','Stalker','Delta'];
+            function sq(s){ for(const p of PFX){ if(s.startsWith(p))return s.split(' ').slice(0,2).join(' '); } return null; }
+            function e(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+            function k(u,s,l){ return (u+'__'+s+'__'+l).split(' ').join('_'); }
+            function slot(nm,st,n,ac){
+                const sc=st==='closed'?'#667':st==='filled'?'#6a8d33':'rgba(0,217,255,.4)';
+                const tx=st==='closed'?'CLOSED':st==='filled'?e(n):'OPEN';
+                const cl=st==='filled'?'uc-filled':st==='closed'?'uc-closed':'uc-open';
+                return `<div class="uc-slot"><div class="uc-slot-name">${e(nm)}</div><div class="uc-slot-status ${cl}">${tx}</div></div>`;
+            }
+            try{
+                const snap=await getDoc(doc(db,'settings','unit_cards'));
+                const uc=snap.exists()?snap.data():{};
+                let h='';
+                for(const [sec,slots] of Object.entries(cfg.sections)){
+                    const staff=[],squads={},so=[];
+                    for(const s of slots){ const g=sq(s); if(g){ if(!squads[g]){ squads[g]=[];so.push(g); } squads[g].push(s); } else staff.push(s); }
+                    // Platoon header
+                    h+=`<div class="uc-section"><div class="uc-section-title" style="color:${cfg.accent}">${sec}</div>`;
+                    // Staff vertical list
+                    if(staff.length){
+                        h+='<div class="uc-staff">';
+                        for(const s of staff){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||'',cfg.accent); }
+                        h+='</div>';
+                    }
+                    // Squads side by side
+                    if(so.length){
+                        h+='<div class="uc-squads-row">';
+                        for(const sn of so){
+                            h+=`<div class="uc-squad-card"><div class="uc-squad-label" style="color:${cfg.accent}">${sn.toUpperCase()}</div>`;
+                            for(const s of squads[sn]){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||'',cfg.accent); }
+                            h+='</div>';
+                        }
+                        h+='</div>';
+                    }
+                    h+='</div>';
+                }
+                el.innerHTML=h;
+            }catch(er){ console.warn('Unit cards:',er.message); }
+        }
+    </script>
 </body>
 </html>
