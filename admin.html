@@ -729,20 +729,59 @@
                 </div>`).join('') || '<div class="empty-state">NO PERSONNEL</div>';
         }
 
+        const PAGE_URLS={'home':'home.html','about-505th':'about-505th.html','about-alpha':'about-alpha-company.html','about-stalker':'about-stalker.html','about-corpsman':'about-corpsman.html','about-54th':'about-54th-air-wing.html'};
+
         window.loadPageContent = async function(pageId) {
-            if(!pageContentData[pageId]) {
-                try { const s=await getDoc(doc(db,'settings','page_content')); if(s.exists()) pageContentData=s.data(); } catch(e){}
-            }
+            try { const s=await getDoc(doc(db,'settings','page_content')); if(s.exists()) pageContentData=s.data(); } catch(e){}
             const cfg=PAGE_SLOTS[pageId]; if(!cfg) return;
             const container=document.querySelector(`.page-editor-container[data-page="${pageId}"]`); if(!container) return;
 
-            container.innerHTML=cfg.slots.map(slot=>{
+            const viewUrl=PAGE_URLS[pageId]||'#';
+
+            const slotsHtml=cfg.slots.map(slot=>{
                 const key=`${pageId}__${slot.id}`;
                 const val=pageContentData[key]||{};
-                if(slot.type==='image') return `<div class="upload-field"><label>${slot.label}</label><div class="image-preview" id="prev-${key}">${val.url?`<img src="${val.url}" style="max-width:200px;max-height:120px;object-fit:cover;">`:'<span style="color:#777">No image</span>'}</div><button class="upload-btn" onclick="openMediaPicker('${key}','image')">SELECT IMAGE</button></div>`;
-                if(slot.type==='video') return `<div class="upload-field"><label>${slot.label}</label><input type="text" id="input-${key}" value="${esc(val.url||val.value||'')}" placeholder="YouTube/video URL" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none"></div>`;
-                return `<div class="upload-field"><label>${slot.label}</label><textarea id="input-${key}" rows="3" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;resize:vertical">${esc(val.value||val.text||'')}</textarea></div>`;
-            }).join('')+`<button class="upload-btn" onclick="savePageContent('${pageId}')" style="margin-top:12px">SAVE CHANGES</button>`;
+
+                if(slot.type==='image') return `
+                <div class="upload-field" style="border-bottom:1px solid rgba(0,217,255,.07);padding-bottom:14px;margin-bottom:14px">
+                    <label style="display:block;margin-bottom:6px">${slot.label}</label>
+                    <div class="image-preview" id="prev-${key}" style="margin-bottom:8px">${val.url?`<img src="${val.url}" style="max-width:200px;max-height:120px;object-fit:cover;">`:'<span style="color:#555;font-size:10px;letter-spacing:1px">NO IMAGE SET</span>'}</div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                        <button class="upload-btn" onclick="openMediaPicker('${key}','image')" style="font-size:9px;padding:5px 12px">SELECT IMAGE</button>
+                        <button class="action-btn remove-btn" onclick="removePageImage('${key}','${pageId}')" style="font-size:9px;padding:5px 12px">REMOVE IMAGE</button>
+                    </div>
+                </div>`;
+
+                if(slot.type==='video') return `
+                <div class="upload-field" style="border-bottom:1px solid rgba(0,217,255,.07);padding-bottom:14px;margin-bottom:14px">
+                    <label style="display:block;margin-bottom:6px">${slot.label}</label>
+                    <input type="text" id="input-${key}" value="${esc(val.url||val.value||'')}" placeholder="YouTube/video URL" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;box-sizing:border-box;margin-bottom:8px">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                        <button class="upload-btn" onclick="saveSlot('${key}','${pageId}')" style="font-size:9px;padding:5px 12px">SAVE</button>
+                        <button class="action-btn remove-btn" onclick="clearSlot('${key}','${pageId}')" style="font-size:9px;padding:5px 12px">CLEAR</button>
+                    </div>
+                </div>`;
+
+                return `
+                <div class="upload-field" style="border-bottom:1px solid rgba(0,217,255,.07);padding-bottom:14px;margin-bottom:14px">
+                    <label style="display:block;margin-bottom:6px">${slot.label}</label>
+                    <textarea id="input-${key}" rows="3" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;resize:vertical;box-sizing:border-box;margin-bottom:8px">${esc(val.value||val.text||'')}</textarea>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                        <button class="upload-btn" onclick="saveSlot('${key}','${pageId}')" style="font-size:9px;padding:5px 12px">SAVE</button>
+                        <button class="action-btn remove-btn" onclick="clearSlot('${key}','${pageId}')" style="font-size:9px;padding:5px 12px">CLEAR</button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            container.innerHTML=`
+                <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+                    <button class="action-btn remove-btn" onclick="clearAllPageContent('${pageId}')" style="font-size:9px;letter-spacing:2px;padding:6px 14px">⚠ CLEAR ALL</button>
+                </div>
+                ${slotsHtml}
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid rgba(0,217,255,.15);align-items:center">
+                    <button class="upload-btn" onclick="savePageContent('${pageId}')" style="font-size:10px;letter-spacing:2px;padding:7px 18px">💾 SAVE ALL</button>
+                    <a href="${viewUrl}" target="_blank" class="action-btn approve-btn" style="font-size:10px;letter-spacing:2px;padding:7px 18px;text-decoration:none;display:inline-flex;align-items:center;gap:4px">↗ VIEW PAGE</a>
+                </div>`;
         }
 
         window.savePageContent = async function(pageId) {
@@ -754,7 +793,44 @@
                     if(el) { if(!pageContentData[key]) pageContentData[key]={}; pageContentData[key].value=el.value; }
                 }
             }
-            try { await setDoc(doc(db,'settings','page_content'),pageContentData); notify('SAVED'); logAction('PAGE_CONTENT',pageId); } catch(e){notify('ERROR',1);}
+            try { await setDoc(doc(db,'settings','page_content'),pageContentData); notify('ALL CHANGES SAVED'); logAction('PAGE_CONTENT',pageId); } catch(e){notify('SAVE FAILED',1);}
+        };
+
+        window.saveSlot = async function(key, pageId) {
+            const el=document.getElementById('input-'+key); if(!el) return;
+            if(!pageContentData[key]) pageContentData[key]={};
+            pageContentData[key].value=el.value;
+            try { await setDoc(doc(db,'settings','page_content'),pageContentData); notify('SAVED: '+key.split('__')[1].toUpperCase()); } catch(e){notify('SAVE FAILED',1);}
+        };
+
+        window.clearSlot = async function(key, pageId) {
+            if(!confirm('Clear this field?')) return;
+            const el=document.getElementById('input-'+key);
+            if(el) el.value='';
+            if(pageContentData[key]) { pageContentData[key].value=''; pageContentData[key].text=''; }
+            try { await setDoc(doc(db,'settings','page_content'),pageContentData); notify('CLEARED: '+key.split('__')[1].toUpperCase()); } catch(e){notify('ERROR',1);}
+        };
+
+        window.removePageImage = async function(key, pageId) {
+            if(!confirm('Remove this image?')) return;
+            pageContentData[key]={};
+            const prev=document.getElementById('prev-'+key);
+            if(prev) prev.innerHTML='<span style="color:#555;font-size:10px;letter-spacing:1px">NO IMAGE SET</span>';
+            try { await setDoc(doc(db,'settings','page_content'),pageContentData); notify('IMAGE REMOVED: '+key.split('__')[1].toUpperCase()); } catch(e){notify('ERROR',1);}
+        };
+
+        window.clearAllPageContent = async function(pageId) {
+            if(!confirm('Clear ALL content for this page? This cannot be undone.')) return;
+            const cfg=PAGE_SLOTS[pageId]; if(!cfg) return;
+            for(const slot of cfg.slots) {
+                const key=`${pageId}__${slot.id}`;
+                pageContentData[key]={};
+            }
+            try {
+                await setDoc(doc(db,'settings','page_content'),pageContentData);
+                notify('ALL CONTENT CLEARED FOR '+cfg.name.toUpperCase());
+                loadPageContent(pageId);
+            } catch(e){notify('ERROR',1);}
         };
         window.openMediaPicker = function(key, type) {
             window._pickerTarget=key; window._pickerType=type;
