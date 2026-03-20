@@ -1001,6 +1001,97 @@
             showPanel('panel-dashboard');
         });
 
+        // ===== MEDIA LIBRARY UPLOAD =====
+        window.handleUpload = async function(type) {
+            if (type === 'image') {
+                const fileInput  = document.getElementById('uploadImgFile');
+                const nameInput  = document.getElementById('uploadImgName');
+                const catInput   = document.getElementById('uploadImgCat');
+                const descInput  = document.getElementById('uploadImgDesc');
+                const btn        = document.getElementById('uploadImgBtn');
+                const statusEl   = document.getElementById('uploadImgStatus');
+
+                const files = fileInput.files;
+                if (!files || files.length === 0) { notify('SELECT AT LEAST ONE IMAGE', 1); return; }
+
+                btn.disabled = true;
+                btn.textContent = 'UPLOADING...';
+                let successCount = 0;
+
+                for (const file of files) {
+                    try {
+                        if (statusEl) statusEl.textContent = `UPLOADING ${file.name}...`;
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        fd.append('upload_preset', UPLOAD_PRESET);
+                        const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method:'POST', body:fd });
+                        const data = await res.json();
+                        if (!res.ok || data.error) throw new Error(data.error?.message || 'Cloudinary upload failed');
+
+                        const name = (nameInput?.value?.trim()) || file.name.replace(/\.[^.]+$/, '');
+                        await addDoc(collection(db, 'media'), {
+                            type:       'image',
+                            url:        data.secure_url,
+                            name:       name,
+                            description: descInput?.value?.trim() || '',
+                            category:   catInput?.value || 'operations',
+                            uploadedAt: new Date().toISOString(),
+                            enabled:    true
+                        });
+                        successCount++;
+                    } catch(e) {
+                        notify('UPLOAD FAILED: ' + e.message, 1);
+                    }
+                }
+
+                btn.disabled = false;
+                btn.textContent = 'UPLOAD';
+                if (statusEl) statusEl.textContent = '';
+                if (successCount > 0) {
+                    fileInput.value = '';
+                    if (nameInput)  nameInput.value  = '';
+                    if (descInput)  descInput.value  = '';
+                    notify(`${successCount} IMAGE${successCount > 1 ? 'S' : ''} UPLOADED`);
+                    loadMedia('image');
+                }
+
+            } else if (type === 'video') {
+                const urlInput  = document.getElementById('uploadVidUrl');
+                const nameInput = document.getElementById('uploadVidName');
+                const catInput  = document.getElementById('uploadVidCat');
+                const descInput = document.getElementById('uploadVidDesc');
+                const btn       = document.getElementById('uploadVidBtn');
+
+                const url  = urlInput?.value?.trim();
+                const name = nameInput?.value?.trim();
+                if (!url)  { notify('ENTER A VIDEO URL', 1); return; }
+                if (!name) { notify('ENTER A VIDEO TITLE', 1); return; }
+
+                btn.disabled = true;
+                btn.textContent = 'SAVING...';
+                try {
+                    await addDoc(collection(db, 'media'), {
+                        type:        'video',
+                        url:         url,
+                        name:        name,
+                        description: descInput?.value?.trim() || '',
+                        category:    catInput?.value || 'operations',
+                        uploadedAt:  new Date().toISOString(),
+                        enabled:     true
+                    });
+                    urlInput.value  = '';
+                    nameInput.value = '';
+                    if (descInput) descInput.value = '';
+                    notify('VIDEO ADDED');
+                    loadMedia('video');
+                } catch(e) {
+                    notify('ERROR: ' + e.message, 1);
+                }
+                btn.disabled = false;
+                btn.textContent = 'ADD VIDEO';
+            }
+        };
+
     </script>
 
     <style>
@@ -1366,7 +1457,11 @@
                             <div class="upload-field" style="max-width:160px"><label>CATEGORY</label><select id="uploadImgCat"><option value="operations">OPERATIONS</option><option value="training">TRAINING</option><option value="events">EVENTS</option><option value="screenshots">SCREENSHOTS</option></select></div>
                             <button class="upload-btn" id="uploadImgBtn" onclick="handleUpload('image')">UPLOAD</button>
                         </div>
+                        <div class="upload-row" style="margin-top:10px">
+                            <div class="upload-field"><label>TITLE (optional — uses filename if blank)</label><input type="text" id="uploadImgName" placeholder="e.g. Operation Sundown"></div>
+                        </div>
                         <div class="upload-field" style="margin-top:10px"><label>DESCRIPTION</label><input type="text" id="uploadImgDesc" placeholder="Describe the image..."></div>
+                        <div id="uploadImgStatus" style="margin-top:8px;font-size:9px;letter-spacing:2px;color:var(--accent)"></div>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
                         <div style="color:#aaa;font-size:10px;letter-spacing:2px"><span id="galleryCount" style="color:var(--accent)">0</span></div>
@@ -1378,11 +1473,14 @@
                     <div class="panel-title">VIDEOS</div>
                     <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">MANAGE VIDEOS — TOGGLE VISIBILITY ON THE PUBLIC VIDEOS PAGE</p>
                     <div class="upload-area">
-                        <div style="color:rgba(0,217,255,.5);font-size:9px;letter-spacing:3px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">UPLOAD NEW VIDEO</div>
+                        <div style="color:rgba(0,217,255,.5);font-size:9px;letter-spacing:3px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">ADD NEW VIDEO</div>
                         <div class="upload-row">
-                            <div class="upload-field"><label>SELECT VIDEOS</label><input type="file" id="uploadVidFile" multiple accept="video/*"></div>
+                            <div class="upload-field"><label>YOUTUBE / TWITCH URL *</label><input type="url" id="uploadVidUrl" placeholder="https://www.youtube.com/watch?v=..."></div>
                             <div class="upload-field" style="max-width:160px"><label>CATEGORY</label><select id="uploadVidCat"><option value="operations">OPERATIONS</option><option value="training">TRAINING</option><option value="events">EVENTS</option><option value="other">OTHER</option></select></div>
-                            <button class="upload-btn" id="uploadVidBtn" onclick="handleUpload('video')">UPLOAD</button>
+                            <button class="upload-btn" id="uploadVidBtn" onclick="handleUpload('video')">ADD VIDEO</button>
+                        </div>
+                        <div class="upload-row" style="margin-top:10px">
+                            <div class="upload-field"><label>TITLE *</label><input type="text" id="uploadVidName" placeholder="e.g. Operation Sundown — Full Run"></div>
                         </div>
                         <div class="upload-field" style="margin-top:10px"><label>DESCRIPTION</label><input type="text" id="uploadVidDesc" placeholder="Describe the video..."></div>
                     </div>
