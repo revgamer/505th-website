@@ -350,15 +350,71 @@ a {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 800px;
-    height: 800px;
+    width: 1100px;
+    height: 1100px;
     background-image: url('../images/logo.png');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    opacity: 0.03;
+    opacity: 0.04;
     z-index: 0;
     pointer-events: none;
+}
+
+/* Faded Logo Background - About/Unit pages */
+.page-content {
+    position: relative;
+    overflow: hidden;
+}
+
+.page-content::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1100px;
+    height: 1100px;
+    background-image: url('../images/logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.04;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.page-content .container {
+    position: relative;
+    z-index: 1;
+}
+
+/* Faded Logo Background - Media pages */
+.media-page-content {
+    position: relative;
+    overflow: hidden;
+}
+
+.media-page-content::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1100px;
+    height: 1100px;
+    background-image: url('../images/logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.04;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.media-page-content .container {
+    position: relative;
+    z-index: 1;
 }
 
 .homepage-content .container {
@@ -829,10 +885,12 @@ a {
         font-size: 0.9rem;
     }
     
-    .homepage-content::before {
-        width: 500px;
-        height: 500px;
-        opacity: 0.02;
+    .homepage-content::before,
+    .page-content::before,
+    .media-page-content::before {
+        width: 700px;
+        height: 700px;
+        opacity: 0.03;
     }
     
     .homepage-content .container {
@@ -922,9 +980,11 @@ a {
         padding: 1rem;
     }
     
-    .homepage-content::before {
-        width: 350px;
-        height: 350px;
+    .homepage-content::before,
+    .page-content::before,
+    .media-page-content::before {
+        width: 500px;
+        height: 500px;
     }
     
     .hero-section {

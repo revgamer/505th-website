@@ -303,13 +303,13 @@ a {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 600px;
-    height: 600px;
+    width: 1100px;
+    height: 1100px;
     background-image: url('../images/logo.png');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    opacity: 0.05;
+    opacity: 0.04;
     z-index: 0;
     pointer-events: none;
 }
@@ -535,8 +535,8 @@ a {
     }
     
     .construction-page::before {
-        width: 400px;
-        height: 400px;
+        width: 700px;
+        height: 700px;
         opacity: 0.03;
     }
     
@@ -576,8 +576,8 @@ a {
     }
     
     .construction-page::before {
-        width: 300px;
-        height: 300px;
+        width: 500px;
+        height: 500px;
     }
     
     .title-line {
