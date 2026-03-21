@@ -626,6 +626,40 @@
                             <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-role">${(u.role||'').toUpperCase()}</div></div>
                         </div>`).join('') || '<div class="empty-state">NO RECENT JOINS</div>';
                 }
+
+                // Discord invite status (staff_nco+ only)
+                const discordWidget=document.getElementById('dashDiscordStatus');
+                if(discordWidget && P().discordLink){
+                    try {
+                        const ss=await getDoc(doc(db,'settings','site'));
+                        const inviteUrl=ss.exists()&&ss.data().discord_invite?ss.data().discord_invite:null;
+                        if(inviteUrl){
+                            discordWidget.innerHTML=`<div style="color:#aaa;font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:2px">CHECKING INVITE STATUS...</div>`;
+                            const code=inviteUrl.replace(/https?:\/\/(www\.)?(discord\.(gg|com\/invite))\//i,'').replace(/\//g,'').trim();
+                            const res=await fetch(`https://discord.com/api/v10/invites/${code}`);
+                            const data=await res.json();
+                            if(res.ok&&data.guild){
+                                discordWidget.innerHTML=`
+                                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                                        <span style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;color:#7FFF7F;border:1px solid #7FFF7F;padding:4px 12px">✓ ACTIVE</span>
+                                        <span style="font-family:'Rajdhani',sans-serif;font-size:13px;color:#ccc;letter-spacing:1px">${esc(data.guild.name||'Unknown Server')}</span>
+                                        <a href="${inviteUrl}" target="_blank" style="font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--accent);letter-spacing:1px;text-decoration:none">↗ OPEN LINK</a>
+                                    </div>`;
+                            } else {
+                                discordWidget.innerHTML=`
+                                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                                        <span style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;color:#FF4444;border:1px solid #FF4444;padding:4px 12px">✗ EXPIRED / INVALID</span>
+                                        <span style="font-family:'Rajdhani',sans-serif;font-size:13px;color:#aaa;letter-spacing:1px">Update the invite link in Site Settings → Discord Invite Link</span>
+                                    </div>`;
+                            }
+                        } else {
+                            discordWidget.innerHTML=`<div style="font-family:'Rajdhani',sans-serif;font-size:13px;color:#aaa;letter-spacing:1px">No invite link set. Go to Site Settings → Discord Invite Link.</div>`;
+                        }
+                    } catch(e){
+                        discordWidget.innerHTML=`<span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:#FFD700;border:1px solid #FFD700;padding:4px 12px">⚠ UNABLE TO CHECK</span>`;
+                    }
+                }
+
             } catch(e) { console.error('Dashboard error:',e); }
         }
 
@@ -962,9 +996,39 @@
                     if(el) el.value=val;
                     const lnk=document.getElementById('currentDiscordLink');
                     if(lnk){lnk.href=val;lnk.textContent='SET';lnk.style.color='#7FFF7F';}
+                    checkDiscordInvite(val);
                 }
             } catch(e){}
         }
+
+        async function checkDiscordInvite(url){
+            const badge=document.getElementById('discordStatusBadge');
+            if(!badge) return;
+            badge.style.display='inline-block';
+            badge.textContent='CHECKING...';
+            badge.style.color='#aaa';
+            badge.style.borderColor='#aaa';
+            try {
+                const code=(url||'').replace(/https?:\/\/(www\.)?(discord\.(gg|com\/invite))\//i,'').replace(/\//g,'').trim();
+                if(!code){badge.textContent='INVALID URL';badge.style.color='#FF4444';badge.style.borderColor='#FF4444';return;}
+                const res=await fetch(`https://discord.com/api/v10/invites/${code}`);
+                const data=await res.json();
+                if(res.ok && data.guild){
+                    badge.textContent='✓ ACTIVE';
+                    badge.style.color='#7FFF7F';
+                    badge.style.borderColor='#7FFF7F';
+                } else {
+                    badge.textContent='✗ EXPIRED / INVALID';
+                    badge.style.color='#FF4444';
+                    badge.style.borderColor='#FF4444';
+                }
+            } catch(e){
+                badge.textContent='⚠ UNABLE TO CHECK';
+                badge.style.color='#FFD700';
+                badge.style.borderColor='#FFD700';
+            }
+        }
+
         window.saveDiscordLink = async function() {
             const val=document.getElementById('discordLinkInput')?.value?.trim();
             if(!val){notify('ENTER A LINK FIRST',1);return;}
@@ -972,6 +1036,7 @@
                 await setDoc(doc(db,'settings','site'),{discord_invite:val},{merge:true});
                 const lnk=document.getElementById('currentDiscordLink');
                 if(lnk){lnk.href=val;lnk.textContent='SET';lnk.style.color='#7FFF7F';}
+                checkDiscordInvite(val);
                 notify('SAVED');
                 logAction('DISCORD_LINK','updated');
             } catch(e){notify('ERROR',1);}
@@ -1004,6 +1069,8 @@
             if(aarLink) aarLink.style.display=p.aar?'':'none';
             const rosterLink=document.getElementById('navlink-roster');
             if(rosterLink) rosterLink.style.display=p.roster?'':'none';
+            const discordDashSection=document.getElementById('dashDiscordSection');
+            if(discordDashSection) discordDashSection.style.display=p.discordLink?'':'none';
 
             // Topbar user info
             const tn=document.getElementById('topbarName');
@@ -1478,7 +1545,7 @@
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
             </div>
             <div class="main-content">
-                <div class="panel" id="panel-dashboard"><div class="panel-title">DASHBOARD</div><div class="stats-row"><div class="stat-card"><div class="stat-number warning" id="dashPending">0</div><div class="stat-label">PENDING</div></div><div class="stat-card"><div class="stat-number" id="dashActive">0</div><div class="stat-label">ACTIVE</div></div><div class="stat-card"><div class="stat-number" id="dashTotal">0</div><div class="stat-label">TOTAL</div></div></div><div class="dash-grid"><div class="dash-section"><div class="dash-section-title">PENDING REGISTRATIONS</div><div id="dashPendingList"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">RECENT JOINS</div><div id="dashRecentJoins"><div class="empty-state">LOADING...</div></div></div></div></div>
+                <div class="panel" id="panel-dashboard"><div class="panel-title">DASHBOARD</div><div class="stats-row"><div class="stat-card"><div class="stat-number warning" id="dashPending">0</div><div class="stat-label">PENDING</div></div><div class="stat-card"><div class="stat-number" id="dashActive">0</div><div class="stat-label">ACTIVE</div></div><div class="stat-card"><div class="stat-number" id="dashTotal">0</div><div class="stat-label">TOTAL</div></div></div><div class="dash-section" style="margin-bottom:16px" id="dashDiscordSection"><div class="dash-section-title">DISCORD INVITE LINK STATUS</div><div id="dashDiscordStatus"><div class="empty-state">LOADING...</div></div></div><div class="dash-grid"><div class="dash-section"><div class="dash-section-title">PENDING REGISTRATIONS</div><div id="dashPendingList"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">RECENT JOINS</div><div id="dashRecentJoins"><div class="empty-state">LOADING...</div></div></div></div></div>
                 <div class="panel hidden" id="panel-active"><div class="panel-title">ACTIVE PERSONNEL</div><div id="activeList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-register"><div class="panel-title">REGISTRATION PANEL</div><div id="registerList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-promote">
@@ -1548,7 +1615,7 @@
                 <div class="panel hidden" id="panel-page-corpsman"><div class="panel-title">HOSPITAL CORPSMAN</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 EQUIPMENT CARDS</p><div class="page-editor-container" data-page="about-corpsman"></div></div>
                 <div class="panel hidden" id="panel-page-54th"><div class="panel-title">54TH AIR WING</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 AIR ASSET CARDS</p><div class="page-editor-container" data-page="about-54th"></div></div>
                 
-                <div class="panel hidden" id="panel-discord"><div class="panel-title">DISCORD INVITE LINK</div><div class="upload-area"><p style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:500;letter-spacing:1px;margin-bottom:12px">CHANGE ONCE — ALL PAGES UPDATE AUTOMATICALLY</p><div style="color:#bbb;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;letter-spacing:2px;margin-bottom:12px">CURRENT: <a id="currentDiscordLink" href="#" target="_blank" style="color:#FF6B6B;text-decoration:none;letter-spacing:2px">NOT SET</a></div><div class="upload-row"><div class="upload-field"><input type="url" id="discordLinkInput" placeholder="https://discord.gg/XXXXXXXX"></div><button class="upload-btn" onclick="saveDiscordLink()">SAVE LINK</button></div></div></div>
+                <div class="panel hidden" id="panel-discord"><div class="panel-title">DISCORD INVITE LINK</div><div class="upload-area"><p style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:500;letter-spacing:1px;margin-bottom:12px">CHANGE ONCE — ALL PAGES UPDATE AUTOMATICALLY</p><div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap"><div style="color:#bbb;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;letter-spacing:2px">CURRENT: <a id="currentDiscordLink" href="#" target="_blank" style="color:#FF6B6B;text-decoration:none;letter-spacing:2px">NOT SET</a></div><span id="discordStatusBadge" style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:3px 10px;border:1px solid #555;color:#555;display:none"></span><button onclick="checkDiscordInvite(document.getElementById('discordLinkInput').value)" style="background:none;border:1px solid rgba(0,217,255,.35);color:rgba(0,217,255,.7);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;padding:3px 10px;cursor:pointer" id="discordCheckBtn">↺ RE-CHECK</button></div><div class="upload-row"><div class="upload-field"><input type="url" id="discordLinkInput" placeholder="https://discord.gg/XXXXXXXX"></div><button class="upload-btn" onclick="saveDiscordLink()">SAVE LINK</button></div></div></div>
                 <div class="panel hidden" id="panel-aar">
                     <div class="panel-title">BATTALION AFTER ACTION REPORT</div>
                     <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:20px">NCO+ ACCESS // CLASSIFICATION: CL-5 // PUBLISHED TO resources-aar.html ON SUBMIT</p>
