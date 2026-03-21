@@ -954,11 +954,27 @@
         }
 
         window.loadDiscordLink = async function() {
-            try { const s=await getDoc(doc(db,'settings','site')); if(s.exists()&&s.data().discord_invite) { const el=document.getElementById('discordLinkInput'); if(el) el.value=s.data().discord_invite; } } catch(e){}
+            try {
+                const s=await getDoc(doc(db,'settings','site'));
+                if(s.exists()&&s.data().discord_invite){
+                    const val=s.data().discord_invite;
+                    const el=document.getElementById('discordLinkInput');
+                    if(el) el.value=val;
+                    const lnk=document.getElementById('currentDiscordLink');
+                    if(lnk){lnk.href=val;lnk.textContent='SET';lnk.style.color='#7FFF7F';}
+                }
+            } catch(e){}
         }
         window.saveDiscordLink = async function() {
-            const val=document.getElementById('discordLinkInput')?.value;
-            try { await setDoc(doc(db,'settings','site'),{discord_invite:val},{merge:true}); notify('SAVED'); logAction('DISCORD_LINK','updated'); } catch(e){notify('ERROR',1);}
+            const val=document.getElementById('discordLinkInput')?.value?.trim();
+            if(!val){notify('ENTER A LINK FIRST',1);return;}
+            try {
+                await setDoc(doc(db,'settings','site'),{discord_invite:val},{merge:true});
+                const lnk=document.getElementById('currentDiscordLink');
+                if(lnk){lnk.href=val;lnk.textContent='SET';lnk.style.color='#7FFF7F';}
+                notify('SAVED');
+                logAction('DISCORD_LINK','updated');
+            } catch(e){notify('ERROR',1);}
         };
 
         window.handleLogout = async function() {
@@ -1168,7 +1184,7 @@
         .approve-btn{color:var(--success);border-color:var(--success)}.approve-btn:hover{background:rgba(0,255,65,.1)}
         .deny-btn{color:#ef4444;border-color:#ef4444}.deny-btn:hover{background:rgba(239,68,68,.1)}
         .remove-btn{color:#aaa;border-color:#999}.remove-btn:hover{color:#ef4444;border-color:#ef4444}
-        .role-badge{font-size:8px;letter-spacing:2px;padding:1px 6px;border:1px solid #555;color:#999}
+        .role-badge{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;padding:4px 10px;border:1px solid #555;color:#999}
         .role-commander{color:#f59e0b;border-color:#f59e0b}.role-developer{color:#a78bfa;border-color:#a78bfa}.role-staff_nco{color:#2DD4BF;border-color:#2DD4BF}.role-recruiter{color:#fb923c;border-color:#fb923c}.role-nco{color:#34d399;border-color:#34d399}.role-marine{color:#94a3b8;border-color:#94a3b8}.role-enlistee{color:#64748b;border-color:#64748b}
         .status-badge{font-size:8px;letter-spacing:2px;padding:1px 6px}
         .status-badge.status-approved{color:var(--success);border:1px solid var(--success)}.status-badge.status-pending{color:#f59e0b;border:1px solid #f59e0b}.status-badge.status-denied{color:#ef4444;border:1px solid #ef4444}
@@ -1532,7 +1548,7 @@
                 <div class="panel hidden" id="panel-page-corpsman"><div class="panel-title">HOSPITAL CORPSMAN</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 EQUIPMENT CARDS</p><div class="page-editor-container" data-page="about-corpsman"></div></div>
                 <div class="panel hidden" id="panel-page-54th"><div class="panel-title">54TH AIR WING</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 AIR ASSET CARDS</p><div class="page-editor-container" data-page="about-54th"></div></div>
                 
-                <div class="panel hidden" id="panel-discord"><div class="panel-title">DISCORD INVITE LINK</div><div class="upload-area"><p style="color:#aaa;font-size:9px;letter-spacing:1px;margin-bottom:12px">CHANGE ONCE - ALL PAGES UPDATE AUTOMATICALLY</p><div style="color:#bbb;font-size:9px;letter-spacing:2px;margin-bottom:8px">CURRENT: <a id="currentDiscordLink" href="#" target="_blank" style="color:var(--accent);text-decoration:none">NOT SET</a></div><div class="upload-row"><div class="upload-field"><input type="url" id="discordLinkInput" placeholder="https://discord.gg/XXXXXXXX"></div><button class="upload-btn" onclick="saveDiscordLink()">SAVE LINK</button></div></div></div>
+                <div class="panel hidden" id="panel-discord"><div class="panel-title">DISCORD INVITE LINK</div><div class="upload-area"><p style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:500;letter-spacing:1px;margin-bottom:12px">CHANGE ONCE — ALL PAGES UPDATE AUTOMATICALLY</p><div style="color:#bbb;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;letter-spacing:2px;margin-bottom:12px">CURRENT: <a id="currentDiscordLink" href="#" target="_blank" style="color:#FF6B6B;text-decoration:none;letter-spacing:2px">NOT SET</a></div><div class="upload-row"><div class="upload-field"><input type="url" id="discordLinkInput" placeholder="https://discord.gg/XXXXXXXX"></div><button class="upload-btn" onclick="saveDiscordLink()">SAVE LINK</button></div></div></div>
                 <div class="panel hidden" id="panel-aar">
                     <div class="panel-title">BATTALION AFTER ACTION REPORT</div>
                     <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:20px">NCO+ ACCESS // CLASSIFICATION: CL-5 // PUBLISHED TO resources-aar.html ON SUBMIT</p>
