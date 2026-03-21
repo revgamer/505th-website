@@ -166,6 +166,9 @@
         .badge-major    { border-color: #FFD700; color: #FFD700; }
         .badge-regular  { border-color: var(--accent); color: var(--accent); }
         .badge-patrol   { border-color: #7FFF7F; color: #7FFF7F; }
+        .badge-main_op  { border-color: #FF6B6B; color: #FF6B6B; }
+        .badge-deployment { border-color: var(--accent); color: var(--accent); }
+        .badge-fun_op   { border-color: #FFD700; color: #FFD700; }
         .badge-success  { border-color: #7FFF7F; color: #7FFF7F; }
         .badge-partial  { border-color: #FFD700; color: #FFD700; }
         .badge-failure  { border-color: #FF4444; color: #FF4444; }
@@ -445,9 +448,9 @@
             <!-- Stats Bar -->
             <div class="aar-stats-bar" id="aarStatsBar">
                 <div class="aar-stat"><span class="aar-stat-num" id="statTotal">—</span><span class="aar-stat-label">Total Operations</span></div>
-                <div class="aar-stat"><span class="aar-stat-num" id="statMajor">—</span><span class="aar-stat-label">Major Deployments</span></div>
-                <div class="aar-stat"><span class="aar-stat-num" id="statRegular">—</span><span class="aar-stat-label">Regular Deployments</span></div>
-                <div class="aar-stat"><span class="aar-stat-num" id="statPatrol">—</span><span class="aar-stat-label">Sector Patrols</span></div>
+                <div class="aar-stat"><span class="aar-stat-num" id="statMajor">—</span><span class="aar-stat-label">Main Ops</span></div>
+                <div class="aar-stat"><span class="aar-stat-num" id="statRegular">—</span><span class="aar-stat-label">Deployments</span></div>
+                <div class="aar-stat"><span class="aar-stat-num" id="statPatrol">—</span><span class="aar-stat-label">Patrols</span></div>
             </div>
 
             <!-- Filter Bar -->
@@ -464,9 +467,10 @@
                 <label>TYPE</label>
                 <select class="aar-filter-select" id="filterType">
                     <option value="">All Types</option>
-                    <option value="major">Major Deployment</option>
-                    <option value="regular">Regular Deployment</option>
-                    <option value="patrol">Sector Patrol</option>
+                    <option value="main_op">Main Op</option>
+                    <option value="patrol">Patrol</option>
+                    <option value="deployment">Deployment</option>
+                    <option value="fun_op">Fun Op</option>
                 </select>
                 <label>RESULT</label>
                 <select class="aar-filter-select" id="filterResult">
@@ -531,7 +535,7 @@
             alpha: 'Alpha Company', forcerecon: 'JTF-23 Force Recon',
             corpsman: 'Hospital Corpsman', airwing: '54th Air Wing', combined: 'Combined Arms'
         };
-        const TYPE_LABELS = { major: 'Major Deployment', regular: 'Regular Deployment', patrol: 'Sector Patrol' };
+        const TYPE_LABELS = { main_op: 'Main Op', patrol: 'Patrol', deployment: 'Deployment', fun_op: 'Fun Op' };
         const RESULT_LABELS = { success: 'Mission Success', partial: 'Partial Success', failure: 'Mission Failure' };
 
         let allAARs = [];
@@ -552,8 +556,8 @@
 
         function updateStats() {
             document.getElementById('statTotal').textContent = allAARs.length;
-            document.getElementById('statMajor').textContent = allAARs.filter(a => a.operationType === 'major').length;
-            document.getElementById('statRegular').textContent = allAARs.filter(a => a.operationType === 'regular').length;
+            document.getElementById('statMajor').textContent = allAARs.filter(a => a.operationType === 'main_op').length;
+            document.getElementById('statRegular').textContent = allAARs.filter(a => a.operationType === 'deployment').length;
             document.getElementById('statPatrol').textContent = allAARs.filter(a => a.operationType === 'patrol').length;
         }
 
@@ -665,7 +669,10 @@
 
                 <!-- ENGAGEMENT OVERVIEW -->
                 ${sec('Main Objective', a.mainObjective)}
-                ${sec('Summary of Events', a.summary)}
+                ${sec("Commander's Intent", a.commanderIntent)}
+                ${sec('Objective Standards', a.objectiveStandards)}
+                ${sec('Planned Execution', a.plannedExecution)}
+                ${sec('Actual Execution', a.summary)}
 
                 <!-- FRIENDLY FORCES -->
                 ${a.unitsInvolved ? `<div class="aar-modal-section">
@@ -693,21 +700,13 @@
                     ${a.unexpected ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Unexpected Occurrences:</strong> ${a.unexpected}</p>` : ''}
                 </div>` : ''}
 
-                <!-- INTERROGATION -->
-                ${(a.detainee || a.interrogationSummary || a.infoObtained) ? `
-                <div class="aar-modal-section">
-                    <div class="aar-modal-section-title">Interrogation Report</div>
-                    ${a.detainee ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Detainee:</strong> ${a.detainee}</p>` : ''}
-                    ${a.interrogationSummary ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Summary:</strong> ${a.interrogationSummary}</p>` : ''}
-                    ${a.infoObtained ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Information Obtained:</strong> ${a.infoObtained}</p>` : ''}
-                </div>` : ''}
-
                 <!-- CONCLUSION -->
-                ${(a.objectiveOutcome || a.recommended || a.miscComments) ? `
+                ${(a.objectiveOutcome || a.recommended || a.lessonsLearned || a.miscComments) ? `
                 <div class="aar-modal-section">
                     <div class="aar-modal-section-title">Conclusion</div>
                     ${a.objectiveOutcome ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Objective Outcome:</strong> ${a.objectiveOutcome}</p>` : ''}
-                    ${a.recommended ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Recommended Actions:</strong> ${a.recommended}</p>` : ''}
+                    ${a.recommended ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Operational Followup / Recommendations:</strong> ${a.recommended}</p>` : ''}
+                    ${a.lessonsLearned ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Lessons Learned:</strong> ${a.lessonsLearned}</p>` : ''}
                     ${a.miscComments ? `<p class="aar-modal-text"><strong style="color:rgba(255,255,255,0.6);">Misc. Comments:</strong> ${a.miscComments}</p>` : ''}
                 </div>` : ''}
 
