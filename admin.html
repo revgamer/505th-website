@@ -151,7 +151,7 @@
                   unit=document.querySelector('input[name="aarUnit"]:checked')?.value||'',
                   st=document.getElementById('aarSubmitStatus'),btn=document.getElementById('aarSubmitBtn');
             const attachments=[...document.querySelectorAll('.aar-attachment-input')].map(i=>i.value.trim()).filter(Boolean);
-            if(!title||!dateVal||!opType||!commander||!result||!unit||!summary){st.style.color='#FF4444';st.textContent='\u26a0 FILL REQUIRED FIELDS: UNIT, RESULT, MISSION NAME, DATE, CO, TYPE, SUMMARY';return;}
+            if(!title||!dateVal||!opType||!commander||!result||!unit||!actualExecution){st.style.color='#FF4444';st.textContent='\u26a0 FILL REQUIRED FIELDS: UNIT, RESULT, MISSION NAME, DATE, CO, TYPE, ACTUAL EXECUTION';return;}
             btn.disabled=1;btn.textContent='SUBMITTING...';st.style.color='var(--accent)';st.textContent='SUBMITTING...';
             try{
                 await addDoc(collection(db,'aars'),{
@@ -1600,6 +1600,7 @@
                         </div>
                     </div>
 
+                    <!-- SECTION 8: CONCLUSION -->
                     <!-- SECTION 8: CONCLUSION -->
                     <div class="upload-area" style="margin-bottom:12px">
                         <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.12)">08 // CONCLUSION</div>
