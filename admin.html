@@ -34,6 +34,7 @@
         const PAGE_SLOTS = {
             'home': { name:'Home Page', slots:[{id:'enlist_photo',label:'Ready To Enlist Card Photo',type:'image',description:'Recruitment banner'},{id:'hero_video',label:'See Us In Action Video',type:'video',description:'YouTube or Twitch URL'},{id:'hero_video_description',label:'Video Description',type:'text',description:'Text below the video'}] },
             'about-505th': { name:'505th Expeditionary Force', slots:[
+                {id:'slider_header',label:'Slider Section Header',type:'text',description:''},{id:'cards_header',label:'Photo Cards Section Header',type:'text',description:''},
                 {id:'slider_1',label:'Slider Photo 1',type:'image',description:''},{id:'slider_1_title',label:'Slider 1 Title',type:'text',description:''},{id:'slider_1_desc',label:'Slider 1 Description',type:'text',description:''},
                 {id:'slider_2',label:'Slider Photo 2',type:'image',description:''},{id:'slider_2_title',label:'Slider 2 Title',type:'text',description:''},{id:'slider_2_desc',label:'Slider 2 Description',type:'text',description:''},
                 {id:'slider_3',label:'Slider Photo 3',type:'image',description:''},{id:'slider_3_title',label:'Slider 3 Title',type:'text',description:''},{id:'slider_3_desc',label:'Slider 3 Description',type:'text',description:''},
@@ -1741,7 +1742,7 @@
                     <div class="media-grid-v2" id="videoGrid"><div class="empty-state">LOADING...</div></div>
                 </div>
                 <div class="panel hidden" id="panel-page-home"><div class="panel-title">HOME PAGE</div><div class="page-editor-container" data-page="home"></div></div>
-                <div class="panel hidden" id="panel-page-505th"><div class="panel-title">505TH EXPEDITIONARY FORCE</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PHOTO SLIDER (3) + 3 MARINE PHOTO CARDS</p><div class="page-editor-container" data-page="about-505th"></div></div>
+                <div class="panel hidden" id="panel-page-505th"><div class="panel-title">505TH EXPEDITIONARY FORCE</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">SLIDER HEADER + PHOTO SLIDER (3) + CARDS HEADER + 3 MARINE PHOTO CARDS</p><div class="page-editor-container" data-page="about-505th"></div></div>
                 <div class="panel hidden" id="panel-page-alpha"><div class="panel-title">ALPHA COMPANY</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">SLIDER HEADER + PHOTO SLIDER (3) + CARDS HEADER + 3 OPERATION CARDS</p><div class="page-editor-container" data-page="about-alpha"></div></div>
                 <div class="panel hidden" id="panel-page-stalker"><div class="panel-title">JTF FORCE RECON</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">SLIDER HEADER + PHOTO SLIDER (3) + CARDS HEADER + 3 EQUIPMENT CARDS</p><div class="page-editor-container" data-page="about-stalker"></div></div>
                 <div class="panel hidden" id="panel-page-corpsman"><div class="panel-title">HOSPITAL CORPSMAN</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">SLIDER HEADER + PHOTO SLIDER (3) + CARDS HEADER + 3 EQUIPMENT CARDS</p><div class="page-editor-container" data-page="about-corpsman"></div></div>
