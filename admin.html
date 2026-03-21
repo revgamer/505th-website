@@ -683,21 +683,44 @@
                     try {
                         const rSnap=await getDocs(collection(db,'roster'));
                         const inactive=[];
+                        const awaitingBCT=[];
+                        const now=new Date();
+
+                        function bctDuration(r){
+                            const ref=r.createdAt||r.updatedAt||null;
+                            if(!ref) return null;
+                            const d=new Date(ref);
+                            const diffDays=Math.floor((now-d)/(1000*60*60*24));
+                            if(diffDays<1) return 'Today';
+                            if(diffDays<7) return diffDays+' day'+(diffDays!==1?'s':'');
+                            const weeks=Math.floor(diffDays/7);
+                            const days=diffDays%7;
+                            if(weeks<4) return weeks+' week'+(weeks!==1?'s':'')+(days>0?' '+days+'d':'');
+                            const months=Math.floor(diffDays/30);
+                            return months+' month'+(months!==1?'s':'');
+                        }
+
                         rSnap.forEach(d=>{
                             const r=d.data();
-                            if((r.attendance||0)===0 && r.platoon && r.platoon!=='Awaiting BCT' && r.platoon!=='Reserves'){
+                            if(r.platoon==='Awaiting BCT'){
+                                awaitingBCT.push({id:d.id,...r});
+                            } else if((r.attendance||0)===0 && r.platoon && r.platoon!=='Reserves'){
                                 inactive.push({id:d.id,...r});
                             }
                         });
                         inactive.sort((a,b)=>(a.platoon||'').localeCompare(b.platoon||''));
-                        if(inactive.length===0){
-                            inWidget.innerHTML='<div style="font-family:\'Rajdhani\',sans-serif;font-size:13px;color:#7FFF7F;letter-spacing:1px;padding:8px 0">✓ ALL ACTIVE MEMBERS ATTENDED THIS CYCLE</div>';
+                        awaitingBCT.sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||''));
+
+                        let html='';
+
+                        if(inactive.length===0 && awaitingBCT.length===0){
+                            html='<div style="font-family:\'Rajdhani\',sans-serif;font-size:13px;color:#7FFF7F;letter-spacing:1px;padding:8px 0">✓ ALL ACTIVE MEMBERS ATTENDED THIS CYCLE</div>';
                         } else {
-                            inWidget.innerHTML=`
-                                <div style="margin-bottom:10px;font-family:'Rajdhani',sans-serif;font-size:13px;color:#FF8888;letter-spacing:2px">
+                            if(inactive.length>0){
+                                html+=`<div style="margin-bottom:8px;font-family:'Rajdhani',sans-serif;font-size:12px;color:#FF8888;letter-spacing:2px">
                                     ${inactive.length} MEMBER${inactive.length!==1?'S':''} WITH 0 ATTENDANCE THIS CYCLE
                                 </div>
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;max-height:220px;overflow-y:auto">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:14px">
                                     ${inactive.map(r=>`
                                         <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)">
                                             <div style="width:6px;height:6px;background:#FF4444;flex-shrink:0;border-radius:50%"></div>
@@ -707,7 +730,28 @@
                                             </div>
                                         </div>`).join('')}
                                 </div>`;
+                            }
+
+                            if(awaitingBCT.length>0){
+                                html+=`<div style="font-family:'Rajdhani',sans-serif;font-size:12px;color:#FFD700;letter-spacing:2px;margin-bottom:8px;padding-top:${inactive.length>0?'4px':'0'};border-top:${inactive.length>0?'1px solid rgba(255,255,255,.06)':'none'}">
+                                    ⏳ AWAITING BCT — ${awaitingBCT.length} RECRUIT${awaitingBCT.length!==1?'S':''}
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:4px">
+                                    ${awaitingBCT.map(r=>{
+                                        const dur=bctDuration(r);
+                                        const durColor=!dur?'#666':dur.includes('month')?'#FF6B6B':dur.includes('week')?'#FFD700':'#7FFF7F';
+                                        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(255,215,0,.04);border:1px solid rgba(255,215,0,.12)">
+                                            <div style="display:flex;align-items:center;gap:8px">
+                                                <div style="width:6px;height:6px;background:#FFD700;flex-shrink:0;border-radius:50%"></div>
+                                                <span style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:#ddd">${esc(r.name||'Unknown')}</span>
+                                            </div>
+                                            <span style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:${durColor}">${dur?'WAITING '+dur.toUpperCase():'—'}</span>
+                                        </div>`;
+                                    }).join('')}
+                                </div>`;
+                            }
                         }
+                        inWidget.innerHTML=`<div style="max-height:260px;overflow-y:auto">${html}</div>`;
                     } catch(e){ inWidget.innerHTML='<div class="empty-state">UNABLE TO LOAD DATA</div>'; }
                 }
 
