@@ -1246,8 +1246,12 @@
         /* ── Unit Management Readability ── */
         #panel-aar .upload-field label,
         #panel-roster .upload-field label,
-        #panel-unitcards .upload-field label {
-            font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;letter-spacing:2px;color:#e0e0e0;
+        #panel-unitcards .upload-field label,
+        #panel-content .upload-field label,
+        #panel-media .upload-field label,
+        #panel-personnel .upload-field label,
+        #panel-settings .upload-field label {
+            font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;letter-spacing:2px;color:#e0e0e0;
         }
         /* AAR form readability - increased */
         #panel-aar .upload-field input,
@@ -1256,25 +1260,53 @@
         #panel-roster .upload-field input,
         #panel-roster .upload-field select,
         #panel-unitcards .upload-field input,
-        #panel-unitcards .upload-field select {
-            font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:500;color:#e8e8e8;padding:11px 14px;
+        #panel-unitcards .upload-field select,
+        #panel-content .upload-field input,
+        #panel-content .upload-field select,
+        #panel-content .upload-field textarea,
+        #panel-media .upload-field input,
+        #panel-media .upload-field select,
+        #panel-media .upload-field textarea,
+        #panel-personnel .upload-field input,
+        #panel-personnel .upload-field select,
+        #panel-personnel .upload-field textarea,
+        #panel-settings .upload-field input,
+        #panel-settings .upload-field select,
+        #panel-settings .upload-field textarea {
+            font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:500;color:#e8e8e8;padding:11px 14px;
         }
         #panel-aar .upload-area,
         #panel-roster .upload-area {
             border:1px solid rgba(0,217,255,.2);
         }
-        #panel-aar p, #panel-roster p, #panel-unitcards p {
-            font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;color:#ccc;
+        #panel-aar p, #panel-roster p, #panel-unitcards p,
+        #panel-content p, #panel-media p, #panel-personnel p, #panel-settings p {
+            font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:500;color:#ccc;
         }
         #panel-aar .upload-btn,
         #panel-roster .upload-btn,
-        #panel-unitcards .upload-btn {
-            font-size:13px;padding:10px 20px;
+        #panel-unitcards .upload-btn,
+        #panel-content .upload-btn,
+        #panel-media .upload-btn,
+        #panel-personnel .upload-btn,
+        #panel-settings .upload-btn {
+            font-size:14px;padding:10px 20px;
         }
         #panel-aar .action-btn,
         #panel-roster .action-btn,
-        #panel-unitcards .action-btn {
-            font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;
+        #panel-unitcards .action-btn,
+        #panel-content .action-btn,
+        #panel-media .action-btn,
+        #panel-personnel .action-btn,
+        #panel-settings .action-btn {
+            font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;
+        }
+        /* Section labels inside panels */
+        #panel-content .section-label,
+        #panel-media .section-label,
+        #panel-personnel .section-label,
+        #panel-settings .section-label {
+            font-size:12px;letter-spacing:3px;
         }
         /* Roster table readability */
         #panel-roster .roster-header {
@@ -1293,13 +1325,13 @@
         /* Unit cards readability */
         #panel-unitcards .upload-field select,
         #panel-unitcards .upload-field input {
-            font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;
+            font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:500;
         }
         #panel-unitcards input::placeholder {
             color:rgba(0,217,255,.45);font-style:italic;font-weight:400;
         }
         #panel-unitcards select, #panel-unitcards input[type="text"] {
-            font-size:13px !important;
+            font-size:16px !important;
         }
     </style>
 </head>
