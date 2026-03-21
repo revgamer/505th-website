@@ -88,6 +88,7 @@
         window.aarObjRemove=function(id){aarObjectives=aarObjectives.filter(x=>x.id!==id);renderAARObjs();};
         window.aarUnitChange=function(){['alpha','forcerecon','corpsman','airwing','combined'].forEach(u=>{const el=document.getElementById('uo-'+u);if(!el)return;const checked=document.querySelector('input[name="aarUnit"][value="'+u+'"]')?.checked;el.style.border='2px solid '+(checked?'var(--accent)':'rgba(0,217,255,.12)');el.style.background=checked?'rgba(0,217,255,.06)':'transparent';el.querySelector('img').style.opacity=checked?'1':'0.45';el.querySelector('div').style.color=checked?'var(--accent)':'#444';});};
         window.aarResultChange=function(){[['success','#7FFF7F'],['partial','#FFD700'],['failure','#FF4444']].forEach(([v,bc])=>{const el=document.getElementById('ropt-'+v);if(!el)return;const checked=document.querySelector('input[name="aarResult"][value="'+v+'"]')?.checked;el.style.background=checked?bc+'18':'transparent';el.style.borderColor=checked?bc:bc+'40';el.style.color=checked?bc:bc+'66';});};
+        window.aarClassChange=function(){const v=document.getElementById('aarClassification')?.value||'CL-5';const prev=document.getElementById('aarClassPreview');if(prev)prev.textContent=v;};
         async function loadAARPanel(){aarObjectives=[];renderAARObjs();document.getElementById('aarDate').value=new Date().toISOString().split('T')[0];document.getElementById('aarSubmitStatus').textContent='';await loadRecentAARs();}
         async function loadRecentAARs(){const c=document.getElementById('aarRecentList');if(!c)return;c.innerHTML='<div class="empty-state">LOADING...</div>';try{const s=await getDocs(query(collection(db,'aars'),orderBy('date','desc'),limit(20)));if(s.empty){c.innerHTML='<div class="empty-state">NO REPORTS SUBMITTED YET</div>';return;}const rows=[];s.forEach(d=>rows.push({id:d.id,...d.data()}));c.innerHTML=rows.map(a=>{const dt=a.date?.toDate?a.date.toDate().toLocaleDateString('en-GB'):(a.date?new Date(a.date).toLocaleDateString('en-GB'):'—');return`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03)"><img src="${UNIT_LOGOS[a.unit]||'images/logo.png'}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0"><div style="flex:1;color:#ccc;font-size:11px;letter-spacing:1px">${esc(a.title||'Untitled')}</div><div style="color:#aaa;font-size:9px;white-space:nowrap">${dt}</div><div style="font-size:8px;letter-spacing:1px;padding:1px 5px;border:1px solid;color:${a.result==='success'?'#7FFF7F':a.result==='partial'?'#FFD700':'#FF4444'};border-color:${a.result==='success'?'#7FFF7F':a.result==='partial'?'#FFD700':'#FF4444'}">${RES_LABELS[a.result]||'—'}</div><button class="action-btn remove-btn small" onclick="deleteAAR('${a.id}')">DELETE</button></div>`;}).join('');}catch(e){c.innerHTML=`<div class="empty-state">ERROR: ${esc(e.message)}</div>`;}}
         // DISCORD WEBHOOK — paste your webhook URL here
@@ -130,11 +131,12 @@
             });
             document.getElementById('aarAttachmentsList').appendChild(row);
         };
-        window.aarClearForm=function(skipConfirm){if(!skipConfirm&&!confirm('Clear all form data?'))return;['aarTitle','aarAuthor','aarCommander','aarFiledBy','aarLocation','aarMainObjective','aarCommanderIntent','aarObjectiveStandards','aarPlannedExecution','aarActualExecution','aarUnitsInvolved','aarEnemyFaction','aarEnemyCasualties','aarEnemyTactics','aarEnemyDisposition','aarSuccessfulManeuvers','aarMistakes','aarUnexpected','aarObjectiveOutcome','aarLessonsLearned','aarRecommended','aarMiscComments'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('aarPersonnel').value='';document.getElementById('aarCasualties').value='';document.getElementById('aarOpType').value='';document.querySelectorAll('input[name="aarResult"],input[name="aarUnit"]').forEach(r=>r.checked=false);aarUnitChange();aarResultChange();document.getElementById('aarSubmitStatus').textContent='';};
+        window.aarClearForm=function(skipConfirm){if(!skipConfirm&&!confirm('Clear all form data?'))return;['aarTitle','aarAuthor','aarCommander','aarFiledBy','aarLocation','aarMainObjective','aarCommanderIntent','aarObjectiveStandards','aarPlannedExecution','aarActualExecution','aarUnitsInvolved','aarEnemyFaction','aarEnemyCasualties','aarEnemyTactics','aarEnemyDisposition','aarSuccessfulManeuvers','aarMistakes','aarUnexpected','aarObjectiveOutcome','aarLessonsLearned','aarRecommended','aarMiscComments'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('aarPersonnel').value='';document.getElementById('aarCasualties').value='';document.getElementById('aarOpType').value='';const cl=document.getElementById('aarClassification');if(cl){cl.value='CL-5';}aarClassChange();document.querySelectorAll('input[name="aarResult"],input[name="aarUnit"]').forEach(r=>r.checked=false);aarUnitChange();aarResultChange();document.getElementById('aarSubmitStatus').textContent='';};
         window.submitAAR=async function(){
             const g=id=>document.getElementById(id)?.value.trim()||'';
             const title=g('aarTitle'),dateVal=g('aarDate'),opType=g('aarOpType'),commander=g('aarCommander'),
                   filedBy=g('aarFiledBy'),author=g('aarAuthor'),location=g('aarLocation'),
+                  classification=document.getElementById('aarClassification')?.value||'CL-5',
                   mainObjective=g('aarMainObjective'),commanderIntent=g('aarCommanderIntent'),
                   objectiveStandards=g('aarObjectiveStandards'),plannedExecution=g('aarPlannedExecution'),
                   actualExecution=g('aarActualExecution'),
@@ -153,7 +155,7 @@
             btn.disabled=1;btn.textContent='SUBMITTING...';st.style.color='var(--accent)';st.textContent='SUBMITTING...';
             try{
                 await addDoc(collection(db,'aars'),{
-                    title,operationType:opType,commander,filedBy,author,location,mainObjective,
+                    title,operationType:opType,commander,filedBy,author,location,classification,mainObjective,
                     commanderIntent,objectiveStandards,plannedExecution,summary:actualExecution,
                     unitsInvolved,personnel,casualties,enemyFaction,enemyCasualties,enemyTactics,enemyDisposition,
                     successfulManeuvers,mistakes,unexpected,
@@ -1514,14 +1516,14 @@
                             <label style="cursor:pointer;text-align:center"><input type="radio" name="aarUnit" value="combined" style="display:none" onchange="aarUnitChange()"><div id="uo-combined" style="padding:10px 12px;border:2px solid rgba(0,217,255,.12);transition:all .2s;min-width:80px"><img src="images/logo.png" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 4px;opacity:.45"><div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;color:#ccc">COMBINED</div></div></label>
                         </div>
                         <div class="upload-row">
-                            <div class="upload-field" style="max-width:160px"><label>CLASSIFICATION</label><div style="padding:9px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.35);color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;font-weight:700">CL-5</div></div>
+                            <div class="upload-field" style="max-width:160px"><label>CLASSIFICATION</label><select id="aarClassification" onchange="aarClassChange()" style="width:100%;padding:9px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.35);color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;font-weight:700;outline:none;cursor:pointer"><option value="CL-1">CL-1</option><option value="CL-2">CL-2</option><option value="CL-3">CL-3</option><option value="CL-4">CL-4</option><option value="CL-5" selected>CL-5</option><option value="CL-6">CL-6</option><option value="CL-7">CL-7</option><option value="CL-8">CL-8</option><option value="CL-9">CL-9</option></select></div>
                             <div class="upload-field"><label>AUTHOR *</label><input type="text" id="aarAuthor" placeholder="Full name / callsign of report author"></div>
                         </div>
                     </div>
 
                     <!-- DOCUMENT HEADER PREVIEW -->
                     <div style="background:rgba(0,0,0,.5);border:1px solid rgba(0,217,255,.12);padding:14px 18px;margin-bottom:12px;text-align:center;line-height:2">
-                        <div style="color:rgba(0,217,255,.9);font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:4px">CLASSIFICATION: CL-5</div>
+                        <div style="color:rgba(0,217,255,.9);font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:4px">CLASSIFICATION: <span id="aarClassPreview">CL-5</span></div>
                         <div style="color:#ddd;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;letter-spacing:3px;margin-top:6px">PLATOON AFTER ACTION REPORT</div>
                         <div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;letter-spacing:1.5px;margin-top:4px">THIS DOCUMENT IS ISSUED BY THE AUTHORITY OF THE PLATOON COMMANDER</div>
                         <div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;letter-spacing:1.5px">UNDER THE COMMAND OF LIEUTENANT GENERAL OF THE 505TH EXPEDITIONARY FORCE</div>
@@ -1561,7 +1563,7 @@
                         <div class="upload-row">
                             <div class="upload-field"><label>UNITS INVOLVED</label><input type="text" id="aarUnitsInvolved" placeholder="e.g. Alpha Co., JTF-23, 54th Air Wing"></div>
                             <div class="upload-field" style="max-width:140px"><label>INITIAL STRENGTH</label><input type="number" id="aarPersonnel" placeholder="Personnel count" min="0"></div>
-                            <div class="upload-field" style="max-width:140px"><label>TOTAL CASUALTIES (KIA+WIA)</label><input type="number" id="aarCasualties" placeholder="0" min="0"></div>
+                            <div class="upload-field" style="max-width:140px"><label>TOTAL CASUALTIES (KIA+WIA)</label><input type="number" id="aarCasualties" placeholder="0" min="0"><div style="color:#aaa;font-size:8px;letter-spacing:1.5px;margin-top:4px;line-height:1.4">⚠ REFER TO IN-GAME LEADERBOARD</div></div>
                         </div>
                     </div>
 
@@ -1570,7 +1572,7 @@
                         <div style="color:rgba(0,217,255,.8);font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.12)">05 // ENEMY FORCES</div>
                         <div class="upload-row">
                             <div class="upload-field"><label>ENEMY FACTION</label><input type="text" id="aarEnemyFaction" placeholder="e.g. Insurrectionists, Unknown Hostiles"></div>
-                            <div class="upload-field" style="max-width:180px"><label>EST. ENEMY CASUALTIES</label><input type="text" id="aarEnemyCasualties" placeholder="e.g. 12 KIA, 3 captured"></div>
+                            <div class="upload-field" style="max-width:180px"><label>EST. ENEMY CASUALTIES</label><input type="text" id="aarEnemyCasualties" placeholder="e.g. 12 KIA, 3 captured"><div style="color:#aaa;font-size:8px;letter-spacing:1.5px;margin-top:4px;line-height:1.4">⚠ REFER TO IN-GAME LEADERBOARD</div></div>
                         </div>
                         <div class="upload-row" style="margin-top:8px">
                             <div class="upload-field"><label>ENEMY TACTICS AS OBSERVED</label><textarea id="aarEnemyTactics" placeholder="Flanking maneuvers, use of cover, vehicle tactics..." style="width:100%;min-height:60px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:500;padding:12px;outline:none;resize:vertical;line-height:1.6"></textarea></div>

@@ -617,7 +617,7 @@
 
                 <!-- CLASSIFICATION HEADER -->
                 <div style="text-align:center;padding:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(0,217,255,0.15);margin-bottom:1.2rem;line-height:1.8;">
-                    <div style="font-size:0.65rem;letter-spacing:0.2em;color:var(--accent);">CLASSIFICATION: CL-5</div>
+                    <div style="font-size:0.65rem;letter-spacing:0.2em;color:var(--accent);">CLASSIFICATION: ${a.classification || 'CL-5'}</div>
                     <div style="font-size:0.8rem;letter-spacing:0.12em;color:rgba(255,255,255,0.5);">BATTALION AFTER ACTION REPORT // 505TH EXPEDITIONARY FORCE</div>
                     <div style="font-size:0.75rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35);">DISTRIBUTION OUTSIDE 505TH CLASSIFIED DOCUMENT AUTHORITY IS STRICTLY PROHIBITED</div>
                 </div>
@@ -718,7 +718,7 @@
 
                 <!-- FOOTER -->
                 <div style="font-size:0.7rem;color:rgba(255,255,255,0.25);letter-spacing:0.08em;margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.07);">
-                    SUBMITTED BY: ${a.submittedByName || 'UNKNOWN'} // CLASSIFICATION: CL-5 // 505TH EXPEDITIONARY FORCE
+                    SUBMITTED BY: ${a.submittedByName || 'UNKNOWN'} // CLASSIFICATION: ${a.classification || 'CL-5'} // 505TH EXPEDITIONARY FORCE
                 </div>
             `;
             document.getElementById('aarModal').classList.add('active');
