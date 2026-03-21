@@ -79,7 +79,7 @@ function applyCmsSlots(content, pageId) {
             }
 
         } else if (slotType === 'text') {
-            const text = typeof value === 'string' ? value : (value.text || value.url || '');
+            const text = typeof value === 'string' ? value : (value.value || value.text || value.url || '');
             if (text) el.textContent = text;
         }
     });
