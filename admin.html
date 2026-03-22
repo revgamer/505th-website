@@ -916,9 +916,13 @@
                 <div class="upload-field" style="border-bottom:1px solid rgba(0,217,255,.07);padding-bottom:14px;margin-bottom:14px">
                     <label style="display:block;margin-bottom:6px">${slot.label}</label>
                     <div class="image-preview" id="prev-${key}" style="margin-bottom:8px">${val.url?`<img src="${val.url}" style="max-width:200px;max-height:120px;object-fit:cover;">`:'<span style="color:#555;font-size:10px;letter-spacing:1px">NO IMAGE SET</span>'}</div>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap">
-                        <button class="upload-btn" onclick="openMediaPicker('${key}','image')" style="font-size:9px;padding:5px 12px">SELECT IMAGE</button>
-                        <button class="action-btn remove-btn" onclick="removePageImage('${key}','${pageId}')" style="font-size:9px;padding:5px 12px">REMOVE IMAGE</button>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                        <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:\'Rajdhani\',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;padding:9px 18px">
+                            <input type="file" accept="image/*" style="display:none" onchange="uploadPageImage(this,'${key}','${pageId}')">
+                            UPLOAD IMAGE
+                        </label>
+                        <span id="upstatus-${key}" style="font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1px;color:#aaa"></span>
+                        <button class="action-btn remove-btn" onclick="removePageImage('${key}','${pageId}')" style="font-size:9px;padding:5px 12px">REMOVE</button>
                     </div>
                 </div>`;
 
@@ -987,6 +991,34 @@
             const prev=document.getElementById('prev-'+key);
             if(prev) prev.innerHTML='<span style="color:#555;font-size:10px;letter-spacing:1px">NO IMAGE SET</span>';
             try { await setDoc(doc(db,'settings','page_content'),pageContentData); notify('IMAGE REMOVED: '+key.split('__')[1].toUpperCase()); } catch(e){notify('ERROR',1);}
+        };
+
+        window.uploadPageImage = async function(input, key, pageId) {
+            const file = input.files[0]; if(!file) return;
+            const status = document.getElementById('upstatus-'+key);
+            const prev = document.getElementById('prev-'+key);
+            if(status) { status.textContent='UPLOADING...'; status.style.color='var(--accent)'; }
+            try {
+                const fd = new FormData();
+                fd.append('file', file);
+                fd.append('upload_preset', UPLOAD_PRESET);
+                fd.append('folder', '505th_pages');
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {method:'POST', body:fd});
+                const data = await res.json();
+                if(!data.secure_url) throw new Error('No URL returned');
+                if(!pageContentData[key]) pageContentData[key]={};
+                pageContentData[key].url = data.secure_url;
+                if(prev) prev.innerHTML=`<img src="${data.secure_url}" style="max-width:200px;max-height:120px;object-fit:cover;">`;
+                if(status) { status.textContent='✓ UPLOADED'; status.style.color='#7FFF7F'; }
+                await setDoc(doc(db,'settings','page_content'), pageContentData);
+                notify('SAVED: '+key.split('__')[1].toUpperCase());
+                logAction('PAGE_IMG', key);
+            } catch(e) {
+                if(status) { status.textContent='✗ FAILED'; status.style.color='#FF4444'; }
+                notify('UPLOAD FAILED', 1);
+                console.error(e);
+            }
+            input.value='';
         };
 
         window.clearAllPageContent = async function(pageId) {
