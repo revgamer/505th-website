@@ -1176,29 +1176,19 @@
                             </div>
                         </div>`;
                     } else {
-                        const embedUrl  = getVideoEmbed(m.url);
-                        const isMedal   = isMedalUrl(m.url);
-                        const medalThumb= isMedal ? getMedalThumb(m.url) : null;
+                        const embedUrl = getVideoEmbed(m.url);
+                        const isUpload = !embedUrl && m.url && (m.url.startsWith('https://res.cloudinary.com') || m.url.match(/\.(mp4|webm|mov)(\?|$)/i));
                         return `<div class="media-card-v2 media-card-video" style="${dimStyle}">
                             <div class="media-video-preview">
-                                ${isMedal
-                                    ? `<a href="${m.url}" target="_blank" rel="noopener" style="display:block;position:relative;width:100%;padding-bottom:56.25%;background:#050709;overflow:hidden;text-decoration:none">
-                                        ${medalThumb ? `<img src="${medalThumb}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:.85" onerror="this.style.display='none'">` : ''}
-                                        <div style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(0,0,0,.45)">
-                                            <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,180,0,.15);border:2px solid #FFB400;display:flex;align-items:center;justify-content:center;font-size:20px">▶</div>
-                                            <span style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;color:#FFB400">WATCH ON MEDAL</span>
-                                        </div>
-                                      </a>`
-                                    : embedUrl
-                                        ? `<iframe src="${embedUrl}" frameborder="0" allowfullscreen loading="lazy"></iframe>`
+                                ${embedUrl
+                                    ? `<iframe src="${embedUrl}" frameborder="0" allowfullscreen loading="lazy"></iframe>`
+                                    : isUpload
+                                        ? `<video controls style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;background:#000" preload="metadata"><source src="${m.url}"></video>`
                                         : `<div style="padding:20px;color:#aaa;font-size:10px;word-break:break-all">${esc(m.url||'No URL')}</div>`
                                 }
                             </div>
                             <div class="media-body-v2">
-                                <div class="media-name-v2">
-                                    ${isMedal ? '<span style="color:#FFB400;font-size:8px;letter-spacing:2px;margin-right:6px;border:1px solid #FFB400;padding:1px 5px">MEDAL</span>' : ''}
-                                    ${esc(m.name||'Untitled')}
-                                </div>
+                                <div class="media-name-v2">${esc(m.name||'Untitled')}</div>
                                 ${m.description?`<div class="media-desc-v2">${esc(m.description)}</div>`:''}
                                 <div class="media-meta-v2">
                                     <span class="media-cat-badge">${cat.toUpperCase()}</span>
@@ -1207,7 +1197,6 @@
                                 <div class="media-actions-v2">
                                     <label class="toggle-switch"><input type="checkbox" ${isEnabled?'checked':''} onchange="toggleMediaEnabled('${m.id}',this.checked,'${type}')"><span class="toggle-slider"></span></label>
                                     <span style="font-size:9px;letter-spacing:1px;color:${isEnabled?'var(--success)':'#aaa'}">${isEnabled?'VISIBLE':'HIDDEN'}</span>
-                                    ${isMedal?`<a href="${m.url}" target="_blank" rel="noopener" class="action-btn approve-btn small" style="text-decoration:none;font-size:9px">↗ OPEN</a>`:''}
                                     <button class="action-btn remove-btn small" onclick="deleteMedia('${m.id}','${type}')">DELETE</button>
                                 </div>
                             </div>
@@ -1217,24 +1206,13 @@
             } catch(e){ c.innerHTML=`<div class="empty-state">ERROR: ${esc(e.message)}</div>`; }
         }
 
-        // YouTube/Twitch/Medal embed helper
+        // YouTube/Twitch embed helper
         function getVideoEmbed(url) {
             if(!url) return null;
             let m;
             if((m=url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/))) return `https://www.youtube-nocookie.com/embed/${m[1]}`;
             if((m=url.match(/youtube\.com\/embed\/([\w-]+)/))) return `https://www.youtube-nocookie.com/embed/${m[1]}`;
             if((m=url.match(/twitch\.tv\/videos\/(\d+)/))) return `https://player.twitch.tv/?video=${m[1]}&parent=${location.hostname}`;
-            return null; // Medal handled separately via isMedalUrl()
-        }
-
-        function isMedalUrl(url) {
-            return url && /medal\.tv/i.test(url);
-        }
-
-        // Extract Medal clip ID for thumbnail
-        function getMedalThumb(url) {
-            const m = url.match(/clips\/([A-Za-z0-9_-]+)/);
-            if(m) return `https://clips2.medal.tv/clip/${m[1]}/thumbnail.jpg`;
             return null;
         }
 
@@ -1320,7 +1298,29 @@
             } catch(e){notify('ERROR',1);}
         };
 
-        window.handleLogout = async function() {
+        window.setVidMode = function(mode) {
+            const ytForm   = document.getElementById('vidYoutubeForm');
+            const fileForm = document.getElementById('vidFileForm');
+            const btnYT    = document.getElementById('vidModeYT');
+            const btnFile  = document.getElementById('vidModeFile');
+            if(mode === 'youtube') {
+                ytForm.style.display   = '';
+                fileForm.style.display = 'none';
+                btnYT.style.background   = 'rgba(0,217,255,.15)';
+                btnYT.style.color        = 'var(--accent)';
+                btnFile.style.background = 'transparent';
+                btnFile.style.color      = '#aaa';
+            } else {
+                ytForm.style.display   = 'none';
+                fileForm.style.display = '';
+                btnFile.style.background = 'rgba(0,217,255,.15)';
+                btnFile.style.color      = 'var(--accent)';
+                btnYT.style.background   = 'transparent';
+                btnYT.style.color        = '#aaa';
+            }
+        };
+
+
             try { await signOut(auth); window.location.href='login.html'; } catch(e){}
         };
 
@@ -1492,9 +1492,54 @@
                 btn.disabled = false;
                 btn.textContent = 'ADD VIDEO';
             }
-        };
+            } else if (type === 'videofile') {
+                const fileInput = document.getElementById('uploadVidFile');
+                const nameInput = document.getElementById('uploadVidFileName');
+                const catInput  = document.getElementById('uploadVidFileCat');
+                const descInput = document.getElementById('uploadVidFileDesc');
+                const btn       = document.getElementById('uploadVidFileBtn');
+                const statusEl  = document.getElementById('uploadVidFileStatus');
 
-    </script>
+                const file = fileInput.files[0];
+                if(!file) { notify('SELECT A VIDEO FILE', 1); return; }
+
+                btn.disabled = true;
+                btn.textContent = 'UPLOADING...';
+                if(statusEl) statusEl.textContent = 'UPLOADING ' + file.name + '...';
+
+                try {
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    fd.append('upload_preset', UPLOAD_PRESET);
+                    fd.append('resource_type', 'video');
+                    const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, { method:'POST', body:fd });
+                    const data = await res.json();
+                    if(!res.ok || data.error) throw new Error(data.error?.message || 'Upload failed');
+
+                    const name = nameInput?.value?.trim() || file.name.replace(/\.[^.]+$/, '');
+                    await addDoc(collection(db, 'media'), {
+                        type:        'video',
+                        url:         data.secure_url,
+                        name:        name,
+                        description: descInput?.value?.trim() || '',
+                        category:    catInput?.value || 'operations',
+                        uploadedAt:  new Date().toISOString(),
+                        enabled:     true,
+                        source:      'upload'
+                    });
+                    fileInput.value = '';
+                    if(nameInput)  nameInput.value  = '';
+                    if(descInput)  descInput.value  = '';
+                    if(statusEl)   statusEl.textContent = '';
+                    notify('VIDEO UPLOADED');
+                    loadMedia('video');
+                } catch(e) {
+                    notify('UPLOAD FAILED: ' + e.message, 1);
+                    if(statusEl) statusEl.textContent = '';
+                }
+                btn.disabled = false;
+                btn.textContent = 'UPLOAD';
+            }
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
@@ -1954,16 +1999,40 @@
                     <div class="panel-title">VIDEOS</div>
                     <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">MANAGE VIDEOS — TOGGLE VISIBILITY ON THE PUBLIC VIDEOS PAGE</p>
                     <div class="upload-area">
-                        <div style="color:rgba(0,217,255,.5);font-size:9px;letter-spacing:3px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">ADD NEW VIDEO</div>
-                        <div class="upload-row">
-                            <div class="upload-field"><label>YOUTUBE / TWITCH / MEDAL URL *</label><input type="url" id="uploadVidUrl" placeholder="https://www.youtube.com/watch?v=...  or  https://medal.tv/games/arma-3/clips/..."></div>
-                            <div class="upload-field" style="max-width:160px"><label>CATEGORY</label><select id="uploadVidCat"><option value="operations">OPERATIONS</option><option value="training">TRAINING</option><option value="events">EVENTS</option><option value="other">OTHER</option></select></div>
-                            <button class="upload-btn" id="uploadVidBtn" onclick="handleUpload('video')">ADD VIDEO</button>
+                        <div style="color:rgba(0,217,255,.5);font-size:9px;letter-spacing:3px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">ADD NEW VIDEO</div>
+
+                        <!-- Mode toggle -->
+                        <div style="display:flex;gap:0;margin-bottom:14px;border:1px solid rgba(0,217,255,.25);width:fit-content">
+                            <button id="vidModeYT" onclick="setVidMode('youtube')" style="background:rgba(0,217,255,.15);border:none;border-right:1px solid rgba(0,217,255,.25);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:7px 18px;cursor:pointer">▶ YOUTUBE LINK</button>
+                            <button id="vidModeFile" onclick="setVidMode('file')" style="background:transparent;border:none;color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:7px 18px;cursor:pointer">⬆ UPLOAD FILE</button>
                         </div>
-                        <div class="upload-row" style="margin-top:10px">
-                            <div class="upload-field"><label>TITLE *</label><input type="text" id="uploadVidName" placeholder="e.g. Operation Sundown — Full Run"></div>
+
+                        <!-- YouTube mode -->
+                        <div id="vidYoutubeForm">
+                            <div class="upload-row">
+                                <div class="upload-field"><label>YOUTUBE URL *</label><input type="url" id="uploadVidUrl" placeholder="https://www.youtube.com/watch?v=..."></div>
+                                <div class="upload-field" style="max-width:160px"><label>CATEGORY</label><select id="uploadVidCat"><option value="operations">OPERATIONS</option><option value="training">TRAINING</option><option value="events">EVENTS</option><option value="other">OTHER</option></select></div>
+                                <button class="upload-btn" id="uploadVidBtn" onclick="handleUpload('video')">ADD VIDEO</button>
+                            </div>
+                            <div class="upload-row" style="margin-top:10px">
+                                <div class="upload-field"><label>TITLE *</label><input type="text" id="uploadVidName" placeholder="e.g. Operation Sundown — Full Run"></div>
+                            </div>
+                            <div class="upload-field" style="margin-top:10px"><label>DESCRIPTION</label><input type="text" id="uploadVidDesc" placeholder="Describe the video..."></div>
                         </div>
-                        <div class="upload-field" style="margin-top:10px"><label>DESCRIPTION</label><input type="text" id="uploadVidDesc" placeholder="Describe the video..."></div>
+
+                        <!-- File upload mode -->
+                        <div id="vidFileForm" style="display:none">
+                            <div class="upload-row">
+                                <div class="upload-field"><label>SELECT VIDEO FILE (MP4, WEBM, MOV)</label><input type="file" id="uploadVidFile" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"></div>
+                                <div class="upload-field" style="max-width:160px"><label>CATEGORY</label><select id="uploadVidFileCat"><option value="operations">OPERATIONS</option><option value="training">TRAINING</option><option value="events">EVENTS</option><option value="other">OTHER</option></select></div>
+                                <button class="upload-btn" id="uploadVidFileBtn" onclick="handleUpload('videofile')">UPLOAD</button>
+                            </div>
+                            <div class="upload-row" style="margin-top:10px">
+                                <div class="upload-field"><label>TITLE (optional — uses filename if blank)</label><input type="text" id="uploadVidFileName" placeholder="e.g. Operation Sundown — Full Run"></div>
+                            </div>
+                            <div class="upload-field" style="margin-top:10px"><label>DESCRIPTION</label><input type="text" id="uploadVidFileDesc" placeholder="Describe the video..."></div>
+                            <div id="uploadVidFileStatus" style="margin-top:8px;font-size:9px;letter-spacing:2px;color:var(--accent)"></div>
+                        </div>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
                         <div style="color:#aaa;font-size:10px;letter-spacing:2px"><span id="videoCount" style="color:var(--accent)">0</span></div>
