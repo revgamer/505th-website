@@ -430,9 +430,9 @@
             '54th Air Wing': {
                 color:'#007A70', accent:'#00c4b7',
                 sections:{
-                    'Squadron Staff': ['Squadron Leader','Squadron Assistant'],
-                    'Alpha Squadron': ['Pilot 1','Pilot 2','Pilot 3','Pilot 4','Pilot 5'],
-                    'Bravo Squadron': ['Pilot 1','Pilot 2','Pilot 3','Pilot 4','Pilot 5'],
+                    'Wing Staff': ['Wing Commander','Deputy Wing Commander'],
+                    'Alpha Squadron': ['Squadron CO','Squadron XO','Pilot 1','Pilot 2','Pilot 3','Pilot 4'],
+                    'Bravo Squadron': ['Squadron CO','Squadron XO','Pilot 1','Pilot 2','Pilot 3','Pilot 4'],
                 }
             },
             'Support Company': {
@@ -498,16 +498,16 @@
 
                 // Special layout for 54th Air Wing — Squadron Staff on top, squadrons side by side below
                 if(unit === '54th Air Wing') {
-                    const staffSlots = cfg.sections['Squadron Staff'] || [];
+                    const staffSlots = cfg.sections['Wing Staff'] || [];
                     if(staffSlots.length) {
-                        html += `<div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)">Squadron Staff</div>`;
+                        html += `<div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)">Wing Staff</div>`;
                         html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">`;
-                        staffSlots.forEach(slot => { html += renderSlotCard(unit, 'Squadron Staff', slot); });
+                        staffSlots.forEach(slot => { html += renderSlotCard(unit, 'Wing Staff', slot); });
                         html += `</div>`;
                     }
                     html += `<div style="display:flex;gap:16px;flex-wrap:wrap">`;
                     for(const [section, slots] of Object.entries(cfg.sections)) {
-                        if(section === 'Squadron Staff') continue;
+                        if(section === 'Wing Staff') continue;
                         html += `<div style="flex:0 1 300px">`;
                         html += `<div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)">${section}</div>`;
                         html += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;

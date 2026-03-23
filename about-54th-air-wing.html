@@ -1125,7 +1125,7 @@
         const el=document.getElementById('unitCardsEmbed');
         if(el){
             const UNIT='54th Air Wing';
-            const cfg={"accent": "#00c4b7", "sections": {"Squadron Staff": ["Squadron Leader", "Squadron Assistant"], "Alpha Squadron": ["Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4", "Pilot 5"], "Bravo Squadron": ["Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4", "Pilot 5"]}};
+            const cfg={"accent": "#00c4b7", "sections": {"Wing Staff": ["Wing Commander", "Deputy Wing Commander"], "Alpha Squadron": ["Squadron CO", "Squadron XO", "Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4"], "Bravo Squadron": ["Squadron CO", "Squadron XO", "Pilot 1", "Pilot 2", "Pilot 3", "Pilot 4"]}};
             function e(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
             function k(u,s,l){ return (u+'__'+s+'__'+l).split(' ').join('_'); }
             function slot(nm,st,n){
@@ -1138,18 +1138,18 @@
                 const snap=await getDoc(doc(db,'settings','unit_cards'));
                 const uc=snap.exists()?snap.data():{};
                 let h='';
-                // Squadron Staff — full width centred on top
-                const staffSlots=cfg.sections['Squadron Staff']||[];
+                // Wing Staff — full width centred on top
+                const staffSlots=cfg.sections['Wing Staff']||[];
                 if(staffSlots.length){
                     h+=`<div class="uc-squads-row" style="justify-content:center;margin-bottom:12px">`;
-                    h+=`<div class="uc-squad-card" style="flex:0 1 420px;max-width:420px"><div class="uc-squad-label" style="color:${cfg.accent}">Squadron Staff</div>`;
-                    staffSlots.forEach(s=>{const v=uc[k(UNIT,'Squadron Staff',s)]||{};h+=slot(s,v.status||'open',v.name||'');});
+                    h+=`<div class="uc-squad-card" style="flex:0 1 420px;max-width:420px"><div class="uc-squad-label" style="color:${cfg.accent}">Wing Staff</div>`;
+                    staffSlots.forEach(s=>{const v=uc[k(UNIT,'Wing Staff',s)]||{};h+=slot(s,v.status||'open',v.name||'');});
                     h+=`</div></div>`;
                 }
                 // Alpha and Bravo side by side
                 h+=`<div class="uc-squads-row" style="justify-content:center">`;
                 for(const [sec,slots] of Object.entries(cfg.sections)){
-                    if(sec==='Squadron Staff') continue;
+                    if(sec==='Wing Staff') continue;
                     h+=`<div class="uc-squad-card" style="flex:0 1 300px;max-width:300px"><div class="uc-squad-label" style="color:${cfg.accent}">${sec}</div>`;
                     slots.forEach(s=>{const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||'');});
                     h+=`</div>`;
