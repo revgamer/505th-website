@@ -17,6 +17,7 @@
         const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
         const auth = getAuth(app), db = getFirestore(app);
         let currentUser=null, currentUserData=null, allUsers=[], allMedia=[], pageContentData={};
+        let rosterData=[], rosterSort='name-asc';
 
         const ADMIN_ROLES = ['commander','developer','staff_nco','nco','recruiter'];
         const ROLE_PERMISSIONS = {
@@ -189,8 +190,16 @@
                 window.deleteAAR=async function(id){if(!confirm('DELETE THIS AAR?'))return;await deleteDoc(doc(db,'aars',id));logAction('AAR_DELETE','Deleted AAR '+id);notify('AAR DELETED');loadRecentAARs();};
 
         // ── ROSTER ──────────────────────────────────────────────────────────
-        let rosterData=[];
         function calcPeriod(dateStr){if(!dateStr)return'—';const d=new Date(dateStr),now=new Date();let m=(now.getFullYear()-d.getFullYear())*12+(now.getMonth()-d.getMonth());const y=Math.floor(m/12),r=m%12;return(y>0?y+' year'+(y!==1?'s ':' '):'')+r+' month'+(r!==1?'s':'');}
+        window.setRosterSort=function(sort){
+            rosterSort=sort;
+            document.querySelectorAll('.roster-sort-btn').forEach(b=>{
+                b.style.background=b.dataset.sort===sort?'rgba(0,217,255,.15)':'transparent';
+                b.style.color=b.dataset.sort===sort?'var(--accent)':'#aaa';
+                b.style.borderColor=b.dataset.sort===sort?'var(--accent)':'rgba(0,217,255,.2)';
+            });
+            renderRosterTable();
+        };
         async function loadRosterPanel(){
             const c=document.getElementById('rosterList');
             if(c)c.innerHTML='<div class="empty-state">LOADING...</div>';
@@ -203,14 +212,20 @@
         }
         function renderRosterTable(){
             const c=document.getElementById('rosterList');if(!c)return;
-            const active=rosterData.filter(r=>r.platoon!=='Reserves');
-            const reserves=rosterData.filter(r=>r.platoon==='Reserves');
+            // Apply sort
+            const sorted=[...rosterData];
+            if(rosterSort==='name-asc')  sorted.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+            if(rosterSort==='name-desc') sorted.sort((a,b)=>(b.name||'').localeCompare(a.name||''));
+            if(rosterSort==='platoon')   sorted.sort((a,b)=>(a.platoon||'').localeCompare(b.platoon||'')||(a.name||'').localeCompare(b.name||''));
+            if(rosterSort==='att-desc')  sorted.sort((a,b)=>(b.attendance||0)-(a.attendance||0));
+            const active=sorted.filter(r=>r.platoon!=='Reserves');
+            const reserves=sorted.filter(r=>r.platoon==='Reserves');
             const tot=document.getElementById('rosterTotal'),act=document.getElementById('rosterActiveCount'),res=document.getElementById('rosterReservesCount');
             if(tot)tot.textContent=rosterData.length;
             if(act)act.textContent=active.length;
             if(res)res.textContent=reserves.length;
             if(!rosterData.length){c.innerHTML='<div class="empty-state">NO ROSTER ENTRIES — ADD YOUR FIRST MEMBER</div>';return;}
-            c.innerHTML=rosterData.map(r=>{
+            c.innerHTML=sorted.map(r=>{
                 const att=r.attendance||0;
                 const pt=r.promotionTracker||0;
                 const attColor=att>=3?'#7FFF7F':att>=2?'#FFD700':'var(--accent)';
@@ -916,13 +931,9 @@
                 <div class="upload-field" style="border-bottom:1px solid rgba(0,217,255,.07);padding-bottom:14px;margin-bottom:14px">
                     <label style="display:block;margin-bottom:6px">${slot.label}</label>
                     <div class="image-preview" id="prev-${key}" style="margin-bottom:8px">${val.url?`<img src="${val.url}" style="max-width:200px;max-height:120px;object-fit:cover;">`:'<span style="color:#555;font-size:10px;letter-spacing:1px">NO IMAGE SET</span>'}</div>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-                        <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:\'Rajdhani\',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;padding:9px 18px">
-                            <input type="file" accept="image/*" style="display:none" onchange="uploadPageImage(this,'${key}','${pageId}')">
-                            UPLOAD IMAGE
-                        </label>
-                        <span id="upstatus-${key}" style="font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1px;color:#aaa"></span>
-                        <button class="action-btn remove-btn" onclick="removePageImage('${key}','${pageId}')" style="font-size:9px;padding:5px 12px">REMOVE</button>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                        <button class="upload-btn" onclick="openMediaPicker('${key}','image')" style="font-size:9px;padding:5px 12px">SELECT IMAGE</button>
+                        <button class="action-btn remove-btn" onclick="removePageImage('${key}','${pageId}')" style="font-size:9px;padding:5px 12px">REMOVE IMAGE</button>
                     </div>
                 </div>`;
 
@@ -991,34 +1002,6 @@
             const prev=document.getElementById('prev-'+key);
             if(prev) prev.innerHTML='<span style="color:#555;font-size:10px;letter-spacing:1px">NO IMAGE SET</span>';
             try { await setDoc(doc(db,'settings','page_content'),pageContentData); notify('IMAGE REMOVED: '+key.split('__')[1].toUpperCase()); } catch(e){notify('ERROR',1);}
-        };
-
-        window.uploadPageImage = async function(input, key, pageId) {
-            const file = input.files[0]; if(!file) return;
-            const status = document.getElementById('upstatus-'+key);
-            const prev = document.getElementById('prev-'+key);
-            if(status) { status.textContent='UPLOADING...'; status.style.color='var(--accent)'; }
-            try {
-                const fd = new FormData();
-                fd.append('file', file);
-                fd.append('upload_preset', UPLOAD_PRESET);
-                fd.append('folder', '505th_pages');
-                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {method:'POST', body:fd});
-                const data = await res.json();
-                if(!data.secure_url) throw new Error('No URL returned');
-                if(!pageContentData[key]) pageContentData[key]={};
-                pageContentData[key].url = data.secure_url;
-                if(prev) prev.innerHTML=`<img src="${data.secure_url}" style="max-width:200px;max-height:120px;object-fit:cover;">`;
-                if(status) { status.textContent='✓ UPLOADED'; status.style.color='#7FFF7F'; }
-                await setDoc(doc(db,'settings','page_content'), pageContentData);
-                notify('SAVED: '+key.split('__')[1].toUpperCase());
-                logAction('PAGE_IMG', key);
-            } catch(e) {
-                if(status) { status.textContent='✗ FAILED'; status.style.color='#FF4444'; }
-                notify('UPLOAD FAILED', 1);
-                console.error(e);
-            }
-            input.value='';
         };
 
         window.clearAllPageContent = async function(pageId) {
@@ -1921,6 +1904,13 @@
                         <button class="upload-btn" onclick="openRosterAdd()">+ ADD ENTRY</button>
                         <button class="action-btn approve-btn" onclick="loadRosterPanel()">&#8635; REFRESH</button>
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
+                        <div style="display:flex;gap:4px;margin-left:8px;align-items:center">
+                            <span style="color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:2px;margin-right:4px">SORT:</span>
+                            <button class="roster-sort-btn" data-sort="name-asc" onclick="setRosterSort('name-asc')" style="background:rgba(0,217,255,.15);border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">A → Z</button>
+                            <button class="roster-sort-btn" data-sort="name-desc" onclick="setRosterSort('name-desc')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">Z → A</button>
+                            <button class="roster-sort-btn" data-sort="platoon" onclick="setRosterSort('platoon')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">PLATOON</button>
+                            <button class="roster-sort-btn" data-sort="att-desc" onclick="setRosterSort('att-desc')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">ATTENDANCE</button>
+                        </div>
                         <span style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;margin-left:8px">&#9998; CHECKBOX = +1 ATT &nbsp;|&nbsp; 3/3 = GLOWING PT — STAFF CLICKS +1 PT TO PROMOTE &nbsp;|&nbsp; RESETS MONTHLY</span>
                     </div>
                     <div class="roster-header">
