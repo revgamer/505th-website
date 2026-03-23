@@ -134,14 +134,16 @@
 
         /* ── NOTICE ── */
         .roster-notice {
-            margin-top:32px; padding:14px 18px;
-            border:1px dashed rgba(0,217,255,.1); background:rgba(0,0,0,.3);
-            font-family:'Share Tech Mono',monospace; font-size:12px; letter-spacing:2px; color:#ccc;
-            line-height:2;
+            margin-top:32px; padding:16px 20px;
+            border:1px solid rgba(0,217,255,.25); border-left:3px solid var(--accent);
+            background:rgba(0,0,0,.4);
+            font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:500;
+            letter-spacing:1.5px; color:#ccc; line-height:2;
         }
         .roster-notice a {
-            color:var(--accent); text-decoration:none;
+            color:var(--accent); text-decoration:none; font-weight:700;
         }
+        .roster-notice a:hover { text-decoration:underline; }
 
         @media(max-width:600px) {
             .roster-table th:nth-child(n+5),
@@ -291,8 +293,7 @@
 
                     <div class="roster-notice">
                         ⚠ &nbsp;THIS ROSTER IS FOR OFFICIAL UNIT USE ONLY. PERSONNEL INFORMATION IS CONFIDENTIAL.<br>
-                        FOR ROSTER UPDATES OR CORRECTIONS, CONTACT YOUR NCO OR UNIT ADMINISTRATION.<br>
-                        VIEW THE FULL <a href="resources-order-of-battle.html">ORDER OF BATTLE →</a>
+                        FOR ROSTER UPDATES OR CORRECTIONS, CONTACT YOUR NCO OR UNIT ADMINISTRATION.
                     </div>
                 </div>
             </div>
