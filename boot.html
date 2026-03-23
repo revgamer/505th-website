@@ -208,20 +208,21 @@
             opacity: 0;
             font-weight: 600;
         }
-        .boot-status.show { animation: fadeIn 0.5s ease forwards; }
+        .boot-status.show {
+            animation: fadeIn 0.5s ease forwards;
+        }
 
         /* Enter prompt */
         .enter-prompt {
-            text-align: center;
-            margin-top: 2.5rem;
+            margin-top: 2rem;
             color: var(--accent);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1.3rem;
-            font-weight: 700;
-            letter-spacing: 5px;
-            text-shadow: 0 0 20px var(--accent-glow);
+            font-size: 1.2rem;
+            letter-spacing: 4px;
+            text-align: center;
             opacity: 0;
             visibility: hidden;
+            font-weight: 700;
+            text-shadow: 0 0 15px var(--accent-glow);
         }
         .enter-prompt.show {
             opacity: 1;
@@ -277,6 +278,9 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // ── Must match ADMIN_ROLES in admin.html ──────────────────────────
+        const ADMIN_ROLES = ['commander', 'developer', 'staff_nco', 'nco', 'recruiter'];
+
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = 'login.html';
@@ -290,8 +294,7 @@
             }
 
             const userData = userDoc.data();
-            const destination = (userData.role === 'commander' || userData.role === 'admin' || userData.role === 'developer')
-                ? 'admin.html' : 'home.html';
+            const destination = ADMIN_ROLES.includes(userData.role) ? 'admin.html' : 'home.html';
 
             // Hide auth check, show boot
             document.getElementById('authCheck').classList.add('hidden');
