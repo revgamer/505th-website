@@ -1137,13 +1137,24 @@
             try{
                 const snap=await getDoc(doc(db,'settings','unit_cards'));
                 const uc=snap.exists()?snap.data():{};
-                let h='<div class="uc-squads-row">';
-                for(const [sec,slots] of Object.entries(cfg.sections)){
-                    h+=`<div class="uc-squad-card"><div class="uc-squad-label" style="color:${cfg.accent}">${sec}</div>`;
-                    for(const s of slots){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||''); }
-                    h+='</div>';
+                let h='';
+                // Squadron Staff — full width centred on top
+                const staffSlots=cfg.sections['Squadron Staff']||[];
+                if(staffSlots.length){
+                    h+=`<div class="uc-squads-row" style="justify-content:center;margin-bottom:12px">`;
+                    h+=`<div class="uc-squad-card" style="flex:0 1 420px;max-width:420px"><div class="uc-squad-label" style="color:${cfg.accent}">Squadron Staff</div>`;
+                    staffSlots.forEach(s=>{const v=uc[k(UNIT,'Squadron Staff',s)]||{};h+=slot(s,v.status||'open',v.name||'');});
+                    h+=`</div></div>`;
                 }
-                h+='</div>';
+                // Alpha and Bravo side by side
+                h+=`<div class="uc-squads-row" style="justify-content:center">`;
+                for(const [sec,slots] of Object.entries(cfg.sections)){
+                    if(sec==='Squadron Staff') continue;
+                    h+=`<div class="uc-squad-card" style="flex:0 1 300px;max-width:300px"><div class="uc-squad-label" style="color:${cfg.accent}">${sec}</div>`;
+                    slots.forEach(s=>{const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||'');});
+                    h+=`</div>`;
+                }
+                h+=`</div>`;
                 el.innerHTML=h;
             }catch(er){ console.warn('Unit cards:',er.message); }
         }

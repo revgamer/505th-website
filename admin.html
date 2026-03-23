@@ -491,6 +491,28 @@
                 html += `<div style="margin-bottom:20px;border:1px solid ${cfg.color}55;padding:14px 16px;background:rgba(0,0,0,.25)">`;
                 html += `<div style="color:${cfg.accent};font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:4px;margin-bottom:12px">${unit.toUpperCase()}</div>`;
 
+                // Special layout for 54th Air Wing — Squadron Staff on top, squadrons side by side below
+                if(unit === '54th Air Wing') {
+                    const staffSlots = cfg.sections['Squadron Staff'] || [];
+                    if(staffSlots.length) {
+                        html += `<div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)">Squadron Staff</div>`;
+                        html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">`;
+                        staffSlots.forEach(slot => { html += renderSlotCard(unit, 'Squadron Staff', slot); });
+                        html += `</div>`;
+                    }
+                    html += `<div style="display:flex;gap:16px;flex-wrap:wrap">`;
+                    for(const [section, slots] of Object.entries(cfg.sections)) {
+                        if(section === 'Squadron Staff') continue;
+                        html += `<div style="flex:0 1 300px">`;
+                        html += `<div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)">${section}</div>`;
+                        html += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
+                        slots.forEach(slot => { html += renderSlotCard(unit, section, slot); });
+                        html += `</div></div>`;
+                    }
+                    html += `</div></div>`;
+                    continue;
+                }
+
                 for(const [section, slots] of Object.entries(cfg.sections)) {
                     html += `<div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)">${section}</div>`;
 
