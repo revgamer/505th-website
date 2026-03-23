@@ -1340,16 +1340,18 @@
             if(unitcardsLink) unitcardsLink.style.display = p.unitcards?'':'none';
 
             // Dashboard widgets — hide sections the role doesn't need
-            const dashStatsRow  = document.getElementById('dashStatsRow');
+            const dashStatsRow    = document.getElementById('dashStatsRow');
             const dashDiscordSect = document.getElementById('dashDiscordSection');
             const dashRosterGrid  = document.getElementById('dashRosterGrid');
+            const dashInactiveSect= document.getElementById('dashInactiveSection');
             const dashReserveSect = document.getElementById('dashReserveSection');
             const dashBottomGrid  = document.getElementById('dashBottomGrid');
-            if(dashStatsRow)    dashStatsRow.style.display    = p.dash_stats?'':'none';
-            if(dashDiscordSect) dashDiscordSect.style.display = p.dash_discord?'':'none';
-            if(dashRosterGrid)  dashRosterGrid.style.display  = (p.dash_roster||p.dash_inactive)?'':'none';
-            if(dashReserveSect) dashReserveSect.style.display = p.dash_reserve?'':'none';
-            if(dashBottomGrid)  dashBottomGrid.style.display  = (p.dash_pending||p.dash_recent)?'':'none';
+            if(dashStatsRow)     dashStatsRow.style.display     = p.dash_stats?'':'none';
+            if(dashDiscordSect)  dashDiscordSect.style.display  = p.dash_discord?'':'none';
+            if(dashRosterGrid)   dashRosterGrid.style.display   = (p.dash_roster||p.dash_inactive||p.dash_reserve)?'grid':'none';
+            if(dashInactiveSect) dashInactiveSect.style.display = p.dash_inactive?'':'none';
+            if(dashReserveSect)  dashReserveSect.style.display  = p.dash_reserve?'':'none';
+            if(dashBottomGrid)   dashBottomGrid.style.display   = (p.dash_pending||p.dash_recent)?'':'none';
 
             // Topbar user info
             const tn=document.getElementById('topbarName');
@@ -1824,7 +1826,54 @@
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
             </div>
             <div class="main-content">
-                <div class="panel" id="panel-dashboard"><div class="panel-title">DASHBOARD</div><div class="stats-row" id="dashStatsRow"><div class="stat-card"><div class="stat-number warning" id="dashPending">0</div><div class="stat-label">PENDING</div></div><div class="stat-card"><div class="stat-number" id="dashActive">0</div><div class="stat-label">ACTIVE</div></div><div class="stat-card"><div class="stat-number" id="dashTotal">0</div><div class="stat-label">TOTAL</div></div></div><div class="dash-section" style="margin-bottom:16px" id="dashDiscordSection"><div class="dash-section-title">DISCORD INVITE LINK STATUS</div><div id="dashDiscordStatus"><div class="empty-state">LOADING...</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" id="dashRosterGrid"><div class="dash-section"><div class="dash-section-title">ROSTER STRENGTH BY PLATOON</div><div id="dashRosterStrength"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">INACTIVE MEMBERS <span style="font-size:9px;color:#aaa;letter-spacing:1px">(0 ATTENDANCE THIS CYCLE)</span></div><div id="dashInactiveMembers"><div class="empty-state">LOADING...</div></div></div></div><div class="dash-section" style="margin-bottom:16px" id="dashReserveSection"><div class="dash-section-title">RESERVES <span style="font-size:9px;color:#aaa;letter-spacing:1px;font-family:'Share Tech Mono',monospace">— TIME IN RESERVE</span></div><div id="dashReserves"><div class="empty-state">LOADING...</div></div></div><div class="dash-grid" id="dashBottomGrid"><div class="dash-section"><div class="dash-section-title">PENDING REGISTRATIONS</div><div id="dashPendingList"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">RECENT JOINS</div><div id="dashRecentJoins"><div class="empty-state">LOADING...</div></div></div></div></div>
+                <div class="panel" id="panel-dashboard">
+                    <div class="panel-title">DASHBOARD</div>
+
+                    <!-- Row 1: Stats -->
+                    <div class="stats-row" id="dashStatsRow">
+                        <div class="stat-card"><div class="stat-number warning" id="dashPending">0</div><div class="stat-label">PENDING</div></div>
+                        <div class="stat-card"><div class="stat-number" id="dashActive">0</div><div class="stat-label">ACTIVE</div></div>
+                        <div class="stat-card"><div class="stat-number" id="dashTotal">0</div><div class="stat-label">TOTAL</div></div>
+                    </div>
+
+                    <!-- Row 2: Discord (full width, staff_nco+) -->
+                    <div class="dash-section" style="margin-bottom:16px" id="dashDiscordSection">
+                        <div class="dash-section-title">DISCORD INVITE LINK STATUS</div>
+                        <div id="dashDiscordStatus"><div class="empty-state">LOADING...</div></div>
+                    </div>
+
+                    <!-- Row 3: Left = Roster Strength | Right = Inactive + Reserves stacked -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;align-items:start" id="dashRosterGrid">
+                        <!-- LEFT: Roster Strength -->
+                        <div class="dash-section" style="height:100%">
+                            <div class="dash-section-title">ROSTER STRENGTH BY PLATOON</div>
+                            <div id="dashRosterStrength"><div class="empty-state">LOADING...</div></div>
+                        </div>
+                        <!-- RIGHT: Inactive + Reserves stacked -->
+                        <div style="display:flex;flex-direction:column;gap:16px">
+                            <div class="dash-section" id="dashInactiveSection">
+                                <div class="dash-section-title">INACTIVE MEMBERS <span style="font-size:9px;color:#aaa;letter-spacing:1px">(0 ATT. THIS CYCLE)</span></div>
+                                <div id="dashInactiveMembers"><div class="empty-state">LOADING...</div></div>
+                            </div>
+                            <div class="dash-section" id="dashReserveSection">
+                                <div class="dash-section-title">RESERVES <span style="font-size:9px;color:#aaa;letter-spacing:1px;font-family:'Share Tech Mono',monospace">— TIME IN RESERVE</span></div>
+                                <div id="dashReserves"><div class="empty-state">LOADING...</div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Pending + Recent Joins -->
+                    <div class="dash-grid" id="dashBottomGrid">
+                        <div class="dash-section">
+                            <div class="dash-section-title">PENDING REGISTRATIONS</div>
+                            <div id="dashPendingList"><div class="empty-state">LOADING...</div></div>
+                        </div>
+                        <div class="dash-section">
+                            <div class="dash-section-title">RECENT JOINS</div>
+                            <div id="dashRecentJoins"><div class="empty-state">LOADING...</div></div>
+                        </div>
+                    </div>
+                </div>
                 <div class="panel hidden" id="panel-active"><div class="panel-title">ACTIVE PERSONNEL</div><div id="activeList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-register"><div class="panel-title">REGISTRATION PANEL</div><div id="registerList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-promote">
