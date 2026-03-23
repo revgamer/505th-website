@@ -214,10 +214,11 @@
             const c=document.getElementById('rosterList');if(!c)return;
             // Apply sort
             const sorted=[...rosterData];
-            if(rosterSort==='name-asc')  sorted.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
-            if(rosterSort==='name-desc') sorted.sort((a,b)=>(b.name||'').localeCompare(a.name||''));
-            if(rosterSort==='platoon')   sorted.sort((a,b)=>(a.platoon||'').localeCompare(b.platoon||'')||(a.name||'').localeCompare(b.name||''));
-            if(rosterSort==='att-desc')  sorted.sort((a,b)=>(b.attendance||0)-(a.attendance||0));
+            if(rosterSort==='name-asc')        sorted.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+            if(rosterSort==='name-desc')       sorted.sort((a,b)=>(b.name||'').localeCompare(a.name||''));
+            if(rosterSort==='joined')          sorted.sort((a,b)=>new Date(a.joinedPlatoon||'9999')-new Date(b.joinedPlatoon||'9999'));
+            if(rosterSort==='platoon-service') sorted.sort((a,b)=>new Date(a.joinedPlatoon||'9999')-new Date(b.joinedPlatoon||'9999'));
+            if(rosterSort==='time-in-unit')    sorted.sort((a,b)=>new Date(a.graduation||'9999')-new Date(b.graduation||'9999'));
             const active=sorted.filter(r=>r.platoon!=='Reserves');
             const reserves=sorted.filter(r=>r.platoon==='Reserves');
             const tot=document.getElementById('rosterTotal'),act=document.getElementById('rosterActiveCount'),res=document.getElementById('rosterReservesCount');
@@ -1906,10 +1907,11 @@
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
                         <div style="display:flex;gap:4px;margin-left:8px;align-items:center">
                             <span style="color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:2px;margin-right:4px">SORT:</span>
-                            <button class="roster-sort-btn" data-sort="name-asc" onclick="setRosterSort('name-asc')" style="background:rgba(0,217,255,.15);border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">A → Z</button>
-                            <button class="roster-sort-btn" data-sort="name-desc" onclick="setRosterSort('name-desc')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">Z → A</button>
-                            <button class="roster-sort-btn" data-sort="platoon" onclick="setRosterSort('platoon')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">PLATOON</button>
-                            <button class="roster-sort-btn" data-sort="att-desc" onclick="setRosterSort('att-desc')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">ATTENDANCE</button>
+                            <button class="roster-sort-btn" data-sort="name-asc" onclick="setRosterSort('name-asc')" style="background:rgba(0,217,255,.15);border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">NAME A→Z</button>
+                            <button class="roster-sort-btn" data-sort="name-desc" onclick="setRosterSort('name-desc')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">NAME Z→A</button>
+                            <button class="roster-sort-btn" data-sort="joined" onclick="setRosterSort('joined')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">JOINED</button>
+                            <button class="roster-sort-btn" data-sort="platoon-service" onclick="setRosterSort('platoon-service')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">PLATOON SERVICE</button>
+                            <button class="roster-sort-btn" data-sort="time-in-unit" onclick="setRosterSort('time-in-unit')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">TIME IN UNIT</button>
                         </div>
                         <span style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;margin-left:8px">&#9998; CHECKBOX = +1 ATT &nbsp;|&nbsp; 3/3 = GLOWING PT — STAFF CLICKS +1 PT TO PROMOTE &nbsp;|&nbsp; RESETS MONTHLY</span>
                     </div>
