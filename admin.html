@@ -22,15 +22,15 @@
         const ADMIN_ROLES = ['commander','developer','staff_nco','nco','recruiter'];
         const ROLE_PERMISSIONS = {
             // Full access. Can demote/assign anyone including other commanders.
-            'commander': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,canDemoteCommander:1,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
+            'commander': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:1,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
             // Same as commander but CANNOT touch commander role assignments.
-            'developer': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
+            'developer': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
             // Personnel (active+register, NO promote) + Media + Unit Management + Page Content + Discord setting.
-            'staff_nco': {personnel:1,activePersonnel:1,registerPanel:1,promote:0,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1,roster:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
-            // Register Panel only + Media Gallery + AAR + Battalion Roster.
-            'nco':       {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0,roster:1,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
+            'staff_nco': {personnel:1,activePersonnel:1,registerPanel:1,promote:0,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
+            // Register Panel only + Media Gallery + AAR + Battalion Roster. NO Unit Cards.
+            'nco':       {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0,roster:1,unitcards:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
             // Register Panel only.
-            'recruiter': {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0,roster:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:0,dash_inactive:0,dash_pending:1,dash_recent:0},
+            'recruiter': {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0,roster:0,unitcards:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:0,dash_inactive:0,dash_pending:1,dash_recent:0},
         };
         function P() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
@@ -1261,11 +1261,13 @@
 
             // Unit Management — show if ANY sub-item is accessible
             const navAarEl = document.getElementById('nav-aar');
-            if(navAarEl) navAarEl.style.display = (p.aar||p.roster)?'':'none';
-            const aarLink    = document.getElementById('navlink-aar');
-            const rosterLink = document.getElementById('navlink-roster');
-            if(aarLink)    aarLink.style.display    = p.aar?'':'none';
-            if(rosterLink) rosterLink.style.display = p.roster?'':'none';
+            if(navAarEl) navAarEl.style.display = (p.aar||p.roster||p.unitcards)?'':'none';
+            const aarLink      = document.getElementById('navlink-aar');
+            const rosterLink   = document.getElementById('navlink-roster');
+            const unitcardsLink= document.querySelector('[data-panel="panel-unitcards"]');
+            if(aarLink)       aarLink.style.display       = p.aar?'':'none';
+            if(rosterLink)    rosterLink.style.display    = p.roster?'':'none';
+            if(unitcardsLink) unitcardsLink.style.display = p.unitcards?'':'none';
 
             // Dashboard widgets — hide sections the role doesn't need
             const dashStatsRow  = document.getElementById('dashStatsRow');
