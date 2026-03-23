@@ -1310,12 +1310,17 @@
             const p = P();
 
             // Top-level nav sections
-            const navMediaEl    = document.getElementById('nav-media');
-            const navContentEl  = document.getElementById('nav-content');
+            const navMediaEl   = document.getElementById('nav-media');
+            const navContentEl = document.getElementById('nav-content');
+            if(navMediaEl)   navMediaEl.style.display   = p.media?'':'none';
+            if(navContentEl) navContentEl.style.display = p.content?'':'none';
+
+            // Site Settings nav — show if they have full settings OR just discordLink access
             const navSettingsEl = document.getElementById('nav-settings');
-            if(navMediaEl)    navMediaEl.style.display    = p.media?'':'none';
-            if(navContentEl)  navContentEl.style.display  = p.content?'':'none';
-            if(navSettingsEl) navSettingsEl.style.display = p.settings?'':'none';
+            if(navSettingsEl) navSettingsEl.style.display = (p.settings||p.discordLink)?'':'none';
+            // Discord Tracking sub-link — only full settings roles (commander/developer)
+            const discordTrackingLink = document.getElementById('navlink-discord-tracking');
+            if(discordTrackingLink) discordTrackingLink.style.display = p.settings?'':'none';
 
             // Personnel section — show if ANY sub-item is accessible
             const navPersonnelEl = document.getElementById('nav-personnel');
