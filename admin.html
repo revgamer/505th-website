@@ -21,11 +21,16 @@
 
         const ADMIN_ROLES = ['commander','developer','staff_nco','nco','recruiter'];
         const ROLE_PERMISSIONS = {
-            'commander': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1},
-            'developer': {personnel:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1},
-            'staff_nco': {personnel:1,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1,roster:1},
-            'nco':       {personnel:1,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0,roster:1},
-            'recruiter': {personnel:1,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0,roster:0},
+            // Full access. Can demote/assign anyone including other commanders.
+            'commander': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,canDemoteCommander:1,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
+            // Same as commander but CANNOT touch commander role assignments.
+            'developer': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
+            // Personnel (active+register, NO promote) + Media + Unit Management + Page Content + Discord setting.
+            'staff_nco': {personnel:1,activePersonnel:1,registerPanel:1,promote:0,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1,roster:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
+            // Register Panel only + Media Gallery + AAR + Battalion Roster.
+            'nco':       {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0,roster:1,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
+            // Register Panel only.
+            'recruiter': {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0,roster:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:0,dash_inactive:0,dash_pending:1,dash_recent:0},
         };
         function P() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
@@ -858,7 +863,7 @@
                         <div class="user-actions">
                             ${P().canEditProfiles?`<button class="action-btn approve-btn small" onclick="openEditUser('${u.id}')">EDIT</button>`:''}
                             ${P().canChangeRoles?`<select onchange="changeRole('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace">
-                                ${['enlistee','marine','recruiter','nco','staff_nco','commander','developer'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+                                ${['enlistee','marine','recruiter','nco','staff_nco','commander','developer'].filter(r=>P().canDemoteCommander?true:r!=='commander').map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
                             </select>`:''}
                             ${P().canEditProfiles?`<button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>`:''}
                         </div>
@@ -895,6 +900,12 @@
             try { await deleteDoc(doc(db,'users',uid)); logAction('REMOVE',callsign); notify('REMOVED: '+callsign); allUsers=[]; loadAllUsers(); loadDashboard(); } catch(e){notify('ERROR',1);}
         };
         window.changeRole = async function(uid, role) {
+            // Developers cannot assign or remove the commander role
+            if (!P().canDemoteCommander) {
+                const target = allUsers.find(u=>u.id===uid);
+                if (target?.role === 'commander') { notify('CANNOT MODIFY COMMANDER ROLE',1); return; }
+                if (role === 'commander') { notify('CANNOT ASSIGN COMMANDER ROLE',1); return; }
+            }
             try { await updateDoc(doc(db,'users',uid),{role}); logAction('ROLE_CHANGE',uid+' → '+role); notify('ROLE UPDATED'); allUsers=[]; loadAllUsers(); } catch(e){notify('ERROR',1);}
         };
         window.openEditUser = function(uid) {
@@ -927,7 +938,7 @@
                     <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-role">${(u.role||'').toUpperCase()}</div></div>
                     <div class="user-actions">
                         <select onchange="changeRole('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace">
-                            ${['enlistee','marine','recruiter','nco','staff_nco','commander','developer'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+                            ${['enlistee','marine','recruiter','nco','staff_nco','commander','developer'].filter(r=>P().canDemoteCommander?true:r!=='commander').map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
                         </select>
                     </div>
                 </div>`).join('') || '<div class="empty-state">NO PERSONNEL</div>';
@@ -1225,19 +1236,46 @@
             currentUser     = user;
             currentUserData = snap.data();
 
-            // Apply nav visibility
+            // ── Apply nav visibility ──────────────────────────────────────
             const p = P();
-            const navMap = {'nav-personnel':'personnel','nav-media':'media','nav-aar':'aar','nav-content':'content','nav-settings':'settings'};
-            for(const [id,perm] of Object.entries(navMap)) {
-                const el=document.getElementById(id);
-                if(el) el.style.display=p[perm]?'':'none';
-            }
-            const aarLink=document.getElementById('navlink-aar');
-            if(aarLink) aarLink.style.display=p.aar?'':'none';
-            const rosterLink=document.getElementById('navlink-roster');
-            if(rosterLink) rosterLink.style.display=p.roster?'':'none';
-            const discordDashSection=document.getElementById('dashDiscordSection');
-            if(discordDashSection) discordDashSection.style.display=p.discordLink?'':'none';
+
+            // Top-level nav sections
+            const navMediaEl    = document.getElementById('nav-media');
+            const navContentEl  = document.getElementById('nav-content');
+            const navSettingsEl = document.getElementById('nav-settings');
+            if(navMediaEl)    navMediaEl.style.display    = p.media?'':'none';
+            if(navContentEl)  navContentEl.style.display  = p.content?'':'none';
+            if(navSettingsEl) navSettingsEl.style.display = p.settings?'':'none';
+
+            // Personnel section — show if ANY sub-item is accessible
+            const navPersonnelEl = document.getElementById('nav-personnel');
+            if(navPersonnelEl) navPersonnelEl.style.display = (p.activePersonnel||p.registerPanel||p.promote)?'':'none';
+
+            // Personnel sub-links — granular per role
+            const subActive   = document.querySelector('[data-panel="panel-active"]');
+            const subRegister = document.querySelector('[data-panel="panel-register"]');
+            const subPromote  = document.querySelector('[data-panel="panel-promote"]');
+            if(subActive)   subActive.style.display   = p.activePersonnel?'':'none';
+            if(subRegister) subRegister.style.display = p.registerPanel?'':'none';
+            if(subPromote)  subPromote.style.display  = p.promote?'':'none';
+
+            // Unit Management — show if ANY sub-item is accessible
+            const navAarEl = document.getElementById('nav-aar');
+            if(navAarEl) navAarEl.style.display = (p.aar||p.roster)?'':'none';
+            const aarLink    = document.getElementById('navlink-aar');
+            const rosterLink = document.getElementById('navlink-roster');
+            if(aarLink)    aarLink.style.display    = p.aar?'':'none';
+            if(rosterLink) rosterLink.style.display = p.roster?'':'none';
+
+            // Dashboard widgets — hide sections the role doesn't need
+            const dashStatsRow  = document.getElementById('dashStatsRow');
+            const dashDiscordSect = document.getElementById('dashDiscordSection');
+            const dashRosterGrid  = document.getElementById('dashRosterGrid');
+            const dashBottomGrid  = document.getElementById('dashBottomGrid');
+            if(dashStatsRow)    dashStatsRow.style.display    = p.dash_stats?'':'none';
+            if(dashDiscordSect) dashDiscordSect.style.display = p.dash_discord?'':'none';
+            if(dashRosterGrid)  dashRosterGrid.style.display  = (p.dash_roster||p.dash_inactive)?'':'none';
+            if(dashBottomGrid)  dashBottomGrid.style.display  = (p.dash_pending||p.dash_recent)?'':'none';
 
             // Topbar user info
             const tn=document.getElementById('topbarName');
@@ -1712,7 +1750,7 @@
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
             </div>
             <div class="main-content">
-                <div class="panel" id="panel-dashboard"><div class="panel-title">DASHBOARD</div><div class="stats-row"><div class="stat-card"><div class="stat-number warning" id="dashPending">0</div><div class="stat-label">PENDING</div></div><div class="stat-card"><div class="stat-number" id="dashActive">0</div><div class="stat-label">ACTIVE</div></div><div class="stat-card"><div class="stat-number" id="dashTotal">0</div><div class="stat-label">TOTAL</div></div></div><div class="dash-section" style="margin-bottom:16px" id="dashDiscordSection"><div class="dash-section-title">DISCORD INVITE LINK STATUS</div><div id="dashDiscordStatus"><div class="empty-state">LOADING...</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px"><div class="dash-section"><div class="dash-section-title">ROSTER STRENGTH BY PLATOON</div><div id="dashRosterStrength"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">INACTIVE MEMBERS <span style="font-size:9px;color:#aaa;letter-spacing:1px">(0 ATTENDANCE THIS CYCLE)</span></div><div id="dashInactiveMembers"><div class="empty-state">LOADING...</div></div></div></div><div class="dash-grid"><div class="dash-section"><div class="dash-section-title">PENDING REGISTRATIONS</div><div id="dashPendingList"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">RECENT JOINS</div><div id="dashRecentJoins"><div class="empty-state">LOADING...</div></div></div></div></div>
+                <div class="panel" id="panel-dashboard"><div class="panel-title">DASHBOARD</div><div class="stats-row" id="dashStatsRow"><div class="stat-card"><div class="stat-number warning" id="dashPending">0</div><div class="stat-label">PENDING</div></div><div class="stat-card"><div class="stat-number" id="dashActive">0</div><div class="stat-label">ACTIVE</div></div><div class="stat-card"><div class="stat-number" id="dashTotal">0</div><div class="stat-label">TOTAL</div></div></div><div class="dash-section" style="margin-bottom:16px" id="dashDiscordSection"><div class="dash-section-title">DISCORD INVITE LINK STATUS</div><div id="dashDiscordStatus"><div class="empty-state">LOADING...</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" id="dashRosterGrid"><div class="dash-section"><div class="dash-section-title">ROSTER STRENGTH BY PLATOON</div><div id="dashRosterStrength"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">INACTIVE MEMBERS <span style="font-size:9px;color:#aaa;letter-spacing:1px">(0 ATTENDANCE THIS CYCLE)</span></div><div id="dashInactiveMembers"><div class="empty-state">LOADING...</div></div></div></div><div class="dash-grid" id="dashBottomGrid"><div class="dash-section"><div class="dash-section-title">PENDING REGISTRATIONS</div><div id="dashPendingList"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">RECENT JOINS</div><div id="dashRecentJoins"><div class="empty-state">LOADING...</div></div></div></div></div>
                 <div class="panel hidden" id="panel-active"><div class="panel-title">ACTIVE PERSONNEL</div><div id="activeList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-register"><div class="panel-title">REGISTRATION PANEL</div><div id="registerList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-promote">
@@ -1723,11 +1761,11 @@
                         <div style="display:grid;grid-template-columns:120px 1fr;gap:6px 14px;font-size:13px;font-family:'Rajdhani',sans-serif;font-weight:500;line-height:1.8">
                             <span class="role-badge role-enlistee" style="align-self:center">ENLISTEE</span><span style="color:#b0b0b0">Profile edit only. No admin access.</span>
                             <span class="role-badge role-marine" style="align-self:center">MARINE</span><span style="color:#b0b0b0">Profile edit only. No admin access.</span>
-                            <span class="role-badge role-recruiter" style="align-self:center">RECRUITER</span><span style="color:#b0b0b0">Personnel panel — approve &amp; deny registrations.</span>
-                            <span class="role-badge role-nco" style="align-self:center">NCO</span><span style="color:#b0b0b0">Personnel (approve/deny) + full Media Library + After Action Reports.</span>
-                            <span class="role-badge role-staff_nco" style="align-self:center">STAFF NCO</span><span style="color:#b0b0b0">Full Personnel + full Media + Page Content + Discord Invite Link + AAR + Roster.</span>
-                            <span class="role-badge role-developer" style="align-self:center">DEVELOPER</span><span style="color:#b0b0b0">Full access to all panels including Settings.</span>
-                            <span class="role-badge role-commander" style="align-self:center">COMMANDER</span><span style="color:#b0b0b0">Full access. Highest authority — outranks Developer.</span>
+                            <span class="role-badge role-recruiter" style="align-self:center">RECRUITER</span><span style="color:#b0b0b0">Register Panel only — approve &amp; deny registrations.</span>
+                            <span class="role-badge role-nco" style="align-self:center">NCO</span><span style="color:#b0b0b0">Register Panel + Media Gallery + After Action Reports + Battalion Roster.</span>
+                            <span class="role-badge role-staff_nco" style="align-self:center">STAFF NCO</span><span style="color:#b0b0b0">Personnel (Active + Register) + Media + Unit Management + Page Content + Discord Invite Link.</span>
+                            <span class="role-badge role-developer" style="align-self:center">DEVELOPER</span><span style="color:#b0b0b0">Full access to all panels including Settings. Cannot assign/remove Commander role.</span>
+                            <span class="role-badge role-commander" style="align-self:center">COMMANDER</span><span style="color:#b0b0b0">Full access including all role assignments. Highest authority.</span>
                         </div>
                     </div>
                     <div id="promoteList"><div class="empty-state">LOADING...</div></div>
