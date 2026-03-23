@@ -22,15 +22,15 @@
         const ADMIN_ROLES = ['commander','developer','staff_nco','nco','recruiter'];
         const ROLE_PERMISSIONS = {
             // Full access. Can demote/assign anyone including other commanders.
-            'commander': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:1,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
+            'commander': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:1,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Same as commander but CANNOT touch commander role assignments.
-            'developer': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
+            'developer': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Personnel (active+register, NO promote) + Media + Unit Management + Page Content + Discord setting.
-            'staff_nco': {personnel:1,activePersonnel:1,registerPanel:1,promote:0,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
+            'staff_nco': {personnel:1,activePersonnel:1,registerPanel:1,promote:0,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Register Panel only + Media Gallery + AAR + Battalion Roster. NO Unit Cards.
-            'nco':       {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0,roster:1,unitcards:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1},
+            'nco':       {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0,roster:1,unitcards:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Register Panel only.
-            'recruiter': {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0,roster:0,unitcards:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:0,dash_inactive:0,dash_pending:1,dash_recent:0},
+            'recruiter': {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0,roster:0,unitcards:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:0,dash_inactive:0,dash_pending:1,dash_recent:0,dash_reserve:0},
         };
         function P() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
@@ -799,7 +799,77 @@
                     } catch(e){ inWidget.innerHTML='<div class="empty-state">UNABLE TO LOAD DATA</div>'; }
                 }
 
-                // Discord invite status (staff_nco+ only)
+                // ── RESERVES ──
+                const resWidget = document.getElementById('dashReserves');
+                if(resWidget && P().dash_reserve) {
+                    try {
+                        const rSnap = await getDocs(collection(db,'roster'));
+                        const reserves = [];
+                        const now = new Date();
+                        rSnap.forEach(d => {
+                            const r = d.data();
+                            if(r.platoon === 'Reserves') reserves.push({id:d.id,...r});
+                        });
+                        reserves.sort((a,b) => (a.joinedPlatoon||'9999').localeCompare(b.joinedPlatoon||'9999'));
+
+                        function calcReserveTime(dateStr) {
+                            if(!dateStr) return null;
+                            const d = new Date(dateStr);
+                            const diffDays = Math.floor((now - d) / (1000*60*60*24));
+                            if(diffDays < 1)  return 'Today';
+                            if(diffDays < 7)  return diffDays + ' day' + (diffDays !== 1 ? 's' : '');
+                            const weeks = Math.floor(diffDays / 7);
+                            const days  = diffDays % 7;
+                            if(weeks < 4) return weeks + ' wk' + (weeks !== 1 ? 's' : '') + (days > 0 ? ' ' + days + 'd' : '');
+                            const months = Math.floor(diffDays / 30);
+                            const remDays = diffDays % 30;
+                            return months + ' mo' + (months !== 1 ? 's' : '') + (remDays > 0 ? ' ' + remDays + 'd' : '');
+                        }
+
+                        function reserveColor(dateStr) {
+                            if(!dateStr) return '#aaa';
+                            const diffDays = Math.floor((now - new Date(dateStr)) / (1000*60*60*24));
+                            if(diffDays >= 90) return '#FF6B6B'; // 3+ months — red
+                            if(diffDays >= 30) return '#FFD700'; // 1+ month  — amber
+                            return '#7FFF7F';                     // < 1 month — green
+                        }
+
+                        if(!reserves.length) {
+                            resWidget.innerHTML = '<div style="font-family:\'Rajdhani\',sans-serif;font-size:13px;color:#7FFF7F;letter-spacing:1px;padding:8px 0">✓ NO PERSONNEL IN RESERVES</div>';
+                        } else {
+                            resWidget.innerHTML = `
+                                <div style="margin-bottom:8px;font-family:'Rajdhani',sans-serif;font-size:12px;color:#aaa;letter-spacing:2px">
+                                    ${reserves.length} PERSONNEL IN RESERVES
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:4px;max-height:240px;overflow-y:auto">
+                                    ${reserves.map(r => {
+                                        const dur   = calcReserveTime(r.joinedPlatoon);
+                                        const color = reserveColor(r.joinedPlatoon);
+                                        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-left:2px solid ${color}">
+                                            <div style="display:flex;align-items:center;gap:8px">
+                                                <div style="width:6px;height:6px;background:${color};flex-shrink:0;border-radius:50%"></div>
+                                                <div>
+                                                    <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:#ddd">${esc(r.name||'Unknown')}</div>
+                                                    <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;letter-spacing:1px">${esc(r.rankGrade||'—')}</div>
+                                                </div>
+                                            </div>
+                                            <div style="text-align:right">
+                                                <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:${color}">${dur ? 'IN RESERVES ' + dur.toUpperCase() : '—'}</div>
+                                                <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;margin-top:1px">${r.joinedPlatoon ? new Date(r.joinedPlatoon).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
+                                            </div>
+                                        </div>`;
+                                    }).join('')}
+                                </div>
+                                <div style="margin-top:8px;display:flex;gap:12px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px">
+                                    <span style="color:#7FFF7F">● &lt;1 MONTH</span>
+                                    <span style="color:#FFD700">● 1-3 MONTHS</span>
+                                    <span style="color:#FF6B6B">● 3+ MONTHS</span>
+                                </div>`;
+                        }
+                    } catch(e) { resWidget.innerHTML = '<div class="empty-state">UNABLE TO LOAD RESERVE DATA</div>'; }
+                }
+
+
                 const discordWidget=document.getElementById('dashDiscordStatus');
                 if(discordWidget && P().discordLink){
                     try {
@@ -1273,10 +1343,12 @@
             const dashStatsRow  = document.getElementById('dashStatsRow');
             const dashDiscordSect = document.getElementById('dashDiscordSection');
             const dashRosterGrid  = document.getElementById('dashRosterGrid');
+            const dashReserveSect = document.getElementById('dashReserveSection');
             const dashBottomGrid  = document.getElementById('dashBottomGrid');
             if(dashStatsRow)    dashStatsRow.style.display    = p.dash_stats?'':'none';
             if(dashDiscordSect) dashDiscordSect.style.display = p.dash_discord?'':'none';
             if(dashRosterGrid)  dashRosterGrid.style.display  = (p.dash_roster||p.dash_inactive)?'':'none';
+            if(dashReserveSect) dashReserveSect.style.display = p.dash_reserve?'':'none';
             if(dashBottomGrid)  dashBottomGrid.style.display  = (p.dash_pending||p.dash_recent)?'':'none';
 
             // Topbar user info
@@ -1752,7 +1824,7 @@
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
             </div>
             <div class="main-content">
-                <div class="panel" id="panel-dashboard"><div class="panel-title">DASHBOARD</div><div class="stats-row" id="dashStatsRow"><div class="stat-card"><div class="stat-number warning" id="dashPending">0</div><div class="stat-label">PENDING</div></div><div class="stat-card"><div class="stat-number" id="dashActive">0</div><div class="stat-label">ACTIVE</div></div><div class="stat-card"><div class="stat-number" id="dashTotal">0</div><div class="stat-label">TOTAL</div></div></div><div class="dash-section" style="margin-bottom:16px" id="dashDiscordSection"><div class="dash-section-title">DISCORD INVITE LINK STATUS</div><div id="dashDiscordStatus"><div class="empty-state">LOADING...</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" id="dashRosterGrid"><div class="dash-section"><div class="dash-section-title">ROSTER STRENGTH BY PLATOON</div><div id="dashRosterStrength"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">INACTIVE MEMBERS <span style="font-size:9px;color:#aaa;letter-spacing:1px">(0 ATTENDANCE THIS CYCLE)</span></div><div id="dashInactiveMembers"><div class="empty-state">LOADING...</div></div></div></div><div class="dash-grid" id="dashBottomGrid"><div class="dash-section"><div class="dash-section-title">PENDING REGISTRATIONS</div><div id="dashPendingList"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">RECENT JOINS</div><div id="dashRecentJoins"><div class="empty-state">LOADING...</div></div></div></div></div>
+                <div class="panel" id="panel-dashboard"><div class="panel-title">DASHBOARD</div><div class="stats-row" id="dashStatsRow"><div class="stat-card"><div class="stat-number warning" id="dashPending">0</div><div class="stat-label">PENDING</div></div><div class="stat-card"><div class="stat-number" id="dashActive">0</div><div class="stat-label">ACTIVE</div></div><div class="stat-card"><div class="stat-number" id="dashTotal">0</div><div class="stat-label">TOTAL</div></div></div><div class="dash-section" style="margin-bottom:16px" id="dashDiscordSection"><div class="dash-section-title">DISCORD INVITE LINK STATUS</div><div id="dashDiscordStatus"><div class="empty-state">LOADING...</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" id="dashRosterGrid"><div class="dash-section"><div class="dash-section-title">ROSTER STRENGTH BY PLATOON</div><div id="dashRosterStrength"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">INACTIVE MEMBERS <span style="font-size:9px;color:#aaa;letter-spacing:1px">(0 ATTENDANCE THIS CYCLE)</span></div><div id="dashInactiveMembers"><div class="empty-state">LOADING...</div></div></div></div><div class="dash-section" style="margin-bottom:16px" id="dashReserveSection"><div class="dash-section-title">RESERVES <span style="font-size:9px;color:#aaa;letter-spacing:1px;font-family:'Share Tech Mono',monospace">— TIME IN RESERVE</span></div><div id="dashReserves"><div class="empty-state">LOADING...</div></div></div><div class="dash-grid" id="dashBottomGrid"><div class="dash-section"><div class="dash-section-title">PENDING REGISTRATIONS</div><div id="dashPendingList"><div class="empty-state">LOADING...</div></div></div><div class="dash-section"><div class="dash-section-title">RECENT JOINS</div><div id="dashRecentJoins"><div class="empty-state">LOADING...</div></div></div></div></div>
                 <div class="panel hidden" id="panel-active"><div class="panel-title">ACTIVE PERSONNEL</div><div id="activeList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-register"><div class="panel-title">REGISTRATION PANEL</div><div id="registerList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-promote">
