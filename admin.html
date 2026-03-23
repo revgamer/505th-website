@@ -1320,7 +1320,7 @@
             }
         };
 
-
+        window.handleLogout = async function() {
             try { await signOut(auth); window.location.href='login.html'; } catch(e){}
         };
 
@@ -1491,7 +1491,6 @@
                 }
                 btn.disabled = false;
                 btn.textContent = 'ADD VIDEO';
-            }
             } else if (type === 'videofile') {
                 const fileInput = document.getElementById('uploadVidFile');
                 const nameInput = document.getElementById('uploadVidFileName');
