@@ -116,8 +116,8 @@ All 7 webhooks use styled Discord embeds (author block, thumbnail, bullet-point 
 | Layer | Technology |
 |-------|------------|
 | Frontend | HTML5, CSS3, Vanilla JavaScript |
-| Hosting | Firebase Hosting |
-| Database | Firebase Firestore |
+| Hosting | Vercel Hosting |
+| Database | Firebase Firestore | 
 | Auth | Firebase Authentication |
 | Media Storage | Cloudinary |
 | Fonts | Google Fonts (Rajdhani, Share Tech Mono) |
@@ -209,7 +209,7 @@ All 7 webhooks use styled Discord embeds (author block, thumbnail, bullet-point 
 
 ## Developer
 
-**Lead Developer:** SSgt S. "Davy" (RevGamer)
+** Website Developer:** SSgt S. "Davy" (RevGamer)
 
 ---
 
