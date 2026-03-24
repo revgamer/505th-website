@@ -1026,7 +1026,13 @@
             try { await updateDoc(doc(db,'users',uid),{role}); logAction('ROLE_CHANGE',uid+' → '+role); notify('ROLE UPDATED'); allUsers=[]; loadAllUsers(); } catch(e){notify('ERROR',1);}
         };
         window.changeRank = async function(uid, rank) {
-            try { await updateDoc(doc(db,'users',uid),{rank}); logAction('RANK_CHANGE',uid+' → '+rank); notify('RANK UPDATED: '+(rank||'CLEARED')); const u=allUsers.find(x=>x.id===uid); if(u) u.rank=rank; } catch(e){notify('ERROR',1);}
+            const u = allUsers.find(x=>x.id===uid);
+            const updateData = {rank};
+            if(u && rank && rank !== (u.rank||'')) {
+                const entry = {date:new Date().toISOString().split('T')[0],fromRank:u.rank||'—',toRank:rank,note:'Updated via Personnel Files (inline)',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
+                updateData.promotionHistory = [...(u.promotionHistory||[]), entry];
+            }
+            try { await updateDoc(doc(db,'users',uid),updateData); logAction('RANK_CHANGE',uid+' → '+rank); notify('RANK UPDATED: '+(rank||'CLEARED')); if(u){u.rank=rank;if(updateData.promotionHistory)u.promotionHistory=updateData.promotionHistory;} } catch(e){notify('ERROR',1);}
         };
         function updateEnlistmentBadge() {
             const badge = document.getElementById('enlistmentBadge');
@@ -1037,21 +1043,166 @@
         }
         window.openEditUser = function(uid) {
             const u = allUsers.find(x=>x.id===uid); if(!u) return;
-            document.getElementById('editUserId').value=uid;
-            document.getElementById('editCallsign').value=u.callsign||'';
-            document.getElementById('editFirstName').value=u.firstName||'';
-            document.getElementById('editLastName').value=u.lastName||'';
-            document.getElementById('editRank').value=u.rank||'';
-            const jEl=document.getElementById('editJoinedAt');
-            if(jEl) jEl.value=u.joinedAt?u.joinedAt.split('T')[0]:'';
+            // Title
+            document.getElementById('editModalTitle').textContent = 'EDIT OPERATIVE — '+(u.callsign||'UNKNOWN').toUpperCase();
+            document.getElementById('editUserId').value = uid;
+            // Fields
+            document.getElementById('editRankSelect').value = u.rank||'';
+            document.getElementById('editFirstName').value  = u.firstName||'';
+            document.getElementById('editLastName').value   = u.lastName||'';
+            const jEl = document.getElementById('editJoinedAt');
+            if(jEl) jEl.value = u.joinedAt ? u.joinedAt.split('T')[0] : '';
+            document.getElementById('editPlatoon').value    = u.platoon||'';
+            // Role dropdown — hide commander option if no canDemoteCommander
+            const roleSelect = document.getElementById('editRoleSelect');
+            Array.from(roleSelect.options).forEach(o => {
+                o.hidden = (o.value==='commander' && !P().canDemoteCommander);
+            });
+            roleSelect.value = u.role||'enlistee';
+            // Callsign — locked for roles below staff_nco
+            const canEditCallsign = ['staff_nco','developer','commander'].includes(currentUserData?.role);
+            const csInput = document.getElementById('editCallsign');
+            const csLock  = document.getElementById('editCallsignLock');
+            const csLabel = document.getElementById('editCallsignLockLabel');
+            csInput.value    = u.callsign||'';
+            csInput.readOnly = !canEditCallsign;
+            csInput.style.opacity     = canEditCallsign ? '1' : '0.55';
+            csInput.style.cursor      = canEditCallsign ? '' : 'not-allowed';
+            csLock.style.display      = canEditCallsign ? 'none' : 'inline';
+            csLabel.style.display     = canEditCallsign ? 'none' : 'inline';
+            // Switch to details tab, load history
+            switchEditTab('details');
+            loadEditHistory(u);
             document.getElementById('editUserModal').classList.add('active');
         };
+
+        window.switchEditTab = function(tab) {
+            document.querySelectorAll('.edit-tab').forEach((t,i)=>t.classList.toggle('active', ['details','history'][i]===tab));
+            document.querySelectorAll('.edit-tab-pane').forEach(p=>p.classList.remove('active'));
+            const pane = document.getElementById('editPane-'+tab);
+            if(pane) pane.classList.add('active');
+        };
+
+        function loadEditHistory(u) {
+            renderHistoryList('histPromoList',   u.promotionHistory||[],   'promo');
+            renderHistoryList('histWarnList',     u.warningHistory||[],     'warn');
+            renderHistoryList('histCommendList',  u.commendationHistory||[],'commend');
+            // Pre-fill today's date in all add rows
+            const today = new Date().toISOString().split('T')[0];
+            ['histPromoDate','histWarnDate','histCommendDate'].forEach(id=>{
+                const el=document.getElementById(id); if(el) el.value=today;
+            });
+            // Clear text inputs
+            ['histPromoFrom','histPromoTo','histPromoNote','histWarnNote','histCommendTitle','histCommendNote'].forEach(id=>{
+                const el=document.getElementById(id); if(el) el.value='';
+            });
+        }
+
+        function renderHistoryList(containerId, entries, type) {
+            const c = document.getElementById(containerId); if(!c) return;
+            if(!entries.length){ c.innerHTML='<div class="history-empty">NO ENTRIES YET</div>'; return; }
+            c.innerHTML = [...entries].reverse().map((e,ri)=>{
+                const i = entries.length-1-ri; // real index for delete
+                let badge='', detail='';
+                if(type==='promo'){
+                    badge = `<span class="history-badge badge-promo">PROMOTED</span>${e.auto?` <span class="history-badge badge-auto">AUTO</span>`:''}`;
+                    detail = `<div>${e.fromRank||'—'} → <strong style="color:#7FFF7F">${e.toRank||'—'}</strong></div>${e.note?`<div style="color:#777;font-size:9px">${esc(e.note)}</div>`:''}`;
+                } else if(type==='warn'){
+                    const wc={'MINOR':'badge-warn-minor','MAJOR':'badge-warn-major','FINAL':'badge-warn-final'}[e.severity]||'badge-warn-minor';
+                    badge = `<span class="history-badge ${wc}">${e.severity||'MINOR'}</span>`;
+                    detail = `<div>${esc(e.note||'—')}</div>`;
+                } else {
+                    badge = `<span class="history-badge badge-commend">&#9733; ${esc(e.title||'COMMENDATION')}</span>`;
+                    detail = `<div>${esc(e.note||'—')}</div>`;
+                }
+                const addedBy = e.addedBy ? `<div style="color:#555;font-size:8px;margin-top:2px">BY ${esc(e.addedBy)}</div>` : '';
+                return `<div class="history-entry">
+                    <div class="history-entry-date">${e.date||'—'}</div>
+                    <div class="history-entry-body">${badge}<div style="margin-top:4px">${detail}${addedBy}</div></div>
+                    <button class="history-entry-del" onclick="deleteHistoryEntry('${type}',${i})" title="Remove entry">✕</button>
+                </div>`;
+            }).join('');
+        }
+
+        window.addHistoryEntry = async function(type) {
+            const uid = document.getElementById('editUserId').value;
+            const u   = allUsers.find(x=>x.id===uid); if(!u) return;
+            let entry={}, fieldKey='';
+            const today = new Date().toISOString().split('T')[0];
+            if(type==='promo'){
+                fieldKey='promotionHistory';
+                entry={date:document.getElementById('histPromoDate').value||today,fromRank:document.getElementById('histPromoFrom').value.trim(),toRank:document.getElementById('histPromoTo').value.trim(),note:document.getElementById('histPromoNote').value.trim(),addedBy:currentUserData?.callsign||'Staff',addedAt:new Date().toISOString(),auto:false};
+                if(!entry.toRank){notify('TO RANK IS REQUIRED',1);return;}
+            } else if(type==='warn'){
+                fieldKey='warningHistory';
+                entry={date:document.getElementById('histWarnDate').value||today,severity:document.getElementById('histWarnSeverity').value,note:document.getElementById('histWarnNote').value.trim(),addedBy:currentUserData?.callsign||'Staff',addedAt:new Date().toISOString()};
+                if(!entry.note){notify('REASON IS REQUIRED',1);return;}
+            } else {
+                fieldKey='commendationHistory';
+                entry={date:document.getElementById('histCommendDate').value||today,title:document.getElementById('histCommendTitle').value.trim(),note:document.getElementById('histCommendNote').value.trim(),addedBy:currentUserData?.callsign||'Staff',addedAt:new Date().toISOString()};
+                if(!entry.title){notify('AWARD TITLE IS REQUIRED',1);return;}
+            }
+            const updated = [...(u[fieldKey]||[]), entry];
+            try {
+                await updateDoc(doc(db,'users',uid),{[fieldKey]:updated});
+                u[fieldKey]=updated;
+                renderHistoryList(type==='promo'?'histPromoList':type==='warn'?'histWarnList':'histCommendList', updated, type);
+                notify('ENTRY ADDED');
+                // Clear inputs
+                if(type==='promo'){document.getElementById('histPromoFrom').value='';document.getElementById('histPromoTo').value='';document.getElementById('histPromoNote').value='';}
+                else if(type==='warn'){document.getElementById('histWarnNote').value='';}
+                else{document.getElementById('histCommendTitle').value='';document.getElementById('histCommendNote').value='';}
+            } catch(e){notify('ERROR: '+e.message,1);}
+        };
+
+        window.deleteHistoryEntry = async function(type, index) {
+            if(!confirm('REMOVE THIS ENTRY?')) return;
+            const uid = document.getElementById('editUserId').value;
+            const u   = allUsers.find(x=>x.id===uid); if(!u) return;
+            const fieldKey = type==='promo'?'promotionHistory':type==='warn'?'warningHistory':'commendationHistory';
+            const updated = (u[fieldKey]||[]).filter((_,i)=>i!==index);
+            try {
+                await updateDoc(doc(db,'users',uid),{[fieldKey]:updated});
+                u[fieldKey]=updated;
+                renderHistoryList(type==='promo'?'histPromoList':type==='warn'?'histWarnList':'histCommendList', updated, type);
+                notify('ENTRY REMOVED');
+            } catch(e){notify('ERROR: '+e.message,1);}
+        };
+
         window.saveUserEdit = async function() {
-            const uid=document.getElementById('editUserId').value;
-            const data={callsign:document.getElementById('editCallsign').value,firstName:document.getElementById('editFirstName').value,lastName:document.getElementById('editLastName').value,rank:document.getElementById('editRank').value};
-            const jEl=document.getElementById('editJoinedAt');
-            if(jEl&&jEl.value) data.joinedAt=jEl.value+'T00:00:00.000Z';
-            try { await updateDoc(doc(db,'users',uid),data); notify('SAVED'); logAction('EDIT_USER',uid); closeEditModal(); allUsers=[]; loadAllUsers(); } catch(e){notify('ERROR',1);}
+            const uid     = document.getElementById('editUserId').value;
+            const oldUser = allUsers.find(x=>x.id===uid);
+            const canEditCallsign = ['staff_nco','developer','commander'].includes(currentUserData?.role);
+            const newRank = document.getElementById('editRankSelect').value;
+            const newRole = document.getElementById('editRoleSelect').value;
+            // Block commander role change if not permitted
+            if(!P().canDemoteCommander){
+                if(oldUser?.role==='commander'){notify('CANNOT MODIFY COMMANDER ROLE',1);return;}
+                if(newRole==='commander'){notify('CANNOT ASSIGN COMMANDER ROLE',1);return;}
+            }
+            const data = {
+                firstName: document.getElementById('editFirstName').value.trim(),
+                lastName:  document.getElementById('editLastName').value.trim(),
+                rank:      newRank,
+                platoon:   document.getElementById('editPlatoon').value,
+                role:      newRole,
+            };
+            if(canEditCallsign) data.callsign = document.getElementById('editCallsign').value.trim();
+            const jEl = document.getElementById('editJoinedAt');
+            if(jEl && jEl.value) data.joinedAt = jEl.value+'T00:00:00.000Z';
+            // Auto-log promotion if rank changed
+            if(oldUser && newRank && newRank !== (oldUser.rank||'')) {
+                const entry = {date:new Date().toISOString().split('T')[0],fromRank:oldUser.rank||'—',toRank:newRank,note:'Updated via Personnel Files',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
+                data.promotionHistory = [...(oldUser.promotionHistory||[]), entry];
+            }
+            try {
+                await updateDoc(doc(db,'users',uid),data);
+                notify('SAVED');
+                logAction('EDIT_USER',uid);
+                closeEditModal();
+                allUsers=[];
+                loadAllUsers();
+            } catch(e){notify('ERROR: '+e.message,1);}
         };
         window.closeEditModal = function(){ document.getElementById('editUserModal').classList.remove('active'); };
 
@@ -1833,6 +1984,42 @@
         #panel-unitcards select, #panel-unitcards input[type="text"] {
             font-size:16px !important;
         }
+        /* ── Edit Modal Tabs ── */
+        #editUserModal .edit-modal-content{max-width:720px;width:96%;max-height:90vh;display:flex;flex-direction:column}
+        .edit-tabs{display:flex;gap:0;border-bottom:1px solid rgba(0,217,255,.25);margin-bottom:16px;flex-shrink:0}
+        .edit-tab{background:none;border:none;border-bottom:2px solid transparent;color:#888;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:9px 18px;cursor:pointer;transition:all .2s;margin-bottom:-1px}
+        .edit-tab:hover{color:#ccc}
+        .edit-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+        .edit-tab-pane{display:none}
+        .edit-tab-pane.active{display:block}
+        .edit-modal-scroll{overflow-y:auto;flex:1;padding-right:4px}
+        .edit-modal-scroll::-webkit-scrollbar{width:4px}
+        .edit-modal-scroll::-webkit-scrollbar-track{background:transparent}
+        .edit-modal-scroll::-webkit-scrollbar-thumb{background:rgba(0,217,255,.2)}
+        /* ── History sections ── */
+        .history-section{margin-bottom:12px;border:1px solid rgba(0,217,255,.12)}
+        .history-section-hd{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(0,217,255,.04)}
+        .history-section-title{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px}
+        .history-entry{display:grid;grid-template-columns:80px 1fr auto;gap:6px;padding:6px 12px;border-top:1px solid rgba(255,255,255,.04);align-items:start}
+        .history-entry-date{color:#888;font-family:'Share Tech Mono',monospace;font-size:9px;padding-top:1px}
+        .history-entry-body{color:#ccc;font-size:10px;line-height:1.5}
+        .history-entry-del{background:none;border:none;color:#555;cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
+        .history-entry-del:hover{color:#ef4444}
+        .history-add-row{display:flex;gap:6px;padding:8px 12px;border-top:1px solid rgba(0,217,255,.08);background:rgba(0,0,0,.25);flex-wrap:wrap;align-items:center}
+        .history-add-row input,.history-add-row select{background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:9px;padding:5px 7px;outline:none}
+        .history-add-row input{flex:1;min-width:80px}
+        .history-add-btn{background:rgba(0,217,255,.1);border:1px solid rgba(0,217,255,.4);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:5px 10px;cursor:pointer;white-space:nowrap}
+        .history-add-btn:hover{background:rgba(0,217,255,.2)}
+        .history-empty{color:#555;font-size:9px;letter-spacing:2px;padding:10px 12px}
+        .cs-lock-wrap{position:relative}
+        .cs-lock-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#f59e0b;font-size:13px;cursor:help}
+        .history-badge{font-size:8px;letter-spacing:1px;padding:1px 6px;border:1px solid;font-family:'Rajdhani',sans-serif;font-weight:700}
+        .badge-promo{color:#7FFF7F;border-color:#7FFF7F55}
+        .badge-warn-minor{color:#FFD700;border-color:#FFD70055}
+        .badge-warn-major{color:#FF8C00;border-color:#FF8C0055}
+        .badge-warn-final{color:#FF4444;border-color:#FF444455}
+        .badge-commend{color:#a78bfa;border-color:#a78bfa55}
+        .badge-auto{color:#555;border-color:#33333388;font-size:7px}
     </style>
 </head>
 <body>
@@ -1840,7 +2027,180 @@
 
     <div class="notification" id="notification"></div>
     <div class="media-picker-modal" id="mediaPickerModal"><div class="picker-content"><div class="picker-header"><h3>SELECT MEDIA</h3><button class="picker-close" onclick="closeMediaPicker()">&times;</button></div><div class="picker-grid" id="pickerGrid"></div></div></div>
-    <div class="edit-modal" id="editUserModal"><div class="edit-modal-content"><div class="edit-modal-title">EDIT OPERATIVE</div><input type="hidden" id="editUserId"><div class="edit-field"><label>CALLSIGN</label><input type="text" id="editCallsign"></div><div class="edit-field"><label>FIRST NAME</label><input type="text" id="editFirstName"></div><div class="edit-field"><label>LAST NAME</label><input type="text" id="editLastName"></div><div class="edit-field"><label>RANK</label><input type="text" id="editRank" placeholder="e.g. Private, Corporal, Sergeant..."></div><div class="edit-field"><label>DATE JOINED</label><input type="date" id="editJoinedAt"></div><div class="edit-modal-actions"><button class="action-btn approve-btn" onclick="saveUserEdit()">SAVE CHANGES</button><button class="action-btn remove-btn" onclick="closeEditModal()">CANCEL</button></div></div></div>
+    <div class="edit-modal" id="editUserModal">
+        <div class="edit-modal-content">
+            <div class="edit-modal-title" id="editModalTitle">EDIT OPERATIVE</div>
+            <input type="hidden" id="editUserId">
+            <!-- Tabs -->
+            <div class="edit-tabs">
+                <button class="edit-tab active" onclick="switchEditTab('details')">&#9998; DETAILS</button>
+                <button class="edit-tab" onclick="switchEditTab('history')">&#9776; HISTORY</button>
+            </div>
+            <div class="edit-modal-scroll">
+                <!-- DETAILS TAB -->
+                <div class="edit-tab-pane active" id="editPane-details">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
+                        <div class="edit-field">
+                            <label>RANK</label>
+                            <select id="editRankSelect" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
+                                <option value="">— SELECT RANK —</option>
+                                <optgroup label="── OFFICER ──">
+                                    <option value="O9 / Lieutenant General">O9 / Lieutenant General</option>
+                                    <option value="O8 / Major General">O8 / Major General</option>
+                                    <option value="O7 / Brigadier General">O7 / Brigadier General</option>
+                                    <option value="O6 / Colonel">O6 / Colonel</option>
+                                    <option value="O5 / Lieutenant Colonel">O5 / Lieutenant Colonel</option>
+                                    <option value="O4 / Major">O4 / Major</option>
+                                    <option value="O3 / Captain">O3 / Captain</option>
+                                    <option value="O2 / First Lieutenant">O2 / First Lieutenant</option>
+                                    <option value="O1 / Second Lieutenant">O1 / Second Lieutenant</option>
+                                </optgroup>
+                                <optgroup label="── E9 ──">
+                                    <option value="E9 / Sergeant Major">E9 / Sergeant Major</option>
+                                    <option value="E9 / Master Gunnery Sergeant">E9 / Master Gunnery Sergeant</option>
+                                    <option value="E9 / Master Chief Hospital Corpsman">E9 / Master Chief Hospital Corpsman</option>
+                                    <option value="E9 / First Sergeant">E9 / First Sergeant</option>
+                                </optgroup>
+                                <optgroup label="── E8 ──">
+                                    <option value="E8 / Senior Chief Corpsman">E8 / Senior Chief Corpsman</option>
+                                    <option value="E8 / Master Sergeant">E8 / Master Sergeant</option>
+                                </optgroup>
+                                <optgroup label="── E7 ──">
+                                    <option value="E7 / Chief Corpsman">E7 / Chief Corpsman</option>
+                                    <option value="E7 / Gunnery Sergeant">E7 / Gunnery Sergeant</option>
+                                </optgroup>
+                                <optgroup label="── E6 ──">
+                                    <option value="E6 / Technical Sergeant">E6 / Technical Sergeant</option>
+                                    <option value="E6 / Corpsman First Class">E6 / Corpsman First Class</option>
+                                    <option value="E6 / Staff Sergeant">E6 / Staff Sergeant</option>
+                                </optgroup>
+                                <optgroup label="── E5 ──">
+                                    <option value="E5 / Corpsman Second Class">E5 / Corpsman Second Class</option>
+                                    <option value="E5 / Staff Sergeant">E5 / Staff Sergeant</option>
+                                    <option value="E5 / Sergeant">E5 / Sergeant</option>
+                                </optgroup>
+                                <optgroup label="── E4 ──">
+                                    <option value="E4 / Corpsman Third Class">E4 / Corpsman Third Class</option>
+                                    <option value="E4 / Senior Airman">E4 / Senior Airman</option>
+                                    <option value="E4 / Corporal">E4 / Corporal</option>
+                                </optgroup>
+                                <optgroup label="── E3 ──">
+                                    <option value="E3 / Hospitalman">E3 / Hospitalman</option>
+                                    <option value="E3 / Airman First Class">E3 / Airman First Class</option>
+                                    <option value="E3 / Lance Corporal">E3 / Lance Corporal</option>
+                                </optgroup>
+                                <optgroup label="── E2 ──">
+                                    <option value="E2 / Hospitalman Apprentice">E2 / Hospitalman Apprentice</option>
+                                    <option value="E2 / Airman">E2 / Airman</option>
+                                    <option value="E2 / Private First Class">E2 / Private First Class</option>
+                                </optgroup>
+                                <optgroup label="── E1 ──">
+                                    <option value="E1 / Airman Basic">E1 / Airman Basic</option>
+                                    <option value="E1 / Private">E1 / Private</option>
+                                </optgroup>
+                                <optgroup label="── OTHER ──">
+                                    <option value="Reservist">Reservist</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="edit-field"><label>FIRST NAME</label><input type="text" id="editFirstName"></div>
+                        <div class="edit-field">
+                            <label style="display:flex;align-items:center;gap:6px">
+                                CALLSIGN
+                                <span id="editCallsignLockLabel" style="display:none;color:#f59e0b;font-size:8px;letter-spacing:1px">&#128274; STAFF NCO+ ONLY</span>
+                            </label>
+                            <div class="cs-lock-wrap">
+                                <input type="text" id="editCallsign" style="width:100%">
+                                <span id="editCallsignLock" class="cs-lock-icon" title="Only Staff NCO, Developer or Commander can edit the Callsign." style="display:none">&#128274;</span>
+                            </div>
+                        </div>
+                        <div class="edit-field"><label>LAST NAME</label><input type="text" id="editLastName"></div>
+                        <div class="edit-field"><label>DATE JOINED UNIT</label><input type="date" id="editJoinedAt"></div>
+                        <div class="edit-field">
+                            <label>PLATOON</label>
+                            <select id="editPlatoon" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
+                                <option value="">— SELECT PLATOON —</option>
+                                <option value="Awaiting BCT">Awaiting BCT</option>
+                                <option value="Command">Command</option>
+                                <option value="1st Platoon">1st Platoon</option>
+                                <option value="2nd Platoon">2nd Platoon</option>
+                                <option value="3rd Platoon">3rd Platoon</option>
+                                <option value="Force Recon">Force Recon</option>
+                                <option value="Corpsmen">Corpsmen</option>
+                                <option value="Pilot">Pilot</option>
+                                <option value="Reserves">Reserves</option>
+                            </select>
+                        </div>
+                        <div class="edit-field" style="grid-column:1/-1">
+                            <label>ROLE</label>
+                            <select id="editRoleSelect" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
+                                <option value="enlistee">ENLISTEE</option>
+                                <option value="marine">MARINE</option>
+                                <option value="recruiter">RECRUITER</option>
+                                <option value="nco">NCO</option>
+                                <option value="staff_nco">STAFF NCO</option>
+                                <option value="developer">DEVELOPER</option>
+                                <option value="commander">COMMANDER</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <!-- HISTORY TAB -->
+                <div class="edit-tab-pane" id="editPane-history">
+                    <!-- PROMOTION HISTORY -->
+                    <div class="history-section">
+                        <div class="history-section-hd">
+                            <span class="history-section-title" style="color:#7FFF7F">&#9650; PROMOTION HISTORY</span>
+                            <span style="font-size:8px;letter-spacing:1px;color:#555">AUTO-LOGGED ON RANK CHANGE + MANUAL</span>
+                        </div>
+                        <div id="histPromoList"></div>
+                        <div class="history-add-row">
+                            <input type="date" id="histPromoDate">
+                            <input type="text" id="histPromoFrom" placeholder="From rank..." style="max-width:140px">
+                            <input type="text" id="histPromoTo" placeholder="To rank..." style="max-width:140px">
+                            <input type="text" id="histPromoNote" placeholder="Note (optional)...">
+                            <button class="history-add-btn" onclick="addHistoryEntry('promo')">+ ADD</button>
+                        </div>
+                    </div>
+                    <!-- WARNING HISTORY -->
+                    <div class="history-section">
+                        <div class="history-section-hd">
+                            <span class="history-section-title" style="color:#FF8C00">&#9888; WARNING HISTORY</span>
+                        </div>
+                        <div id="histWarnList"></div>
+                        <div class="history-add-row">
+                            <input type="date" id="histWarnDate">
+                            <select id="histWarnSeverity" style="max-width:100px">
+                                <option value="MINOR">MINOR</option>
+                                <option value="MAJOR">MAJOR</option>
+                                <option value="FINAL">FINAL</option>
+                            </select>
+                            <input type="text" id="histWarnNote" placeholder="Reason / details...">
+                            <button class="history-add-btn" onclick="addHistoryEntry('warn')">+ ADD</button>
+                        </div>
+                    </div>
+                    <!-- COMMENDATION HISTORY -->
+                    <div class="history-section">
+                        <div class="history-section-hd">
+                            <span class="history-section-title" style="color:#a78bfa">&#9733; COMMENDATION / MEDAL HISTORY</span>
+                        </div>
+                        <div id="histCommendList"></div>
+                        <div class="history-add-row">
+                            <input type="date" id="histCommendDate">
+                            <input type="text" id="histCommendTitle" placeholder="Award / medal title..." style="max-width:160px">
+                            <input type="text" id="histCommendNote" placeholder="Reason / citation...">
+                            <button class="history-add-btn" onclick="addHistoryEntry('commend')">+ ADD</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div class="edit-modal-actions" style="flex-shrink:0;margin-top:12px">
+                <button class="action-btn approve-btn" onclick="saveUserEdit()">SAVE CHANGES</button>
+                <button class="action-btn remove-btn" onclick="closeEditModal()">CANCEL</button>
+            </div>
+        </div>
+    </div>
     <div class="edit-modal" id="rosterModal">
         <div class="edit-modal-content" style="max-width:620px;width:95%">
             <div class="edit-modal-title" id="rosterModalTitle">ADD ROSTER ENTRY</div>
