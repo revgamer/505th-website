@@ -1627,11 +1627,22 @@
         window.changeRank = async function(uid, rank) {
             const u = allUsers.find(x=>x.id===uid);
             const updateData = {rank};
+            const today = new Date().toISOString().split('T')[0];
             if(u && rank && rank !== (u.rank||'')) {
-                const entry = {date:new Date().toISOString().split('T')[0],fromRank:u.rank||'—',toRank:rank,note:'Updated via Personnel Files (inline)',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
+                const entry = {date:today,fromRank:u.rank||'—',toRank:rank,note:'Updated via Personnel Files (inline)',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
                 updateData.promotionHistory = [...(u.promotionHistory||[]), entry];
+                // Auto-set graduation date when promoted to any E2 rank (BCT completion)
+                if(rank.startsWith('E2') && !u.graduation) {
+                    updateData.graduation = today;
+                    notify('RANK UPDATED — GRADUATION DATE AUTO-SET TO TODAY');
+                }
             }
-            try { await updateDoc(doc(db,'users',uid),updateData); logAction('RANK_CHANGE',uid+' → '+rank); notify('RANK UPDATED: '+(rank||'CLEARED')); if(u){u.rank=rank;if(updateData.promotionHistory)u.promotionHistory=updateData.promotionHistory;} } catch(e){notify('ERROR',1);}
+            try {
+                await updateDoc(doc(db,'users',uid),updateData);
+                logAction('RANK_CHANGE',uid+' → '+rank);
+                if(!updateData.graduation) notify('RANK UPDATED: '+(rank||'CLEARED'));
+                if(u){ u.rank=rank; if(updateData.promotionHistory) u.promotionHistory=updateData.promotionHistory; if(updateData.graduation) u.graduation=updateData.graduation; }
+            } catch(e){notify('ERROR',1);}
         };
         function updateEnlistmentBadge() {
             const badge = document.getElementById('enlistmentBadge');
@@ -1830,6 +1841,10 @@
             if(oldUser && newRank && newRank !== (oldUser.rank||'')) {
                 const entry = {date:new Date().toISOString().split('T')[0],fromRank:oldUser.rank||'—',toRank:newRank,note:'Updated via Personnel Files',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
                 data.promotionHistory = [...(oldUser.promotionHistory||[]), entry];
+                // Auto-set graduation date when promoted to any E2 rank (BCT completion) — only if not already set
+                if(newRank.startsWith('E2') && !oldUser.graduation && !data.graduation) {
+                    data.graduation = new Date().toISOString().split('T')[0];
+                }
             }
             // Auto-log platoon transfer if platoon changed
             const newPlatoon = document.getElementById('editPlatoon').value;
