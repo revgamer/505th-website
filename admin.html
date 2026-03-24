@@ -921,6 +921,7 @@
             const active  = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied');
             const pending = allUsers.filter(u=>u.status==='pending');
             const denied  = allUsers.filter(u=>u.status==='denied');
+            updateEnlistmentBadge();
 
             if(activeList) {
                 activeList.innerHTML = active.length ? active.map(u=>`
@@ -928,13 +929,55 @@
                         <div class="user-info">
                             <div class="user-callsign">${esc(u.callsign)}</div>
                             <div class="user-email">${esc(u.email)}</div>
-                            <div class="user-role">${(u.role||'').toUpperCase()}</div>
+                            <div class="user-role">${(u.role||'').toUpperCase()}${u.rank?` — ${esc(u.rank)}`:''}</div>
                         </div>
-                        <div class="user-actions">
+                        <div class="user-actions" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
                             ${P().canEditProfiles?`<button class="action-btn approve-btn small" onclick="openEditUser('${u.id}')">EDIT</button>`:''}
-                            ${P().canChangeRoles?`<select onchange="changeRole('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace">
-                                ${['enlistee','marine','recruiter','nco','staff_nco','commander','developer'].filter(r=>P().canDemoteCommander?true:r!=='commander').map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
-                            </select>`:''}
+                            ${P().canChangeRoles?`<div style="display:flex;flex-direction:column;gap:3px">
+                                <div style="color:rgba(0,217,255,.5);font-size:8px;letter-spacing:1px">ROLE</div>
+                                <select onchange="changeRole('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace">
+                                    ${['enlistee','marine','recruiter','nco','staff_nco','commander','developer'].filter(r=>P().canDemoteCommander?true:r!=='commander').map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:3px">
+                                <div style="color:rgba(0,217,255,.5);font-size:8px;letter-spacing:1px">RANK</div>
+                                <select onchange="changeRank('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace;max-width:200px">
+                                    <option value="" ${!u.rank?'selected':''}>— RANK —</option>
+                                    <optgroup label="── OFFICER ──">
+                                        ${['O9 / Lieutenant General','O8 / Major General','O7 / Brigadier General','O6 / Colonel','O5 / Lieutenant Colonel','O4 / Major','O3 / Captain','O2 / First Lieutenant','O1 / Second Lieutenant'].map(r=>`<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}
+                                    </optgroup>
+                                    <optgroup label="── E9 ──">
+                                        ${['E9 / Sergeant Major','E9 / Master Gunnery Sergeant','E9 / Master Chief Hospital Corpsman','E9 / First Sergeant'].map(r=>`<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}
+                                    </optgroup>
+                                    <optgroup label="── E8 ──">
+                                        ${['E8 / Senior Chief Corpsman','E8 / Master Sergeant'].map(r=>`<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}
+                                    </optgroup>
+                                    <optgroup label="── E7 ──">
+                                        ${['E7 / Chief Corpsman','E7 / Gunnery Sergeant'].map(r=>`<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}
+                                    </optgroup>
+                                    <optgroup label="── E6 ──">
+                                        ${['E6 / Technical Sergeant','E6 / Corpsman First Class','E6 / Staff Sergeant'].map(r=>`<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}
+                                    </optgroup>
+                                    <optgroup label="── E5 ──">
+                                        ${['E5 / Corpsman Second Class','E5 / Staff Sergeant','E5 / Sergeant'].map(r=>`<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}
+                                    </optgroup>
+                                    <optgroup label="── E4 ──">
+                                        ${['E4 / Corpsman Third Class','E4 / Senior Airman','E4 / Corporal'].map(r=>`<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}
+                                    </optgroup>
+                                    <optgroup label="── E3 ──">
+                                        ${['E3 / Hospitalman','E3 / Airman First Class','E3 / Lance Corporal'].map(r=>`<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}
+                                    </optgroup>
+                                    <optgroup label="── E2 ──">
+                                        ${['E2 / Hospitalman Apprentice','E2 / Airman','E2 / Private First Class'].map(r=>`<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}
+                                    </optgroup>
+                                    <optgroup label="── E1 ──">
+                                        ${['E1 / Airman Basic','E1 / Private'].map(r=>`<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}
+                                    </optgroup>
+                                    <optgroup label="── OTHER ──">
+                                        <option value="Reservist" ${u.rank==='Reservist'?'selected':''}>Reservist</option>
+                                    </optgroup>
+                                </select>
+                            </div>`:''}
                             ${P().canEditProfiles?`<button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>`:''}
                         </div>
                     </div>`).join('') : '<div class="empty-state">NO ACTIVE PERSONNEL</div>';
@@ -978,6 +1021,16 @@
             }
             try { await updateDoc(doc(db,'users',uid),{role}); logAction('ROLE_CHANGE',uid+' → '+role); notify('ROLE UPDATED'); allUsers=[]; loadAllUsers(); } catch(e){notify('ERROR',1);}
         };
+        window.changeRank = async function(uid, rank) {
+            try { await updateDoc(doc(db,'users',uid),{rank}); logAction('RANK_CHANGE',uid+' → '+rank); notify('RANK UPDATED: '+(rank||'CLEARED')); const u=allUsers.find(x=>x.id===uid); if(u) u.rank=rank; } catch(e){notify('ERROR',1);}
+        };
+        function updateEnlistmentBadge() {
+            const badge = document.getElementById('enlistmentBadge');
+            if(!badge) return;
+            const count = allUsers.filter(u=>u.status==='pending').length;
+            if(count>0){badge.textContent=count;badge.style.display='inline-block';}
+            else{badge.style.display='none';}
+        }
         window.openEditUser = function(uid) {
             const u = allUsers.find(x=>x.id===uid); if(!u) return;
             document.getElementById('editUserId').value=uid;
@@ -1354,15 +1407,13 @@
 
             // Personnel section — show if ANY sub-item is accessible
             const navPersonnelEl = document.getElementById('nav-personnel');
-            if(navPersonnelEl) navPersonnelEl.style.display = (p.activePersonnel||p.registerPanel||p.promote)?'':'none';
+            if(navPersonnelEl) navPersonnelEl.style.display = (p.activePersonnel||p.registerPanel)?'':'none';
 
             // Personnel sub-links — granular per role
             const subActive   = document.querySelector('[data-panel="panel-active"]');
             const subRegister = document.querySelector('[data-panel="panel-register"]');
-            const subPromote  = document.querySelector('[data-panel="panel-promote"]');
             if(subActive)   subActive.style.display   = p.activePersonnel?'':'none';
             if(subRegister) subRegister.style.display = p.registerPanel?'':'none';
-            if(subPromote)  subPromote.style.display  = p.promote?'':'none';
 
             // Unit Management — show if ANY sub-item is accessible
             const navAarEl = document.getElementById('nav-aar');
@@ -1395,7 +1446,6 @@
             if(tr) tr.textContent=(currentUserData.role||'').toUpperCase();
 
             // Reveal admin
-            document.getElementById('loadingScreen').style.display='none';
             document.getElementById('adminApp').classList.remove('hidden');
 
             // Load Discord link and default panel
@@ -1551,7 +1601,7 @@
         body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 50px,rgba(0,217,255,.03) 50px,rgba(0,217,255,.03) 51px),repeating-linear-gradient(90deg,transparent,transparent 50px,rgba(0,217,255,.03) 50px,rgba(0,217,255,.03) 51px);opacity:.3;pointer-events:none;z-index:0}
         .scanlines{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(0,0,0,.12),rgba(0,0,0,.12) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:9999}
         .hidden{display:none!important}
-        .loading-screen{display:flex;justify-content:center;align-items:center;height:100vh;color:var(--accent);font-size:14px;letter-spacing:4px;z-index:10}
+
         @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
         .top-bar{background:rgba(8,10,14,.92);border-bottom:1px solid rgba(0,217,255,.4);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
         .top-bar-left{display:flex;align-items:center;gap:12px}
@@ -1783,7 +1833,7 @@
 </head>
 <body>
     <div class="scanlines"></div>
-    <div class="loading-screen" id="loadingScreen">AUTHENTICATING<span style="animation:blink 1s infinite">_</span></div>
+
     <div class="notification" id="notification"></div>
     <div class="media-picker-modal" id="mediaPickerModal"><div class="picker-content"><div class="picker-header"><h3>SELECT MEDIA</h3><button class="picker-close" onclick="closeMediaPicker()">&times;</button></div><div class="picker-grid" id="pickerGrid"></div></div></div>
     <div class="edit-modal" id="editUserModal"><div class="edit-modal-content"><div class="edit-modal-title">EDIT OPERATIVE</div><input type="hidden" id="editUserId"><div class="edit-field"><label>CALLSIGN</label><input type="text" id="editCallsign"></div><div class="edit-field"><label>FIRST NAME</label><input type="text" id="editFirstName"></div><div class="edit-field"><label>LAST NAME</label><input type="text" id="editLastName"></div><div class="edit-field"><label>RANK</label><input type="text" id="editRank" placeholder="e.g. Private, Corporal, Sergeant..."></div><div class="edit-field"><label>DATE JOINED</label><input type="date" id="editJoinedAt"></div><div class="edit-modal-actions"><button class="action-btn approve-btn" onclick="saveUserEdit()">SAVE CHANGES</button><button class="action-btn remove-btn" onclick="closeEditModal()">CANCEL</button></div></div></div>
@@ -1899,7 +1949,7 @@
             <div class="sidebar" id="sidebar">
                 <div class="dash-link" onclick="showPanel('panel-dashboard')"><span class="nav-icon">&#9632;</span> DASHBOARD</div>
                 <hr class="sidebar-divider">
-                <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> PERSONNEL <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">Active Personnel</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')">Register Panel</div><div class="sub-link" data-panel="panel-promote" onclick="showPanel('panel-promote')">Promote Ranks</div></div></div>
+                <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> PERSONNEL <span class="arrow">&#9654;</span></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 2px 8px">EXISTING MEMBERS</div><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">&#9998; Personnel Files</div><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:8px 0 2px 8px;border-top:1px solid rgba(0,217,255,.08);margin-top:4px">NEW MEMBERS</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')" style="display:flex;align-items:center;justify-content:space-between">&#9993; Enlistment Queue<span id="enlistmentBadge" style="display:none;background:#f59e0b;color:#000;font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;padding:1px 6px;letter-spacing:1px;flex-shrink:0">0</span></div></div></div>
                 <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> MEDIA LIBRARY <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
                 <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> UNIT MANAGEMENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div><div class="sub-link" data-panel="panel-unitcards" onclick="showPanel('panel-unitcards')">Unit Cards</div></div></div>
                 <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PAGE CONTENT <span class="arrow">&#9654;</span></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">ABOUT US</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div></div></div>
@@ -1956,8 +2006,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="panel hidden" id="panel-active"><div class="panel-title">ACTIVE PERSONNEL</div><div id="activeList"><div class="empty-state">LOADING...</div></div></div>
-                <div class="panel hidden" id="panel-register"><div class="panel-title">REGISTRATION PANEL</div><div id="registerList"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-active"><div class="panel-title">PERSONNEL FILES</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">VIEW, EDIT AND MANAGE RANK &amp; ROLE FOR ALL ACTIVE MEMBERS — USE DROPDOWNS INLINE PER ROW</p><div id="activeList"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-register"><div class="panel-title">ENLISTMENT QUEUE</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PENDING APPLICANTS AWAITING APPROVAL — APPROVE TO GRANT ENLISTEE ACCESS, DENY TO REJECT</p><div id="registerList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-promote">
                     <div class="panel-title">PROMOTE RANKS</div>
                     <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">CHANGE ROLES AND SET RANKS</p>
