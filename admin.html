@@ -739,6 +739,8 @@
             if (id==='panel-roster')      loadRosterPanel();
             if (id==='panel-attendance')  loadAttendancePanel();
             if (id==='panel-unitcards')   loadUnitCards();
+            if (id==='panel-webhooks')    loadWebhooksPanel();
+            if (id==='panel-recruit-source') loadRecruitSourcePanel();
             if (id==='panel-discord-tracking') loadDiscordTracking();
             if (id.startsWith('panel-page-')) {
                 // Resolve actual pageId from the container's data-page attribute
@@ -898,6 +900,7 @@
                 const snap = await getDocs(query(collection(db,'users'), orderBy('callsign','asc')));
                 allUsers = [];
                 snap.forEach(d => allUsers.push({id:d.id,...d.data()}));
+                checkNewRegistrationWebhook(allUsers);
                 renderUsers();
             } catch(e) { console.error('loadAllUsers error:',e); }
         }
@@ -1208,9 +1211,215 @@
             }
         }
 
-        window.approveUser = async function(uid, callsign) {
-            try { await updateDoc(doc(db,'users',uid),{status:'active',role:'enlistee'}); logAction('APPROVE',callsign); notify('APPROVED: '+callsign); allUsers=[]; loadAllUsers(); loadDashboard(); } catch(e){notify('ERROR',1);}
+        // ── WEBHOOK HELPERS ──────────────────────────────────────────────────
+        let webhookConfig = {};
+        const WEBHOOK_KEYS = ['registration','approved','promote','warning','platoon','aar','attendance'];
+        const WEBHOOK_LABELS = {
+            registration: 'New Registration',
+            approved:     'Registration Approved / Denied',
+            promote:      'Promotion History',
+            warning:      'Warning History',
+            platoon:      'Platoon Transfer',
+            aar:          'AAR Submitted',
+            attendance:   'Attendance Locked'
         };
+
+        async function getWebhooks() {
+            if(Object.keys(webhookConfig).length) return webhookConfig;
+            try {
+                const s = await getDoc(doc(db,'settings','webhooks'));
+                webhookConfig = s.exists() ? s.data() : {};
+            } catch(e) { webhookConfig = {}; }
+            return webhookConfig;
+        }
+
+        async function fireWebhook(key, embed) {
+            const cfg = await getWebhooks();
+            const url = cfg[key];
+            if(!url) return;
+            try {
+                const LOGO = 'https://i.ibb.co/d0Gn5M5R/505-TH-Logo.png';
+                await fetch(url, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        username:'505th Command Terminal',
+                        avatar_url: LOGO,
+                        embeds: [{ ...embed, author:{name:'505th Expeditionary Force',icon_url:LOGO}, footer:{text:'505th Expeditionary Force • Command Terminal'}, timestamp: new Date().toISOString() }]
+                    })
+                });
+            } catch(e){ console.warn('Webhook fire failed:',e.message); }
+        }
+
+        window.loadWebhooksPanel = async function() {
+            const cfg = await getWebhooks();
+            WEBHOOK_KEYS.forEach(k=>{
+                const el = document.getElementById('webhook-'+k);
+                if(el) el.value = cfg[k]||'';
+            });
+        };
+
+        window.saveWebhooks = async function() {
+            const data = {};
+            WEBHOOK_KEYS.forEach(k=>{
+                const el = document.getElementById('webhook-'+k);
+                if(el && el.value.trim()) data[k] = el.value.trim();
+            });
+            try {
+                await setDoc(doc(db,'settings','webhooks'), data, {merge:true});
+                webhookConfig = data;
+                notify('WEBHOOKS SAVED');
+            } catch(e){ notify('SAVE FAILED: '+e.message,1); }
+        };
+
+        window.testWebhook = async function(key) {
+            const el = document.getElementById('webhook-'+key);
+            if(!el||!el.value.trim()){notify('ENTER A URL FIRST',1);return;}
+            try {
+                const LOGO='https://i.ibb.co/d0Gn5M5R/505-TH-Logo.png';
+                await fetch(el.value.trim(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'505th Command Terminal',avatar_url:LOGO,embeds:[{title:'✅ Webhook Test',description:'This is a test message from the 505th Command Terminal.\n\n**'+WEBHOOK_LABELS[key]+'** webhook is configured correctly.',color:0x00D9FF,footer:{text:'505th Expeditionary Force'},timestamp:new Date().toISOString()}]})});
+                notify('TEST SENT — CHECK DISCORD');
+            } catch(e){ notify('TEST FAILED: '+e.message,1); }
+        };
+
+        // ── RECRUITMENT SOURCE ──────────────────────────────────────────────
+        const RECRUIT_SOURCES = ['Reddit','Steam Community','Disboard','Discord','Word of Mouth','Other'];
+
+        window.loadRecruitSourcePanel = async function() {
+            const c = document.getElementById('recruitSourceChart'); if(!c) return;
+            c.innerHTML = '<div class="empty-state">LOADING...</div>';
+            try {
+                const snap = await getDocs(collection(db,'users'));
+                const counts = {}; const recentBySource = {};
+                RECRUIT_SOURCES.forEach(s=>{ counts[s]=0; recentBySource[s]=[]; });
+                let total = 0;
+                snap.forEach(d=>{
+                    const u={id:d.id,...d.data()};
+                    if(u.status==='pending'||u.status==='denied') return;
+                    const src = u.recruitSource||'Unknown';
+                    counts[src] = (counts[src]||0)+1;
+                    if(!recentBySource[src]) recentBySource[src]=[];
+                    recentBySource[src].push(u);
+                    total++;
+                });
+                if(!total){ c.innerHTML='<div class="empty-state">NO SOURCE DATA YET — TAG SOURCES WHEN APPROVING RECRUITS</div>'; return; }
+                const max = Math.max(...Object.values(counts),1);
+                const sourceColors={'Reddit':'#FF4500','Steam Community':'#1b2838','Disboard':'#5865F2','Discord':'#5865F2','Word of Mouth':'#7FFF7F','Other':'#aaa','Unknown':'#555'};
+                c.innerHTML = Object.entries(counts).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([src,cnt])=>{
+                    const pct = Math.round((cnt/total)*100);
+                    const barPct = Math.round((cnt/max)*100);
+                    const col = sourceColors[src]||'var(--accent)';
+                    return `<div style="margin-bottom:14px">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                            <span style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:#e0e0e0;letter-spacing:1px">${esc(src)}</span>
+                            <div style="display:flex;align-items:center;gap:10px">
+                                <span style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:${col}">${pct}%</span>
+                                <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#666">${cnt} recruit${cnt!==1?'s':''}</span>
+                            </div>
+                        </div>
+                        <div style="height:8px;background:rgba(255,255,255,.06);width:100%;position:relative">
+                            <div style="height:100%;width:${barPct}%;background:${col};transition:width .5s;opacity:.85"></div>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                // Recent recruits table
+                const tbl = document.getElementById('recruitSourceTable');
+                if(tbl){
+                    const allWithSource = [];
+                    snap.forEach(d=>{ const u={id:d.id,...d.data()}; if(u.status!=='pending'&&u.status!=='denied'&&u.recruitSource) allWithSource.push(u); });
+                    allWithSource.sort((a,b)=>(b.joinedAt||'').localeCompare(a.joinedAt||''));
+                    tbl.innerHTML = allWithSource.slice(0,20).map(u=>`
+                        <div style="display:grid;grid-template-columns:1fr 160px 120px;gap:8px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);align-items:center">
+                            <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:#e0e0e0">${esc(formatMemberName(u)||u.callsign)}</div>
+                            <div style="font-size:10px;letter-spacing:1px;color:${sourceColors[u.recruitSource]||'#aaa'}">${esc(u.recruitSource)}</div>
+                            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#555">${u.joinedAt?new Date(u.joinedAt).toLocaleDateString('en-US'):'—'}</div>
+                        </div>`).join('') || '<div class="empty-state">NO TAGGED RECRUITS YET</div>';
+                }
+            } catch(e){ c.innerHTML='<div class="empty-state">ERROR: '+e.message+'</div>'; }
+        };
+
+        // ── APPROVE WITH SOURCE TAGGING ──────────────────────────────────────
+        window.approveUser = async function(uid, callsign) {
+            const u = allUsers.find(x=>x.id===uid);
+            // Show source picker modal
+            const src = await pickRecruitSource(callsign);
+            try {
+                const updateData = {status:'active', role:'enlistee'};
+                if(src) updateData.recruitSource = src;
+                await updateDoc(doc(db,'users',uid), updateData);
+                logAction('APPROVE', callsign);
+                notify('APPROVED: '+callsign+(src?' — SOURCE: '+src:''));
+                // Fire registration approved webhook
+                if(u){
+                    const first = u.firstName||'';
+                    const mid   = u.middleName?u.middleName.charAt(0).toUpperCase()+'.':'';
+                    const last  = u.lastName||'';
+                    const name  = [first, mid, last].filter(Boolean).join(' ') || callsign;
+                    fireWebhook('approved',{
+                        title: '✅ Registration Approved',
+                        description: `**${name}** has been approved and granted Enlistee access.`,
+                        color: 0x00FF41,
+                        fields:[
+                            {name:'Callsign', value:callsign, inline:true},
+                            {name:'Recruit Source', value:src||'Not tagged', inline:true},
+                        ]
+                    });
+                }
+                allUsers=[]; loadAllUsers(); loadDashboard();
+            } catch(e){ notify('ERROR',1); }
+        };
+
+        function pickRecruitSource(callsign) {
+            return new Promise(resolve=>{
+                const modal = document.getElementById('recruitSourceModal');
+                const label = document.getElementById('recruitSourceModalLabel');
+                if(label) label.textContent = 'APPROVING: '+callsign.toUpperCase();
+                if(modal) modal.classList.add('active');
+                window._recruitSourceResolve = resolve;
+            });
+        }
+        window.confirmRecruitSource = function() {
+            const sel = document.getElementById('recruitSourcePicker');
+            const val = sel ? sel.value : '';
+            document.getElementById('recruitSourceModal').classList.remove('active');
+            if(window._recruitSourceResolve){ window._recruitSourceResolve(val); window._recruitSourceResolve=null; }
+        };
+        window.skipRecruitSource = function() {
+            document.getElementById('recruitSourceModal').classList.remove('active');
+            if(window._recruitSourceResolve){ window._recruitSourceResolve(''); window._recruitSourceResolve=null; }
+        };
+
+        // Fire new registration webhook when user registers (called from registration form — hook into loadAllUsers render)
+        // We fire it when pending user appears in the list for the first time
+        let _notifiedRegistrations = new Set();
+        window.checkNewRegistrationWebhook = async function(users) {
+            const pending = users.filter(u=>u.status==='pending');
+            for(const u of pending){
+                if(_notifiedRegistrations.has(u.id)) continue;
+                _notifiedRegistrations.add(u.id);
+                const first = u.firstName||'';
+                const mid   = u.middleName?u.middleName.charAt(0).toUpperCase()+'.':'';
+                const last  = u.lastName||'';
+                const name  = [first, mid, last].filter(Boolean).join(' ') || u.callsign||'Unknown';
+                const ts    = u.createdAt ? new Date(u.createdAt).toLocaleString('en-US') : new Date().toLocaleString('en-US');
+                fireWebhook('registration',{
+                    title: '📋 New Registration Request',
+                    description: `A new operative has submitted a registration request and is awaiting approval.`,
+                    color: 0xF59E0B,
+                    fields:[
+                        {name:'Full Name',  value: name,          inline:true},
+                        {name:'Callsign',   value: u.callsign||'Not set', inline:true},
+                        {name:'Email',      value: u.email||'—',  inline:false},
+                        {name:'Submitted',  value: ts,            inline:false},
+                    ]
+                });
+            }
+        };
+        // ── END WEBHOOKS / RECRUIT SOURCE ─────────────────────────────────────
+
+        window.approveUser_old_backup = null; // marker
+
         window.removeUser = async function(uid, callsign) {
             if(!confirm('REMOVE '+callsign+'?')) return;
             try { await deleteDoc(doc(db,'users',uid)); logAction('REMOVE',callsign); notify('REMOVED: '+callsign); allUsers=[]; loadAllUsers(); loadDashboard(); } catch(e){notify('ERROR',1);}
@@ -1791,7 +2000,9 @@
             if(navSettingsEl) navSettingsEl.style.display = (p.settings||p.discordLink)?'':'none';
             // Discord Tracking sub-link — only full settings roles (commander/developer)
             const discordTrackingLink = document.getElementById('navlink-discord-tracking');
+            const webhooksLink = document.getElementById('navlink-webhooks');
             if(discordTrackingLink) discordTrackingLink.style.display = p.settings?'':'none';
+            if(webhooksLink) webhooksLink.style.display = p.settings?'':'none';
 
             // Personnel section — show if ANY sub-item is accessible
             const navPersonnelEl = document.getElementById('nav-personnel');
@@ -1809,9 +2020,11 @@
             const aarLink      = document.getElementById('navlink-aar');
             const rosterLink   = document.getElementById('navlink-roster');
             const unitcardsLink= document.querySelector('[data-panel="panel-unitcards"]');
+            const recruitLink  = document.querySelector('[data-panel="panel-recruit-source"]');
             if(aarLink)       aarLink.style.display       = p.aar?'':'none';
             if(rosterLink)    rosterLink.style.display    = p.roster?'':'none';
             if(unitcardsLink) unitcardsLink.style.display = p.unitcards?'':'none';
+            if(recruitLink)   recruitLink.style.display   = p.roster?'':'none';
 
             // Dashboard widgets — hide sections the role doesn't need
             const dashStatsRow    = document.getElementById('dashStatsRow');
@@ -2623,6 +2836,30 @@
             </div>
         </div>
     </div>
+    <!-- Recruit Source Picker Modal -->
+    <div class="edit-modal" id="recruitSourceModal">
+        <div class="edit-modal-content" style="max-width:400px">
+            <div class="edit-modal-title" id="recruitSourceModalLabel">TAG RECRUIT SOURCE</div>
+            <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">WHERE DID THIS RECRUIT HEAR ABOUT THE 505TH?</p>
+            <div class="edit-field">
+                <label>RECRUITMENT SOURCE</label>
+                <select id="recruitSourcePicker" style="width:100%;padding:10px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
+                    <option value="">— SELECT SOURCE —</option>
+                    <option value="Reddit">Reddit</option>
+                    <option value="Steam Community">Steam Community</option>
+                    <option value="Disboard">Disboard</option>
+                    <option value="Discord">Discord</option>
+                    <option value="Word of Mouth">Word of Mouth</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="edit-modal-actions">
+                <button class="action-btn approve-btn" onclick="confirmRecruitSource()">CONFIRM &amp; APPROVE</button>
+                <button class="action-btn" onclick="skipRecruitSource()" style="border-color:#555;color:#aaa">SKIP</button>
+            </div>
+        </div>
+    </div>
+
     <div id="adminApp" class="hidden">
         <div class="top-bar"><div class="top-bar-left"><button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button><img src="images/logo.png" alt="505th"><span class="top-bar-title">COMMAND TERMINAL_</span></div><div class="top-bar-right"><div class="user-identity"><div id="topbarName">---</div><div id="topbarRole">---</div></div><a href="profile.html" class="top-btn">&#9823; PROFILE</a><a href="home.html" class="top-btn">&#8962; HOME</a><button class="top-btn logout-btn" onclick="handleLogout()">&#9211; LOGOUT</button></div></div>
         <div class="app-layout">
@@ -2630,10 +2867,10 @@
                 <div class="dash-link" onclick="showPanel('panel-dashboard')"><span class="nav-icon">&#9632;</span> DASHBOARD</div>
                 <hr class="sidebar-divider">
                 <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> MANPOWER <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">MANPOWER</div><div class="nav-tip-body">Manage all unit personnel. Review active member files, edit ranks &amp; roles, and process new enlistment applications.</div></div></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 2px 8px">EXISTING MEMBERS</div><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">&#9998; Personnel Files</div><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:8px 0 2px 8px;border-top:1px solid rgba(0,217,255,.08);margin-top:4px">NEW MEMBERS</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')" style="display:flex;align-items:center;justify-content:space-between">&#9993; Enlistment Queue<span id="enlistmentBadge" style="display:none;background:#f59e0b;color:#000;font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;padding:1px 6px;letter-spacing:1px;flex-shrink:0">0</span></div></div></div>
-                <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> BATTALION OPS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">BATTALION OPS</div><div class="nav-tip-body">Operational records for the unit. Submit After Action Reports, manage Battalion Roster strength, and maintain Unit Cards on the Order of Battle.</div></div></div><div class="sub-links"><div id="navlink-attendance" class="sub-link" data-panel="panel-attendance" onclick="showPanel('panel-attendance')">&#9635; Attendance Tracker</div><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div><div class="sub-link" data-panel="panel-unitcards" onclick="showPanel('panel-unitcards')">Unit Cards</div></div></div>
+                <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> BATTALION OPS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">BATTALION OPS</div><div class="nav-tip-body">Operational records for the unit. Submit After Action Reports, manage Battalion Roster strength, and maintain Unit Cards on the Order of Battle.</div></div></div><div class="sub-links"><div id="navlink-attendance" class="sub-link" data-panel="panel-attendance" onclick="showPanel('panel-attendance')">&#9635; Attendance Tracker</div><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div><div class="sub-link" data-panel="panel-unitcards" onclick="showPanel('panel-unitcards')">Unit Cards</div><div class="sub-link" data-panel="panel-recruit-source" onclick="showPanel('panel-recruit-source')">&#9650; Recruitment Source</div></div></div>
                 <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> INTEL ARCHIVE <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
                 <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PUBLIC COMMS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">PUBLIC COMMS</div><div class="nav-tip-body">Edit content displayed on public-facing unit pages — photos, sliders, descriptions and section headers visible to recruits and visitors.</div></div></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">ABOUT US</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div></div></div>
-                <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> NETWORK CONFIG <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">NETWORK CONFIG</div><div class="nav-tip-body">Configure external integrations — set the Discord server invite link and manage Cortana bot tracking connections.</div></div></div><div class="sub-links"><div id="navlink-discord" class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div id="navlink-discord-tracking" class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Discord Tracking</div></div></div>
+                <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> DISCORD &amp; NETWORK <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">DISCORD &amp; NETWORK</div><div class="nav-tip-body">Configure Discord invite link, webhook notifications, and Cortana bot integration for the unit.</div></div></div><div class="sub-links"><div id="navlink-discord" class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div id="navlink-webhooks" class="sub-link" data-panel="panel-webhooks" onclick="showPanel('panel-webhooks')">Discord Webhooks</div><div id="navlink-discord-tracking" class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Cortana Bot Integration</div></div></div>
                 <hr class="sidebar-divider">
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
             </div>
@@ -3027,6 +3264,81 @@
                     </div>
                     <div id="unitCardsList"><div class="empty-state">LOADING...</div></div>
                 </div>
+                <!-- DISCORD WEBHOOKS PANEL -->
+                <div class="panel hidden" id="panel-webhooks">
+                    <div class="panel-title">DISCORD WEBHOOKS</div>
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:20px">PASTE DISCORD WEBHOOK URLS — FIRES AUTOMATICALLY WHEN EACH ACTION OCCURS IN THE COMMAND TERMINAL</p>
+                    <div style="display:flex;flex-direction:column;gap:12px;max-width:800px">
+                        ${WEBHOOK_KEYS.map ? '' : ''}
+                        <div class="dash-section" style="padding:16px 20px">
+                            <div class="dash-section-title">&#128276; WEBHOOK URLS</div>
+                            <div style="display:flex;flex-direction:column;gap:14px;margin-top:4px" id="webhookFieldsContainer">
+                                <div style="display:grid;grid-template-columns:200px 1fr auto;gap:10px;align-items:center">
+                                    <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#ccc">NEW REGISTRATION</div>
+                                    <input type="url" id="webhook-registration" placeholder="https://discord.com/api/webhooks/..." style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px 10px;outline:none;width:100%">
+                                    <button class="action-btn approve-btn small" onclick="testWebhook('registration')" style="font-size:9px;white-space:nowrap">TEST</button>
+                                </div>
+                                <div style="display:grid;grid-template-columns:200px 1fr auto;gap:10px;align-items:center">
+                                    <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#ccc">APPROVED / DENIED</div>
+                                    <input type="url" id="webhook-approved" placeholder="https://discord.com/api/webhooks/..." style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px 10px;outline:none;width:100%">
+                                    <button class="action-btn approve-btn small" onclick="testWebhook('approved')" style="font-size:9px;white-space:nowrap">TEST</button>
+                                </div>
+                                <div style="display:grid;grid-template-columns:200px 1fr auto;gap:10px;align-items:center">
+                                    <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#ccc">PROMOTION HISTORY</div>
+                                    <input type="url" id="webhook-promote" placeholder="https://discord.com/api/webhooks/..." style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px 10px;outline:none;width:100%">
+                                    <button class="action-btn approve-btn small" onclick="testWebhook('promote')" style="font-size:9px;white-space:nowrap">TEST</button>
+                                </div>
+                                <div style="display:grid;grid-template-columns:200px 1fr auto;gap:10px;align-items:center">
+                                    <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#ccc">WARNING HISTORY</div>
+                                    <input type="url" id="webhook-warning" placeholder="https://discord.com/api/webhooks/..." style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px 10px;outline:none;width:100%">
+                                    <button class="action-btn approve-btn small" onclick="testWebhook('warning')" style="font-size:9px;white-space:nowrap">TEST</button>
+                                </div>
+                                <div style="display:grid;grid-template-columns:200px 1fr auto;gap:10px;align-items:center">
+                                    <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#ccc">PLATOON TRANSFER</div>
+                                    <input type="url" id="webhook-platoon" placeholder="https://discord.com/api/webhooks/..." style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px 10px;outline:none;width:100%">
+                                    <button class="action-btn approve-btn small" onclick="testWebhook('platoon')" style="font-size:9px;white-space:nowrap">TEST</button>
+                                </div>
+                                <div style="display:grid;grid-template-columns:200px 1fr auto;gap:10px;align-items:center">
+                                    <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#ccc">AAR SUBMITTED</div>
+                                    <input type="url" id="webhook-aar" placeholder="https://discord.com/api/webhooks/..." style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px 10px;outline:none;width:100%">
+                                    <button class="action-btn approve-btn small" onclick="testWebhook('aar')" style="font-size:9px;white-space:nowrap">TEST</button>
+                                </div>
+                                <div style="display:grid;grid-template-columns:200px 1fr auto;gap:10px;align-items:center">
+                                    <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#ccc">ATTENDANCE LOCKED</div>
+                                    <input type="url" id="webhook-attendance" placeholder="https://discord.com/api/webhooks/..." style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px 10px;outline:none;width:100%">
+                                    <button class="action-btn approve-btn small" onclick="testWebhook('attendance')" style="font-size:9px;white-space:nowrap">TEST</button>
+                                </div>
+                            </div>
+                            <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(0,217,255,.1)">
+                                <button class="upload-btn" onclick="saveWebhooks()" style="font-size:12px;padding:10px 24px;letter-spacing:2px">&#10003; SAVE ALL WEBHOOKS</button>
+                                <span style="color:#555;font-size:9px;letter-spacing:1px;margin-left:12px">&#9432; LEAVE BLANK TO DISABLE THAT NOTIFICATION</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RECRUITMENT SOURCE TRACKER PANEL -->
+                <div class="panel hidden" id="panel-recruit-source">
+                    <div class="panel-title">RECRUITMENT SOURCE TRACKER</div>
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:20px">WHERE ARE NEW RECRUITS HEARING ABOUT THE 505TH — TAGGED AT ENLISTMENT APPROVAL</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+                        <div class="dash-section">
+                            <div class="dash-section-title">SOURCE BREAKDOWN</div>
+                            <div id="recruitSourceChart"><div class="empty-state">LOADING...</div></div>
+                            <div style="margin-top:12px">
+                                <button class="action-btn approve-btn" onclick="loadRecruitSourcePanel()" style="font-size:10px;padding:5px 12px">&#8635; REFRESH</button>
+                            </div>
+                        </div>
+                        <div class="dash-section">
+                            <div class="dash-section-title">RECENT RECRUITS BY SOURCE</div>
+                            <div style="margin-bottom:8px;font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.4);display:grid;grid-template-columns:1fr 160px 120px;gap:8px;padding:0 12px">
+                                <div>NAME</div><div>SOURCE</div><div>JOINED</div>
+                            </div>
+                            <div id="recruitSourceTable"><div class="empty-state">LOADING...</div></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="panel hidden" id="panel-discord-tracking">
                     <div class="panel-title">DISCORD TRACKING</div>
                     <div style="text-align:center;padding:60px 20px;">
