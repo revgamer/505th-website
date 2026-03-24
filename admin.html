@@ -311,7 +311,10 @@
                 const ptStyle=ptReady?'color:#7FFF7F;font-weight:700;font-size:14px;text-shadow:0 0 8px rgba(127,255,127,.6);animation:ptGlow 1s ease-in-out infinite':'color:var(--accent);font-weight:700;font-size:14px';
                 return`<div class="roster-row">
                     <div class="roster-cell roster-name">${esc(formatMemberName(r)||r.callsign)}</div>
-                    <div class="roster-cell"><span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;padding:3px 10px;border:1px solid rgba(0,217,255,.35);color:var(--accent)">${esc(r.platoon||'—')}</span></div>
+                    <div class="roster-cell">${r.platoon
+                        ? `<span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;padding:3px 10px;border:1px solid rgba(0,217,255,.35);color:var(--accent)">${esc(r.platoon)}</span>`
+                        : `<span style="color:#555;font-size:10px">—</span>`
+                    }</div>
                     <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-US'):'—'}</div>
                     <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:#ccc">${calcPeriod(r.joinedPlatoon)}</div>
                     <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500">${esc(r.rank||'—')}</div>
@@ -2847,8 +2850,6 @@
                     <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <button class="action-btn approve-btn" onclick="loadRosterPanel()">&#8635; REFRESH</button>
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
-                        <button class="action-btn" onclick="migrateRosterToUsers()" style="border-color:#FFD700;color:#FFD700;background:rgba(255,212,0,.06);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 12px;cursor:pointer">&#9888; MIGRATE OLD ROSTER DATA</button>
-                        <button class="action-btn remove-btn" onclick="deleteOldRosterCollection()" style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 12px;cursor:pointer">&#128465; DELETE OLD ROSTER COLLECTION</button>
                         <div style="display:flex;gap:4px;margin-left:8px;align-items:center">
                             <span style="color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:2px;margin-right:4px">SORT:</span>
                             <button class="roster-sort-btn" data-sort="name-asc" onclick="setRosterSort('name-asc')" style="background:rgba(0,217,255,.15);border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">NAME A→Z</button>
