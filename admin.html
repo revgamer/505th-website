@@ -898,6 +898,72 @@
                     } catch(e){ discordWidget.innerHTML=`<span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:#FFD700;border:1px solid #FFD700;padding:4px 12px">⚠ UNABLE TO CHECK</span>`; }
                 }
 
+                // ── Recruitment Source widget (all roles) ──
+                const rsrcWidget = document.getElementById('dashRecruitSource');
+                if(rsrcWidget) {
+                    try {
+                        const SOURCES = ['Reddit','Steam Community','Disboard','Discord','Word of Mouth','Other'];
+                        const SOURCE_COLORS = {
+                            'Reddit':        '#FF4500',
+                            'Steam Community':'#4CAF94',
+                            'Disboard':      '#5865F2',
+                            'Discord':       '#7289DA',
+                            'Word of Mouth': '#7FFF7F',
+                            'Other':         '#aaa'
+                        };
+                        const counts = {};
+                        let srcTotal = 0;
+                        snap.forEach(d => {
+                            const u = d.data();
+                            if(u.status==='pending'||u.status==='denied') return;
+                            const src = u.recruitSource||'Unknown';
+                            counts[src] = (counts[src]||0) + 1;
+                            srcTotal++;
+                        });
+
+                        if(!srcTotal || Object.keys(counts).every(k=>k==='Unknown')) {
+                            rsrcWidget.innerHTML = '<div class="empty-state">NO SOURCE DATA YET — TAG SOURCES WHEN APPROVING RECRUITS</div>';
+                        } else {
+                            // Filter out Unknown, sort by count desc
+                            const entries = Object.entries(counts)
+                                .filter(([k])=>k!=='Unknown')
+                                .sort((a,b)=>b[1]-a[1]);
+                            const unknownCount = counts['Unknown']||0;
+                            const taggedTotal = srcTotal - unknownCount;
+                            const maxCount = Math.max(...entries.map(([,v])=>v), 1);
+
+                            // Vertical bar chart
+                            const barWidth = Math.floor(100 / Math.max(entries.length, 1));
+                            rsrcWidget.innerHTML = `
+                                <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding:0 4px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.06)">
+                                    ${entries.map(([src, cnt])=>{
+                                        const pct = Math.round((cnt/maxCount)*100);
+                                        const color = SOURCE_COLORS[src]||'var(--accent)';
+                                        const labelPct = taggedTotal>0?Math.round((cnt/taggedTotal)*100):0;
+                                        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0">
+                                            <div style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:${color}">${labelPct}%</div>
+                                            <div style="width:100%;max-width:48px;background:rgba(255,255,255,.05);position:relative;height:${Math.max(pct,4)}px;transition:height .4s;border-top:2px solid ${color}">
+                                                <div style="position:absolute;inset:0;background:${color};opacity:.25"></div>
+                                            </div>
+                                        </div>`;
+                                    }).join('')}
+                                </div>
+                                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                                    ${entries.map(([src, cnt])=>{
+                                        const color = SOURCE_COLORS[src]||'var(--accent)';
+                                        return `<div style="display:flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid ${color}22;background:${color}0D">
+                                            <div style="width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0"></div>
+                                            <span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:600;color:#ccc">${esc(src)}</span>
+                                            <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:${color};font-weight:700">${cnt}</span>
+                                        </div>`;
+                                    }).join('')}
+                                    ${unknownCount?`<div style="display:flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid #33333355"><div style="width:7px;height:7px;border-radius:50%;background:#555;flex-shrink:0"></div><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:#555">Not Tagged</span><span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#555">${unknownCount}</span></div>`:''}
+                                </div>
+                                <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;letter-spacing:1px">${taggedTotal} OF ${srcTotal} MEMBERS TAGGED · <a onclick="showPanel('panel-recruit-source')" href="#" style="color:rgba(0,217,255,.5);text-decoration:none">VIEW FULL REPORT ↗</a></div>`;
+                        }
+                    } catch(e){ rsrcWidget.innerHTML='<div class="empty-state">UNABLE TO LOAD SOURCE DATA</div>'; }
+                }
+
             } catch(e) { console.error('Dashboard error:',e); }
         }
 
@@ -952,7 +1018,7 @@
                         <div style="font-size:8px;color:#666;letter-spacing:1px">${attendCount} PRESENT${excusedCount>0?' · '+excusedCount+' EXC':''}</div>
                     </div>
                     ${e.locked?`<span style="font-size:9px;color:#FFD700;border:1px solid #FFD70055;padding:1px 6px;font-family:Rajdhani,sans-serif;font-weight:700;letter-spacing:1px;flex-shrink:0">LOCKED</span>`:''}
-                    <button class="action-btn remove-btn small" onclick="deleteAttEvent('${e.id}','${esc(e.title||'this event')}')" style="font-size:9px;padding:3px 8px;flex-shrink:0" title="Delete event">&#10006;</button>
+                    <button class="action-btn remove-btn small" onclick="deleteAttEvent('${e.id}','${esc(e.title||'this event')}')" style="font-size:9px;padding:3px 8px;flex-shrink:0;${e.locked?'opacity:.25;cursor:not-allowed;':''}" ${e.locked?'disabled title="Locked events cannot be deleted"':''}>&#10006;</button>
                 </div>`;
             }).join('');
         }
@@ -991,52 +1057,25 @@
         };
 
         window.deleteAttEvent = async function(eventId, title) {
-            // Load the event to check if it was locked
             let eventDoc;
             try { eventDoc = await getDoc(doc(db,'attendance_events',eventId)); } catch(e){ notify('ERROR: '+e.message,1); return; }
             if(!eventDoc.exists()) { notify('EVENT NOT FOUND',1); return; }
             const ev = eventDoc.data();
 
-            let confirmMsg = 'DELETE EVENT: "'+title+'"?';
+            // Block delete if locked — locked events are permanent record
             if(ev.locked) {
-                confirmMsg += '\n\n⚠ This event was LOCKED — attendance counters were already saved to member records.\n\nClick OK to delete and REVERSE the counters for all members who attended.';
-            } else {
-                confirmMsg += '\n\nThis event was not locked so no member records will be affected.';
+                notify('CANNOT DELETE — EVENT IS LOCKED. LOCKED EVENTS ARE PERMANENT RECORD.',1);
+                return;
             }
-            if(!confirm(confirmMsg)) return;
+
+            if(!confirm('DELETE EVENT: "'+title+'"?\n\nThis event is not locked so no member records will be affected.')) return;
 
             try {
-                // If locked, reverse counters for all attendees
-                if(ev.locked) {
-                    const attendees = ev.attendees||[];
-                    const eligible  = [...attendees, ...(ev.excused||[])]; // everyone who was eligible
-                    for(const uid of eligible) {
-                        const u = allUsers.find(x=>x.id===uid);
-                        if(!u) continue;
-                        const wasPresent  = attendees.includes(uid);
-                        const newOpsElig  = Math.max(0, (u.opsEligible||0) - 1);
-                        const newOpsAtt   = Math.max(0, (u.opsAttended||0) - (wasPresent?1:0));
-                        const newAtt      = wasPresent ? Math.max(0, (u.attendance||0) - 1) : (u.attendance||0);
-                        await updateDoc(doc(db,'users',uid), {
-                            opsEligible: newOpsElig,
-                            opsAttended: newOpsAtt,
-                            attendance:  newAtt,
-                            updatedAt:   new Date().toISOString()
-                        });
-                        // Update local cache
-                        u.opsEligible = newOpsElig;
-                        u.opsAttended = newOpsAtt;
-                        u.attendance  = newAtt;
-                    }
-                    notify('EVENT DELETED & COUNTERS REVERSED FOR '+attendees.length+' MEMBERS');
-                } else {
-                    notify('EVENT DELETED');
-                }
                 await deleteDoc(doc(db,'attendance_events',eventId));
                 if(attEventData?.id === eventId) attClearForm();
-                logAction('ATT_DELETE', title+(ev.locked?' (counters reversed)':''));
+                notify('EVENT DELETED');
+                logAction('ATT_DELETE', title);
                 await loadAttendancePanel();
-                renderAttRoster(); // refresh monthly rate display
             } catch(e){ notify('DELETE FAILED: '+e.message,1); }
         };
 
@@ -3102,6 +3141,12 @@
                                 <div id="dashRecentJoins"><div class="empty-state">LOADING...</div></div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Row 5: Recruitment Source Bar Chart -->
+                    <div class="dash-section" style="margin-bottom:16px">
+                        <div class="dash-section-title">&#9650; RECRUITMENT SOURCE</div>
+                        <div id="dashRecruitSource"><div class="empty-state">LOADING...</div></div>
                     </div>
                 </div>
 
