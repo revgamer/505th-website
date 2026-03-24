@@ -942,16 +942,17 @@
                 const totalActive = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied'&&u.platoon!=='Reserves').length;
                 const rate = totalActive>0?Math.round((attendCount/totalActive)*100):0;
                 const rateColor = rate>=75?'#7FFF7F':rate>=50?'#FFD700':'#FF4444';
-                return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(0,217,255,.03)'" onmouseout="this.style.background=''" onclick="loadAttEvent('${e.id}')">
-                    <div style="flex:1">
+                return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s" onmouseover="this.style.background='rgba(0,217,255,.03)'" onmouseout="this.style.background=''">
+                    <div style="flex:1;cursor:pointer" onclick="loadAttEvent('${e.id}')">
                         <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:#e0e0e0">${esc(e.title||'Untitled')}</div>
                         <div style="font-size:9px;color:#666;letter-spacing:1px;margin-top:2px">${e.date||'—'} · <span style="color:${typeColors[e.type]||'#aaa'}">${typeLabels[e.type]||e.type||'—'}</span></div>
                     </div>
-                    <div style="text-align:right">
+                    <div style="text-align:right;cursor:pointer" onclick="loadAttEvent('${e.id}')">
                         <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:${rateColor}">${rate}%</div>
                         <div style="font-size:8px;color:#666;letter-spacing:1px">${attendCount} PRESENT${excusedCount>0?' · '+excusedCount+' EXC':''}</div>
                     </div>
-                    ${e.locked?`<span style="font-size:9px;color:#FFD700;border:1px solid #FFD70055;padding:1px 6px;font-family:Rajdhani,sans-serif;font-weight:700;letter-spacing:1px">LOCKED</span>`:''}
+                    ${e.locked?`<span style="font-size:9px;color:#FFD700;border:1px solid #FFD70055;padding:1px 6px;font-family:Rajdhani,sans-serif;font-weight:700;letter-spacing:1px;flex-shrink:0">LOCKED</span>`:''}
+                    <button class="action-btn remove-btn small" onclick="deleteAttEvent('${e.id}','${esc(e.title||'this event')}')" style="font-size:9px;padding:3px 8px;flex-shrink:0" title="Delete event">&#10006;</button>
                 </div>`;
             }).join('');
         }
@@ -977,6 +978,27 @@
             document.getElementById('attEventType').value='main_op';
             const _lbl=document.getElementById('attCurrentEventLabel');if(_lbl)_lbl.textContent='New Event';
             renderAttRoster();
+        };
+
+        window.attClearForm = function() {
+            attEventData = null;
+            document.getElementById('attEventTitle').value='';
+            document.getElementById('attEventDate').value=new Date().toISOString().split('T')[0];
+            document.getElementById('attEventType').value='main_op';
+            const _lbl=document.getElementById('attCurrentEventLabel');if(_lbl)_lbl.textContent='New Event';
+            renderAttRoster();
+            notify('FORM CLEARED');
+        };
+
+        window.deleteAttEvent = async function(eventId, title) {
+            if(!confirm('DELETE EVENT: "'+title+'"?\n\nNote: This will NOT reverse attendance counters already saved to member records.')) return;
+            try {
+                await deleteDoc(doc(db,'attendance_events',eventId));
+                if(attEventData?.id === eventId) attClearForm();
+                notify('EVENT DELETED');
+                logAction('ATT_DELETE', title);
+                await loadAttendancePanel();
+            } catch(e){ notify('DELETE FAILED: '+e.message,1); }
         };
 
         window.setAttFilter = function(platoon) {
@@ -3099,6 +3121,7 @@
                     <!-- Footer actions -->
                     <div style="display:flex;gap:10px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid rgba(0,217,255,.15);flex-wrap:wrap">
                         <button class="action-btn approve-btn" onclick="loadAttendancePanel()" style="padding:8px 18px;font-size:11px;letter-spacing:2px">&#8635; REFRESH</button>
+                        <button class="action-btn" onclick="attClearForm()" style="padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:#555;color:#aaa">&#10005; CLEAR</button>
                         <button class="action-btn" onclick="attMarkAllExcused()" style="padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:#FFD70088;color:#FFD700;background:rgba(255,212,0,.06)">&#128274; MARK EXCUSED</button>
                         <button id="attSaveBtn" class="upload-btn" onclick="saveAttendance(false)" style="padding:8px 20px;font-size:11px;letter-spacing:2px">&#10003; SAVE ATTENDANCE</button>
                         <button class="action-btn" onclick="saveAttendance(true)" style="padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:rgba(0,217,255,.3);color:var(--accent)">&#128274; SAVE &amp; LOCK</button>
