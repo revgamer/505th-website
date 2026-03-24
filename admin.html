@@ -241,17 +241,21 @@
                     submittedBy:currentUser.uid,submittedByName:currentUserData.callsign,submittedAt:new Date().toISOString()
                 });
                 logAction('AAR_SUBMIT',`${title} (${OP_LABELS[opType]||opType}) \u2014 ${UNIT_LABELS[unit]||unit} \u2014 ${RES_LABELS[result]||result}`);
-                if(AAR_WEBHOOK_URL){
-                    try{
+                const wh = await getWebhooks();
+                const RC={success:0x00FF41,partial:0xFFD700,failure:0xFF4444};
+                const RI={success:'✅ Mission Success',partial:'🟡 Partial Success',failure:'❌ Mission Failure'};
+                const OI={main_op:'🔴 Main Op',patrol:'🔵 Patrol',deployment:'🟢 Deployment',fun_op:'🟡 Fun Op'};
+                const desc='**'+title+'**\n\n• **Submitted by:** '+(filedBy||currentUserData.callsign)+'\n• **Unit:** '+(UNIT_LABELS[unit]||unit)+'\n• **Type:** '+(OI[opType]||opType)+'\n• **Date:** '+new Date(dateVal).toLocaleDateString('en-US',{day:'2-digit',month:'long',year:'numeric'})+'\n• **Result:** '+(RI[result]||result)+'\n\n[📄 View full report](https://www.505expeditionaryforce.com/resources-aar.html)';
+                // Use configured webhook URL if set, otherwise fall back to hardcoded
+                if(wh.aar) {
+                    fireWebhook('aar', {description:desc, color:RC[result]||0x2b2d31});
+                } else if(AAR_WEBHOOK_URL) {
+                    try {
                         const LOGO_URL='https://i.ibb.co/d0Gn5M5R/505-TH-Logo.png';
-                        const RC={success:0x00FF41,partial:0xFFD700,failure:0xFF4444};
-                        const RI={success:'✅ Mission Success',partial:'🟡 Partial Success',failure:'❌ Mission Failure'};
-                        const OI={main_op:'🔴 Main Op',patrol:'🔵 Patrol',deployment:'🟢 Deployment',fun_op:'🟡 Fun Op'};
-                        const desc='**'+title+'**\n\n• **Submitted by:** '+(filedBy||currentUserData.callsign)+'\n• **Unit:** '+(UNIT_LABELS[unit]||unit)+'\n• **Type:** '+(OI[opType]||opType)+'\n• **Date:** '+new Date(dateVal).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})+'\n• **Result:** '+(RI[result]||result)+'\n\n[📄 Click here to view the full report](https://www.505expeditionaryforce.com/resources-aar.html)';
                         const payload=JSON.stringify({username:'505th Command Terminal',avatar_url:LOGO_URL,embeds:[{author:{name:'505th Expeditionary Force — Operations',icon_url:LOGO_URL},title:'📘 New After Action Report Submitted',description:desc,color:RC[result]||0x2b2d31,thumbnail:{url:LOGO_URL},footer:{text:'505th Expeditionary Force • After Action Reports'},timestamp:new Date().toISOString()}]});
                         const whr=await fetch(AAR_WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:payload});
-                        if(!whr.ok){const err=await whr.text();console.error('Webhook failed:',whr.status,err);}
-                    }catch(we){console.error('Webhook error:',we);}
+                        if(!whr.ok){const err=await whr.text();console.error('AAR Webhook failed:',whr.status,err);}
+                    }catch(we){console.error('AAR Webhook error:',we);}
                 }
                 st.style.color='#7FFF7F';st.textContent='\u2713 REPORT SUBMITTED';notify('AAR SUBMITTED');
                 aarClearForm(true);await loadRecentAARs();
@@ -1106,6 +1110,13 @@
                         if(local){ local.attendance=att; local.opsAttended=opsAttended; local.opsEligible=opsEligible; }
                     }
                     notify('EVENT LOCKED & ATTENDANCE SAVED — '+attendees.length+' PRESENT');
+                    fireWebhook('attendance', {
+                        title:   title,
+                        date:    date,
+                        type:    {main_op:'Main Op',patrol:'Patrol',training:'Training',fun_op:'Fun Op'}[type]||type,
+                        present: attendees.length,
+                        by:      currentUserData?.callsign||'Staff'
+                    });
                 } else {
                     notify('EVENT SAVED — '+attendees.length+' MARKED PRESENT');
                 }
@@ -1232,22 +1243,91 @@
             return webhookConfig;
         }
 
-        async function fireWebhook(key, embed) {
+        async function fireWebhook(key, data) {
             const cfg = await getWebhooks();
             const url = cfg[key];
             if(!url) return;
+            const LOGO = 'https://i.ibb.co/d0Gn5M5R/505-TH-Logo.png';
+            const BASE = { author:{name:'505th Expeditionary Force',icon_url:LOGO}, thumbnail:{url:LOGO}, footer:{text:'505th Expeditionary Force • Command Terminal'}, timestamp:new Date().toISOString() };
+
+            let embed = {};
+            switch(key) {
+                case 'registration':
+                    embed = { ...BASE,
+                        title: '📋 New Registration Request',
+                        color: 0xF59E0B,
+                        footer: {...BASE.footer, text:'505th Expeditionary Force • Enlistment'},
+                        description: `A new operative has submitted a registration request and is awaiting approval.\n\n• **Full Name:** ${data.name||'—'}\n• **Email:** ${data.email||'—'}\n• **Submitted:** ${data.ts||new Date().toLocaleString('en-US')}`
+                    }; break;
+
+                case 'approved':
+                    embed = { ...BASE,
+                        title: '✅ Registration Approved',
+                        color: 0x00FF41,
+                        footer: {...BASE.footer, text:'505th Expeditionary Force • Enlistment'},
+                        description: `**${data.name||'—'}** has been approved and granted Enlistee access.\n\n• **Full Name:** ${data.name||'—'}\n• **Email:** ${data.email||'—'}\n• **Recruit Source:** ${data.source||'Not tagged'}\n• **Approved by:** ${data.approvedBy||'Staff'}`
+                    }; break;
+
+                case 'denied':
+                    embed = { ...BASE,
+                        title: '❌ Registration Denied',
+                        color: 0xFF4444,
+                        footer: {...BASE.footer, text:'505th Expeditionary Force • Enlistment'},
+                        description: `**${data.name||'—'}**'s registration has been denied.\n\n• **Full Name:** ${data.name||'—'}\n• **Email:** ${data.email||'—'}\n• **Denied by:** ${data.deniedBy||'Staff'}`
+                    }; break;
+
+                case 'promote':
+                    embed = { ...BASE,
+                        title: '⭐ Promotion Record Updated',
+                        color: 0xA78BFA,
+                        footer: {...BASE.footer, text:'505th Expeditionary Force • Personnel'},
+                        description: `A promotion entry has been logged for **${data.name||'—'}**.\n\n• **Operative:** ${data.name||'—'}\n• **From Rank:** ${data.fromRank||'—'}\n• **To Rank:** ${data.toRank||'—'}\n• **Note:** ${data.note||'—'}\n• **Logged by:** ${data.by||'Staff'}`
+                    }; break;
+
+                case 'warning':
+                    embed = { ...BASE,
+                        title: '⚠️ Warning Issued',
+                        color: 0xFF6B35,
+                        footer: {...BASE.footer, text:'505th Expeditionary Force • Personnel'},
+                        description: `A warning has been issued to **${data.name||'—'}**.\n\n• **Operative:** ${data.name||'—'}\n• **Severity:** ${data.severity||'—'}\n• **Reason:** ${data.reason||'—'}\n• **Issued by:** ${data.by||'Staff'}`
+                    }; break;
+
+                case 'platoon':
+                    embed = { ...BASE,
+                        title: '🔄 Platoon Transfer',
+                        color: 0x00D9FF,
+                        footer: {...BASE.footer, text:'505th Expeditionary Force • Personnel'},
+                        description: `**${data.name||'—'}** has been transferred to a new platoon.\n\n• **Operative:** ${data.name||'—'}\n• **From:** ${data.from||'—'}\n• **To:** ${data.to||'—'}\n• **Note:** ${data.note||'—'}\n• **Transferred by:** ${data.by||'Staff'}`
+                    }; break;
+
+                case 'aar':
+                    embed = { ...BASE,
+                        title: '📘 New After Action Report Submitted',
+                        color: data.color||0x2b2d31,
+                        author: {name:'505th Expeditionary Force — Operations', icon_url:LOGO},
+                        footer: {...BASE.footer, text:'505th Expeditionary Force • After Action Reports'},
+                        description: data.description||''
+                    }; break;
+
+                case 'attendance':
+                    embed = { ...BASE,
+                        title: '📊 Attendance Event Locked',
+                        color: 0x2DD4BF,
+                        footer: {...BASE.footer, text:'505th Expeditionary Force • Attendance'},
+                        description: `An attendance event has been finalised and member records updated.\n\n• **Event:** ${data.title||'—'}\n• **Date:** ${data.date||'—'}\n• **Type:** ${data.type||'—'}\n• **Present:** ${data.present||0} members\n• **Locked by:** ${data.by||'Staff'}`
+                    }; break;
+
+                default:
+                    embed = { ...BASE, title: data.title||key, description: data.description||'', color: 0x00D9FF };
+            }
+
             try {
-                const LOGO = 'https://i.ibb.co/d0Gn5M5R/505-TH-Logo.png';
                 await fetch(url, {
                     method:'POST',
                     headers:{'Content-Type':'application/json'},
-                    body: JSON.stringify({
-                        username:'505th Command Terminal',
-                        avatar_url: LOGO,
-                        embeds: [{ ...embed, author:{name:'505th Expeditionary Force',icon_url:LOGO}, footer:{text:'505th Expeditionary Force • Command Terminal'}, timestamp: new Date().toISOString() }]
-                    })
+                    body: JSON.stringify({ username:'505th Command Terminal', avatar_url:LOGO, embeds:[embed] })
                 });
-            } catch(e){ console.warn('Webhook fire failed:',e.message); }
+            } catch(e){ console.warn('Webhook fire failed ['+key+']:', e.message); }
         }
 
         window.loadWebhooksPanel = async function() {
@@ -1276,7 +1356,19 @@
             if(!el||!el.value.trim()){notify('ENTER A URL FIRST',1);return;}
             try {
                 const LOGO='https://i.ibb.co/d0Gn5M5R/505-TH-Logo.png';
-                await fetch(el.value.trim(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'505th Command Terminal',avatar_url:LOGO,embeds:[{title:'✅ Webhook Test',description:'This is a test message from the 505th Command Terminal.\n\n**'+WEBHOOK_LABELS[key]+'** webhook is configured correctly.',color:0x00D9FF,footer:{text:'505th Expeditionary Force'},timestamp:new Date().toISOString()}]})});
+                await fetch(el.value.trim(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+                    username:'505th Command Terminal',
+                    avatar_url:LOGO,
+                    embeds:[{
+                        author:{name:'505th Expeditionary Force',icon_url:LOGO},
+                        title:'🔔 Webhook Test — '+WEBHOOK_LABELS[key],
+                        description:`This is a test notification from the 505th Command Terminal.\n\n• **Webhook:** ${WEBHOOK_LABELS[key]}\n• **Status:** ✅ Connected\n• **Tested by:** ${currentUserData?.callsign||'Staff'}`,
+                        color:0x00D9FF,
+                        thumbnail:{url:LOGO},
+                        footer:{text:'505th Expeditionary Force • Command Terminal'},
+                        timestamp:new Date().toISOString()
+                    }]
+                })});
                 notify('TEST SENT — CHECK DISCORD');
             } catch(e){ notify('TEST FAILED: '+e.message,1); }
         };
@@ -1355,15 +1447,11 @@
                 logAction('APPROVE', displayName);
                 notify('APPROVED: '+displayName+(src?' — SOURCE: '+src:''));
                 // Fire approved webhook
-                fireWebhook('approved',{
-                    title: '✅ Registration Approved',
-                    description: `**${displayName}** has been approved and granted Enlistee access.`,
-                    color: 0x00FF41,
-                    fields:[
-                        {name:'Full Name',      value: displayName,          inline:true},
-                        {name:'Email',          value: u?.email||'—',        inline:true},
-                        {name:'Recruit Source', value: src||'Not tagged',    inline:false},
-                    ]
+                fireWebhook('approved', {
+                    name:       displayName,
+                    email:      u?.email||'—',
+                    source:     src||'Not tagged',
+                    approvedBy: currentUserData?.callsign||'Staff'
                 });
                 allUsers=[]; loadAllUsers(); loadDashboard();
             } catch(e){ notify('ERROR: '+e.message,1); }
@@ -1392,7 +1480,6 @@
         // ── REAL-TIME REGISTRATION WEBHOOK ───────────────────────────────────
         // Listens live for new pending users — fires webhook the moment someone registers
         let _regListenerStarted = false;
-        let _notifiedRegistrations = new Set();
 
         window.startRegistrationListener = function() {
             if(_regListenerStarted) return;
@@ -1401,29 +1488,7 @@
             onSnapshot(q, snap => {
                 snap.docChanges().forEach(change => {
                     if(change.type !== 'added') return;
-                    const u = {id: change.doc.id, ...change.doc.data()};
-                    if(_notifiedRegistrations.has(u.id)) return;
-                    _notifiedRegistrations.add(u.id);
-                    // Only fire for registrations that happened in last 5 minutes (not old backlog)
-                    const regTime = u.registeredAt ? new Date(u.registeredAt).getTime() : 0;
-                    const age = Date.now() - regTime;
-                    if(age > 5 * 60 * 1000) return; // skip old ones on first load
-                    const first = u.firstName||'';
-                    const mid   = u.middleName ? u.middleName.charAt(0).toUpperCase()+'.' : '';
-                    const last  = u.lastName||'';
-                    const name  = [first, mid, last].filter(Boolean).join(' ') || 'Unknown';
-                    const ts    = u.registeredAt ? new Date(u.registeredAt).toLocaleString('en-US') : new Date().toLocaleString('en-US');
-                    fireWebhook('registration', {
-                        title: '📋 New Registration Request',
-                        description: 'A new operative has submitted a registration and is awaiting approval.',
-                        color: 0xF59E0B,
-                        fields: [
-                            {name: 'Full Name',  value: name,         inline: true},
-                            {name: 'Email',      value: u.email||'—', inline: true},
-                            {name: 'Submitted',  value: ts,           inline: false},
-                        ]
-                    });
-                    // Also update the enlistment badge
+                    // Only update the enlistment badge — webhook is fired by login.html at registration time
                     updateEnlistmentBadge();
                 });
             }, err => console.warn('Registration listener error:', err.message));
@@ -1594,6 +1659,11 @@
                 u[fieldKey]=updated;
                 renderHistoryList(type==='platoon'?'histPlatoonList':type==='promo'?'histPromoList':type==='warn'?'histWarnList':'histCommendList', updated, type);
                 notify('ENTRY ADDED');
+                const memberName = formatMemberName(u)||u.callsign||'Unknown';
+                const by = currentUserData?.callsign||'Staff';
+                if(type==='promo')   fireWebhook('promote',  {name:memberName, fromRank:entry.fromRank||'—', toRank:entry.toRank||'—', note:entry.note||'—', by});
+                if(type==='warn')    fireWebhook('warning',  {name:memberName, severity:entry.severity||'—', reason:entry.note||'—', by});
+                if(type==='platoon') fireWebhook('platoon',  {name:memberName, from:entry.from||'—', to:entry.to||'—', note:entry.note||'—', by});
                 if(type==='platoon'){document.getElementById('histPlatoonFrom').value='';document.getElementById('histPlatoonTo').value='';document.getElementById('histPlatoonNote').value='';}
                 else if(type==='promo'){document.getElementById('histPromoFrom').value='';document.getElementById('histPromoTo').value='';document.getElementById('histPromoNote').value='';}
                 else if(type==='warn'){document.getElementById('histWarnNote').value='';}
