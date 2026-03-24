@@ -86,6 +86,11 @@
 
             // ── Platoon History ──
             renderPlatoonHistory(d.platoonHistory || []);
+
+            // Show Command Terminal for admin roles
+            if(ADMIN_ROLES.includes(d.role)) {
+                document.getElementById('cmdTerminalBtn').style.display = 'inline-flex';
+            }
         }
 
         function renderMedals(entries) {
@@ -164,6 +169,8 @@
         }
 
         window.handleLogout = async function() { await signOut(auth); window.location.href = 'home.html'; };
+
+        const ADMIN_ROLES = ['commander','developer','staff_nco','nco','recruiter'];
     </script>
     <style>
         :root{--accent:#00D9FF;--accent-glow:rgba(0,217,255,.5);--success:#00FF41}
@@ -279,6 +286,7 @@
             </div>
             <div class="top-bar-right">
                 <a href="home.html" class="top-btn">&#8962; HOME</a>
+                <a href="admin.html" id="cmdTerminalBtn" class="top-btn" style="display:none;color:var(--accent);border-color:rgba(0,217,255,.5)">&#9632; COMMAND TERMINAL</a>
                 <button class="top-btn logout-btn" onclick="handleLogout()">&#9211; LOGOUT</button>
             </div>
         </div>
