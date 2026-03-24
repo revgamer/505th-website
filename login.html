@@ -15,7 +15,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
@@ -69,6 +69,38 @@
                     approvedAt: null
                 });
                 await signOut(auth);
+
+                // ── Fire registration webhook ──────────────────────────────
+                try {
+                    const whSnap = await getDoc(doc(db,'settings','webhooks'));
+                    const whUrl  = whSnap.exists() ? whSnap.data().registration : null;
+                    if(whUrl) {
+                        const name = [firstName, middleInitial?middleInitial+'.':'', lastName].filter(Boolean).join(' ');
+                        const LOGO = 'https://i.ibb.co/d0Gn5M5R/505-TH-Logo.png';
+                        await fetch(whUrl, {
+                            method:'POST',
+                            headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({
+                                username: '505th Command Terminal',
+                                avatar_url: LOGO,
+                                embeds:[{
+                                    title: '📋 New Registration Request',
+                                    description: 'A new operative has submitted a registration and is awaiting approval.',
+                                    color: 0xF59E0B,
+                                    author: {name:'505th Expeditionary Force', icon_url:LOGO},
+                                    fields:[
+                                        {name:'Full Name',  value: name||'Unknown',  inline:true},
+                                        {name:'Email',      value: email,            inline:true},
+                                        {name:'Submitted',  value: new Date().toLocaleString('en-US'), inline:false},
+                                    ],
+                                    footer: {text:'505th Expeditionary Force • Command Terminal'},
+                                    timestamp: new Date().toISOString()
+                                }]
+                            })
+                        });
+                    }
+                } catch(whErr){ console.warn('Webhook error:', whErr.message); }
+                // ── End webhook ───────────────────────────────────────────
                 document.getElementById('regForm').reset();
                 // Show register boot animation
                 document.getElementById('loginContainer').classList.add('hidden');

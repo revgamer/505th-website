@@ -11,7 +11,7 @@
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, orderBy, addDoc, limit } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, orderBy, addDoc, limit, onSnapshot, where } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
         const firebaseConfig = { apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg", authDomain:"th-website-91533.firebaseapp.com", projectId:"th-website-91533", storageBucket:"th-website-91533.firebasestorage.app", messagingSenderId:"1046139150142", appId:"1:1046139150142:web:01f409ae4a38c4f79d966f" };
         const CLOUD_NAME='dwugtsdsx', UPLOAD_PRESET='505th_uploads', CLOUDINARY_API_KEY='143672934239445';
         const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -900,7 +900,6 @@
                 const snap = await getDocs(query(collection(db,'users'), orderBy('callsign','asc')));
                 allUsers = [];
                 snap.forEach(d => allUsers.push({id:d.id,...d.data()}));
-                checkNewRegistrationWebhook(allUsers);
                 renderUsers();
             } catch(e) { console.error('loadAllUsers error:',e); }
         }
@@ -1342,32 +1341,32 @@
         // ── APPROVE WITH SOURCE TAGGING ──────────────────────────────────────
         window.approveUser = async function(uid, callsign) {
             const u = allUsers.find(x=>x.id===uid);
-            // Show source picker modal
-            const src = await pickRecruitSource(callsign);
+            const first = u?.firstName||'';
+            const mid   = u?.middleName?u.middleName.charAt(0).toUpperCase()+'.':'';
+            const last  = u?.lastName||'';
+            const displayName = [first, mid, last].filter(Boolean).join(' ') || callsign || uid;
+
+            // Show source picker modal — use full name as label
+            const src = await pickRecruitSource(displayName);
             try {
                 const updateData = {status:'active', role:'enlistee'};
                 if(src) updateData.recruitSource = src;
                 await updateDoc(doc(db,'users',uid), updateData);
-                logAction('APPROVE', callsign);
-                notify('APPROVED: '+callsign+(src?' — SOURCE: '+src:''));
-                // Fire registration approved webhook
-                if(u){
-                    const first = u.firstName||'';
-                    const mid   = u.middleName?u.middleName.charAt(0).toUpperCase()+'.':'';
-                    const last  = u.lastName||'';
-                    const name  = [first, mid, last].filter(Boolean).join(' ') || callsign;
-                    fireWebhook('approved',{
-                        title: '✅ Registration Approved',
-                        description: `**${name}** has been approved and granted Enlistee access.`,
-                        color: 0x00FF41,
-                        fields:[
-                            {name:'Callsign', value:callsign, inline:true},
-                            {name:'Recruit Source', value:src||'Not tagged', inline:true},
-                        ]
-                    });
-                }
+                logAction('APPROVE', displayName);
+                notify('APPROVED: '+displayName+(src?' — SOURCE: '+src:''));
+                // Fire approved webhook
+                fireWebhook('approved',{
+                    title: '✅ Registration Approved',
+                    description: `**${displayName}** has been approved and granted Enlistee access.`,
+                    color: 0x00FF41,
+                    fields:[
+                        {name:'Full Name',      value: displayName,          inline:true},
+                        {name:'Email',          value: u?.email||'—',        inline:true},
+                        {name:'Recruit Source', value: src||'Not tagged',    inline:false},
+                    ]
+                });
                 allUsers=[]; loadAllUsers(); loadDashboard();
-            } catch(e){ notify('ERROR',1); }
+            } catch(e){ notify('ERROR: '+e.message,1); }
         };
 
         function pickRecruitSource(callsign) {
@@ -1390,35 +1389,46 @@
             if(window._recruitSourceResolve){ window._recruitSourceResolve(''); window._recruitSourceResolve=null; }
         };
 
-        // Fire new registration webhook when user registers (called from registration form — hook into loadAllUsers render)
-        // We fire it when pending user appears in the list for the first time
+        // ── REAL-TIME REGISTRATION WEBHOOK ───────────────────────────────────
+        // Listens live for new pending users — fires webhook the moment someone registers
+        let _regListenerStarted = false;
         let _notifiedRegistrations = new Set();
-        window.checkNewRegistrationWebhook = async function(users) {
-            const pending = users.filter(u=>u.status==='pending');
-            for(const u of pending){
-                if(_notifiedRegistrations.has(u.id)) continue;
-                _notifiedRegistrations.add(u.id);
-                const first = u.firstName||'';
-                const mid   = u.middleName?u.middleName.charAt(0).toUpperCase()+'.':'';
-                const last  = u.lastName||'';
-                const name  = [first, mid, last].filter(Boolean).join(' ') || u.callsign||'Unknown';
-                const ts    = u.createdAt ? new Date(u.createdAt).toLocaleString('en-US') : new Date().toLocaleString('en-US');
-                fireWebhook('registration',{
-                    title: '📋 New Registration Request',
-                    description: `A new operative has submitted a registration request and is awaiting approval.`,
-                    color: 0xF59E0B,
-                    fields:[
-                        {name:'Full Name',  value: name,          inline:true},
-                        {name:'Callsign',   value: u.callsign||'Not set', inline:true},
-                        {name:'Email',      value: u.email||'—',  inline:false},
-                        {name:'Submitted',  value: ts,            inline:false},
-                    ]
-                });
-            }
-        };
-        // ── END WEBHOOKS / RECRUIT SOURCE ─────────────────────────────────────
 
-        window.approveUser_old_backup = null; // marker
+        window.startRegistrationListener = function() {
+            if(_regListenerStarted) return;
+            _regListenerStarted = true;
+            const q = query(collection(db,'users'), where('status','==','pending'));
+            onSnapshot(q, snap => {
+                snap.docChanges().forEach(change => {
+                    if(change.type !== 'added') return;
+                    const u = {id: change.doc.id, ...change.doc.data()};
+                    if(_notifiedRegistrations.has(u.id)) return;
+                    _notifiedRegistrations.add(u.id);
+                    // Only fire for registrations that happened in last 5 minutes (not old backlog)
+                    const regTime = u.registeredAt ? new Date(u.registeredAt).getTime() : 0;
+                    const age = Date.now() - regTime;
+                    if(age > 5 * 60 * 1000) return; // skip old ones on first load
+                    const first = u.firstName||'';
+                    const mid   = u.middleName ? u.middleName.charAt(0).toUpperCase()+'.' : '';
+                    const last  = u.lastName||'';
+                    const name  = [first, mid, last].filter(Boolean).join(' ') || 'Unknown';
+                    const ts    = u.registeredAt ? new Date(u.registeredAt).toLocaleString('en-US') : new Date().toLocaleString('en-US');
+                    fireWebhook('registration', {
+                        title: '📋 New Registration Request',
+                        description: 'A new operative has submitted a registration and is awaiting approval.',
+                        color: 0xF59E0B,
+                        fields: [
+                            {name: 'Full Name',  value: name,         inline: true},
+                            {name: 'Email',      value: u.email||'—', inline: true},
+                            {name: 'Submitted',  value: ts,           inline: false},
+                        ]
+                    });
+                    // Also update the enlistment badge
+                    updateEnlistmentBadge();
+                });
+            }, err => console.warn('Registration listener error:', err.message));
+        };
+        // ── END REAL-TIME REGISTRATION WEBHOOK ───────────────────────────────
 
         window.removeUser = async function(uid, callsign) {
             if(!confirm('REMOVE '+callsign+'?')) return;
@@ -2048,6 +2058,9 @@
 
             // Reveal admin
             document.getElementById('adminApp').classList.remove('hidden');
+
+            // Start real-time registration webhook listener
+            startRegistrationListener();
 
             // Load Discord link and default panel
             loadDiscordLink();
