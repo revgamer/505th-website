@@ -35,27 +35,38 @@
             event.preventDefault();
             const btn = document.querySelector('#registerForm .btn');
             const errorMsg = document.getElementById('registerError');
-            const successMsg = document.getElementById('registerSuccess');
 
-            const firstName = document.getElementById('regFirstName').value.trim();
-            const lastName = document.getElementById('regLastName').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const callsign = firstName + ' ' + lastName;
-            const password = document.getElementById('regPassword').value;
+            const firstName     = document.getElementById('regFirstName').value.trim();
+            const middleInitial = document.getElementById('regMiddleInitial').value.trim().replace(/[^a-zA-Z]/g,'').charAt(0).toUpperCase();
+            const lastName      = document.getElementById('regLastName').value.trim();
+            const recruitSource = document.getElementById('regRecruitSource').value;
+            const email         = document.getElementById('regEmail').value.trim();
+            const password      = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regPasswordConfirm').value;
 
+            if (!recruitSource)           { showError(errorMsg, 'PLEASE SELECT WHERE YOU HEARD ABOUT US'); return false; }
+            if (!firstName || !lastName)  { showError(errorMsg, 'FIRST AND LAST NAME REQUIRED'); return false; }
             if (password !== confirmPassword) { showError(errorMsg, 'ACCESS CODES DO NOT MATCH'); return false; }
-            if (password.length < 6) { showError(errorMsg, 'ACCESS CODE MUST BE 6+ CHARACTERS'); return false; }
-            if (!firstName || !lastName) { showError(errorMsg, 'FIRST AND LAST NAME REQUIRED'); return false; }
+            if (password.length < 6)      { showError(errorMsg, 'ACCESS CODE MUST BE 6+ CHARACTERS'); return false; }
 
             btn.textContent = 'PROCESSING...'; btn.disabled = true;
 
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 await setDoc(doc(db, "users", userCredential.user.uid), {
-                    callsign, firstName, lastName, email, role: "marine", status: "pending",
-                    rank: "", joinedAt: new Date().toISOString(),
-                    registeredAt: new Date().toISOString(), approvedBy: null, approvedAt: null
+                    callsign: '',
+                    firstName,
+                    middleName: middleInitial,
+                    lastName,
+                    recruitSource,
+                    email,
+                    role: 'marine',
+                    status: 'pending',
+                    rank: '',
+                    joinedAt: new Date().toISOString(),
+                    registeredAt: new Date().toISOString(),
+                    approvedBy: null,
+                    approvedAt: null
                 });
                 await signOut(auth);
                 document.getElementById('regForm').reset();
@@ -534,6 +545,7 @@
 
         .form-row { display:flex; gap:10px; }
         .form-group.half { flex:1; }
+        select.form-input { appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2300D9FF'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
 
         @media (max-width: 640px) {
             .form-row { flex-direction:column; gap:0; }
@@ -586,31 +598,56 @@
                 <div class="section-header"><span class="terminal-prompt">></span> NEW OPERATIVE REGISTRATION</div>
                 <div class="error-message" id="registerError">REGISTRATION FAILED</div>
                 <div class="success-message" id="registerSuccess">REGISTRATION COMPLETE</div>
+
+                <!-- Privacy notice -->
+                <div style="background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.2);border-left:3px solid var(--accent);padding:10px 14px;margin-bottom:16px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:#aaa;line-height:1.8">
+                    <span style="color:var(--accent);font-weight:700">&#9432; PRIVACY NOTICE</span><br>
+                    Do <strong style="color:#e0e0e0">NOT</strong> use your real name or personal details.<br>
+                    Use your <strong style="color:#e0e0e0">in-game / community name</strong> only.<br>
+                    Only your email address is required for account access.
+                </div>
+
                 <form id="regForm" onsubmit="return handleRegister(event)">
+                    <div class="form-group">
+                        <label class="form-label">WHERE DID YOU HEAR ABOUT US? <span style="color:#FF4444">*</span></label>
+                        <select class="form-input" id="regRecruitSource" required style="cursor:pointer">
+                            <option value="">— SELECT ONE —</option>
+                            <option value="Reddit">Reddit</option>
+                            <option value="Steam Community">Steam Community</option>
+                            <option value="Disboard">Disboard</option>
+                            <option value="Discord">Discord</option>
+                            <option value="Word of Mouth">Word of Mouth</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
                     <div class="form-row">
                         <div class="form-group half">
-                            <label class="form-label">FIRST NAME</label>
+                            <label class="form-label">FIRST NAME <span style="color:#FF4444">*</span></label>
                             <input type="text" class="form-input" id="regFirstName" placeholder="First name..." required>
                         </div>
+                        <div class="form-group" style="flex:0 0 80px">
+                            <label class="form-label">MIDDLE</label>
+                            <input type="text" class="form-input" id="regMiddleInitial" placeholder="A" maxlength="1" style="text-align:center;text-transform:uppercase">
+                        </div>
                         <div class="form-group half">
-                            <label class="form-label">LAST NAME</label>
+                            <label class="form-label">LAST NAME <span style="color:#FF4444">*</span></label>
                             <input type="text" class="form-input" id="regLastName" placeholder="Last name..." required>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">EMAIL</label>
+                        <label class="form-label">EMAIL ADDRESS <span style="color:#FF4444">*</span></label>
                         <input type="email" class="form-input" id="regEmail" placeholder="your@email.com" required autocomplete="email">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">ACCESS CODE</label>
+                        <label class="form-label">ACCESS CODE (PASSWORD) <span style="color:#FF4444">*</span></label>
                         <input type="password" class="form-input" id="regPassword" placeholder="Min 6 characters..." required autocomplete="new-password">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">CONFIRM ACCESS CODE</label>
+                        <label class="form-label">CONFIRM ACCESS CODE <span style="color:#FF4444">*</span></label>
                         <input type="password" class="form-input" id="regPasswordConfirm" placeholder="Confirm access code..." required autocomplete="new-password">
                     </div>
                     <button type="submit" class="btn">REGISTER OPERATIVE</button>
-                    <p class="info-note">* Registration requires Commander approval before access is granted</p>
+                    <p class="info-note">Your recruiting officer will review and approve your access during the recruitment process.</p>
                 </form>
                 <div class="toggle-link">
                     <a href="#" onclick="toggleForm('login'); return false;">< RETURN TO LOGIN</a>
