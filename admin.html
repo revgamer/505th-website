@@ -1545,6 +1545,9 @@
                 o.hidden = (o.value==='commander' && !P().canDemoteCommander);
             });
             roleSelect.value = u.role||'enlistee';
+            // Recruit source
+            const rsEl = document.getElementById('editRecruitSource');
+            if(rsEl) rsEl.value = u.recruitSource||'';
             // Callsign — locked for roles below staff_nco
             const canEditCallsign = ['staff_nco','developer','commander'].includes(currentUserData?.role);
             const csInput = document.getElementById('editCallsign');
@@ -1705,6 +1708,7 @@
                 rank:      newRank,
                 platoon:   document.getElementById('editPlatoon').value,
                 role:      newRole,
+                recruitSource: document.getElementById('editRecruitSource')?.value||'',
             };
             if(canEditCallsign) data.callsign = document.getElementById('editCallsign').value.trim();
             const jEl = document.getElementById('editJoinedAt');
@@ -2692,6 +2696,18 @@
                                 <option value="staff_nco">STAFF NCO</option>
                                 <option value="developer">DEVELOPER</option>
                                 <option value="commander">COMMANDER</option>
+                            </select>
+                        </div>
+                        <div class="edit-field" style="grid-column:1/-1">
+                            <label>WHERE DID THEY HEAR ABOUT US? <span style="color:#555;font-size:8px;letter-spacing:1px">(RECRUITMENT SOURCE)</span></label>
+                            <select id="editRecruitSource" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
+                                <option value="">— NOT SET —</option>
+                                <option value="Reddit">Reddit</option>
+                                <option value="Steam Community">Steam Community</option>
+                                <option value="Disboard">Disboard</option>
+                                <option value="Discord">Discord</option>
+                                <option value="Word of Mouth">Word of Mouth</option>
+                                <option value="Other">Other</option>
                             </select>
                         </div>
                     </div>
