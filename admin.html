@@ -260,7 +260,7 @@
         };
                 window.deleteAAR=async function(id){if(!confirm('DELETE THIS AAR?'))return;await deleteDoc(doc(db,'aars',id));logAction('AAR_DELETE','Deleted AAR '+id);notify('AAR DELETED');loadRecentAARs();};
 
-        // ── ROSTER ──────────────────────────────────────────────────────────
+        // ── ROSTER (reads from users collection) ────────────────────────────
         function calcPeriod(dateStr){if(!dateStr)return'—';const d=new Date(dateStr),now=new Date();let m=(now.getFullYear()-d.getFullYear())*12+(now.getMonth()-d.getMonth());const y=Math.floor(m/12),r=m%12;return(y>0?y+' year'+(y!==1?'s ':' '):'')+r+' month'+(r!==1?'s':'');}
         window.setRosterSort=function(sort){
             rosterSort=sort;
@@ -271,22 +271,28 @@
             });
             renderRosterTable();
         };
+
         async function loadRosterPanel(){
             const c=document.getElementById('rosterList');
             if(c)c.innerHTML='<div class="empty-state">LOADING...</div>';
             try{
                 await checkMonthlyReset();
-                const s=await getDocs(query(collection(db,'roster'),orderBy('name','asc')));
-                rosterData=[];s.forEach(d=>rosterData.push({id:d.id,...d.data()}));
+                // Read from users collection — single source of truth
+                const s=await getDocs(query(collection(db,'users'),orderBy('callsign','asc')));
+                rosterData=[];
+                s.forEach(d=>{
+                    const u={id:d.id,...d.data()};
+                    if(u.status!=='pending'&&u.status!=='denied') rosterData.push(u);
+                });
                 renderRosterTable();
             }catch(e){if(c)c.innerHTML='<div class="empty-state">ERROR: '+e.message+'</div>';}
         }
+
         function renderRosterTable(){
             const c=document.getElementById('rosterList');if(!c)return;
-            // Apply sort
             const sorted=[...rosterData];
-            if(rosterSort==='name-asc')        sorted.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
-            if(rosterSort==='name-desc')       sorted.sort((a,b)=>(b.name||'').localeCompare(a.name||''));
+            if(rosterSort==='name-asc')        sorted.sort((a,b)=>(a.callsign||'').localeCompare(b.callsign||''));
+            if(rosterSort==='name-desc')       sorted.sort((a,b)=>(b.callsign||'').localeCompare(a.callsign||''));
             if(rosterSort==='joined')          sorted.sort((a,b)=>new Date(a.joinedPlatoon||'9999')-new Date(b.joinedPlatoon||'9999'));
             if(rosterSort==='platoon-service') sorted.sort((a,b)=>new Date(a.joinedPlatoon||'9999')-new Date(b.joinedPlatoon||'9999'));
             if(rosterSort==='time-in-unit')    sorted.sort((a,b)=>new Date(a.graduation||'9999')-new Date(b.graduation||'9999'));
@@ -296,7 +302,7 @@
             if(tot)tot.textContent=rosterData.length;
             if(act)act.textContent=active.length;
             if(res)res.textContent=reserves.length;
-            if(!rosterData.length){c.innerHTML='<div class="empty-state">NO ROSTER ENTRIES — ADD YOUR FIRST MEMBER</div>';return;}
+            if(!rosterData.length){c.innerHTML='<div class="empty-state">NO ROSTER ENTRIES</div>';return;}
             c.innerHTML=sorted.map(r=>{
                 const att=r.attendance||0;
                 const pt=r.promotionTracker||0;
@@ -304,11 +310,11 @@
                 const ptReady=att>=3;
                 const ptStyle=ptReady?'color:#7FFF7F;font-weight:700;font-size:14px;text-shadow:0 0 8px rgba(127,255,127,.6);animation:ptGlow 1s ease-in-out infinite':'color:var(--accent);font-weight:700;font-size:14px';
                 return`<div class="roster-row">
-                    <div class="roster-cell roster-name">${esc(formatMemberName(r)||r.name)}</div>
+                    <div class="roster-cell roster-name">${esc(formatMemberName(r)||r.callsign)}</div>
                     <div class="roster-cell"><span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;padding:3px 10px;border:1px solid rgba(0,217,255,.35);color:var(--accent)">${esc(r.platoon||'—')}</span></div>
                     <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-US'):'—'}</div>
                     <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:#ccc">${calcPeriod(r.joinedPlatoon)}</div>
-                    <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500">${esc(r.rankGrade||'—')}</div>
+                    <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500">${esc(r.rank||'—')}</div>
                     <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.graduation?new Date(r.graduation).toLocaleDateString('en-US'):'—'}</div>
                     <div class="roster-cell">
                         <div style="display:flex;align-items:center;gap:6px">
@@ -325,12 +331,11 @@
                     </div>
                     <div class="roster-cell" style="display:flex;gap:4px;flex-wrap:wrap">
                         <button class="action-btn approve-btn small" onclick="openRosterEdit('${r.id}')">EDIT</button>
-                        <button class="action-btn remove-btn small" onclick="deleteRosterEntry('${r.id}','${esc(r.name)}')">DEL</button>
                     </div>
                 </div>`;
             }).join('');
         }
-        // PT glow animation
+
         if(!document.getElementById('ptGlowStyle')){
             const s=document.createElement('style');s.id='ptGlowStyle';
             s.textContent='@keyframes ptGlow{0%,100%{text-shadow:0 0 8px rgba(127,255,127,.6)}50%{text-shadow:0 0 18px rgba(127,255,127,.9),0 0 30px rgba(127,255,127,.4)}}';
@@ -343,9 +348,9 @@
             let att=(r.attendance||0)+1;
             if(att>3)att=3;
             r.attendance=att;
-            await updateDoc(doc(db,'roster',id),{attendance:att,updatedAt:new Date().toISOString()});
-            if(att>=3) notify(r.name+' — 3/3 ATTENDANCE REACHED — READY FOR PT PROMOTION');
-            else notify(r.name+' — ATTENDANCE: '+att+'/3');
+            await updateDoc(doc(db,'users',id),{attendance:att,updatedAt:new Date().toISOString()});
+            if(att>=3) notify(formatMemberName(r)+' — 3/3 ATTENDANCE — READY FOR PT PROMOTION');
+            else notify(formatMemberName(r)+' — ATTENDANCE: '+att+'/3');
             renderRosterTable();
         };
 
@@ -354,12 +359,12 @@
             const pt=(r.promotionTracker||0)+1;
             r.promotionTracker=pt;
             r.attendance=0;
-            await updateDoc(doc(db,'roster',id),{promotionTracker:pt,attendance:0,updatedAt:new Date().toISOString()});
-            notify(r.name+' — PT +1 (NOW '+pt+') — ATTENDANCE RESET');
+            await updateDoc(doc(db,'users',id),{promotionTracker:pt,attendance:0,updatedAt:new Date().toISOString()});
+            notify(formatMemberName(r)+' — PT +1 (NOW '+pt+') — ATTENDANCE RESET');
             renderRosterTable();
         };
 
-        // ── Monthly attendance reset ────────────────────────────────────
+        // ── Monthly attendance reset — now reads/writes users ───────────────
         async function checkMonthlyReset(){
             try{
                 const settingsSnap=await getDoc(doc(db,'settings','roster_meta'));
@@ -367,58 +372,39 @@
                 const lastReset=meta.lastAttendanceReset||'';
                 const now=new Date();
                 const currentMonth=now.getFullYear()+'-'+(now.getMonth()+1).toString().padStart(2,'0');
-                if(lastReset===currentMonth) return; // Already reset this month
-
-                // Auto-promote anyone at 3/3 before resetting (staff didn't do it)
-                const snap=await getDocs(collection(db,'roster'));
+                if(lastReset===currentMonth) return;
+                const snap=await getDocs(collection(db,'users'));
                 const batch=[];
                 snap.forEach(d=>{
                     const data=d.data();
+                    if(data.status==='pending'||data.status==='denied') return;
                     if((data.attendance||0)>=3){
                         batch.push({id:d.id,pt:(data.promotionTracker||0)+1});
                     }
                 });
                 for(const b of batch){
-                    await updateDoc(doc(db,'roster',b.id),{promotionTracker:b.pt,attendance:0,updatedAt:now.toISOString()});
+                    await updateDoc(doc(db,'users',b.id),{promotionTracker:b.pt,attendance:0,updatedAt:now.toISOString()});
                 }
-                // Reset all remaining attendance to 0
-                const snap2=await getDocs(collection(db,'roster'));
+                const snap2=await getDocs(collection(db,'users'));
                 snap2.forEach(async d=>{
-                    if((d.data().attendance||0)>0){
-                        await updateDoc(doc(db,'roster',d.id),{attendance:0,updatedAt:now.toISOString()});
+                    const data=d.data();
+                    if(data.status==='pending'||data.status==='denied') return;
+                    if((data.attendance||0)>0){
+                        await updateDoc(doc(db,'users',d.id),{attendance:0,updatedAt:now.toISOString()});
                     }
                 });
-                // Record reset
                 await setDoc(doc(db,'settings','roster_meta'),{lastAttendanceReset:currentMonth},{merge:true});
                 if(batch.length) notify('MONTHLY RESET: '+batch.length+' MEMBER(S) AUTO-PROMOTED BEFORE RESET');
                 else notify('MONTHLY ATTENDANCE RESET COMPLETE');
             }catch(e){console.warn('Monthly reset check:',e.message);}
         }
-        window.deleteRosterEntry=async function(id,name){
-            if(!confirm('DELETE '+name+' FROM ROSTER?'))return;
-            await deleteDoc(doc(db,'roster',id));
-            logAction('ROSTER_DEL','Deleted '+name);
-            notify(name+' REMOVED');
-            rosterData=rosterData.filter(x=>x.id!==id);
-            renderRosterTable();
-        };
-        window.openRosterAdd=function(){
-            document.getElementById('rosterEntryId').value='';
-            document.getElementById('rosterModalTitle').textContent='ADD ROSTER ENTRY';
-            ['rosterName','rosterJoinedPlatoon','rosterGraduation'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-            document.getElementById('rosterPlatoon').value='';
-            document.getElementById('rosterRankGrade').value='';
-            document.getElementById('rosterAttendance').value='0';
-            document.getElementById('rosterPT').value='0';
-            document.getElementById('rosterModal').classList.add('active');
-        };
+
         window.openRosterEdit=function(id){
             const r=rosterData.find(x=>x.id===id);if(!r)return;
             document.getElementById('rosterEntryId').value=id;
-            document.getElementById('rosterModalTitle').textContent='EDIT: '+r.name;
-            document.getElementById('rosterName').value=r.name||'';
+            document.getElementById('rosterModalTitle').textContent='EDIT: '+formatMemberName(r);
             document.getElementById('rosterPlatoon').value=r.platoon||'';
-            document.getElementById('rosterRankGrade').value=r.rankGrade||'';
+            document.getElementById('rosterRankGrade').value=r.rank||'';
             document.getElementById('rosterJoinedPlatoon').value=r.joinedPlatoon?r.joinedPlatoon.split('T')[0]:'';
             document.getElementById('rosterGraduation').value=r.graduation?r.graduation.split('T')[0]:'';
             document.getElementById('rosterAttendance').value=r.attendance||0;
@@ -427,24 +413,64 @@
         };
         window.closeRosterModal=function(){document.getElementById('rosterModal').classList.remove('active');};
         window.saveRosterEntry=async function(){
-            const name=document.getElementById('rosterName').value.trim();
-            const platoon=document.getElementById('rosterPlatoon').value;
-            if(!name||!platoon){notify('NAME & PLATOON REQUIRED',1);return;}
             const id=document.getElementById('rosterEntryId').value;
+            if(!id){notify('NO MEMBER SELECTED',1);return;}
+            const platoon=document.getElementById('rosterPlatoon').value;
+            if(!platoon){notify('PLATOON REQUIRED',1);return;}
+            const rank=document.getElementById('rosterRankGrade').value;
             const data={
-                name,platoon,
-                rankGrade:document.getElementById('rosterRankGrade').value,
+                platoon,
+                rank,
                 joinedPlatoon:document.getElementById('rosterJoinedPlatoon').value||null,
                 graduation:document.getElementById('rosterGraduation').value||null,
                 attendance:parseInt(document.getElementById('rosterAttendance').value)||0,
                 promotionTracker:parseInt(document.getElementById('rosterPT').value)||0,
                 updatedAt:new Date().toISOString()
             };
-            if(id){await updateDoc(doc(db,'roster',id),data);logAction('ROSTER_EDIT','Edited '+name);}
-            else{data.createdAt=new Date().toISOString();await addDoc(collection(db,'roster'),data);logAction('ROSTER_ADD','Added '+name);}
-            notify(id?'ENTRY UPDATED':'ENTRY ADDED');
+            await updateDoc(doc(db,'users',id),data);
+            logAction('ROSTER_EDIT','Edited user '+id);
+            notify('ROSTER ENTRY UPDATED');
             closeRosterModal();
             await loadRosterPanel();
+        };
+
+        // ── One-time migration: roster collection → users ───────────────────
+        window.migrateRosterToUsers=async function(){
+            if(!confirm('MIGRATE ROSTER DATA INTO USERS COLLECTION?\n\nThis copies attendance, PT, joinedPlatoon, graduation and rankGrade from the old roster collection into matching user docs.\n\nRun once only — safe to re-run (will overwrite with roster values).'))return;
+            try{
+                const rSnap=await getDocs(collection(db,'roster'));
+                const uSnap=await getDocs(collection(db,'users'));
+                const users=[];
+                uSnap.forEach(d=>users.push({id:d.id,...d.data()}));
+                let matched=0,skipped=0;
+                for(const rd of rSnap.docs){
+                    const r=rd.data();
+                    // Match by callsign (case-insensitive) or firstName+lastName
+                    const rName=(r.name||'').toLowerCase().trim();
+                    const match=users.find(u=>{
+                        const cs=(u.callsign||'').toLowerCase().trim();
+                        const full=((u.firstName||'')+' '+(u.lastName||'')).toLowerCase().trim();
+                        return cs===rName||full===rName||cs.includes(rName)||rName.includes(cs);
+                    });
+                    if(match){
+                        await updateDoc(doc(db,'users',match.id),{
+                            attendance:r.attendance||0,
+                            promotionTracker:r.promotionTracker||0,
+                            joinedPlatoon:r.joinedPlatoon||null,
+                            graduation:r.graduation||null,
+                            rank:r.rankGrade||match.rank||'',
+                            platoon:r.platoon||match.platoon||'',
+                            updatedAt:new Date().toISOString()
+                        });
+                        matched++;
+                    }else{
+                        console.warn('No user match for roster entry:',r.name);
+                        skipped++;
+                    }
+                }
+                notify(`MIGRATION COMPLETE — ${matched} MATCHED, ${skipped} SKIPPED`);
+                await loadRosterPanel();
+            }catch(e){notify('MIGRATION FAILED: '+e.message,1);}
         };
         // ── END ROSTER ───────────────────────────────────────────────────────
 
@@ -514,6 +540,8 @@
         async function loadUnitCards() {
             const c = document.getElementById('unitCardsList');
             if(c) c.innerHTML = '<div class="empty-state">LOADING...</div>';
+            // Ensure allUsers loaded for personnel dropdown
+            if(!allUsers.length) await loadAllUsers();
             try {
                 const snap = await getDoc(doc(db,'settings','unit_cards'));
                 unitCardData = snap.exists() ? snap.data() : {};
@@ -525,16 +553,24 @@
             const c = document.getElementById('unitCardsList');
             if(!c) return;
 
-            // Squad prefixes — if a slot starts with one of these it belongs to a squad group
+            // Build sorted personnel list for dropdown
+            const activeUsers = allUsers
+                .filter(u=>u.status!=='pending'&&u.status!=='denied')
+                .sort((a,b)=>(formatMemberName(a)||a.callsign||'').localeCompare(formatMemberName(b)||b.callsign||''));
+
+            function personnelOptions(selectedUserId) {
+                return `<option value="">— OPEN —</option>`
+                    + activeUsers.map(u=>{
+                        const label = formatMemberName(u)||u.callsign;
+                        return `<option value="${u.id}" data-name="${esc(label)}" ${u.id===selectedUserId?'selected':''}>${esc(label)}</option>`;
+                    }).join('');
+            }
+
             const SQUAD_PREFIXES = ['KJ','Alpha','Bravo','Charlie','Stalker','Delta'];
             function getSquadGroup(slot) {
-                for (const pfx of SQUAD_PREFIXES) {
-                    if (slot.startsWith(pfx)) {
-                        // Extract squad name: everything before " SQL" / " Marine" etc
-                        // e.g. "KJ 1-1 SQL" → "KJ 1-1", "KJ 1-1 Marine 3" → "KJ 1-1"
-                        const parts = slot.split(' ');
-                        // Squad name is first 2 tokens (e.g. "KJ 1-1", "Alpha 2-1", "Stalker 1-0")
-                        return parts.slice(0,2).join(' ');
+                for(const pfx of SQUAD_PREFIXES){
+                    if(slot.startsWith(pfx)){
+                        return slot.split(' ').slice(0,2).join(' ');
                     }
                 }
                 return null;
@@ -542,18 +578,20 @@
 
             function renderSlotCard(unit, section, slot) {
                 const key = (`${unit}__${section}__${slot}`).split(' ').join('_');
-                const val = unitCardData[key] || {status:'open',name:''};
+                const val = unitCardData[key] || {status:'open', name:'', userId:''};
                 const statusColor = val.status==='closed'?'#556':val.status==='filled'?'#6a8d33':'rgba(0,217,255,.5)';
-                return `<div style="display:flex;flex-direction:column;gap:4px;background:rgba(0,0,0,.4);border:1px solid ${statusColor};padding:8px 10px;min-width:160px;flex:1;max-width:220px">
+                const isFilled = val.status==='filled';
+                return `<div style="display:flex;flex-direction:column;gap:4px;background:rgba(0,0,0,.4);border:1px solid ${statusColor};padding:8px 10px;min-width:170px;flex:1;max-width:230px">
                     <div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;color:#ddd;margin-bottom:2px">${slot}</div>
                     <select data-uc-key="${key}" data-uc-field="status" onchange="ucLocalChange(this)" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.18);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;padding:6px 8px;outline:none">
-                        <option value="open" ${val.status==='open'?'selected':''}>OPEN</option>
+                        <option value="open"   ${val.status==='open'  ?'selected':''}>OPEN</option>
                         <option value="closed" ${val.status==='closed'?'selected':''}>CLOSED</option>
                         <option value="filled" ${val.status==='filled'?'selected':''}>FILLED</option>
                     </select>
-                    <input type="text" data-uc-key="${key}" data-uc-field="name" placeholder="Name (when filled)..." value="${esc(val.name||'')}" 
-                        oninput="ucLocalChange(this)"
-                        style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);color:#e0e0e0;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;padding:6px 8px;outline:none;${val.status!=='filled'?'opacity:.5':''}">
+                    <select data-uc-key="${key}" data-uc-field="userId" onchange="ucPersonnelChange(this)"
+                        style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);color:${isFilled?'#e0e0e0':'#555'};font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:500;padding:6px 8px;outline:none;${!isFilled?'opacity:.5':''}">
+                        ${personnelOptions(val.userId||'')}
+                    </select>
                 </div>`;
             }
 
@@ -562,7 +600,6 @@
                 html += `<div style="margin-bottom:20px;border:1px solid ${cfg.color}55;padding:14px 16px;background:rgba(0,0,0,.25)">`;
                 html += `<div style="color:${cfg.accent};font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:4px;margin-bottom:12px">${unit.toUpperCase()}</div>`;
 
-                // Special layout for 54th Air Wing — Squadron Staff on top, squadrons side by side below
                 if(unit === '54th Air Wing') {
                     const staffSlots = cfg.sections['Wing Staff'] || [];
                     if(staffSlots.length) {
@@ -586,31 +623,18 @@
 
                 for(const [section, slots] of Object.entries(cfg.sections)) {
                     html += `<div style="color:#ccc;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)">${section}</div>`;
-
-                    // Separate staff slots from squad slots
-                    const staffSlots = [];
-                    const squadGroups = {};  // squadName → [slots]
-                    const squadOrder = [];   // preserve insertion order
-
-                    for (const slot of slots) {
+                    const staffSlots = [], squadGroups = {}, squadOrder = [];
+                    for(const slot of slots){
                         const sq = getSquadGroup(slot);
-                        if (sq) {
-                            if (!squadGroups[sq]) { squadGroups[sq] = []; squadOrder.push(sq); }
-                            squadGroups[sq].push(slot);
-                        } else {
-                            staffSlots.push(slot);
-                        }
+                        if(sq){ if(!squadGroups[sq]){squadGroups[sq]=[];squadOrder.push(sq);} squadGroups[sq].push(slot); }
+                        else { staffSlots.push(slot); }
                     }
-
-                    // Render staff slots (Platoon Commander, Platoon Sergeant, etc.)
-                    if (staffSlots.length) {
+                    if(staffSlots.length){
                         html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">`;
                         staffSlots.forEach(slot => { html += renderSlotCard(unit, section, slot); });
                         html += `</div>`;
                     }
-
-                    // Render each squad as its own labelled block
-                    for (const sqName of squadOrder) {
+                    for(const sqName of squadOrder){
                         const sqSlots = squadGroups[sqName];
                         html += `<div style="margin:8px 0 10px;padding:8px 10px;border-left:2px solid ${cfg.accent}88;background:rgba(0,0,0,.15)">`;
                         html += `<div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;color:${cfg.accent};opacity:.9;margin-bottom:6px">${sqName.toUpperCase()}</div>`;
@@ -618,24 +642,46 @@
                         sqSlots.forEach(slot => { html += renderSlotCard(unit, section, slot); });
                         html += `</div></div>`;
                     }
-
-                    // If no squads (e.g. Wing HQ, Reserves), staff already rendered above — nothing else needed
                 }
                 html += `</div>`;
             }
             c.innerHTML = html;
         }
 
-        // Track local edits before save
+        // Personnel dropdown change — auto-sets status to filled, stores name
+        window.ucPersonnelChange = function(el) {
+            const key = el.dataset.ucKey;
+            if(!unitCardData[key]) unitCardData[key] = {status:'open', name:'', userId:''};
+            const uid = el.value;
+            const selectedOpt = el.options[el.selectedIndex];
+            const name = uid ? (selectedOpt.dataset.name || selectedOpt.text) : '';
+            unitCardData[key].userId = uid;
+            unitCardData[key].name   = name;
+            if(uid) unitCardData[key].status = 'filled';
+            // Sync status dropdown visually
+            const statusSel = document.querySelector(`select[data-uc-key="${key}"][data-uc-field="status"]`);
+            if(statusSel && uid) statusSel.value = 'filled';
+            const btn = document.getElementById('ucSaveBtn');
+            if(btn){ btn.textContent='SAVE CHANGES ●'; btn.style.borderColor='#FFD700'; btn.style.color='#FFD700'; }
+        };
+
+        // Status dropdown change
         window.ucLocalChange = function(el) {
             const key   = el.dataset.ucKey;
             const field = el.dataset.ucField;
-            if(!unitCardData[key]) unitCardData[key] = {status:'open',name:''};
+            if(!unitCardData[key]) unitCardData[key] = {status:'open', name:'', userId:''};
             unitCardData[key][field] = el.value;
-            // Mark the save button as dirty
+            // If set back to open/closed — clear personnel
+            if(field==='status' && el.value!=='filled'){
+                unitCardData[key].userId = '';
+                unitCardData[key].name   = '';
+                const personnelSel = document.querySelector(`select[data-uc-key="${key}"][data-uc-field="userId"]`);
+                if(personnelSel) personnelSel.value = '';
+            }
             const btn = document.getElementById('ucSaveBtn');
-            if(btn) { btn.textContent='SAVE CHANGES ●'; btn.style.borderColor='#FFD700'; btn.style.color='#FFD700'; }
+            if(btn){ btn.textContent='SAVE CHANGES ●'; btn.style.borderColor='#FFD700'; btn.style.color='#FFD700'; }
         };
+
         window.saveAllCards = async function() {
             const btn = document.getElementById('ucSaveBtn');
             if(btn) { btn.disabled=true; btn.textContent='SAVING...'; }
@@ -644,9 +690,7 @@
                 logAction('UNIT_CARDS_SAVE','Saved all unit card data');
                 notify('UNIT CARDS SAVED — OOB PAGE WILL SHOW UPDATED DATA ON REFRESH');
                 if(btn) { btn.textContent='SAVED ✓'; btn.style.borderColor='var(--success)'; btn.style.color='var(--success)'; }
-                setTimeout(()=>{
-                    if(btn){btn.textContent='SAVE CHANGES';btn.style.borderColor='';btn.style.color='';btn.disabled=false;}
-                }, 3000);
+                setTimeout(()=>{ if(btn){btn.textContent='SAVE CHANGES';btn.style.borderColor='';btn.style.color='';btn.disabled=false;} }, 3000);
                 renderUnitCards();
             } catch(e) {
                 notify('SAVE FAILED: '+e.message, 1);
@@ -2388,10 +2432,9 @@
     </div>
     <div class="edit-modal" id="rosterModal">
         <div class="edit-modal-content" style="max-width:620px;width:95%">
-            <div class="edit-modal-title" id="rosterModalTitle">ADD ROSTER ENTRY</div>
+            <div class="edit-modal-title" id="rosterModalTitle">EDIT ROSTER ENTRY</div>
             <input type="hidden" id="rosterEntryId">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
-                <div class="edit-field" style="grid-column:1/-1"><label>FULL NAME *</label><input type="text" id="rosterName" placeholder="e.g. John H. Burns"></div>
                 <div class="edit-field"><label>PLATOON *</label>
                     <select id="rosterPlatoon" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
                         <option value="">— SELECT PLATOON —</option>
@@ -2786,9 +2829,9 @@
                         <div class="stat-card"><div class="stat-number" id="rosterReservesCount">0</div><div class="stat-label">RESERVES</div></div>
                     </div>
                     <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                        <button class="upload-btn" onclick="openRosterAdd()">+ ADD ENTRY</button>
                         <button class="action-btn approve-btn" onclick="loadRosterPanel()">&#8635; REFRESH</button>
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
+                        <button class="action-btn" onclick="migrateRosterToUsers()" style="border-color:#FFD700;color:#FFD700;background:rgba(255,212,0,.06);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 12px;cursor:pointer">&#9888; MIGRATE OLD ROSTER DATA</button>
                         <div style="display:flex;gap:4px;margin-left:8px;align-items:center">
                             <span style="color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:2px;margin-right:4px">SORT:</span>
                             <button class="roster-sort-btn" data-sort="name-asc" onclick="setRosterSort('name-asc')" style="background:rgba(0,217,255,.15);border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">NAME A→Z</button>
