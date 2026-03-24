@@ -976,7 +976,7 @@
                 const active = b.dataset.platoon===platoon;
                 b.style.background = active?'rgba(0,217,255,.12)':'transparent';
                 b.style.color = active?'var(--accent)':'#888';
-                b.style.borderColor = active?'rgba(0,217,255,.5)':'rgba(0,217,255,.15)';
+                b.style.borderColor = active?'rgba(0,217,255,.5)':'rgba(0,217,255,.2)';
             });
             renderAttRoster();
         };
@@ -995,68 +995,77 @@
             const total=members.length;
             const rate=total>0?Math.round((present/total)*100):0;
 
-            document.getElementById('attStatPresent').textContent=present;
-            document.getElementById('attStatRate').textContent=rate+'%';
-            document.getElementById('attStatRate').style.color=rate>=75?'#7FFF7F':rate>=50?'#FFD700':'#FF4444';
-            document.getElementById('attStatExcused').textContent=exc;
-            document.getElementById('attStatAbsent').textContent=absent;
+            const pEl=document.getElementById('attStatPresent'); if(pEl) pEl.textContent=present;
+            const rEl=document.getElementById('attStatRate'); if(rEl){ rEl.textContent=rate+'%'; rEl.style.color=rate>=75?'#7FFF7F':rate>=50?'#FFD700':'#FF4444'; }
+            const eEl=document.getElementById('attStatExcused'); if(eEl) eEl.textContent=exc;
+            const aEl=document.getElementById('attStatAbsent'); if(aEl) aEl.textContent=absent;
+            const pb=document.getElementById('attStatPresentBar'); if(pb) pb.style.width=Math.round((present/Math.max(total,1))*100)+'%';
+            const rb=document.getElementById('attStatRateBar'); if(rb){ rb.style.width=rate+'%'; rb.style.background=rate>=75?'#7FFF7F':rate>=50?'#FFD700':'#FF4444'; }
+            const eb=document.getElementById('attStatExcusedBar'); if(eb) eb.style.width=Math.round((exc/Math.max(total,1))*100)+'%';
+            const ab2=document.getElementById('attStatAbsentBar'); if(ab2) ab2.style.width=Math.round((absent/Math.max(total,1))*100)+'%';
 
             if(!members.length){ c.innerHTML='<div class="empty-state">NO MEMBERS IN THIS PLATOON</div>'; return; }
 
+            const platoonColors={'Command':'#a78bfa','1st Platoon':'#8aad44','2nd Platoon':'#8aad44','3rd Platoon':'#8aad44','Force Recon':'#a47de0','Corpsmen':'#34d399','Pilot':'#00D9FF'};
+
             c.innerHTML = members.map(u=>{
-                const isPresent  = attendees.includes(u.id);
-                const isExcused  = excused.includes(u.id);
-                const monthRate  = u.opsEligible>0?Math.round((u.opsAttended/u.opsEligible)*100):null;
-                const mrColor    = monthRate===null?'#555':monthRate>=75?'#7FFF7F':monthRate>=50?'#FFD700':'#FF4444';
-                const rowBg      = isPresent?'rgba(0,217,255,.03)':isExcused?'rgba(255,212,0,.03)':'rgba(255,68,68,.02)';
-                return `<div class="roster-row" style="background:${rowBg};grid-template-columns:1fr 90px 110px 80px">
-                    <div class="roster-cell roster-name">${esc(formatMemberName(u)||u.callsign)}
-                        ${u.platoon?`<span style="font-family:Rajdhani,sans-serif;font-size:9px;color:#555;margin-left:6px;letter-spacing:1px">${esc(u.platoon)}</span>`:''}
+                const isPresent = attendees.includes(u.id);
+                const isExcused = excused.includes(u.id);
+                const opsElig   = u.opsEligible||0;
+                const opsAtt    = u.opsAttended||0;
+                const monthRate = opsElig>0?Math.round((opsAtt/opsElig)*100):null;
+                const mrColor   = monthRate===null?'#555':monthRate>=75?'#7FFF7F':monthRate>=50?'#FFD700':'#FF4444';
+                const platColor = platoonColors[u.platoon]||'var(--accent)';
+                const rowBg     = isPresent?'rgba(0,217,255,.025)':isExcused?'rgba(255,212,0,.02)':'';
+                return `<div style="display:grid;grid-template-columns:1fr 120px 130px 70px;gap:0;border-bottom:1px solid rgba(255,255,255,.04);padding:10px 14px;align-items:center;background:${rowBg}" onmouseover="this.style.background='rgba(0,217,255,.03)'" onmouseout="this.style.background='${rowBg}'">
+                    <div>
+                        <div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:#e0e0e0">${esc(formatMemberName(u)||u.callsign)}</div>
+                        <div style="font-size:9px;color:#666;letter-spacing:1px;margin-top:1px">${esc(u.rank||'—')}</div>
                     </div>
-                    <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:11px;color:${mrColor};text-align:center">
-                        ${monthRate!==null?monthRate+'%':'—'}
-                        <div style="font-size:8px;color:#555;letter-spacing:1px">MONTHLY</div>
+                    <div style="text-align:center">
+                        ${u.platoon?`<span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:3px 10px;border:1px solid ${platColor}55;color:${platColor}">${esc(u.platoon)}</span>`:'<span style="color:#555">—</span>'}
                     </div>
-                    <div class="roster-cell" style="text-align:center">
-                        ${isPresent
-                            ? `<span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:#7FFF7F;letter-spacing:1px">✓ PRESENT</span>`
-                            : isExcused
-                            ? `<span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:#FFD700;letter-spacing:1px">⊘ EXCUSED</span>`
-                            : `<span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:#FF4444;letter-spacing:1px">✗ ABSENT</span>`}
+                    <div style="text-align:center">
+                        <div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:${mrColor}">${monthRate!==null?monthRate+'%':'—'}</div>
+                        ${monthRate!==null?`<div style="font-size:9px;color:#555;letter-spacing:1px">(${opsAtt}/${opsElig})</div>`:''}
                     </div>
-                    <div class="roster-cell" style="display:flex;gap:4px;justify-content:center">
-                        ${locked?'':`
-                        <button class="action-btn ${isPresent?'remove-btn':'approve-btn'} small" onclick="attTogglePresent('${u.id}')" style="font-size:9px;padding:3px 10px;min-width:64px;text-align:center">
-                            ${isPresent?'UNMARK':'PRESENT'}
-                        </button>
-                        <button class="action-btn small" onclick="attToggleExcused('${u.id}')" style="font-size:9px;padding:3px 8px;min-width:36px;border-color:#FFD70066;color:${isExcused?'#FFD700':'#888'}">
-                            EXC
-                        </button>`}
+                    <div style="text-align:center">
+                        ${locked
+                            ? `<span style="font-size:14px;color:${isPresent?'#7FFF7F':isExcused?'#FFD700':'#FF4444'}">${isPresent?'✓':isExcused?'⊘':'✗'}</span>`
+                            : `<input type="checkbox" ${isPresent?'checked':''} onchange="attCheckboxChange('${u.id}',this)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)">`
+                        }
                     </div>
                 </div>`;
             }).join('');
         }
 
-        window.attTogglePresent = function(uid) {
+        window.attCheckboxChange = function(uid, cb) {
             if(!attEventData) attEventData={title:'',date:new Date().toISOString().split('T')[0],type:'main_op',attendees:[],excused:[]};
             const att=[...(attEventData.attendees||[])];
             const exc=[...(attEventData.excused||[])];
-            const attIdx=att.indexOf(uid);
-            if(attIdx>-1){ att.splice(attIdx,1); }
-            else { att.push(uid); const ei=exc.indexOf(uid); if(ei>-1) exc.splice(ei,1); }
+            if(cb.checked){
+                if(!att.includes(uid)) att.push(uid);
+                const ei=exc.indexOf(uid); if(ei>-1) exc.splice(ei,1);
+            } else {
+                const ai=att.indexOf(uid); if(ai>-1) att.splice(ai,1);
+            }
             attEventData.attendees=att; attEventData.excused=exc;
             renderAttRoster();
         };
 
-        window.attToggleExcused = function(uid) {
+        window.attMarkAllExcused = function() {
             if(!attEventData) attEventData={title:'',date:new Date().toISOString().split('T')[0],type:'main_op',attendees:[],excused:[]};
+            // Mark all currently absent (not present, not excused) as excused
+            let members = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied'&&u.platoon!=='Reserves');
+            if(attFilter!=='ALL') members=members.filter(u=>u.platoon===attFilter);
             const att=[...(attEventData.attendees||[])];
             const exc=[...(attEventData.excused||[])];
-            const excIdx=exc.indexOf(uid);
-            if(excIdx>-1){ exc.splice(excIdx,1); }
-            else { exc.push(uid); const ai=att.indexOf(uid); if(ai>-1) att.splice(ai,1); }
-            attEventData.attendees=att; attEventData.excused=exc;
+            members.forEach(u=>{
+                if(!att.includes(u.id)&&!exc.includes(u.id)) exc.push(u.id);
+            });
+            attEventData.excused=exc;
             renderAttRoster();
+            notify('ABSENT MEMBERS MARKED EXCUSED');
         };
 
         window.saveAttendance = async function(lock=false) {
@@ -2686,76 +2695,75 @@
                 <!-- ATTENDANCE TRACKER PANEL -->
                 <div class="panel hidden" id="panel-attendance">
                     <div class="panel-title">ATTENDANCE TRACKER</div>
-                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">LOG ATTENDANCE PER OPERATION — SAVE UPDATES MEMBER RECORDS · LOCK FINALISES THE EVENT</p>
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">BATTALION OPS — LOG ATTENDANCE PER OPERATION / TRAINING EVENT</p>
 
-                    <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:16px;align-items:start">
-                        <!-- LEFT: Event list -->
-                        <div class="dash-section">
-                            <div class="dash-section-title">RECENT EVENTS</div>
-                            <div style="margin-bottom:10px">
-                                <button class="action-btn approve-btn" onclick="attNewEvent()" style="font-size:10px;padding:5px 12px">&#43; NEW EVENT</button>
-                                <button class="action-btn approve-btn" onclick="loadAttendancePanel()" style="font-size:10px;padding:5px 12px">&#8635; REFRESH</button>
+                    <!-- Stats row -->
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+                        <div class="stat-card"><div class="stat-number" id="attStatPresent">0</div><div class="stat-label">THIS EVENT</div><div style="height:3px;background:rgba(255,255,255,.06);margin-top:8px"><div id="attStatPresentBar" style="height:100%;background:var(--accent);width:0%;transition:width .3s"></div></div></div>
+                        <div class="stat-card"><div class="stat-number" id="attStatRate" style="color:#7FFF7F">0%</div><div class="stat-label">ATTENDANCE RATE</div><div style="height:3px;background:rgba(255,255,255,.06);margin-top:8px"><div id="attStatRateBar" style="height:100%;background:#7FFF7F;width:0%;transition:width .3s"></div></div></div>
+                        <div class="stat-card"><div class="stat-number" id="attStatExcused" style="color:#FFD700">0</div><div class="stat-label">EXCUSED</div><div style="height:3px;background:rgba(255,255,255,.06);margin-top:8px"><div id="attStatExcusedBar" style="height:100%;background:#FFD700;width:0%;transition:width .3s"></div></div></div>
+                        <div class="stat-card"><div class="stat-number" id="attStatAbsent" style="color:#FF4444">0</div><div class="stat-label">ABSENT / UA</div><div style="height:3px;background:rgba(255,255,255,.06);margin-top:8px"><div id="attStatAbsentBar" style="height:100%;background:#FF4444;width:0%;transition:width .3s"></div></div></div>
+                    </div>
+
+                    <!-- Event form -->
+                    <div class="dash-section" style="margin-bottom:16px">
+                        <div class="dash-section-title">&#9998; CREATE / SELECT EVENT</div>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+                            <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px">
+                                <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.5)">OPERATION / EVENT NAME</div>
+                                <input type="text" id="attEventTitle" placeholder="e.g. Operation Ironveil Phase 2..." style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none;width:100%">
                             </div>
-                            <div id="attEventList"><div class="empty-state">LOADING...</div></div>
+                            <div style="display:flex;flex-direction:column;gap:4px;min-width:130px">
+                                <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.5)">DATE</div>
+                                <input type="date" id="attEventDate" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none">
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;min-width:120px">
+                                <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.5)">TYPE</div>
+                                <select id="attEventType" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none">
+                                    <option value="main_op">MAIN OP</option>
+                                    <option value="patrol">PATROL</option>
+                                    <option value="training">TRAINING</option>
+                                    <option value="fun_op">FUN OP</option>
+                                </select>
+                            </div>
+                            <button class="upload-btn" onclick="attNewEvent()" style="padding:8px 16px;font-size:11px;white-space:nowrap">&#43; NEW EVENT</button>
                         </div>
-
-                        <!-- RIGHT: Current event + roster -->
-                        <div>
-                            <!-- Event form -->
-                            <div class="dash-section" style="margin-bottom:12px">
-                                <div class="dash-section-title">&#9998; <span id="attCurrentEventLabel">NEW EVENT</span></div>
-                                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-                                    <div style="display:flex;flex-direction:column;gap:3px;flex:2;min-width:120px">
-                                        <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.5)">EVENT NAME</div>
-                                        <input type="text" id="attEventTitle" placeholder="e.g. Operation Ironveil Phase 2..." style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:6px 8px;outline:none;width:100%">
-                                    </div>
-                                    <div style="display:flex;flex-direction:column;gap:3px;min-width:120px">
-                                        <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.5)">DATE</div>
-                                        <input type="date" id="attEventDate" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:6px 8px;outline:none">
-                                    </div>
-                                    <div style="display:flex;flex-direction:column;gap:3px;min-width:110px">
-                                        <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.5)">TYPE</div>
-                                        <select id="attEventType" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:6px 8px;outline:none">
-                                            <option value="main_op">MAIN OP</option>
-                                            <option value="patrol">PATROL</option>
-                                            <option value="training">TRAINING</option>
-                                            <option value="fun_op">FUN OP</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <!-- Stats row -->
-                                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
-                                    <div style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.12);padding:8px;text-align:center"><div style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700;color:var(--accent)" id="attStatPresent">0</div><div style="font-size:7px;letter-spacing:2px;color:#666">PRESENT</div></div>
-                                    <div style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.12);padding:8px;text-align:center"><div style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700" id="attStatRate">0%</div><div style="font-size:7px;letter-spacing:2px;color:#666">RATE</div></div>
-                                    <div style="background:rgba(0,0,0,.4);border:1px solid rgba(255,212,0,.12);padding:8px;text-align:center"><div style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700;color:#FFD700" id="attStatExcused">0</div><div style="font-size:7px;letter-spacing:2px;color:#666">EXCUSED</div></div>
-                                    <div style="background:rgba(0,0,0,.4);border:1px solid rgba(255,68,68,.12);padding:8px;text-align:center"><div style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700;color:#FF4444" id="attStatAbsent">0</div><div style="font-size:7px;letter-spacing:2px;color:#666">ABSENT</div></div>
-                                </div>
-                                <!-- Action buttons -->
-                                <div style="display:flex;gap:8px;flex-wrap:wrap">
-                                    <button id="attSaveBtn" class="action-btn approve-btn" onclick="saveAttendance(false)" style="font-size:10px;padding:5px 14px">&#10003; SAVE</button>
-                                    <button class="action-btn" onclick="saveAttendance(true)" style="font-size:10px;padding:5px 14px;border-color:#FFD70088;color:#FFD700;background:rgba(255,212,0,.06)">&#128274; SAVE &amp; LOCK EVENT</button>
-                                </div>
-                                <div style="font-size:8px;letter-spacing:1px;color:#555;margin-top:6px">&#9432; SAVE = draft · LOCK = finalises event and updates member attendance counters</div>
+                        <!-- Recent events list (collapsible) -->
+                        <div style="margin-top:12px">
+                            <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.4);cursor:pointer;display:flex;align-items:center;gap:6px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)" onclick="document.getElementById('attEventListWrap').style.display=document.getElementById('attEventListWrap').style.display==='none'?'block':'none'">
+                                &#9660; RECENT EVENTS — CLICK TO LOAD A PREVIOUS EVENT
                             </div>
-
-                            <!-- Platoon filter -->
-                            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
-                                <button class="att-ftab action-btn" data-platoon="ALL" onclick="setAttFilter('ALL')" style="font-size:9px;padding:4px 10px;background:rgba(0,217,255,.12);border-color:rgba(0,217,255,.5);color:var(--accent)">ALL</button>
-                                <button class="att-ftab action-btn" data-platoon="Command" onclick="setAttFilter('Command')" style="font-size:9px;padding:4px 10px;background:transparent;border-color:rgba(0,217,255,.15);color:#888">COMMAND</button>
-                                <button class="att-ftab action-btn" data-platoon="1st Platoon" onclick="setAttFilter('1st Platoon')" style="font-size:9px;padding:4px 10px;background:transparent;border-color:rgba(0,217,255,.15);color:#888">1ST PLT</button>
-                                <button class="att-ftab action-btn" data-platoon="2nd Platoon" onclick="setAttFilter('2nd Platoon')" style="font-size:9px;padding:4px 10px;background:transparent;border-color:rgba(0,217,255,.15);color:#888">2ND PLT</button>
-                                <button class="att-ftab action-btn" data-platoon="3rd Platoon" onclick="setAttFilter('3rd Platoon')" style="font-size:9px;padding:4px 10px;background:transparent;border-color:rgba(0,217,255,.15);color:#888">3RD PLT</button>
-                                <button class="att-ftab action-btn" data-platoon="Force Recon" onclick="setAttFilter('Force Recon')" style="font-size:9px;padding:4px 10px;background:transparent;border-color:rgba(0,217,255,.15);color:#888">F. RECON</button>
-                                <button class="att-ftab action-btn" data-platoon="Corpsmen" onclick="setAttFilter('Corpsmen')" style="font-size:9px;padding:4px 10px;background:transparent;border-color:rgba(0,217,255,.15);color:#888">CORPSMEN</button>
-                                <button class="att-ftab action-btn" data-platoon="Pilot" onclick="setAttFilter('Pilot')" style="font-size:9px;padding:4px 10px;background:transparent;border-color:rgba(0,217,255,.15);color:#888">PILOT</button>
+                            <div id="attEventListWrap" style="display:none;max-height:200px;overflow-y:auto;margin-top:6px">
+                                <div id="attEventList"><div class="empty-state">NO EVENTS YET</div></div>
                             </div>
-
-                            <!-- Member list header -->
-                            <div class="roster-header" style="grid-template-columns:1fr 90px 110px 80px">
-                                <div>NAME</div><div style="text-align:center">MONTHLY</div><div style="text-align:center">STATUS</div><div style="text-align:center">ACTIONS</div>
-                            </div>
-                            <div id="attRosterList"><div class="empty-state">LOADING...</div></div>
                         </div>
+                    </div>
+
+                    <!-- Platoon filter tabs -->
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+                        <button class="att-ftab" data-platoon="ALL" onclick="setAttFilter('ALL')" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:7px 16px;border:1px solid rgba(0,217,255,.5);background:rgba(0,217,255,.12);color:var(--accent);cursor:pointer;transition:all .15s">ALL PLATOONS</button>
+                        <button class="att-ftab" data-platoon="Command" onclick="setAttFilter('Command')" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:7px 16px;border:1px solid rgba(0,217,255,.2);background:transparent;color:#888;cursor:pointer;transition:all .15s">COMMAND</button>
+                        <button class="att-ftab" data-platoon="1st Platoon" onclick="setAttFilter('1st Platoon')" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:7px 16px;border:1px solid rgba(0,217,255,.2);background:transparent;color:#888;cursor:pointer;transition:all .15s">1ST PLT</button>
+                        <button class="att-ftab" data-platoon="2nd Platoon" onclick="setAttFilter('2nd Platoon')" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:7px 16px;border:1px solid rgba(0,217,255,.2);background:transparent;color:#888;cursor:pointer;transition:all .15s">2ND PLT</button>
+                        <button class="att-ftab" data-platoon="3rd Platoon" onclick="setAttFilter('3rd Platoon')" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:7px 16px;border:1px solid rgba(0,217,255,.2);background:transparent;color:#888;cursor:pointer;transition:all .15s">3RD PLT</button>
+                        <button class="att-ftab" data-platoon="Force Recon" onclick="setAttFilter('Force Recon')" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:7px 16px;border:1px solid rgba(0,217,255,.2);background:transparent;color:#888;cursor:pointer;transition:all .15s">FORCE RECON</button>
+                        <button class="att-ftab" data-platoon="Corpsmen" onclick="setAttFilter('Corpsmen')" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:7px 16px;border:1px solid rgba(0,217,255,.2);background:transparent;color:#888;cursor:pointer;transition:all .15s">CORPSMEN</button>
+                        <button class="att-ftab" data-platoon="Pilot" onclick="setAttFilter('Pilot')" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:7px 16px;border:1px solid rgba(0,217,255,.2);background:transparent;color:#888;cursor:pointer;transition:all .15s">PILOT</button>
+                    </div>
+
+                    <!-- Member table -->
+                    <div style="background:rgba(0,217,255,.04);border:1px solid rgba(0,217,255,.2);border-bottom:2px solid rgba(0,217,255,.35);display:grid;grid-template-columns:1fr 120px 130px 70px;padding:8px 14px;font-size:9px;letter-spacing:2px;color:rgba(0,217,255,.7);margin-bottom:1px">
+                        <div>NAME</div><div style="text-align:center">PLATOON</div><div style="text-align:center">MONTHLY RATE</div><div style="text-align:center">PRESENT</div>
+                    </div>
+                    <div id="attRosterList"><div class="empty-state">LOADING...</div></div>
+
+                    <!-- Footer actions -->
+                    <div style="display:flex;gap:10px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid rgba(0,217,255,.15);flex-wrap:wrap">
+                        <button class="action-btn approve-btn" onclick="loadAttendancePanel()" style="padding:8px 18px;font-size:11px;letter-spacing:2px">&#8635; REFRESH</button>
+                        <button class="action-btn" onclick="attMarkAllExcused()" style="padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:#FFD70088;color:#FFD700;background:rgba(255,212,0,.06)">&#128274; MARK EXCUSED</button>
+                        <button id="attSaveBtn" class="upload-btn" onclick="saveAttendance(false)" style="padding:8px 20px;font-size:11px;letter-spacing:2px">&#10003; SAVE ATTENDANCE</button>
+                        <button class="action-btn" onclick="saveAttendance(true)" style="padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:rgba(0,217,255,.3);color:var(--accent)">&#128274; SAVE &amp; LOCK</button>
+                        <span style="font-size:9px;letter-spacing:1px;color:#555">&#9432; CHECKED = PRESENT &nbsp;|&nbsp; UNCHECKED = ABSENT &nbsp;|&nbsp; SAVE LOCKS THE EVENT AND UPDATES MEMBER RECORDS</span>
                     </div>
                 </div>
                 <div class="panel hidden" id="panel-active"><div class="panel-title">PERSONNEL FILES</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">VIEW, EDIT AND MANAGE RANK &amp; ROLE FOR ALL ACTIVE MEMBERS — USE DROPDOWNS INLINE PER ROW</p><div id="activeList"><div class="empty-state">LOADING...</div></div></div>
