@@ -472,6 +472,22 @@
                 await loadRosterPanel();
             }catch(e){notify('MIGRATION FAILED: '+e.message,1);}
         };
+        // ── Delete old roster collection ────────────────────────────────────
+        window.deleteOldRosterCollection = async function(){
+            if(!confirm('DELETE ALL DOCS IN THE OLD ROSTER COLLECTION?\n\nThis is permanent and cannot be undone.\nOnly do this AFTER confirming migration was successful.')) return;
+            if(!confirm('SECOND CONFIRM — ARE YOU ABSOLUTELY SURE?\n\nThis will permanently delete the old roster collection from Firestore.')) return;
+            try{
+                const snap = await getDocs(collection(db,'roster'));
+                if(snap.empty){ notify('OLD ROSTER COLLECTION IS ALREADY EMPTY'); return; }
+                let count = 0;
+                for(const d of snap.docs){
+                    await deleteDoc(doc(db,'roster',d.id));
+                    count++;
+                }
+                notify(`OLD ROSTER COLLECTION DELETED — ${count} DOCS REMOVED`);
+                logAction('ROSTER_COLLECTION_DELETE',`Deleted ${count} old roster docs`);
+            }catch(e){ notify('DELETE FAILED: '+e.message, 1); }
+        };
         // ── END ROSTER ───────────────────────────────────────────────────────
 
 
@@ -2832,6 +2848,7 @@
                         <button class="action-btn approve-btn" onclick="loadRosterPanel()">&#8635; REFRESH</button>
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
                         <button class="action-btn" onclick="migrateRosterToUsers()" style="border-color:#FFD700;color:#FFD700;background:rgba(255,212,0,.06);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 12px;cursor:pointer">&#9888; MIGRATE OLD ROSTER DATA</button>
+                        <button class="action-btn remove-btn" onclick="deleteOldRosterCollection()" style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 12px;cursor:pointer">&#128465; DELETE OLD ROSTER COLLECTION</button>
                         <div style="display:flex;gap:4px;margin-left:8px;align-items:center">
                             <span style="color:#aaa;font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:2px;margin-right:4px">SORT:</span>
                             <button class="roster-sort-btn" data-sort="name-asc" onclick="setRosterSort('name-asc')" style="background:rgba(0,217,255,.15);border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">NAME A→Z</button>
