@@ -293,7 +293,7 @@
             const sorted=[...rosterData];
             if(rosterSort==='name-asc')        sorted.sort((a,b)=>(a.callsign||'').localeCompare(b.callsign||''));
             if(rosterSort==='name-desc')       sorted.sort((a,b)=>(b.callsign||'').localeCompare(a.callsign||''));
-            if(rosterSort==='joined')          sorted.sort((a,b)=>new Date(a.joinedPlatoon||'9999')-new Date(b.joinedPlatoon||'9999'));
+            if(rosterSort==='joined')          sorted.sort((a,b)=>new Date(a.joinedAt||'9999')-new Date(b.joinedAt||'9999'));
             if(rosterSort==='platoon-service') sorted.sort((a,b)=>new Date(a.joinedPlatoon||'9999')-new Date(b.joinedPlatoon||'9999'));
             if(rosterSort==='time-in-unit')    sorted.sort((a,b)=>new Date(a.graduation||'9999')-new Date(b.graduation||'9999'));
             const active=sorted.filter(r=>r.platoon!=='Reserves');
@@ -315,7 +315,7 @@
                         ? `<span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;padding:3px 10px;border:1px solid rgba(0,217,255,.35);color:var(--accent)">${esc(r.platoon)}</span>`
                         : `<span style="color:#555;font-size:10px">—</span>`
                     }</div>
-                    <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-US'):'—'}</div>
+                    <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.joinedAt?new Date(r.joinedAt).toLocaleDateString('en-US'):'—'}</div>
                     <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:#ccc">${calcPeriod(r.joinedPlatoon)}</div>
                     <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500">${esc(r.rank||'—')}</div>
                     <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.graduation?new Date(r.graduation).toLocaleDateString('en-US'):'—'}</div>
