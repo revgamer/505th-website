@@ -991,16 +991,68 @@
         };
 
         window.deleteAttEvent = async function(eventId, title) {
-            if(!confirm('DELETE EVENT: "'+title+'"?\n\nNote: This will NOT reverse attendance counters already saved to member records.')) return;
+            // Load the event to check if it was locked
+            let eventDoc;
+            try { eventDoc = await getDoc(doc(db,'attendance_events',eventId)); } catch(e){ notify('ERROR: '+e.message,1); return; }
+            if(!eventDoc.exists()) { notify('EVENT NOT FOUND',1); return; }
+            const ev = eventDoc.data();
+
+            let confirmMsg = 'DELETE EVENT: "'+title+'"?';
+            if(ev.locked) {
+                confirmMsg += '\n\n⚠ This event was LOCKED — attendance counters were already saved to member records.\n\nClick OK to delete and REVERSE the counters for all members who attended.';
+            } else {
+                confirmMsg += '\n\nThis event was not locked so no member records will be affected.';
+            }
+            if(!confirm(confirmMsg)) return;
+
             try {
+                // If locked, reverse counters for all attendees
+                if(ev.locked) {
+                    const attendees = ev.attendees||[];
+                    const eligible  = [...attendees, ...(ev.excused||[])]; // everyone who was eligible
+                    for(const uid of eligible) {
+                        const u = allUsers.find(x=>x.id===uid);
+                        if(!u) continue;
+                        const wasPresent  = attendees.includes(uid);
+                        const newOpsElig  = Math.max(0, (u.opsEligible||0) - 1);
+                        const newOpsAtt   = Math.max(0, (u.opsAttended||0) - (wasPresent?1:0));
+                        const newAtt      = wasPresent ? Math.max(0, (u.attendance||0) - 1) : (u.attendance||0);
+                        await updateDoc(doc(db,'users',uid), {
+                            opsEligible: newOpsElig,
+                            opsAttended: newOpsAtt,
+                            attendance:  newAtt,
+                            updatedAt:   new Date().toISOString()
+                        });
+                        // Update local cache
+                        u.opsEligible = newOpsElig;
+                        u.opsAttended = newOpsAtt;
+                        u.attendance  = newAtt;
+                    }
+                    notify('EVENT DELETED & COUNTERS REVERSED FOR '+attendees.length+' MEMBERS');
+                } else {
+                    notify('EVENT DELETED');
+                }
                 await deleteDoc(doc(db,'attendance_events',eventId));
                 if(attEventData?.id === eventId) attClearForm();
-                notify('EVENT DELETED');
-                logAction('ATT_DELETE', title);
+                logAction('ATT_DELETE', title+(ev.locked?' (counters reversed)':''));
                 await loadAttendancePanel();
+                renderAttRoster(); // refresh monthly rate display
             } catch(e){ notify('DELETE FAILED: '+e.message,1); }
         };
 
+        // Reset all attendance counters to 0 (admin utility — use after deleting mock events)
+        window.resetAllAttendanceCounters = async function() {
+            if(!confirm('RESET ALL ATTENDANCE COUNTERS?\n\nThis will set opsAttended, opsEligible, and attendance to 0 for ALL active members.\n\nOnly use this to clear mock/test data.')) return;
+            try {
+                const activeMembers = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied');
+                for(const u of activeMembers) {
+                    await updateDoc(doc(db,'users',u.id),{opsAttended:0,opsEligible:0,attendance:0,updatedAt:new Date().toISOString()});
+                    u.opsAttended=0; u.opsEligible=0; u.attendance=0;
+                }
+                notify('COUNTERS RESET FOR '+activeMembers.length+' MEMBERS');
+                renderAttRoster();
+            } catch(e){ notify('RESET FAILED: '+e.message,1); }
+        };
         window.setAttFilter = function(platoon) {
             attFilter = platoon;
             document.querySelectorAll('.att-ftab').forEach(b=>{
@@ -3125,7 +3177,8 @@
                         <button class="action-btn" onclick="attMarkAllExcused()" style="padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:#FFD70088;color:#FFD700;background:rgba(255,212,0,.06)">&#128274; MARK EXCUSED</button>
                         <button id="attSaveBtn" class="upload-btn" onclick="saveAttendance(false)" style="padding:8px 20px;font-size:11px;letter-spacing:2px">&#10003; SAVE ATTENDANCE</button>
                         <button class="action-btn" onclick="saveAttendance(true)" style="padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:rgba(0,217,255,.3);color:var(--accent)">&#128274; SAVE &amp; LOCK</button>
-                        <span style="font-size:9px;letter-spacing:1px;color:#555">&#9432; CHECKED = PRESENT &nbsp;|&nbsp; UNCHECKED = ABSENT &nbsp;|&nbsp; SAVE LOCKS THE EVENT AND UPDATES MEMBER RECORDS</span>
+                        <div style="flex:1"></div>
+                        <button class="action-btn remove-btn" onclick="resetAllAttendanceCounters()" style="padding:6px 12px;font-size:9px;letter-spacing:2px;opacity:.6" title="Reset all member attendance counters to 0 — use only to clear test data">&#9888; RESET ALL COUNTERS</button>
                     </div>
                 </div>
                 <div class="panel hidden" id="panel-active"><div class="panel-title">PERSONNEL FILES</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">VIEW, EDIT AND MANAGE RANK &amp; ROLE FOR ALL ACTIVE MEMBERS — USE DROPDOWNS INLINE PER ROW</p><div id="activeList"><div class="empty-state">LOADING...</div></div></div>
