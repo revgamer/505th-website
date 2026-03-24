@@ -924,7 +924,9 @@
             updateEnlistmentBadge();
 
             if(activeList) {
-                activeList.innerHTML = active.length ? active.map(u=>`
+                activeList.innerHTML = active.length ? active.map(u=>{
+                    const isLockedCommander = u.role==='commander' && !P().canDemoteCommander;
+                    return `
                     <div class="user-card status-active">
                         <div class="user-info">
                             <div class="user-callsign">${esc(u.callsign)}</div>
@@ -932,8 +934,9 @@
                             <div class="user-role">${(u.role||'').toUpperCase()}${u.rank?` — ${esc(u.rank)}`:''}</div>
                         </div>
                         <div class="user-actions" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-                            ${P().canEditProfiles?`<button class="action-btn approve-btn small" onclick="openEditUser('${u.id}')">EDIT</button>`:''}
-                            ${P().canChangeRoles?`<div style="display:flex;flex-direction:column;gap:3px">
+                            ${P().canEditProfiles && !isLockedCommander?`<button class="action-btn approve-btn small" onclick="openEditUser('${u.id}')">EDIT</button>`:''}
+                            ${isLockedCommander?`<span style="font-family:'Rajdhani',sans-serif;font-size:9px;letter-spacing:2px;color:#f59e0b;border:1px solid #f59e0b44;padding:3px 8px">&#128274; COMMANDER — LOCKED</span>`:''}
+                            ${P().canChangeRoles && !isLockedCommander?`<div style="display:flex;flex-direction:column;gap:3px">
                                 <div style="color:rgba(0,217,255,.5);font-size:8px;letter-spacing:1px">ROLE</div>
                                 <select onchange="changeRole('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace">
                                     ${['enlistee','marine','recruiter','nco','staff_nco','commander','developer'].filter(r=>P().canDemoteCommander?true:r!=='commander').map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
@@ -978,9 +981,10 @@
                                     </optgroup>
                                 </select>
                             </div>`:''}
-                            ${P().canEditProfiles?`<button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>`:''}
+                            ${P().canEditProfiles && !isLockedCommander?`<button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>`:''}
                         </div>
-                    </div>`).join('') : '<div class="empty-state">NO ACTIVE PERSONNEL</div>';
+                    </div>`;
+                }).join('') : '<div class="empty-state">NO ACTIVE PERSONNEL</div>';
             }
 
             if(registerList) {
