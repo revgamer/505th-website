@@ -209,7 +209,7 @@ All 7 webhooks use styled Discord embeds (author block, thumbnail, bullet-point 
 
 ## Developer
 
-** Website Developer:** SSgt S. "Davy" (RevGamer)
+**Website Developer:** SSgt S. "Davy" (RevGamer)
 
 ---
 
