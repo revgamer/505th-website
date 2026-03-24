@@ -1144,6 +1144,8 @@
                 titleEl.value = '';
             }
         };
+
+        window.addHistoryEntry = async function(type) {
             const uid = document.getElementById('editUserId').value;
             const u   = allUsers.find(x=>x.id===uid); if(!u) return;
             let entry={}, fieldKey='';
