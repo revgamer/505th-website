@@ -1026,10 +1026,10 @@
                     </div>
                     <div class="roster-cell" style="display:flex;gap:4px;justify-content:center">
                         ${locked?'':`
-                        <button class="action-btn ${isPresent?'remove-btn':'approve-btn'} small" onclick="attTogglePresent('${u.id}')" style="font-size:9px;padding:3px 8px">
+                        <button class="action-btn ${isPresent?'remove-btn':'approve-btn'} small" onclick="attTogglePresent('${u.id}')" style="font-size:9px;padding:3px 10px;min-width:64px;text-align:center">
                             ${isPresent?'UNMARK':'PRESENT'}
                         </button>
-                        <button class="action-btn small" onclick="attToggleExcused('${u.id}')" style="font-size:9px;padding:3px 8px;border-color:#FFD70066;color:${isExcused?'#FFD700':'#888'}">
+                        <button class="action-btn small" onclick="attToggleExcused('${u.id}')" style="font-size:9px;padding:3px 8px;min-width:36px;border-color:#FFD70066;color:${isExcused?'#FFD700':'#888'}">
                             EXC
                         </button>`}
                     </div>
