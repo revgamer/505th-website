@@ -1084,20 +1084,18 @@
         };
 
         function loadEditHistory(u) {
-            renderHistoryList('histPromoList',   u.promotionHistory||[],   'promo');
-            renderHistoryList('histWarnList',     u.warningHistory||[],     'warn');
+            renderHistoryList('histPlatoonList',  u.platoonHistory||[],    'platoon');
+            renderHistoryList('histPromoList',    u.promotionHistory||[],  'promo');
+            renderHistoryList('histWarnList',     u.warningHistory||[],    'warn');
             renderHistoryList('histCommendList',  u.commendationHistory||[],'commend');
-            // Pre-fill today's date in all add rows
             const today = new Date().toISOString().split('T')[0];
-            ['histPromoDate','histWarnDate','histCommendDate'].forEach(id=>{
+            ['histPlatoonDate','histPromoDate','histWarnDate','histCommendDate'].forEach(id=>{
                 const el=document.getElementById(id); if(el) el.value=today;
             });
-            // Clear text inputs
-            ['histPromoFrom','histPromoTo','histPromoNote','histWarnNote','histCommendNote'].forEach(id=>{
+            ['histPlatoonFrom','histPlatoonTo','histPlatoonNote','histPromoFrom','histPromoTo','histPromoNote','histWarnNote','histCommendNote'].forEach(id=>{
                 const el=document.getElementById(id); if(el) el.value='';
             });
             const ct=document.getElementById('histCommendTitle'); if(ct) ct.value='';
-            // Reset medal picker to Custom
             document.querySelectorAll('#medalPickerGrid .medal-opt').forEach((o,i)=>o.classList.toggle('selected',i===0));
         }
 
@@ -1105,9 +1103,12 @@
             const c = document.getElementById(containerId); if(!c) return;
             if(!entries.length){ c.innerHTML='<div class="history-empty">NO ENTRIES YET</div>'; return; }
             c.innerHTML = [...entries].reverse().map((e,ri)=>{
-                const i = entries.length-1-ri; // real index for delete
+                const i = entries.length-1-ri;
                 let badge='', detail='';
-                if(type==='promo'){
+                if(type==='platoon'){
+                    badge = `<span class="history-badge" style="color:#00D9FF;border-color:#00D9FF55">&#8644; TRANSFER</span>${e.auto?` <span class="history-badge badge-auto">AUTO</span>`:''}`;
+                    detail = `<div>${esc(e.from||'—')} → <strong style="color:#00D9FF">${esc(e.to||'—')}</strong></div>${e.note?`<div style="color:#777;font-size:9px">${esc(e.note)}</div>`:''}`;
+                } else if(type==='promo'){
                     badge = `<span class="history-badge badge-promo">PROMOTED</span>${e.auto?` <span class="history-badge badge-auto">AUTO</span>`:''}`;
                     detail = `<div>${e.fromRank||'—'} → <strong style="color:#7FFF7F">${e.toRank||'—'}</strong></div>${e.note?`<div style="color:#777;font-size:9px">${esc(e.note)}</div>`:''}`;
                 } else if(type==='warn'){
@@ -1150,7 +1151,11 @@
             const u   = allUsers.find(x=>x.id===uid); if(!u) return;
             let entry={}, fieldKey='';
             const today = new Date().toISOString().split('T')[0];
-            if(type==='promo'){
+            if(type==='platoon'){
+                fieldKey='platoonHistory';
+                entry={date:document.getElementById('histPlatoonDate').value||today,from:document.getElementById('histPlatoonFrom').value.trim(),to:document.getElementById('histPlatoonTo').value.trim(),note:document.getElementById('histPlatoonNote').value.trim(),addedBy:currentUserData?.callsign||'Staff',addedAt:new Date().toISOString(),auto:false};
+                if(!entry.to){notify('DESTINATION PLATOON IS REQUIRED',1);return;}
+            } else if(type==='promo'){
                 fieldKey='promotionHistory';
                 entry={date:document.getElementById('histPromoDate').value||today,fromRank:document.getElementById('histPromoFrom').value.trim(),toRank:document.getElementById('histPromoTo').value.trim(),note:document.getElementById('histPromoNote').value.trim(),addedBy:currentUserData?.callsign||'Staff',addedAt:new Date().toISOString(),auto:false};
                 if(!entry.toRank){notify('TO RANK IS REQUIRED',1);return;}
@@ -1169,10 +1174,10 @@
             try {
                 await updateDoc(doc(db,'users',uid),{[fieldKey]:updated});
                 u[fieldKey]=updated;
-                renderHistoryList(type==='promo'?'histPromoList':type==='warn'?'histWarnList':'histCommendList', updated, type);
+                renderHistoryList(type==='platoon'?'histPlatoonList':type==='promo'?'histPromoList':type==='warn'?'histWarnList':'histCommendList', updated, type);
                 notify('ENTRY ADDED');
-                // Clear inputs
-                if(type==='promo'){document.getElementById('histPromoFrom').value='';document.getElementById('histPromoTo').value='';document.getElementById('histPromoNote').value='';}
+                if(type==='platoon'){document.getElementById('histPlatoonFrom').value='';document.getElementById('histPlatoonTo').value='';document.getElementById('histPlatoonNote').value='';}
+                else if(type==='promo'){document.getElementById('histPromoFrom').value='';document.getElementById('histPromoTo').value='';document.getElementById('histPromoNote').value='';}
                 else if(type==='warn'){document.getElementById('histWarnNote').value='';}
                 else{document.getElementById('histCommendTitle').value='';document.getElementById('histCommendNote').value='';document.querySelectorAll('#medalPickerGrid .medal-opt').forEach((o,i)=>o.classList.toggle('selected',i===0));}
             } catch(e){notify('ERROR: '+e.message,1);}
@@ -1182,12 +1187,12 @@
             if(!confirm('REMOVE THIS ENTRY?')) return;
             const uid = document.getElementById('editUserId').value;
             const u   = allUsers.find(x=>x.id===uid); if(!u) return;
-            const fieldKey = type==='promo'?'promotionHistory':type==='warn'?'warningHistory':'commendationHistory';
+            const fieldKey = type==='platoon'?'platoonHistory':type==='promo'?'promotionHistory':type==='warn'?'warningHistory':'commendationHistory';
             const updated = (u[fieldKey]||[]).filter((_,i)=>i!==index);
             try {
                 await updateDoc(doc(db,'users',uid),{[fieldKey]:updated});
                 u[fieldKey]=updated;
-                renderHistoryList(type==='promo'?'histPromoList':type==='warn'?'histWarnList':'histCommendList', updated, type);
+                renderHistoryList(type==='platoon'?'histPlatoonList':type==='promo'?'histPromoList':type==='warn'?'histWarnList':'histCommendList', updated, type);
                 notify('ENTRY REMOVED');
             } catch(e){notify('ERROR: '+e.message,1);}
         };
@@ -1217,6 +1222,12 @@
             if(oldUser && newRank && newRank !== (oldUser.rank||'')) {
                 const entry = {date:new Date().toISOString().split('T')[0],fromRank:oldUser.rank||'—',toRank:newRank,note:'Updated via Personnel Files',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
                 data.promotionHistory = [...(oldUser.promotionHistory||[]), entry];
+            }
+            // Auto-log platoon transfer if platoon changed
+            const newPlatoon = document.getElementById('editPlatoon').value;
+            if(oldUser && newPlatoon && newPlatoon !== (oldUser.platoon||'')) {
+                const entry = {date:new Date().toISOString().split('T')[0],from:oldUser.platoon||'—',to:newPlatoon,note:'Updated via Personnel Files',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
+                data.platoonHistory = [...(oldUser.platoonHistory||[]), entry];
             }
             try {
                 await updateDoc(doc(db,'users',uid),data);
@@ -2182,6 +2193,21 @@
                 </div>
                 <!-- HISTORY TAB -->
                 <div class="edit-tab-pane" id="editPane-history">
+                    <!-- PLATOON / TRANSFER HISTORY -->
+                    <div class="history-section">
+                        <div class="history-section-hd">
+                            <span class="history-section-title" style="color:#00D9FF">&#8644; PLATOON / TRANSFER HISTORY</span>
+                            <span style="font-size:8px;letter-spacing:1px;color:#555">AUTO-LOGGED ON PLATOON CHANGE + MANUAL</span>
+                        </div>
+                        <div id="histPlatoonList"></div>
+                        <div class="history-add-row">
+                            <input type="date" id="histPlatoonDate">
+                            <input type="text" id="histPlatoonFrom" placeholder="From (e.g. Stalker 1-0)..." style="max-width:160px">
+                            <input type="text" id="histPlatoonTo" placeholder="To (e.g. Killjoy 1-0)..." style="max-width:160px">
+                            <input type="text" id="histPlatoonNote" placeholder="Reason (optional)...">
+                            <button class="history-add-btn" onclick="addHistoryEntry('platoon')">+ ADD</button>
+                        </div>
+                    </div>
                     <!-- PROMOTION HISTORY -->
                     <div class="history-section">
                         <div class="history-section-hd">

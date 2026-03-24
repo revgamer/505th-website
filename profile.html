@@ -13,14 +13,32 @@
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
         const firebaseConfig = { apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg", authDomain:"th-website-91533.firebaseapp.com", projectId:"th-website-91533", storageBucket:"th-website-91533.firebasestorage.app", messagingSenderId:"1046139150142", appId:"1:1046139150142:web:01f409ae4a38c4f79d966f" };
         const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
         const auth = getAuth(app), db = getFirestore(app);
         let currentUser, currentUserData;
 
+        function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+        function calcTimeInUnit(joinedAt) {
+            if(!joinedAt) return 'N/A';
+            const joined = new Date(joinedAt);
+            const now = new Date();
+            const totalDays = Math.floor((now - joined) / (1000*60*60*24));
+            const years = Math.floor(totalDays / 365);
+            const months = Math.floor((totalDays % 365) / 30);
+            const days = totalDays % 30;
+            let parts = [];
+            if(years > 0)  parts.push(years  + ' yr'  + (years  !== 1 ? 's' : ''));
+            if(months > 0) parts.push(months + ' mo'  + (months !== 1 ? 's' : ''));
+            if(!years && days > 0) parts.push(days + ' day' + (days !== 1 ? 's' : ''));
+            return parts.join(' ') || 'Just joined';
+        }
+
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = 'login.html'; return; }
-            const ud = await getDoc(doc(db, "users", user.uid));
+            const ud = await getDoc(doc(db, 'users', user.uid));
             if (!ud.exists()) { window.location.href = 'login.html'; return; }
             currentUser = user;
             currentUserData = ud.data();
@@ -31,64 +49,119 @@
 
         function fillProfile() {
             const d = currentUserData;
-            document.getElementById('profCallsign').textContent = d.callsign || 'N/A';
-            document.getElementById('profRole').textContent = (d.role || 'N/A').toUpperCase().replace('_', ' ');
-            document.getElementById('profRole').className = 'role-badge role-' + d.role;
-            document.getElementById('profRank').textContent = d.rank || 'Not Assigned';
-            document.getElementById('profEmail').textContent = d.email || '';
 
-            // Editable fields
-            document.getElementById('inputFirst').value = d.firstName || '';
+            // ── Dossier Header ──
+            document.getElementById('hdrCallsign').textContent  = d.callsign || 'UNKNOWN';
+            document.getElementById('hdrRank').textContent      = d.rank || 'Unranked';
+            document.getElementById('hdrPlatoon').textContent   = d.platoon || '—';
+            document.getElementById('hdrTimeUnit').textContent  = calcTimeInUnit(d.joinedAt);
+            document.getElementById('hdrJoinDate').textContent  = d.joinedAt ? new Date(d.joinedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : 'Not Set';
+
+            const roleEl = document.getElementById('hdrRole');
+            roleEl.textContent  = (d.role || 'N/A').toUpperCase().replace('_',' ');
+            roleEl.className    = 'role-badge role-' + (d.role||'');
+
+            // Status dot
+            const statusEl = document.getElementById('hdrStatus');
+            const isReserve = d.platoon==='Reserves';
+            const isInactive = d.status==='inactive';
+            statusEl.textContent  = isInactive ? '● INACTIVE' : isReserve ? '● RESERVE' : '● ACTIVE';
+            statusEl.style.color  = isInactive ? '#ef4444' : isReserve ? '#FFD700' : '#00FF41';
+
+            // ── Personal Info ──
+            document.getElementById('infoFirst').textContent  = d.firstName  || '—';
+            document.getElementById('infoLast').textContent   = d.lastName   || '—';
+            document.getElementById('infoEmail').textContent  = d.email      || '—';
+
+            // Editable inputs
+            document.getElementById('inputFirst').value  = d.firstName  || '';
             document.getElementById('inputMiddle').value = d.middleName || '';
-            document.getElementById('inputLast').value = d.lastName || '';
+            document.getElementById('inputLast').value   = d.lastName   || '';
 
-            // Rank history
-            const rh = d.rankHistory || [];
-            const rhc = document.getElementById('rankHistoryList');
-            if (!rh.length) { rhc.innerHTML = '<div class="empty-state">NO RANK HISTORY</div>'; }
-            else { rhc.innerHTML = rh.map(r => `<div class="rh-entry"><span class="rh-rank">${r.rank}</span><span class="rh-date">${new Date(r.date).toLocaleDateString()}</span>${r.by ? `<span class="rh-by">by ${r.by}</span>` : ''}</div>`).join(''); }
+            // ── Medals ──
+            renderMedals(d.commendationHistory || []);
 
-            // Time in unit
-            if (d.joinedAt) {
-                const joined = new Date(d.joinedAt);
-                const now = new Date();
-                const months = (now.getFullYear() - joined.getFullYear()) * 12 + (now.getMonth() - joined.getMonth());
-                const years = Math.floor(months / 12);
-                const rem = months % 12;
-                let timeStr = '';
-                if (years > 0) timeStr += years + ' year' + (years > 1 ? 's' : '') + ' ';
-                timeStr += rem + ' month' + (rem !== 1 ? 's' : '');
-                document.getElementById('profTimeInUnit').textContent = timeStr;
-                document.getElementById('profJoinDate').textContent = joined.toLocaleDateString();
-            } else {
-                document.getElementById('profTimeInUnit').textContent = 'N/A';
-                document.getElementById('profJoinDate').textContent = 'Not Set';
+            // ── Promotion History ──
+            renderPromoHistory(d.promotionHistory || []);
+
+            // ── Platoon History ──
+            renderPlatoonHistory(d.platoonHistory || []);
+        }
+
+        function renderMedals(entries) {
+            const c = document.getElementById('medalsGrid');
+            const awards = entries.filter(e => e.title);
+            if(!awards.length){
+                c.innerHTML = '<div class="empty-state">NO MEDALS OR AWARDS</div>';
+                return;
             }
+            c.innerHTML = awards.map(e => {
+                const img = e.medalImg
+                    ? `<img src="images/medal_emojis/${esc(e.medalImg)}" alt="${esc(e.title)}">`
+                    : `<div class="medal-custom-icon">&#9733;</div>`;
+                return `<div class="medal-card">
+                    <div class="medal-img-wrap">${img}</div>
+                    <div class="medal-title">${esc(e.title)}</div>
+                    ${e.note ? `<div class="medal-note">${esc(e.note)}</div>` : ''}
+                    <div class="medal-date">${e.date||''}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderPromoHistory(entries) {
+            const c = document.getElementById('promoTimeline');
+            if(!entries.length){
+                c.innerHTML = '<div class="empty-state">NO PROMOTION HISTORY</div>';
+                return;
+            }
+            c.innerHTML = [...entries].reverse().map(e => `
+                <div class="timeline-entry">
+                    <div class="timeline-dot promo-dot"></div>
+                    <div class="timeline-body">
+                        <div class="tl-ranks">${esc(e.fromRank||'—')} <span class="tl-arrow">→</span> <span class="tl-rank-to">${esc(e.toRank||'—')}</span></div>
+                        ${e.note ? `<div class="tl-note">${esc(e.note)}</div>` : ''}
+                        <div class="tl-meta">${e.date||''}${e.addedBy&&!e.auto ? ` · by ${esc(e.addedBy)}` : ''}${e.auto ? ' · <span class="tl-auto">auto</span>' : ''}</div>
+                    </div>
+                </div>`).join('');
+        }
+
+        function renderPlatoonHistory(entries) {
+            const c = document.getElementById('platoonTimeline');
+            if(!entries.length){
+                c.innerHTML = '<div class="empty-state">NO TRANSFER HISTORY</div>';
+                return;
+            }
+            c.innerHTML = [...entries].reverse().map(e => `
+                <div class="timeline-entry">
+                    <div class="timeline-dot platoon-dot"></div>
+                    <div class="timeline-body">
+                        <div class="tl-ranks">${esc(e.from||'—')} <span class="tl-arrow">→</span> <span class="tl-platoon-to">${esc(e.to||'—')}</span></div>
+                        ${e.note ? `<div class="tl-note">${esc(e.note)}</div>` : ''}
+                        <div class="tl-meta">${e.date||''}${e.addedBy&&!e.auto ? ` · by ${esc(e.addedBy)}` : ''}${e.auto ? ' · <span class="tl-auto">auto</span>' : ''}</div>
+                    </div>
+                </div>`).join('');
         }
 
         window.saveProfile = async function() {
-            const updates = {
-                firstName: document.getElementById('inputFirst').value.trim(),
-                middleName: document.getElementById('inputMiddle').value.trim(),
-                lastName: document.getElementById('inputLast').value.trim()
-            };
-            // Update callsign from names
-            updates.callsign = [updates.firstName, updates.middleName, updates.lastName].filter(Boolean).join(' ');
+            const first  = document.getElementById('inputFirst').value.trim();
+            const middle = document.getElementById('inputMiddle').value.trim();
+            const last   = document.getElementById('inputLast').value.trim();
+            // Only update name fields — never touch callsign (set by admin only)
+            const updates = { firstName: first, middleName: middle, lastName: last };
             try {
-                await updateDoc(doc(db, "users", currentUser.uid), updates);
+                await updateDoc(doc(db, 'users', currentUser.uid), updates);
                 currentUserData = { ...currentUserData, ...updates };
                 fillProfile();
-                const n = document.getElementById('notification');
-                n.textContent = 'PROFILE UPDATED';
-                n.className = 'notification show';
-                setTimeout(() => n.className = 'notification', 3000);
-            } catch(e) {
-                const n = document.getElementById('notification');
-                n.textContent = 'ERROR: ' + e.message;
-                n.className = 'notification show error';
-                setTimeout(() => n.className = 'notification', 3000);
-            }
+                showNotify('PROFILE UPDATED');
+            } catch(e) { showNotify('ERROR: '+e.message, true); }
         };
+
+        function showNotify(msg, err=false) {
+            const n = document.getElementById('notification');
+            n.textContent = msg;
+            n.className = 'notification show' + (err ? ' error' : '');
+            setTimeout(() => n.className = 'notification', 3000);
+        }
 
         window.handleLogout = async function() { await signOut(auth); window.location.href = 'home.html'; };
     </script>
@@ -101,74 +174,186 @@
         .hidden{display:none!important}
         .loading-screen{display:flex;justify-content:center;align-items:center;height:100vh;color:var(--accent);font-size:14px;letter-spacing:4px;z-index:10}
         @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
-        .top-bar{background:rgba(8,10,14,.92);border-bottom:1px solid rgba(0,217,255,.1);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+        @keyframes scanIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+        /* ── Top bar ── */
+        .top-bar{background:rgba(8,10,14,.95);border-bottom:1px solid rgba(0,217,255,.2);padding:10px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
         .top-bar-left{display:flex;align-items:center;gap:12px}
         .top-bar-left img{width:32px;height:32px;filter:drop-shadow(0 0 8px var(--accent-glow))}
         .top-bar-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:16px;font-weight:700;letter-spacing:3px;text-shadow:0 0 10px var(--accent-glow)}
-        .top-bar-right{display:flex;align-items:center;gap:12px}
-        .top-btn{background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;padding:7px 14px;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+        .top-bar-right{display:flex;align-items:center;gap:10px}
+        .top-btn{background:transparent;border:1px solid rgba(0,217,255,.25);color:#aaa;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;padding:7px 14px;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
         .top-btn:hover{border-color:var(--accent);color:var(--accent)}
         .logout-btn:hover{border-color:#ef4444;color:#ef4444}
-        .profile-container{max-width:700px;margin:40px auto;padding:0 20px;position:relative;z-index:1}
-        .profile-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:24px;font-weight:700;letter-spacing:4px;margin-bottom:24px;text-shadow:0 0 15px var(--accent-glow)}
-        .profile-card{background:rgba(8,10,14,.8);border:1px solid rgba(0,217,255,.1);padding:24px;margin-bottom:16px}
-        .card-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:14px;font-weight:700;letter-spacing:3px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid rgba(0,217,255,.08)}
-        .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.02)}
-        .info-label{color:#aaa;font-size:10px;letter-spacing:2px}
-        .info-value{color:#e0e0e0;font-size:12px}
-        .role-badge{font-size:10px;letter-spacing:2px;padding:2px 8px;border:1px solid #333;color:#bbb}
-        .role-commander{color:#f59e0b;border-color:#f59e0b}.role-developer{color:#a78bfa;border-color:#a78bfa}.role-staff_nco{color:#2DD4BF;border-color:#2DD4BF}.role-recruiter{color:#fb923c;border-color:#fb923c}.role-nco{color:#34d399;border-color:#34d399}.role-marine{color:#94a3b8;border-color:#94a3b8}
-        .edit-field{margin-bottom:12px}
-        .edit-field label{display:block;color:#ccc;font-size:9px;letter-spacing:2px;margin-bottom:4px}
-        .edit-field input{width:100%;padding:10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.1);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none}
+
+        /* ── Layout ── */
+        .profile-container{max-width:960px;margin:32px auto;padding:0 20px;position:relative;z-index:1;animation:scanIn .4s ease-out}
+
+        /* ── Dossier Header ── */
+        .dossier-card{background:rgba(8,10,14,.85);border:1px solid rgba(0,217,255,.35);padding:24px 28px;margin-bottom:20px;position:relative;overflow:hidden}
+        .dossier-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+        .dossier-top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
+        .dossier-identity{flex:1}
+        .dossier-callsign{font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:#fff;letter-spacing:4px;text-shadow:0 0 20px var(--accent-glow);line-height:1}
+        .dossier-rank{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;color:var(--accent);letter-spacing:3px;margin-top:6px}
+        .dossier-platoon{font-family:'Rajdhani',sans-serif;font-size:13px;color:#888;letter-spacing:2px;margin-top:3px}
+        .dossier-badges{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+        .role-badge{font-size:10px;letter-spacing:2px;padding:3px 10px;border:1px solid #333;color:#bbb;font-family:'Rajdhani',sans-serif;font-weight:700}
+        .role-commander{color:#f59e0b;border-color:#f59e0b55;background:rgba(245,158,11,.07)}
+        .role-developer{color:#a78bfa;border-color:#a78bfa55;background:rgba(167,139,250,.07)}
+        .role-staff_nco{color:#2DD4BF;border-color:#2DD4BF55;background:rgba(45,212,191,.07)}
+        .role-recruiter{color:#fb923c;border-color:#fb923c55;background:rgba(251,146,60,.07)}
+        .role-nco{color:#34d399;border-color:#34d39955;background:rgba(52,211,153,.07)}
+        .role-marine{color:#94a3b8;border-color:#94a3b855;background:rgba(148,163,184,.07)}
+        .role-enlistee{color:#64748b;border-color:#64748b55;background:rgba(100,116,139,.07)}
+        .status-pill{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px}
+        .dossier-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:rgba(0,217,255,.08);border:1px solid rgba(0,217,255,.12);align-self:stretch;min-width:200px}
+        .dossier-stat{background:rgba(8,10,14,.9);padding:12px 16px}
+        .dossier-stat-label{font-size:8px;letter-spacing:2px;color:#555;margin-bottom:4px}
+        .dossier-stat-val{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:#e0e0e0;letter-spacing:1px}
+        .dossier-divider{border:none;border-top:1px solid rgba(0,217,255,.1);margin:16px 0 0}
+
+        /* ── Two-column grid ── */
+        .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        @media(max-width:680px){.profile-grid{grid-template-columns:1fr}}
+
+        /* ── Profile card ── */
+        .profile-card{background:rgba(8,10,14,.8);border:1px solid rgba(0,217,255,.12);padding:20px}
+        .profile-card.full{grid-column:1/-1}
+        .card-title{font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:13px;font-weight:700;letter-spacing:3px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid rgba(0,217,255,.1)}
+        .info-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+        .info-label{color:#555;font-size:9px;letter-spacing:2px}
+        .info-value{color:#d0d0d0;font-size:11px;text-align:right}
+
+        /* ── Edit name ── */
+        .edit-field{margin-bottom:10px}
+        .edit-field label{display:block;color:#888;font-size:8px;letter-spacing:2px;margin-bottom:4px}
+        .edit-field input{width:100%;padding:9px 10px;background:rgba(0,0,0,.5);border:1px solid rgba(0,217,255,.12);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;transition:border-color .2s}
         .edit-field input:focus{border-color:var(--accent)}
-        .edit-field input:disabled{opacity:.5;cursor:not-allowed}
-        .name-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-        .save-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;padding:12px 30px;cursor:pointer;transition:all .3s;margin-top:8px}
-        .save-btn:hover{background:rgba(0,217,255,.1);box-shadow:0 0 20px rgba(0,217,255,.15)}
-        .rh-entry{display:flex;gap:16px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px}
-        .rh-rank{color:var(--accent);min-width:120px}.rh-date{color:#aaa}.rh-by{color:#999;font-style:italic}
-        .empty-state{text-align:center;padding:20px;color:#bbb;font-size:11px;letter-spacing:3px}
-        .notification{position:fixed;top:60px;right:20px;background:rgba(8,10,14,.97);border:1px solid var(--accent);color:var(--accent);padding:12px 20px;font-size:11px;letter-spacing:2px;z-index:200;opacity:0;transform:translateX(20px);transition:all .3s;pointer-events:none}.notification.show{opacity:1;transform:translateX(0)}.notification.error{border-color:#ef4444;color:#ef4444}
-        @media(max-width:640px){.name-row{grid-template-columns:1fr}}
+        .name-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+        @media(max-width:500px){.name-row{grid-template-columns:1fr}}
+        .save-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;padding:10px 24px;cursor:pointer;transition:all .2s;margin-top:6px}
+        .save-btn:hover{background:rgba(0,217,255,.08);box-shadow:0 0 16px rgba(0,217,255,.12)}
+
+        /* ── Medals ── */
+        .medals-grid{display:flex;flex-wrap:wrap;gap:10px}
+        .medal-card{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(167,139,250,.15);min-width:72px;max-width:90px;transition:border-color .2s}
+        .medal-card:hover{border-color:rgba(167,139,250,.5)}
+        .medal-img-wrap img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(167,139,250,.4))}
+        .medal-custom-icon{font-size:32px;color:#a78bfa;opacity:.7;line-height:1}
+        .medal-title{font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:.5px;color:#a78bfa;text-align:center;line-height:1.3}
+        .medal-note{font-size:7px;color:#666;text-align:center;line-height:1.3;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .medal-date{font-size:7px;color:#444;letter-spacing:1px}
+
+        /* ── Timeline ── */
+        .timeline{display:flex;flex-direction:column;gap:0}
+        .timeline-entry{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.03);position:relative}
+        .timeline-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+        .promo-dot{background:#7FFF7F;box-shadow:0 0 6px rgba(127,255,127,.5)}
+        .platoon-dot{background:var(--accent);box-shadow:0 0 6px var(--accent-glow)}
+        .timeline-body{flex:1}
+        .tl-ranks{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:#ccc;letter-spacing:.5px}
+        .tl-arrow{color:#555;margin:0 6px}
+        .tl-rank-to{color:#7FFF7F}
+        .tl-platoon-to{color:var(--accent)}
+        .tl-note{color:#666;font-size:9px;margin-top:2px;letter-spacing:.5px}
+        .tl-meta{color:#444;font-size:8px;letter-spacing:1px;margin-top:3px}
+        .tl-auto{color:#333;font-style:italic}
+
+        .empty-state{color:#444;font-size:9px;letter-spacing:3px;text-align:center;padding:16px 0}
+        .notification{position:fixed;top:60px;right:20px;background:rgba(8,10,14,.97);border:1px solid var(--accent);color:var(--accent);padding:12px 20px;font-size:11px;letter-spacing:2px;z-index:200;opacity:0;transform:translateX(20px);transition:all .3s;pointer-events:none}
+        .notification.show{opacity:1;transform:translateX(0)}
+        .notification.error{border-color:#ef4444;color:#ef4444}
     </style>
 </head>
 <body>
     <div class="scanlines"></div>
-    <div class="loading-screen" id="loadingScreen">LOADING PROFILE<span style="animation:blink 1s infinite">_</span></div>
+    <div class="loading-screen" id="loadingScreen">LOADING DOSSIER<span style="animation:blink 1s infinite">_</span></div>
     <div class="notification" id="notification"></div>
+
     <div id="profileApp" class="hidden">
         <div class="top-bar">
-            <div class="top-bar-left"><img src="images/logo.png" alt="505th"><span class="top-bar-title">OPERATIVE PROFILE_</span></div>
+            <div class="top-bar-left">
+                <img src="images/logo.png" alt="505th">
+                <span class="top-bar-title">OPERATIVE DOSSIER_</span>
+            </div>
             <div class="top-bar-right">
                 <a href="home.html" class="top-btn">&#8962; HOME</a>
                 <button class="top-btn logout-btn" onclick="handleLogout()">&#9211; LOGOUT</button>
             </div>
         </div>
+
         <div class="profile-container">
-            <div class="profile-title">MY PROFILE</div>
-            <div class="profile-card">
-                <div class="card-title">OPERATIVE STATUS</div>
-                <div class="info-row"><span class="info-label">CALLSIGN</span><span class="info-value" id="profCallsign">---</span></div>
-                <div class="info-row"><span class="info-label">ROLE</span><span id="profRole" class="role-badge">---</span></div>
-                <div class="info-row"><span class="info-label">RANK</span><span class="info-value" id="profRank">---</span></div>
-                <div class="info-row"><span class="info-label">EMAIL</span><span class="info-value" id="profEmail">---</span></div>
-                <div class="info-row"><span class="info-label">DATE JOINED</span><span class="info-value" id="profJoinDate">---</span></div>
-                <div class="info-row"><span class="info-label">TIME IN UNIT</span><span class="info-value" id="profTimeInUnit">---</span></div>
-            </div>
-            <div class="profile-card">
-                <div class="card-title">EDIT NAME</div>
-                <div class="name-row">
-                    <div class="edit-field"><label>FIRST NAME</label><input type="text" id="inputFirst" placeholder="First name..."></div>
-                    <div class="edit-field"><label>MIDDLE NAME</label><input type="text" id="inputMiddle" placeholder="Middle name (optional)..."></div>
-                    <div class="edit-field"><label>LAST NAME</label><input type="text" id="inputLast" placeholder="Last name..."></div>
+
+            <!-- ── DOSSIER HEADER ── -->
+            <div class="dossier-card">
+                <div class="dossier-top">
+                    <div class="dossier-identity">
+                        <div class="dossier-callsign" id="hdrCallsign">---</div>
+                        <div class="dossier-rank" id="hdrRank">---</div>
+                        <div class="dossier-platoon" id="hdrPlatoon">---</div>
+                        <div class="dossier-badges">
+                            <span id="hdrRole" class="role-badge">---</span>
+                            <span id="hdrStatus" class="status-pill">---</span>
+                        </div>
+                    </div>
+                    <div class="dossier-stats">
+                        <div class="dossier-stat">
+                            <div class="dossier-stat-label">DATE JOINED</div>
+                            <div class="dossier-stat-val" id="hdrJoinDate">---</div>
+                        </div>
+                        <div class="dossier-stat">
+                            <div class="dossier-stat-label">TIME IN UNIT</div>
+                            <div class="dossier-stat-val" id="hdrTimeUnit">---</div>
+                        </div>
+                    </div>
                 </div>
-                <button class="save-btn" onclick="saveProfile()">SAVE CHANGES</button>
+                <hr class="dossier-divider">
             </div>
-            <div class="profile-card">
-                <div class="card-title">RANK HISTORY</div>
-                <div id="rankHistoryList"><div class="empty-state">NO RANK HISTORY</div></div>
+
+            <!-- ── TWO COLUMN: Personal Info + Medals ── -->
+            <div class="profile-grid">
+                <!-- Personal Info -->
+                <div class="profile-card">
+                    <div class="card-title">&#9998; PERSONAL INFO</div>
+                    <div class="info-row"><span class="info-label">FIRST NAME</span><span class="info-value" id="infoFirst">—</span></div>
+                    <div class="info-row"><span class="info-label">LAST NAME</span><span class="info-value" id="infoLast">—</span></div>
+                    <div class="info-row"><span class="info-label">EMAIL</span><span class="info-value" id="infoEmail">—</span></div>
+                    <hr style="border:none;border-top:1px solid rgba(0,217,255,.08);margin:14px 0">
+                    <div class="card-title" style="margin-bottom:10px">EDIT NAME</div>
+                    <div class="name-row">
+                        <div class="edit-field"><label>FIRST</label><input type="text" id="inputFirst" placeholder="First..."></div>
+                        <div class="edit-field"><label>MIDDLE</label><input type="text" id="inputMiddle" placeholder="Middle..."></div>
+                        <div class="edit-field"><label>LAST</label><input type="text" id="inputLast" placeholder="Last..."></div>
+                    </div>
+                    <button class="save-btn" onclick="saveProfile()">SAVE CHANGES</button>
+                </div>
+
+                <!-- Medals -->
+                <div class="profile-card">
+                    <div class="card-title">&#9733; MEDALS &amp; AWARDS</div>
+                    <div class="medals-grid" id="medalsGrid">
+                        <div class="empty-state">NO MEDALS OR AWARDS</div>
+                    </div>
+                </div>
             </div>
+
+            <!-- ── PROMOTION HISTORY ── -->
+            <div class="profile-card full" style="margin-bottom:16px">
+                <div class="card-title">&#9650; PROMOTION HISTORY</div>
+                <div class="timeline" id="promoTimeline">
+                    <div class="empty-state">NO PROMOTION HISTORY</div>
+                </div>
+            </div>
+
+            <!-- ── PLATOON / TRANSFER HISTORY ── -->
+            <div class="profile-card full" style="margin-bottom:32px">
+                <div class="card-title">&#8644; PLATOON / TRANSFER HISTORY</div>
+                <div class="timeline" id="platoonTimeline">
+                    <div class="empty-state">NO TRANSFER HISTORY</div>
+                </div>
+            </div>
+
         </div>
     </div>
 </body>
