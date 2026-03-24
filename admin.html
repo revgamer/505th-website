@@ -955,7 +955,7 @@
                 document.getElementById('attEventTitle').value = attEventData.title||'';
                 document.getElementById('attEventDate').value  = attEventData.date||'';
                 document.getElementById('attEventType').value  = attEventData.type||'main_op';
-                document.getElementById('attCurrentEventLabel').textContent = attEventData.title||'New Event';
+                const _lbl=document.getElementById('attCurrentEventLabel');if(_lbl)_lbl.textContent = attEventData.title||'New Event';
                 renderAttRoster();
                 notify('EVENT LOADED — '+attEventData.title);
             } catch(e){ notify('LOAD FAILED: '+e.message,1); }
@@ -966,7 +966,7 @@
             document.getElementById('attEventTitle').value='';
             document.getElementById('attEventDate').value=new Date().toISOString().split('T')[0];
             document.getElementById('attEventType').value='main_op';
-            document.getElementById('attCurrentEventLabel').textContent='New Event';
+            const _lbl=document.getElementById('attCurrentEventLabel');if(_lbl)_lbl.textContent='New Event';
             renderAttRoster();
         };
 
@@ -1087,7 +1087,7 @@
                     const ref = await addDoc(collection(db,'attendance_events'), {...eventPayload, createdBy:currentUserData?.callsign||'Staff', createdAt:new Date().toISOString()});
                     attEventData = {id:ref.id,...eventPayload};
                 }
-                document.getElementById('attCurrentEventLabel').textContent=title;
+                const _lbl=document.getElementById('attCurrentEventLabel');if(_lbl)_lbl.textContent=title;
 
                 // Update each present member's attendance counter (capped at 3) + opsAttended/opsEligible
                 if(lock) {
