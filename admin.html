@@ -791,14 +791,17 @@
                 if(pl) {
                     const pUsers=[];
                     snap.forEach(d=>{ if(d.data().status==='pending') pUsers.push({id:d.id,...d.data()}); });
-                    pl.innerHTML = pUsers.length ? pUsers.map(u=>`
-                        <div class="user-card status-pending">
-                            <div class="user-info"><div class="user-callsign">${esc(formatMemberName(u)||u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
-                            <div class="user-actions">
-                                <button class="action-btn approve-btn small" onclick="approveUser('${u.id}','${esc(u.callsign)}')">APPROVE</button>
-                                <button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">DENY</button>
+                    pl.innerHTML = pUsers.length ? `
+                        ${pUsers.map(u=>`
+                        <div class="user-card status-pending" style="cursor:default">
+                            <div class="user-info">
+                                <div class="user-callsign">${esc([u.firstName,u.middleName?u.middleName+'.':'',u.lastName].filter(Boolean).join(' ')||'Unknown')}</div>
+                                <div class="user-email">${esc(u.email)}</div>
                             </div>
-                        </div>`).join('') : '<div class="empty-state">NO PENDING REGISTRATIONS</div>';
+                        </div>`).join('')}
+                        <div style="margin-top:10px">
+                            <button class="action-btn approve-btn" onclick="showPanel('panel-register')" style="font-size:10px;padding:5px 14px;letter-spacing:2px">&#9654; OPEN ENLISTMENT QUEUE</button>
+                        </div>` : '<div class="empty-state">NO PENDING REGISTRATIONS</div>';
                 }
 
                 // Recent joins
@@ -1457,11 +1460,11 @@
             } catch(e){ notify('ERROR: '+e.message,1); }
         };
 
-        function pickRecruitSource(callsign) {
+        function pickRecruitSource(displayName) {
             return new Promise(resolve=>{
                 const modal = document.getElementById('recruitSourceModal');
                 const label = document.getElementById('recruitSourceModalLabel');
-                if(label) label.textContent = 'APPROVING: '+callsign.toUpperCase();
+                if(label) label.textContent = 'APPROVING: ' + displayName.toUpperCase();
                 if(modal) modal.classList.add('active');
                 window._recruitSourceResolve = resolve;
             });
