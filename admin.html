@@ -35,6 +35,72 @@
         function P() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
+        // ── Rank abbreviation map ─────────────────────────────────────────
+        const RANK_ABBR = {
+            // Officers
+            'O9 / Lieutenant General':      'LtGen',
+            'O8 / Major General':           'MajGen',
+            'O7 / Brigadier General':       'BGen',
+            'O6 / Colonel':                 'Col',
+            'O5 / Lieutenant Colonel':      'LtCol',
+            'O4 / Major':                   'Maj',
+            'O3 / Captain':                 'Capt',
+            'O2 / First Lieutenant':        '1stLt',
+            'O1 / Second Lieutenant':       '2ndLt',
+            // Marine Enlisted
+            'E9 / Sergeant Major':          'SgtMaj',
+            'E9 / Master Gunnery Sergeant': 'MGySgt',
+            'E9 / First Sergeant':          '1stSgt',
+            'E8 / Master Sergeant':         'MSgt',
+            'E7 / Gunnery Sergeant':        'GySgt',
+            'E6 / Staff Sergeant':          'SSgt',
+            'E5 / Sergeant':                'Sgt',
+            'E4 / Corporal':                'Cpl',
+            'E3 / Lance Corporal':          'LCpl',
+            'E2 / Private First Class':     'PFC',
+            'E1 / Private':                 'Pvt',
+            // Hospital Corpsman
+            'E9 / Master Chief Hospital Corpsman': 'MCPO',
+            'E8 / Senior Chief Corpsman':   'SCPO',
+            'E7 / Chief Corpsman':          'CPO',
+            'E6 / Corpsman First Class':    'HM1',
+            'E5 / Corpsman Second Class':   'HM2',
+            'E4 / Corpsman Third Class':    'HM3',
+            'E3 / Hospitalman':             'HN',
+            'E2 / Hospitalman Apprentice':  'HA',
+            // Air Wing
+            'E6 / Technical Sergeant':      'TSgt',
+            'E5 / Staff Sergeant':          'SSgt',
+            'E4 / Senior Airman':           'SrA',
+            'E3 / Airman First Class':      'A1C',
+            'E2 / Airman':                  'Amn',
+            'E1 / Airman Basic':            'AB',
+            // Other
+            'Reservist':                    'Res',
+        };
+
+        function getRankAbbr(rank) {
+            return RANK_ABBR[rank] || (rank ? rank.split('/').pop().trim() : '');
+        }
+
+        // formatMemberName(user) → "SSgt S. \"Davy\"" or "SSgt S. Jones"
+        function formatMemberName(u) {
+            if (!u) return '—';
+            const rankAbbr  = getRankAbbr(u.rank || u.rankGrade || '');
+            const first     = (u.firstName || '').trim();
+            const last      = (u.lastName  || '').trim();
+            const callsign  = (u.callsign  || '').trim();
+            const firstInit = first ? first.charAt(0).toUpperCase() + '.' : '';
+            // Has callsign AND it differs from first name (not just the name reused as callsign)
+            const hasCallsign = callsign && callsign !== first && callsign !== (first + ' ' + last);
+            let name = '';
+            if (firstInit) name += firstInit + ' ';
+            if (hasCallsign) name += '"' + callsign + '"';
+            else if (last)   name += last;
+            else if (callsign) name += '"' + callsign + '"';
+            return [rankAbbr, name.trim()].filter(Boolean).join(' ');
+        }
+
         async function logAction(a, d) { /* disabled for performance */ }
 
         const PAGE_SLOTS = {
@@ -238,7 +304,7 @@
                 const ptReady=att>=3;
                 const ptStyle=ptReady?'color:#7FFF7F;font-weight:700;font-size:14px;text-shadow:0 0 8px rgba(127,255,127,.6);animation:ptGlow 1s ease-in-out infinite':'color:var(--accent);font-weight:700;font-size:14px';
                 return`<div class="roster-row">
-                    <div class="roster-cell roster-name">${esc(r.name)}</div>
+                    <div class="roster-cell roster-name">${esc(formatMemberName(r)||r.name)}</div>
                     <div class="roster-cell"><span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;padding:3px 10px;border:1px solid rgba(0,217,255,.35);color:var(--accent)">${esc(r.platoon||'—')}</span></div>
                     <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-US'):'—'}</div>
                     <div class="roster-cell" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:#ccc">${calcPeriod(r.joinedPlatoon)}</div>
@@ -651,7 +717,7 @@
                     snap.forEach(d=>{ if(d.data().status==='pending') pUsers.push({id:d.id,...d.data()}); });
                     pl.innerHTML = pUsers.length ? pUsers.map(u=>`
                         <div class="user-card status-pending">
-                            <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
+                            <div class="user-info"><div class="user-callsign">${esc(formatMemberName(u)||u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
                             <div class="user-actions">
                                 <button class="action-btn approve-btn small" onclick="approveUser('${u.id}','${esc(u.callsign)}')">APPROVE</button>
                                 <button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">DENY</button>
@@ -667,7 +733,7 @@
                     recent.sort((a,b)=>(b.joinedAt||'').localeCompare(a.joinedAt||''));
                     rj.innerHTML = recent.slice(0,5).map(u=>`
                         <div class="user-card">
-                            <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-role">${(u.role||'').toUpperCase()}</div></div>
+                            <div class="user-info"><div class="user-callsign">${esc(formatMemberName(u)||u.callsign)}</div><div class="user-role">${(u.role||'').toUpperCase()}</div></div>
                         </div>`).join('') || '<div class="empty-state">NO RECENT JOINS</div>';
                 }
 
@@ -926,12 +992,13 @@
             if(activeList) {
                 activeList.innerHTML = active.length ? active.map(u=>{
                     const isLockedCommander = u.role==='commander' && !P().canDemoteCommander;
+                    const displayName = formatMemberName(u);
                     return `
                     <div class="user-card status-active">
                         <div class="user-info">
-                            <div class="user-callsign">${esc(u.callsign)}</div>
+                            <div class="user-callsign">${esc(displayName)}</div>
                             <div class="user-email">${esc(u.email)}</div>
-                            <div class="user-role">${(u.role||'').toUpperCase()}${u.rank?` — ${esc(u.rank)}`:''}</div>
+                            <div class="user-role">${(u.role||'').toUpperCase()}${u.platoon?' — '+esc(u.platoon):''}</div>
                         </div>
                         <div class="user-actions" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
                             ${P().canEditProfiles && !isLockedCommander?`<button class="action-btn approve-btn small" onclick="openEditUser('${u.id}')">EDIT</button>`:''}
@@ -991,7 +1058,7 @@
                 let h='';
                 if(pending.length) { h+='<div class="section-label">PENDING</div>'+pending.map(u=>`
                     <div class="user-card status-pending">
-                        <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
+                        <div class="user-info"><div class="user-callsign">${esc(formatMemberName(u)||u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
                         <div class="user-actions">
                             <button class="action-btn approve-btn small" onclick="approveUser('${u.id}','${esc(u.callsign)}')">APPROVE</button>
                             <button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">DENY</button>
@@ -999,7 +1066,7 @@
                     </div>`).join(''); }
                 if(denied.length) { h+='<div class="section-label" style="margin-top:20px">DENIED</div>'+denied.map(u=>`
                     <div class="user-card status-denied">
-                        <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
+                        <div class="user-info"><div class="user-callsign">${esc(formatMemberName(u)||u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
                         <div class="user-actions">
                             <button class="action-btn approve-btn small" onclick="approveUser('${u.id}','${esc(u.callsign)}')">RE-APPROVE</button>
                             <button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>
@@ -1044,7 +1111,7 @@
         window.openEditUser = function(uid) {
             const u = allUsers.find(x=>x.id===uid); if(!u) return;
             // Title
-            document.getElementById('editModalTitle').textContent = 'EDIT OPERATIVE — '+(u.callsign||'UNKNOWN').toUpperCase();
+            document.getElementById('editModalTitle').textContent = 'EDIT OPERATIVE — ' + (formatMemberName(u) || (u.callsign||'UNKNOWN')).toUpperCase();
             document.getElementById('editUserId').value = uid;
             // Fields
             document.getElementById('editRankSelect').value = u.rank||'';

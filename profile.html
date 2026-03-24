@@ -21,6 +21,38 @@
 
         function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
+        const RANK_ABBR = {
+            'O9 / Lieutenant General':'LtGen','O8 / Major General':'MajGen','O7 / Brigadier General':'BGen',
+            'O6 / Colonel':'Col','O5 / Lieutenant Colonel':'LtCol','O4 / Major':'Maj',
+            'O3 / Captain':'Capt','O2 / First Lieutenant':'1stLt','O1 / Second Lieutenant':'2ndLt',
+            'E9 / Sergeant Major':'SgtMaj','E9 / Master Gunnery Sergeant':'MGySgt','E9 / First Sergeant':'1stSgt',
+            'E8 / Master Sergeant':'MSgt','E7 / Gunnery Sergeant':'GySgt','E6 / Staff Sergeant':'SSgt',
+            'E5 / Sergeant':'Sgt','E4 / Corporal':'Cpl','E3 / Lance Corporal':'LCpl',
+            'E2 / Private First Class':'PFC','E1 / Private':'Pvt',
+            'E9 / Master Chief Hospital Corpsman':'MCPO','E8 / Senior Chief Corpsman':'SCPO',
+            'E7 / Chief Corpsman':'CPO','E6 / Corpsman First Class':'HM1','E5 / Corpsman Second Class':'HM2',
+            'E4 / Corpsman Third Class':'HM3','E3 / Hospitalman':'HN','E2 / Hospitalman Apprentice':'HA',
+            'E6 / Technical Sergeant':'TSgt','E5 / Staff Sergeant':'SSgt',
+            'E4 / Senior Airman':'SrA','E3 / Airman First Class':'A1C','E2 / Airman':'Amn','E1 / Airman Basic':'AB',
+            'Reservist':'Res'
+        };
+        function getRankAbbr(rank){ return RANK_ABBR[rank]||(rank?rank.split('/').pop().trim():''); }
+        function formatMemberName(u){
+            if(!u) return '—';
+            const rankAbbr=getRankAbbr(u.rank||'');
+            const first=(u.firstName||'').trim();
+            const last=(u.lastName||'').trim();
+            const callsign=(u.callsign||'').trim();
+            const firstInit=first?first.charAt(0).toUpperCase()+'.':'';
+            const hasCallsign=callsign&&callsign!==first&&callsign!==(first+' '+last);
+            let name='';
+            if(firstInit) name+=firstInit+' ';
+            if(hasCallsign) name+='"'+callsign+'"';
+            else if(last) name+=last;
+            else if(callsign) name+='"'+callsign+'"';
+            return [rankAbbr,name.trim()].filter(Boolean).join(' ');
+        }
+
         function calcTimeInUnit(joinedAt) {
             if(!joinedAt) return 'N/A';
             const joined = new Date(joinedAt);
@@ -51,8 +83,8 @@
             const d = currentUserData;
 
             // ── Dossier Header ──
-            document.getElementById('hdrCallsign').textContent  = d.callsign || 'UNKNOWN';
-            document.getElementById('hdrRank').textContent      = d.rank || 'Unranked';
+            document.getElementById('hdrCallsign').textContent  = formatMemberName(d) || d.callsign || 'UNKNOWN';
+            document.getElementById('hdrRank').textContent      = d.rank ? getRankAbbr(d.rank)+' — '+d.rank.split('/').pop().trim() : 'Unranked';
             document.getElementById('hdrPlatoon').textContent   = d.platoon || '—';
             document.getElementById('hdrTimeUnit').textContent  = calcTimeInUnit(d.joinedAt);
             document.getElementById('hdrJoinDate').textContent  = d.joinedAt ? new Date(d.joinedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : 'Not Set';
