@@ -1613,7 +1613,27 @@
 
         window.removeUser = async function(uid, callsign) {
             if(!confirm('REMOVE '+callsign+'?')) return;
-            try { await deleteDoc(doc(db,'users',uid)); logAction('REMOVE',callsign); notify('REMOVED: '+callsign); allUsers=[]; loadAllUsers(); loadDashboard(); } catch(e){notify('ERROR',1);}
+            try {
+                const u = allUsers.find(x=>x.id===uid);
+                // Fire denied webhook if this was a pending registration
+                if(u?.status === 'pending') {
+                    const first = u.firstName||'';
+                    const mid   = u.middleName ? u.middleName.charAt(0).toUpperCase()+'.' : '';
+                    const last  = u.lastName||'';
+                    const name  = [first,mid,last].filter(Boolean).join(' ') || callsign;
+                    fireWebhook('denied', {
+                        name:     name,
+                        email:    u.email||'—',
+                        deniedBy: currentUserData?.callsign||'Staff'
+                    });
+                }
+                await deleteDoc(doc(db,'users',uid));
+                logAction('REMOVE',callsign);
+                notify('REMOVED: '+callsign);
+                allUsers=[];
+                loadAllUsers();
+                loadDashboard();
+            } catch(e){notify('ERROR',1);}
         };
         window.changeRole = async function(uid, role) {
             // Developers cannot assign or remove the commander role
@@ -1636,6 +1656,14 @@
                     updateData.graduation = today;
                     notify('RANK UPDATED — GRADUATION DATE AUTO-SET TO TODAY');
                 }
+                // Fire promote webhook
+                fireWebhook('promote', {
+                    name:      formatMemberName(u)||u.callsign||uid,
+                    fromRank:  u.rank||'—',
+                    toRank:    rank,
+                    note:      'Updated via Personnel Files (inline)',
+                    by:        currentUserData?.callsign||'Staff'
+                });
             }
             try {
                 await updateDoc(doc(db,'users',uid),updateData);
@@ -1845,12 +1873,26 @@
                 if(newRank.startsWith('E2') && !oldUser.graduation && !data.graduation) {
                     data.graduation = new Date().toISOString().split('T')[0];
                 }
+                fireWebhook('promote', {
+                    name:     formatMemberName(oldUser)||oldUser.callsign||uid,
+                    fromRank: oldUser.rank||'—',
+                    toRank:   newRank,
+                    note:     'Updated via Edit Operative modal',
+                    by:       currentUserData?.callsign||'Staff'
+                });
             }
             // Auto-log platoon transfer if platoon changed
             const newPlatoon = document.getElementById('editPlatoon').value;
             if(oldUser && newPlatoon && newPlatoon !== (oldUser.platoon||'')) {
                 const entry = {date:new Date().toISOString().split('T')[0],from:oldUser.platoon||'—',to:newPlatoon,note:'Updated via Personnel Files',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
                 data.platoonHistory = [...(oldUser.platoonHistory||[]), entry];
+                fireWebhook('platoon', {
+                    name: formatMemberName(oldUser)||oldUser.callsign||uid,
+                    from: oldUser.platoon||'—',
+                    to:   newPlatoon,
+                    note: 'Updated via Edit Operative modal',
+                    by:   currentUserData?.callsign||'Staff'
+                });
             }
             try {
                 await updateDoc(doc(db,'users',uid),data);
