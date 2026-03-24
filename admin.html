@@ -1096,6 +1096,8 @@
             ['histPromoFrom','histPromoTo','histPromoNote','histWarnNote','histCommendTitle','histCommendNote'].forEach(id=>{
                 const el=document.getElementById(id); if(el) el.value='';
             });
+            // Reset medal picker to Custom
+            document.querySelectorAll('#medalPickerGrid .medal-opt').forEach((o,i)=>o.classList.toggle('selected',i===0));
         }
 
         function renderHistoryList(containerId, entries, type) {
@@ -1112,7 +1114,10 @@
                     badge = `<span class="history-badge ${wc}">${e.severity||'MINOR'}</span>`;
                     detail = `<div>${esc(e.note||'—')}</div>`;
                 } else {
-                    badge = `<span class="history-badge badge-commend">&#9733; ${esc(e.title||'COMMENDATION')}</span>`;
+                    const medalImgHtml = e.medalImg
+                        ? `<img src="images/medal_emojis/${esc(e.medalImg)}" style="width:28px;height:28px;object-fit:contain;vertical-align:middle;margin-right:6px;filter:drop-shadow(0 0 4px rgba(167,139,250,.4))">`
+                        : '';
+                    badge = `<span class="history-badge badge-commend">${medalImgHtml}&#9733; ${esc(e.title||'COMMENDATION')}</span>`;
                     detail = `<div>${esc(e.note||'—')}</div>`;
                 }
                 const addedBy = e.addedBy ? `<div style="color:#555;font-size:8px;margin-top:2px">BY ${esc(e.addedBy)}</div>` : '';
@@ -1124,7 +1129,15 @@
             }).join('');
         }
 
-        window.addHistoryEntry = async function(type) {
+        window.selectMedal = function(el) {
+            document.querySelectorAll('#medalPickerGrid .medal-opt').forEach(o=>o.classList.remove('selected'));
+            el.classList.add('selected');
+            // Auto-fill title if a real medal selected
+            const name = el.dataset.name;
+            const titleEl = document.getElementById('histCommendTitle');
+            if(titleEl && el.dataset.medal) titleEl.value = name;
+            else if(titleEl && !el.dataset.medal) titleEl.value = '';
+        };
             const uid = document.getElementById('editUserId').value;
             const u   = allUsers.find(x=>x.id===uid); if(!u) return;
             let entry={}, fieldKey='';
@@ -1139,7 +1152,9 @@
                 if(!entry.note){notify('REASON IS REQUIRED',1);return;}
             } else {
                 fieldKey='commendationHistory';
-                entry={date:document.getElementById('histCommendDate').value||today,title:document.getElementById('histCommendTitle').value.trim(),note:document.getElementById('histCommendNote').value.trim(),addedBy:currentUserData?.callsign||'Staff',addedAt:new Date().toISOString()};
+                const selectedMedalEl = document.querySelector('#medalPickerGrid .medal-opt.selected');
+                const medalImg = selectedMedalEl?.dataset?.medal || '';
+                entry={date:document.getElementById('histCommendDate').value||today,title:document.getElementById('histCommendTitle').value.trim(),note:document.getElementById('histCommendNote').value.trim(),medalImg,addedBy:currentUserData?.callsign||'Staff',addedAt:new Date().toISOString()};
                 if(!entry.title){notify('AWARD TITLE IS REQUIRED',1);return;}
             }
             const updated = [...(u[fieldKey]||[]), entry];
@@ -2019,6 +2034,18 @@
         .badge-warn-major{color:#FF8C00;border-color:#FF8C0055}
         .badge-warn-final{color:#FF4444;border-color:#FF444455}
         .badge-commend{color:#a78bfa;border-color:#a78bfa55}
+        /* ── Medal Picker ── */
+        .medal-picker{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px 6px;border-bottom:1px solid rgba(0,217,255,.08)}
+        .medal-picker-label{width:100%;font-family:'Rajdhani',sans-serif;font-size:9px;letter-spacing:2px;color:rgba(0,217,255,.4);margin-bottom:4px}
+        .medal-opt{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 6px;border:1px solid transparent;transition:all .15s;min-width:54px}
+        .medal-opt img{width:36px;height:36px;object-fit:contain;opacity:.55;transition:opacity .15s}
+        .medal-opt span{font-family:'Rajdhani',sans-serif;font-size:7px;letter-spacing:.5px;color:#555;text-align:center;line-height:1.2;transition:color .15s}
+        .medal-opt:hover img,.medal-opt.selected img{opacity:1}
+        .medal-opt:hover{border-color:rgba(167,139,250,.3)}
+        .medal-opt.selected{border-color:#a78bfa;background:rgba(167,139,250,.08)}
+        .medal-opt.selected span{color:#a78bfa}
+        .medal-none-opt{font-size:9px;cursor:pointer;padding:4px 8px;border:1px solid transparent;color:#666;font-family:'Share Tech Mono',monospace;align-self:center;transition:all .15s;letter-spacing:1px}
+        .medal-none-opt:hover,.medal-none-opt.selected{border-color:rgba(0,217,255,.3);color:var(--accent)}
         .badge-auto{color:#555;border-color:#33333388;font-size:7px}
     </style>
 </head>
@@ -2185,9 +2212,48 @@
                             <span class="history-section-title" style="color:#a78bfa">&#9733; COMMENDATION / MEDAL HISTORY</span>
                         </div>
                         <div id="histCommendList"></div>
+                        <div class="medal-picker" id="medalPickerGrid">
+                            <div class="medal-picker-label">SELECT MEDAL / AWARD</div>
+                            <div class="medal-opt selected" data-medal="" data-name="Custom / No Medal" onclick="selectMedal(this)">
+                                <span style="font-size:18px;opacity:.4">✦</span>
+                                <span>CUSTOM</span>
+                            </div>
+                            <div class="medal-opt" data-medal="Medal of Honor Medal.png" data-name="Medal of Honor" onclick="selectMedal(this)">
+                                <img src="images/medal_emojis/Medal of Honor Medal.png" alt="Medal of Honor">
+                                <span>MEDAL OF HONOR</span>
+                            </div>
+                            <div class="medal-opt" data-medal="Navy Cross Medal.png" data-name="Navy Cross" onclick="selectMedal(this)">
+                                <img src="images/medal_emojis/Navy Cross Medal.png" alt="Navy Cross">
+                                <span>NAVY CROSS</span>
+                            </div>
+                            <div class="medal-opt" data-medal="Air Force Cross Medal.png" data-name="Air Force Cross" onclick="selectMedal(this)">
+                                <img src="images/medal_emojis/Air Force Cross Medal.png" alt="Air Force Cross">
+                                <span>AF CROSS</span>
+                            </div>
+                            <div class="medal-opt" data-medal="Silver Medal.png" data-name="Silver Star" onclick="selectMedal(this)">
+                                <img src="images/medal_emojis/Silver Medal.png" alt="Silver Star">
+                                <span>SILVER STAR</span>
+                            </div>
+                            <div class="medal-opt" data-medal="Bronze Star Medal.png" data-name="Bronze Star" onclick="selectMedal(this)">
+                                <img src="images/medal_emojis/Bronze Star Medal.png" alt="Bronze Star">
+                                <span>BRONZE STAR</span>
+                            </div>
+                            <div class="medal-opt" data-medal="Navy Achievement Medal.png" data-name="Navy Achievement Medal" onclick="selectMedal(this)">
+                                <img src="images/medal_emojis/Navy Achievement Medal.png" alt="Navy Achievement Medal">
+                                <span>NAVY ACHVMT</span>
+                            </div>
+                            <div class="medal-opt" data-medal="Air Force Achivement Medal.png" data-name="Air Force Achievement Medal" onclick="selectMedal(this)">
+                                <img src="images/medal_emojis/Air Force Achivement Medal.png" alt="Air Force Achievement Medal">
+                                <span>AF ACHVMT</span>
+                            </div>
+                            <div class="medal-opt" data-medal="POW Medal.png" data-name="POW Medal" onclick="selectMedal(this)">
+                                <img src="images/medal_emojis/POW Medal.png" alt="POW Medal">
+                                <span>POW MEDAL</span>
+                            </div>
+                        </div>
                         <div class="history-add-row">
                             <input type="date" id="histCommendDate">
-                            <input type="text" id="histCommendTitle" placeholder="Award / medal title..." style="max-width:160px">
+                            <input type="text" id="histCommendTitle" placeholder="Award / medal title...">
                             <input type="text" id="histCommendNote" placeholder="Reason / citation...">
                             <button class="history-add-btn" onclick="addHistoryEntry('commend')">+ ADD</button>
                         </div>
