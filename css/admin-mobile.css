@@ -182,8 +182,8 @@ html {
        Both header AND rows get the same columns now */
     #panel-roster .roster-scroll-wrap .roster-header,
     #panel-roster .roster-scroll-wrap .roster-row {
-        grid-template-columns: 1.6fr 1fr .8fr 1fr 1.4fr .8fr .65fr 1fr .45fr .75fr;
-        min-width: 900px;
+        grid-template-columns: 1.6fr 1fr .8fr 1fr 1.4fr .8fr .65fr 1fr 1.1fr;
+        min-width: 820px;
     }
     #panel-roster .roster-scroll-wrap .roster-cell:nth-child(n+3) { display: block; }
     #panel-roster .roster-scroll-wrap .roster-header div:nth-child(n+3) { display: block; }

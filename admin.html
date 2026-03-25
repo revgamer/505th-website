@@ -330,20 +330,36 @@
                         </div>
                     </div>
                     <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;color:#ccc">${calcPeriod(r.graduation)}</div>
-                    <div class="roster-cell">
-                        <div style="display:flex;align-items:center;gap:6px">
-                            <span style="${ptStyle}">${pt}</span>
-                            ${ptReady?`<button class="action-btn approve-btn small" onclick="promotePT('${r.id}')" style="font-size:8px;padding:2px 8px;animation:ptGlow 1s ease-in-out infinite">+1 PT</button>`:''}
-                        </div>
-                    </div>
-                    <div class="roster-cell" style="display:flex;gap:4px;flex-wrap:wrap">
-                        <button class="action-btn approve-btn small" onclick="openRosterEdit('${r.id}')">EDIT</button>
+                    <div class="roster-cell" style="display:flex;align-items:center;gap:6px">
+                        <span style="${ptStyle}">${pt}</span>
+                        ${ptReady?`<button class="action-btn approve-btn small" onclick="promotePT('${r.id}')" style="font-size:8px;padding:2px 8px;letter-spacing:1px;animation:ptGlow 1s ease-in-out infinite" title="Award +1 PT &amp; reset attendance">+1 PT</button>`:''}
                     </div>
                 </div>`;
             }).join('');
             // Ensure scroll-wrap is applied after data renders
             if(typeof window.applyRosterScrollWrap==='function') window.applyRosterScrollWrap();
+            // Populate the edit-member selector
+            const sel=document.getElementById('rosterEditSelect');
+            if(sel){
+                sel.innerHTML='<option value="">— SELECT PERSONNEL —</option>';
+                // Sort selector alphabetically by display name
+                const selSorted=[...rosterData].sort((a,b)=>(formatMemberName(a)||'').localeCompare(formatMemberName(b)||''));
+                selSorted.forEach(r=>{
+                    const opt=document.createElement('option');
+                    opt.value=r.id;
+                    opt.textContent=formatMemberName(r)||(r.callsign||r.id);
+                    sel.appendChild(opt);
+                });
+            }
         }
+
+        window.openRosterEditFromSelect=function(sel){
+            const id=sel.value;
+            if(!id)return;
+            openRosterEdit(id);
+            // Reset selector back to placeholder after opening modal
+            sel.value='';
+        };
 
         if(!document.getElementById('ptGlowStyle')){
             const s=document.createElement('style');s.id='ptGlowStyle';
@@ -407,6 +423,43 @@
                 else notify('MONTHLY ATTENDANCE RESET COMPLETE');
             }catch(e){console.warn('Monthly reset check:',e.message);}
         }
+
+        // ── Manual force month-end reset (staff/commander/developer only) ──
+        window.forceMonthlyReset=async function(){
+            const affected=rosterData.filter(r=>(r.attendance||0)>=3);
+            const msg=affected.length
+                ? `FORCE MONTH-END RESET?\n\n${affected.length} member(s) at 3/3 will receive +1 PT:\n${affected.map(r=>formatMemberName(r)).join('\n')}\n\nAll attendance will reset to 0.`
+                : 'FORCE MONTH-END RESET?\n\nNo members are currently at 3/3 — all attendance will be reset to 0.';
+            if(!confirm(msg)) return;
+            const btn=document.getElementById('forceResetBtn');
+            if(btn){btn.disabled=true;btn.textContent='PROCESSING...';}
+            try{
+                const now=new Date();
+                const currentMonth=now.getFullYear()+'-'+(now.getMonth()+1).toString().padStart(2,'0');
+                const snap=await getDocs(collection(db,'users'));
+                let promoted=0;
+                for(const d of snap.docs){
+                    const data=d.data();
+                    if(data.status==='pending'||data.status==='denied') continue;
+                    const att=data.attendance||0;
+                    const pt=data.promotionTracker||0;
+                    if(att>=3){
+                        await updateDoc(doc(db,'users',d.id),{promotionTracker:pt+1,attendance:0,updatedAt:now.toISOString()});
+                        promoted++;
+                    } else if(att>0){
+                        await updateDoc(doc(db,'users',d.id),{attendance:0,updatedAt:now.toISOString()});
+                    }
+                }
+                // Update the last-reset stamp so auto-reset won't double-fire this month
+                await setDoc(doc(db,'settings','roster_meta'),{lastAttendanceReset:currentMonth},{merge:true});
+                notify('MONTH-END RESET COMPLETE — '+promoted+' MEMBER(S) PROMOTED, ALL ATTENDANCE CLEARED');
+                await loadRosterPanel();
+            }catch(e){
+                notify('RESET FAILED: '+e.message,1);
+            }finally{
+                if(btn){btn.disabled=false;btn.textContent='&#9654; MONTH-END RESET';}
+            }
+        };
 
         window.openRosterEdit=function(id){
             const r=rosterData.find(x=>x.id===id);if(!r)return;
@@ -3229,6 +3282,13 @@
                     <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <button class="action-btn approve-btn" onclick="loadRosterPanel()">&#8635; REFRESH</button>
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
+                        ${P().promote?`<button id="forceResetBtn" class="action-btn" onclick="forceMonthlyReset()" style="border:1px solid rgba(255,200,0,.45);color:#FFD700;background:rgba(255,200,0,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer" title="Award +1 PT to all 3/3 members then wipe attendance — same as month-end auto-reset">&#9654; MONTH-END RESET</button>`:''}
+                        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.25);padding:4px 10px">
+                            <span style="color:#aaa;font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:2px;white-space:nowrap">&#9998; EDIT MEMBER:</span>
+                            <select id="rosterEditSelect" onchange="openRosterEditFromSelect(this)" style="background:transparent;border:none;color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;outline:none;cursor:pointer;min-width:140px">
+                                <option value="">— SELECT PERSONNEL —</option>
+                            </select>
+                        </div>
                         <div style="display:flex;gap:4px;margin-left:8px;align-items:center">
                             <span style="color:#aaa;font-family:Rajdhani,sans-serif;font-size:11px;letter-spacing:2px;margin-right:4px">SORT:</span>
                             <button class="roster-sort-btn" data-sort="name-asc" onclick="setRosterSort('name-asc')" style="background:rgba(0,217,255,.15);border:1px solid var(--accent);color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">NAME A→Z</button>
@@ -3237,12 +3297,12 @@
                             <button class="roster-sort-btn" data-sort="platoon-service" onclick="setRosterSort('platoon-service')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">PLATOON SERVICE</button>
                             <button class="roster-sort-btn" data-sort="time-in-unit" onclick="setRosterSort('time-in-unit')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">TIME IN UNIT</button>
                         </div>
-                        <span style="color:#ccc;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;margin-left:8px">&#9998; CHECKBOX = +1 ATT &nbsp;|&nbsp; 3/3 = GLOWING PT — STAFF CLICKS +1 PT TO PROMOTE &nbsp;|&nbsp; RESETS MONTHLY</span>
+                        <span style="color:#ccc;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;margin-left:8px">&#9998; CHECKBOX = +1 ATT &nbsp;|&nbsp; 3/3 = GLOWING PT — STAFF CLICKS +1 PT TO PROMOTE &nbsp;|&nbsp; RESETS MONTHLY &nbsp;|&nbsp; USE SELECTOR ABOVE TO EDIT A MEMBER</span>
                     </div>
                     <div class="roster-header">
                         <div>NAME</div><div>PLATOON</div><div>JOINED</div><div>PLATOON SERVICE</div>
                         <div>RANK / GRADE</div><div>GRADUATION</div><div>ATT.</div>
-                        <div>TIME IN UNIT</div><div>PT</div><div>ACTIONS</div>
+                        <div>TIME IN UNIT</div><div>PT</div>
                     </div>
                     <div id="rosterList"><div class="empty-state">LOADING...</div></div>
                 </div>
