@@ -28,7 +28,7 @@ html {
 @media (max-width: 768px) {
 
     /* ── TOP BAR ── */
-    .top-bar { padding: 8px 14px; }
+    .top-bar { padding: 8px 14px; backdrop-filter: none; }
     .top-bar-title { font-size: 13px; letter-spacing: 2px; }
     .hamburger { display: flex; align-items: center; justify-content: center; }
     .top-btn span.btn-label { display: none; }
@@ -40,9 +40,16 @@ html {
        2. visibility:hidden when closed (belt-and-suspenders)
        3. app-layout block — kills 240px flex reserve
        4. overscroll-behavior: contain — stops pull-to-refresh
-          leaking through the sidebar scroll                      */
+          leaking through the sidebar scroll
+       5. SOLID opaque background — no dashboard bleed-through    */
     .app-layout {
         display: block !important;
+        /* CRITICAL: Remove the stacking context so the sidebar
+           (position:fixed z:50) paints in the ROOT stacking context,
+           same as the backdrop (z:49). Without this, sidebar z:50
+           is trapped inside app-layout z:1 and the backdrop covers it. */
+        position: static !important;
+        z-index: auto !important;
     }
     .sidebar {
         position: fixed;
@@ -50,6 +57,7 @@ html {
         left: -260px;
         width: 260px;
         height: 100vh;
+        height: 100dvh;
         z-index: 50;
         transition: left .3s ease, visibility .3s ease;
         padding-top: 56px;
@@ -57,11 +65,39 @@ html {
         overscroll-behavior: contain;
         pointer-events: none;
         visibility: hidden;
+        /* Solid opaque background — override base .95 alpha */
+        background: #0A0E12 !important;
+        border-right: 1px solid rgba(0,217,255,.35);
     }
     .sidebar.open {
         left: 0;
         pointer-events: auto;
         visibility: visible;
+    }
+
+    /* Backdrop must cover everything behind sidebar */
+    .sidebar-backdrop {
+        z-index: 49;
+    }
+    .sidebar-backdrop.active {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.75);
+    }
+
+    /* Nav dropdowns — ensure tap targets work on touch */
+    .nav-header {
+        cursor: pointer;
+        -webkit-tap-highlight-color: rgba(0,217,255,.15);
+    }
+    .sub-links {
+        /* When parent .nav-item has .open, sub-links display via base CSS */
+    }
+    /* Ensure sub-link text is large enough to tap */
+    .sub-link {
+        padding: 10px 16px;
+        font-size: 13px;
     }
 
     /* Nav tooltips — hide on touch devices */
@@ -327,7 +363,11 @@ html {
     .top-btn { padding: 6px 10px; font-size: 9px; }
 
     /* Full-width sidebar slide */
-    .sidebar { width: 100%; left: -100%; }
+    .sidebar {
+        width: 100%;
+        left: -100%;
+        background: #0A0E12 !important;
+    }
 
     /* Tighter content padding */
     .main-content { padding: 12px 8px; }
