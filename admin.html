@@ -2746,9 +2746,11 @@
         .medal-none-opt:hover,.medal-none-opt.selected{border-color:rgba(0,217,255,.3);color:var(--accent)}
         .badge-auto{color:#555;border-color:#33333388;font-size:7px}
     </style>
+    <link rel="stylesheet" href="css/admin-mobile.css">
 </head>
 <body>
     <div class="scanlines"></div>
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
 
     <div class="notification" id="notification"></div>
     <div class="media-picker-modal" id="mediaPickerModal"><div class="picker-content"><div class="picker-header"><h3>SELECT MEDIA</h3><button class="picker-close" onclick="closeMediaPicker()">&times;</button></div><div class="picker-grid" id="pickerGrid"></div></div></div>
@@ -3133,7 +3135,7 @@
     </div>
 
     <div id="adminApp" class="hidden">
-        <div class="top-bar"><div class="top-bar-left"><button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button><img src="images/logo.png" alt="505th"><span class="top-bar-title">COMMAND TERMINAL_</span></div><div class="top-bar-right"><div class="user-identity"><div id="topbarName">---</div><div id="topbarRole">---</div></div><a href="profile.html" class="top-btn">&#9823; PROFILE</a><a href="home.html" class="top-btn">&#8962; HOME</a><button class="top-btn logout-btn" onclick="handleLogout()">&#9211; LOGOUT</button></div></div>
+        <div class="top-bar"><div class="top-bar-left"><button class="hamburger" onclick="toggleSidebar()">&#9776;</button><img src="images/logo.png" alt="505th"><span class="top-bar-title">COMMAND TERMINAL_</span></div><div class="top-bar-right"><div class="user-identity"><div id="topbarName">---</div><div id="topbarRole">---</div></div><a href="profile.html" class="top-btn">&#9823; PROFILE</a><a href="home.html" class="top-btn">&#8962; HOME</a><button class="top-btn logout-btn" onclick="handleLogout()">&#9211; LOGOUT</button></div></div>
         <div class="app-layout">
             <div class="sidebar" id="sidebar">
                 <div class="dash-link" onclick="showPanel('panel-dashboard')"><span class="nav-icon">&#9632;</span> DASHBOARD</div>
@@ -3646,6 +3648,46 @@
         </div>
     </div>
     
+    <!-- Mobile sidebar helpers -->
+    <script>
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const bd = document.getElementById('sidebarBackdrop');
+            const isOpen = sb.classList.toggle('open');
+            bd.classList.toggle('active', isOpen);
+        }
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarBackdrop').classList.remove('active');
+        }
+        // Close sidebar when a panel sub-link is tapped on mobile
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('.sub-link, .dash-link');
+            if (link && window.innerWidth <= 768) closeSidebar();
+        });
+
+        // Roster scroll wrap — applied after renderRoster / loadAdminRoster
+        // Wraps #rosterList content in a horizontal scroll container on mobile
+        function applyRosterScrollWrap() {
+            const panel = document.getElementById('panel-roster');
+            if (!panel) return;
+            const existing = panel.querySelector('.roster-scroll-wrap');
+            if (existing) return; // already wrapped
+            const list = panel.querySelector('#rosterList');
+            if (!list) return;
+            const wrap = document.createElement('div');
+            wrap.className = 'roster-scroll-wrap';
+            list.parentNode.insertBefore(wrap, list);
+            wrap.appendChild(list);
+        }
+        // Observe the roster panel for content changes
+        const rosterPanelObs = new MutationObserver(applyRosterScrollWrap);
+        document.addEventListener('DOMContentLoaded', function() {
+            const rp = document.getElementById('panel-roster');
+            if (rp) rosterPanelObs.observe(rp, { childList: true, subtree: true });
+        });
+    </script>
+
     <!-- Vercel Speed Insights -->
         <!-- Vercel Speed Insights -->
     <script>

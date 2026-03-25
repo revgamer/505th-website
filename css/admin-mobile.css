@@ -1,0 +1,236 @@
+/* ================================================================
+   505th Admin Panel — Mobile Responsive Patch
+   Link AFTER the inline <style> block in admin.html:
+   <link rel="stylesheet" href="css/admin-mobile.css">
+   ================================================================ */
+
+/* ── SIDEBAR OVERLAY BACKDROP ─────────────────────────────────── */
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.65);
+    z-index: 49;
+}
+.sidebar-backdrop.active { display: block; }
+
+/* ── 768px — Tablet / Mobile breakpoint ───────────────────────── */
+@media (max-width: 768px) {
+
+    /* TOP BAR */
+    .top-bar { padding: 8px 14px; }
+    .top-bar-title { font-size: 13px; letter-spacing: 2px; }
+    .hamburger { display: flex; align-items: center; justify-content: center; }
+    /* Hide text labels on small screens, keep icon buttons */
+    .top-btn span.btn-label { display: none; }
+    .user-identity #topbarName { font-size: 11px; }
+    .user-identity #topbarRole { font-size: 8px; }
+
+    /* SIDEBAR — slides in from left */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -260px;
+        width: 260px;
+        height: 100vh;
+        z-index: 50;
+        transition: left .3s ease;
+        padding-top: 56px;
+        overflow-y: auto;
+    }
+    .sidebar.open { left: 0; }
+
+    /* MAIN CONTENT — full width when sidebar is hidden */
+    .main-content {
+        padding: 16px 12px;
+        width: 100%;
+    }
+
+    /* ── DASHBOARD STATS ROW ── */
+    .stats-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+    .stat-number { font-size: 24px; }
+    .stat-label { font-size: 8px; }
+
+    /* ── DASH GRID (pending / recent) ── */
+    .dash-grid { grid-template-columns: 1fr; gap: 10px; }
+
+    /* ── PANEL TITLE ── */
+    .panel-title { font-size: 16px; letter-spacing: 2px; }
+
+    /* ── USER CARDS (register / active panels) ── */
+    .user-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 12px;
+    }
+    .user-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+    .user-actions .action-btn,
+    .user-actions .upload-btn { font-size: 11px; padding: 7px 12px; flex: 1; text-align: center; }
+
+    /* ── USER TABLE (register panel grid) ── */
+    .table-header, .table-row {
+        grid-template-columns: 1fr 1fr;
+        font-size: 9px;
+    }
+
+    /* ── ROSTER PANEL ── */
+    /* Wrap the roster grid in a horizontal scroll container */
+    #panel-roster .roster-scroll-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .roster-header,
+    .roster-row {
+        grid-template-columns: 1.6fr 1fr;
+        font-size: 8px;
+    }
+    .roster-cell:nth-child(n+3) { display: none; }
+    /* Restore all columns inside the scroll wrap */
+    #panel-roster .roster-scroll-wrap .roster-header,
+    #panel-roster .roster-scroll-wrap .roster-row {
+        grid-template-columns: 1.6fr 1fr .8fr 1fr 1.4fr .8fr .65fr 1fr .45fr .75fr;
+        min-width: 900px;
+    }
+    #panel-roster .roster-scroll-wrap .roster-cell:nth-child(n+3) { display: block; }
+
+    /* ── AUDIT LOG ── */
+    .audit-entry, .audit-header {
+        grid-template-columns: 1fr;
+        font-size: 9px;
+        gap: 2px;
+    }
+    .audit-time { color: rgba(0,217,255,.5); font-size: 8px; }
+
+    /* ── UPLOAD AREA ── */
+    .upload-row { flex-direction: column; gap: 10px; }
+    .upload-field { width: 100%; }
+    .upload-field input,
+    .upload-field select,
+    .upload-field textarea {
+        font-size: 14px !important;
+        padding: 10px 12px !important;
+    }
+    .upload-btn { width: 100%; text-align: center; padding: 11px 16px; font-size: 13px; }
+
+    /* ── SETTINGS: WEBHOOK GRID ── */
+    /* The 3-col grid (label / input / TEST) stacks to single column */
+    div[style*="grid-template-columns:200px 1fr auto"] {
+        display: flex !important;
+        flex-direction: column;
+        gap: 6px !important;
+    }
+    div[style*="grid-template-columns:200px 1fr auto"] .action-btn {
+        align-self: flex-start;
+    }
+
+    /* ── RECRUIT SOURCE PANEL ── */
+    div[style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ── EDIT MODAL ── */
+    .edit-modal-content {
+        width: 96% !important;
+        max-width: none !important;
+        padding: 16px !important;
+        max-height: 92vh;
+    }
+    #editUserModal .edit-modal-content {
+        max-width: 96% !important;
+    }
+    /* Stack the 2-col details grid to 1 col */
+    #editPane-details > div[style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+    #editPane-details .edit-field[style*="grid-column:1/-1"] {
+        grid-column: 1 !important;
+    }
+    .edit-tabs { gap: 0; }
+    .edit-tab { font-size: 11px; padding: 8px 12px; letter-spacing: 1px; }
+    .edit-modal-actions { flex-wrap: wrap; }
+    .edit-modal-actions .action-btn { flex: 1; text-align: center; }
+
+    /* ── HISTORY ADD ROW ── */
+    .history-add-row {
+        flex-direction: column;
+        gap: 6px;
+    }
+    .history-add-row input,
+    .history-add-row select {
+        width: 100% !important;
+        max-width: none !important;
+        font-size: 13px !important;
+        padding: 8px 10px !important;
+    }
+    .history-add-btn { width: 100%; padding: 8px; font-size: 12px; }
+
+    /* ── ROSTER MODAL GRID ── */
+    #rosterModal .edit-modal-content div[style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ── MEDIA GRID ── */
+    .media-grid-v2 { grid-template-columns: 1fr; }
+    .media-thumb-v2 { height: 200px; }
+
+    /* ── AAR FORM ── */
+    #panel-aar div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ── NOTIFICATION TOAST ── */
+    .notification { right: 10px; left: 10px; font-size: 10px; text-align: center; }
+
+    /* ── UNIT CARDS ── */
+    #panel-unitcards div[style*="display:grid"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ── ACTION BUTTONS — min tap target ── */
+    .action-btn, .upload-btn, .top-btn {
+        min-height: 40px;
+    }
+    .action-btn.small { min-height: 32px; }
+}
+
+/* ── 480px — Small phone ──────────────────────────────────────── */
+@media (max-width: 480px) {
+
+    .top-bar-title { font-size: 11px; letter-spacing: 1px; }
+    .top-bar-right { gap: 6px; }
+
+    /* Stats row: single column on very small phones */
+    .stats-row { grid-template-columns: 1fr; }
+
+    /* Sidebar takes full width on smallest screens */
+    .sidebar { width: 100%; left: -100%; }
+
+    .main-content { padding: 12px 8px; }
+
+    /* Edit modal full screen feel */
+    .edit-modal-content {
+        width: 100% !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+    }
+
+    /* Medal picker scrollable on small screens */
+    .medal-picker { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; }
+    .medal-opt { min-width: 50px; flex-shrink: 0; }
+
+    /* Filter bar in roster/register panels */
+    .filter-bar, div[style*="display:flex"][style*="gap:8px"] {
+        flex-direction: column;
+    }
+    input[type="text"][placeholder*="SEARCH"],
+    input[type="text"][placeholder*="search"] {
+        width: 100%;
+    }
+}
