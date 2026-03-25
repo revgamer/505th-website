@@ -147,9 +147,32 @@
         }
         .roster-notice a:hover { text-decoration:underline; }
 
-        @media(max-width:600px) {
-            .roster-table th:nth-child(n+5),
-            .roster-table td:nth-child(n+5) { display:none; }
+        /* ── MOBILE: scroll the table, don't hide columns ── */
+        @media(max-width:768px) {
+            .roster-table-wrap {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                border: 1px solid rgba(0,217,255,.08);
+            }
+            /* Force min-width so the wrapper scrolls instead of squashing columns */
+            .roster-table {
+                min-width: 720px;
+            }
+            /* Tighten cell padding to save space */
+            .roster-table th,
+            .roster-table td {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+            .roster-table td.name-cell { font-size: 13px; }
+            /* Stat strip: compact on small screens */
+            .stat-strip { gap: 8px; }
+            .stat-pill { padding: 8px 12px; }
+            .stat-pill .val { font-size: 20px; }
+            /* Filter bar: stack inputs vertically */
+            .filter-bar { flex-direction: column; }
+            .filter-bar input,
+            .filter-bar select { width: 100%; box-sizing: border-box; min-width: unset; }
         }
     </style>
 </head>
@@ -211,7 +234,7 @@
                         <span class="section-icon"><img src="images/icons/Resources.png" alt="" style="width:24px;height:24px;"></span>
                         <span>RESOURCES</span><span class="submenu-arrow">▼</span>
                     </div>
-                                                            <div class="submenu" id="submenu-resources">
+                    <div class="submenu" id="submenu-resources">
                         <a href="resources-discord-rules.html" class="submenu-item"><span class="submenu-bullet">▸</span>Discord Rules</a>
                         <a href="resources-handbook.html" class="submenu-item"><span class="submenu-bullet">▸</span>General Handbook</a>
                         <a href="resources-hospital-corps-handbook.html" class="submenu-item"><span class="submenu-bullet">▸</span>Hospital Corps Handbook</a>
@@ -525,9 +548,11 @@
     </script>
     
     <!-- Vercel Speed Insights -->
+        <!-- Vercel Speed Insights -->
     <script>
         window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/speed-insights/script.js"></script>
+    <script type="module" src="js/speed-insights.js"></script>
 </body>
 </html>
