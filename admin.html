@@ -1993,10 +1993,15 @@
                 <div class="upload-field" style="border-bottom:1px solid rgba(0,217,255,.07);padding-bottom:14px;margin-bottom:14px">
                     <label style="display:block;margin-bottom:6px">${slot.label}</label>
                     <div class="image-preview" id="prev-${key}" style="margin-bottom:8px">${val.url?`<img src="${val.url}" style="max-width:200px;max-height:120px;object-fit:cover;" onerror="this.style.display='none'">`:'<span style="color:#555;font-size:10px;letter-spacing:1px">NO IMAGE SET</span>'}</div>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap">
-                        <button class="upload-btn" onclick="openMediaPicker('${key}','image')" style="font-size:9px;padding:5px 12px">SELECT IMAGE</button>
-                        <button class="action-btn remove-btn" onclick="removePageImage('${key}','${pageId}')" style="font-size:9px;padding:5px 12px">REMOVE IMAGE</button>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                        <label class="upload-btn" style="font-size:9px;padding:5px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+                            &#8679; UPLOAD IMAGE
+                            <input type="file" accept="image/*" style="display:none" onchange="commsUploadFile(this,'${key}')">
+                        </label>
+                        <button class="action-btn approve-btn" onclick="openCommsPicker('${key}')" style="font-size:9px;padding:5px 12px;letter-spacing:1px">&#9776; COMMS LIBRARY</button>
+                        <button class="action-btn remove-btn" onclick="removePageImage('${key}','${pageId}')" style="font-size:9px;padding:5px 12px">REMOVE</button>
                     </div>
+                    <div id="comms-upload-status-${key}" style="font-size:9px;letter-spacing:1px;color:var(--accent);margin-top:6px;min-height:14px"></div>
                 </div>`;
 
                 if(slot.type==='video') return `
@@ -2099,6 +2104,69 @@
             document.getElementById('mediaPickerModal').classList.remove('active');
         };
         window.closeMediaPicker = function(){ document.getElementById('mediaPickerModal').classList.remove('active'); };
+
+        // ── PUBLIC COMMS — own image storage (comms_media collection) ────────
+        window.commsUploadFile = async function(input, key) {
+            const file = input.files[0]; if(!file) return;
+            const statusEl = document.getElementById('comms-upload-status-'+key);
+            if(statusEl) statusEl.textContent = 'UPLOADING...';
+            try {
+                const fd = new FormData();
+                fd.append('file', file);
+                fd.append('upload_preset', UPLOAD_PRESET);
+                fd.append('cloud_name', CLOUD_NAME);
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {method:'POST',body:fd});
+                const data = await res.json();
+                if(!data.secure_url) throw new Error(data.error?.message||'Upload failed');
+                const url = data.secure_url;
+                await addDoc(collection(db,'comms_media'),{
+                    url,
+                    name: file.name.replace(/\.[^.]+$/,''),
+                    uploadedAt: new Date().toISOString(),
+                    uploadedBy: currentUserData?.callsign||'unknown'
+                });
+                if(!pageContentData[key]) pageContentData[key]={};
+                pageContentData[key].url = url;
+                const prev = document.getElementById('prev-'+key);
+                if(prev) prev.innerHTML=`<img src="${url}" style="max-width:200px;max-height:120px;object-fit:cover;">`;
+                if(statusEl) statusEl.textContent = 'UPLOADED ✓';
+                setTimeout(()=>{ if(statusEl) statusEl.textContent=''; }, 3000);
+                notify('COMMS IMAGE UPLOADED');
+            } catch(e) {
+                if(statusEl) statusEl.textContent = 'UPLOAD FAILED: '+e.message;
+                notify('UPLOAD FAILED: '+e.message, 1);
+            }
+            input.value='';
+        };
+
+        window.openCommsPicker = function(key) {
+            window._pickerTarget = key;
+            const grid = document.getElementById('pickerGrid');
+            grid.innerHTML = '<div class="empty-state">LOADING...</div>';
+            const title = document.querySelector('#mediaPickerModal .picker-header h3');
+            if(title) title.textContent = 'COMMS LIBRARY';
+            document.getElementById('mediaPickerModal').classList.add('active');
+            getDocs(query(collection(db,'comms_media'),orderBy('uploadedAt','desc'))).then(snap=>{
+                const items=[]; snap.forEach(d=>items.push({id:d.id,...d.data()}));
+                grid.innerHTML = items.map(m=>`
+                    <div class="picker-item" onclick="selectCommsMedia('${m.id}','${m.url}')">
+                        <img src="${m.url}" loading="lazy">
+                        <div class="picker-name">${esc(m.name||'')}</div>
+                    </div>`).join('') || '<div class="empty-state">NO COMMS IMAGES — UPLOAD ONE FIRST</div>';
+            }).catch(()=>{ grid.innerHTML='<div class="empty-state">ERROR</div>'; });
+        };
+
+        window.selectCommsMedia = function(id, url) {
+            const key = window._pickerTarget; if(!key) return;
+            if(!pageContentData[key]) pageContentData[key]={};
+            pageContentData[key].url = url;
+            pageContentData[key].mediaId = id;
+            const prev = document.getElementById('prev-'+key);
+            if(prev) prev.innerHTML=`<img src="${url}" style="max-width:200px;max-height:120px;object-fit:cover;">`;
+            document.getElementById('mediaPickerModal').classList.remove('active');
+            const title = document.querySelector('#mediaPickerModal .picker-header h3');
+            if(title) title.textContent = 'SELECT MEDIA';
+        };
 
         window.loadMedia = async function(type) {
             const gridId=type==='image'?'galleryGrid':'videoGrid';
