@@ -55,9 +55,20 @@ function applyCmsSlots(content, pageId) {
         if (slotType === 'image') {
             const url = typeof value === 'string' ? value : value.url;
             if (!url) return;
-            el.innerHTML = '<img src="' + url + '" alt="' + (value.name || slotId) + '" style="width:100%;height:100%;object-fit:cover;">';
-            el.style.background = 'none';
-            el.style.border = 'none';
+            // FIX: Use Image() with onload so the container only becomes visible
+            // after the image has actually loaded — prevents empty blue box on mobile
+            const img = new Image();
+            img.alt = value.name || slotId;
+            img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+            img.onload = () => {
+                el.innerHTML = '';
+                el.appendChild(img);
+                el.style.background = 'none';
+                el.style.border = '1px solid rgba(0,217,255,.15)';
+                el.style.display = 'block';
+            };
+            img.onerror = () => { /* stay hidden — no broken image box */ };
+            img.src = url;
 
         } else if (slotType === 'video') {
             const url = typeof value === 'string' ? value : value.url;
