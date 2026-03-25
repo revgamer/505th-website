@@ -128,7 +128,12 @@
         font-size: 14px !important;
         padding: 10px 12px !important;
     }
-    .upload-btn { width: 100%; text-align: center; padding: 11px 16px; font-size: 13px; }
+    /* upload-btn: full-width only when standalone, not in flex button pairs */
+    .upload-btn { text-align: center; padding: 11px 16px; font-size: 13px; min-width: 120px; }
+    .upload-area > .upload-btn { width: 100%; }
+    /* Button pairs (SELECT/REMOVE, SAVE/CLEAR) stay side by side */
+    div[style*="display:flex"][style*="gap:6px"] .upload-btn,
+    div[style*="display:flex"][style*="gap:8px"] .upload-btn { width: auto; flex: 1; }
 
     /* ── SETTINGS: WEBHOOK GRID ── */
     div[style*="grid-template-columns:200px 1fr auto"] {

@@ -1937,7 +1937,7 @@
                 if(slot.type==='image') return `
                 <div class="upload-field" style="border-bottom:1px solid rgba(0,217,255,.07);padding-bottom:14px;margin-bottom:14px">
                     <label style="display:block;margin-bottom:6px">${slot.label}</label>
-                    <div class="image-preview" id="prev-${key}" style="margin-bottom:8px">${val.url?`<img src="${val.url}" style="max-width:200px;max-height:120px;object-fit:cover;">`:'<span style="color:#555;font-size:10px;letter-spacing:1px">NO IMAGE SET</span>'}</div>
+                    <div class="image-preview" id="prev-${key}" style="margin-bottom:8px">${val.url?`<img src="${val.url}" style="max-width:200px;max-height:120px;object-fit:cover;" onerror="this.style.display='none'">`:'<span style="color:#555;font-size:10px;letter-spacing:1px">NO IMAGE SET</span>'}</div>
                     <div style="display:flex;gap:6px;flex-wrap:wrap">
                         <button class="upload-btn" onclick="openMediaPicker('${key}','image')" style="font-size:9px;padding:5px 12px">SELECT IMAGE</button>
                         <button class="action-btn remove-btn" onclick="removePageImage('${key}','${pageId}')" style="font-size:9px;padding:5px 12px">REMOVE IMAGE</button>
