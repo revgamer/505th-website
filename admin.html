@@ -794,6 +794,7 @@
             if (id==='panel-dashboard')   loadDashboard();
             if (id==='panel-gallery')     loadMedia('image');
             if (id==='panel-videos')      loadMedia('video');
+            if (id==='panel-comms-library') loadCommsLibrary();
             if (id==='panel-aar')         loadAARPanel();
             if (id==='panel-roster')      loadRosterPanel();
             if (id==='panel-attendance')  loadAttendancePanel();
@@ -2168,6 +2169,88 @@
             if(title) title.textContent = 'SELECT MEDIA';
         };
 
+        // ── COMMS LIBRARY PANEL ──────────────────────────────────────────────
+        window.loadCommsLibrary = async function() {
+            const grid = document.getElementById('commsLibGrid');
+            const countEl = document.getElementById('commsLibCount');
+            if(!grid) return;
+            grid.innerHTML = '<div class="empty-state">LOADING...</div>';
+            try {
+                const snap = await getDocs(query(collection(db,'comms_media'), orderBy('uploadedAt','desc')));
+                const items = []; snap.forEach(d => items.push({id:d.id,...d.data()}));
+                if(countEl) countEl.textContent = items.length;
+                if(!items.length) { grid.innerHTML='<div class="empty-state">NO IMAGES IN COMMS LIBRARY — UPLOAD ONE ABOVE OR VIA A PAGE EDITOR</div>'; return; }
+                grid.innerHTML = items.map(m => {
+                    const date = m.uploadedAt ? new Date(m.uploadedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+                    return `<div class="media-card-v2">
+                        <div class="media-thumb-v2"><img src="${m.url}" loading="lazy"></div>
+                        <div class="media-body-v2">
+                            <div class="media-name-v2">${esc(m.name||'Untitled')}</div>
+                            <div class="media-meta-v2">
+                                <span style="font-size:8px;letter-spacing:1px;color:#aaa">${esc(m.uploadedBy||'—')}</span>
+                                <span>${date}</span>
+                            </div>
+                            <div class="media-actions-v2">
+                                <button class="action-btn approve-btn small" onclick="commsLibCopyUrl('${m.url}')" title="Copy URL to clipboard">&#128203; COPY URL</button>
+                                <button class="action-btn remove-btn small" onclick="commsLibDelete('${m.id}')">DELETE</button>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch(e) { grid.innerHTML=`<div class="empty-state">ERROR: ${esc(e.message)}</div>`; }
+        };
+
+        window.commsLibHandleUpload = async function() {
+            const input = document.getElementById('commsLibUploadFile');
+            const nameInput = document.getElementById('commsLibUploadName');
+            const statusEl = document.getElementById('commsLibUploadStatus');
+            const btn = document.getElementById('commsLibUploadBtn');
+            if(!input.files.length) { notify('SELECT AT LEAST ONE IMAGE',1); return; }
+            btn.disabled = true;
+            const files = Array.from(input.files);
+            let done = 0;
+            for(const file of files) {
+                if(statusEl) statusEl.textContent = `UPLOADING ${done+1}/${files.length} — ${file.name}`;
+                try {
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    fd.append('upload_preset', UPLOAD_PRESET);
+                    fd.append('cloud_name', CLOUD_NAME);
+                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {method:'POST',body:fd});
+                    const data = await res.json();
+                    if(!data.secure_url) throw new Error(data.error?.message||'Upload failed');
+                    const label = files.length===1 && nameInput.value.trim() ? nameInput.value.trim() : file.name.replace(/\.[^.]+$/,'');
+                    await addDoc(collection(db,'comms_media'),{
+                        url: data.secure_url, name: label,
+                        uploadedAt: new Date().toISOString(),
+                        uploadedBy: currentUserData?.callsign||'unknown'
+                    });
+                    done++;
+                } catch(e) {
+                    notify('FAILED: '+file.name+' — '+e.message, 1);
+                }
+            }
+            if(statusEl) statusEl.textContent = done+' IMAGE(S) UPLOADED ✓';
+            setTimeout(()=>{ if(statusEl) statusEl.textContent=''; }, 3000);
+            input.value=''; nameInput.value='';
+            btn.disabled = false;
+            notify('COMMS LIBRARY: '+done+' IMAGE(S) UPLOADED');
+            loadCommsLibrary();
+        };
+
+        window.commsLibCopyUrl = function(url) {
+            navigator.clipboard.writeText(url).then(()=>notify('URL COPIED TO CLIPBOARD')).catch(()=>notify('COPY FAILED',1));
+        };
+
+        window.commsLibDelete = async function(id) {
+            if(!confirm('DELETE THIS IMAGE FROM COMMS LIBRARY?\n\nNote: If it is currently set on a page slot, that slot will show as broken until a new image is selected.')) return;
+            try {
+                await deleteDoc(doc(db,'comms_media',id));
+                notify('IMAGE DELETED FROM COMMS LIBRARY');
+                loadCommsLibrary();
+            } catch(e) { notify('DELETE FAILED: '+e.message, 1); }
+        };
+
         window.loadMedia = async function(type) {
             const gridId=type==='image'?'galleryGrid':'videoGrid';
             const countId=type==='image'?'galleryCount':'videoCount';
@@ -2975,7 +3058,7 @@
                 <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> MANPOWER <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">MANPOWER</div><div class="nav-tip-body">Manage all unit personnel. Review active member files, edit ranks &amp; roles, and process new enlistment applications.</div></div></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 2px 8px">EXISTING MEMBERS</div><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">&#9998; Personnel Files</div><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:8px 0 2px 8px;border-top:1px solid rgba(0,217,255,.08);margin-top:4px">NEW MEMBERS</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')" style="display:flex;align-items:center;justify-content:space-between">&#9993; Enlistment Queue<span id="enlistmentBadge" style="display:none;background:#f59e0b;color:#000;font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;padding:1px 6px;letter-spacing:1px;flex-shrink:0">0</span></div></div></div>
                 <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> BATTALION OPS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">BATTALION OPS</div><div class="nav-tip-body">Operational records for the unit. Submit After Action Reports, manage Battalion Roster strength, and maintain Unit Cards on the Order of Battle.</div></div></div><div class="sub-links"><div id="navlink-attendance" class="sub-link" data-panel="panel-attendance" onclick="showPanel('panel-attendance')">&#9635; Attendance Tracker</div><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div><div class="sub-link" data-panel="panel-unitcards" onclick="showPanel('panel-unitcards')">Unit Cards</div><div class="sub-link" data-panel="panel-recruit-source" onclick="showPanel('panel-recruit-source')">&#9650; Recruitment Source</div></div></div>
                 <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> INTEL ARCHIVE <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
-                <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PUBLIC COMMS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">PUBLIC COMMS</div><div class="nav-tip-body">Edit content displayed on public-facing unit pages — photos, sliders, descriptions and section headers visible to recruits and visitors.</div></div></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">ABOUT US</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div></div></div>
+                <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PUBLIC COMMS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">PUBLIC COMMS</div><div class="nav-tip-body">Edit content displayed on public-facing unit pages — photos, sliders, descriptions and section headers visible to recruits and visitors.</div></div></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">ABOUT US</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:10px 0 3px 4px">MEDIA</div><div class="sub-link" data-panel="panel-comms-library" onclick="showPanel('panel-comms-library')">&#9776; Comms Library</div></div></div>
                 <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> DISCORD &amp; NETWORK <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">DISCORD &amp; NETWORK</div><div class="nav-tip-body">Configure Discord invite link, webhook notifications, and Cortana bot integration for the unit.</div></div></div><div class="sub-links"><div id="navlink-discord" class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div id="navlink-webhooks" class="sub-link" data-panel="panel-webhooks" onclick="showPanel('panel-webhooks')">Discord Webhooks</div><div id="navlink-discord-tracking" class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Cortana Bot Integration</div></div></div>
                 <hr class="sidebar-divider">
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
@@ -3209,6 +3292,25 @@
                 <div class="panel hidden" id="panel-page-stalker"><div class="panel-title">JTF FORCE RECON</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">SLIDER HEADER + PHOTO SLIDER (3) + CARDS HEADER + 3 EQUIPMENT CARDS</p><div class="page-editor-container" data-page="about-stalker"></div></div>
                 <div class="panel hidden" id="panel-page-corpsman"><div class="panel-title">HOSPITAL CORPSMAN</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">SLIDER HEADER + PHOTO SLIDER (3) + CARDS HEADER + 3 EQUIPMENT CARDS</p><div class="page-editor-container" data-page="about-corpsman"></div></div>
                 <div class="panel hidden" id="panel-page-54th"><div class="panel-title">54TH AIR WING</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">SLIDER HEADER + PHOTO SLIDER (3) + CARDS HEADER + 3 AIR ASSET CARDS</p><div class="page-editor-container" data-page="about-54th"></div></div>
+
+                <div class="panel hidden" id="panel-comms-library">
+                    <div class="panel-title">COMMS LIBRARY</div>
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PUBLIC COMMS IMAGE STORAGE — SEPARATE FROM INTEL ARCHIVE // USED BY PAGE EDITORS ONLY</p>
+                    <div class="upload-area" style="margin-bottom:16px">
+                        <div style="color:rgba(0,217,255,.5);font-size:9px;letter-spacing:3px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)">UPLOAD NEW IMAGE</div>
+                        <div class="upload-row">
+                            <div class="upload-field"><label>SELECT IMAGE FROM COMPUTER</label><input type="file" id="commsLibUploadFile" multiple accept="image/*"></div>
+                            <div class="upload-field" style="max-width:220px"><label>LABEL (optional)</label><input type="text" id="commsLibUploadName" placeholder="e.g. Alpha Company Slider 1"></div>
+                            <button class="upload-btn" id="commsLibUploadBtn" onclick="commsLibHandleUpload()">UPLOAD</button>
+                        </div>
+                        <div id="commsLibUploadStatus" style="margin-top:8px;font-size:9px;letter-spacing:2px;color:var(--accent)"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                        <div style="color:#aaa;font-size:10px;letter-spacing:2px"><span id="commsLibCount" style="color:var(--accent)">0</span> IMAGES</div>
+                        <button class="action-btn approve-btn" onclick="loadCommsLibrary()">&#8635; REFRESH</button>
+                    </div>
+                    <div class="media-grid-v2" id="commsLibGrid"><div class="empty-state">LOADING...</div></div>
+                </div>
                 
                 <div class="panel hidden" id="panel-discord"><div class="panel-title">DISCORD INVITE LINK</div><div class="upload-area"><p style="color:#ccc;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:500;letter-spacing:1px;margin-bottom:12px">CHANGE ONCE — ALL PAGES UPDATE AUTOMATICALLY</p><div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap"><div style="color:#bbb;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:600;letter-spacing:2px">CURRENT: <a id="currentDiscordLink" href="#" target="_blank" style="color:#FF6B6B;text-decoration:none;letter-spacing:2px">NOT SET</a></div><span id="discordStatusBadge" style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:3px 10px;border:1px solid #555;color:#555;display:none"></span><button onclick="checkDiscordInvite(document.getElementById('discordLinkInput').value)" style="background:none;border:1px solid rgba(0,217,255,.35);color:rgba(0,217,255,.7);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;padding:3px 10px;cursor:pointer" id="discordCheckBtn">↺ RE-CHECK</button></div><div class="upload-row"><div class="upload-field"><input type="url" id="discordLinkInput" placeholder="https://discord.gg/XXXXXXXX"></div><button class="upload-btn" onclick="saveDiscordLink()">SAVE LINK</button></div></div></div>
                 <div class="panel hidden" id="panel-aar">
