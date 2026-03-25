@@ -3376,17 +3376,19 @@
         });
 
         // Roster scroll wrap — applied after renderRoster / loadAdminRoster
-        // Wraps #rosterList content in a horizontal scroll container on mobile
+        // Wraps BOTH .roster-header AND #rosterList inside a single
+        // horizontal-scroll container so columns stay aligned on mobile.
         function applyRosterScrollWrap() {
             const panel = document.getElementById('panel-roster');
             if (!panel) return;
-            const existing = panel.querySelector('.roster-scroll-wrap');
-            if (existing) return; // already wrapped
-            const list = panel.querySelector('#rosterList');
-            if (!list) return;
+            if (panel.querySelector('.roster-scroll-wrap')) return; // already wrapped
+            const header = panel.querySelector('.roster-header');
+            const list   = panel.querySelector('#rosterList');
+            if (!header || !list) return;
             const wrap = document.createElement('div');
             wrap.className = 'roster-scroll-wrap';
-            list.parentNode.insertBefore(wrap, list);
+            header.parentNode.insertBefore(wrap, header);
+            wrap.appendChild(header);
             wrap.appendChild(list);
         }
         // Observe the roster panel for content changes

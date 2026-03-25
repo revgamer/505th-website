@@ -125,25 +125,53 @@ html {
     }
 
     /* ── ROSTER PANEL ── */
+
+    /* Scroll wrap — contains BOTH header and data rows now */
     #panel-roster .roster-scroll-wrap {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
     }
-    /* Default (no scroll-wrap): truncated 2-col view */
+
+    /* Fallback (no scroll-wrap): truncated 2-col view */
     .roster-header,
     .roster-row {
         grid-template-columns: 1.6fr 1fr;
         font-size: 8px;
     }
     .roster-cell:nth-child(n+3) { display: none; }
+    .roster-header div:nth-child(n+3) { display: none; }
 
-    /* Inside scroll-wrap: full 10-col with horizontal scroll */
+    /* Inside scroll-wrap: full 10-col with horizontal scroll
+       Both header AND rows get the same columns now */
     #panel-roster .roster-scroll-wrap .roster-header,
     #panel-roster .roster-scroll-wrap .roster-row {
         grid-template-columns: 1.6fr 1fr .8fr 1fr 1.4fr .8fr .65fr 1fr .45fr .75fr;
         min-width: 900px;
     }
     #panel-roster .roster-scroll-wrap .roster-cell:nth-child(n+3) { display: block; }
+    #panel-roster .roster-scroll-wrap .roster-header div:nth-child(n+3) { display: block; }
+
+    /* Roster stats — force 3-col to stay readable */
+    #panel-roster > .stats-row {
+        grid-template-columns: 1fr 1fr 1fr !important;
+        gap: 6px;
+    }
+
+    /* Sort toolbar — wrap nicely on mobile */
+    #panel-roster > div[style*="display:flex"][style*="flex-wrap:wrap"] {
+        gap: 6px !important;
+    }
+    /* Sort buttons container — allow wrap and remove forced margin */
+    #panel-roster .roster-sort-btn {
+        font-size: 10px !important;
+        padding: 6px 8px !important;
+        min-height: 36px;
+    }
+    /* Hide the long help text on mobile — too much clutter */
+    #panel-roster > div[style*="display:flex"] > span[style*="font-size:11px"][style*="letter-spacing:2px"] {
+        display: none;
+    }
 
     /* ── AUDIT LOG ── */
     .audit-entry, .audit-header {
@@ -309,6 +337,11 @@ html {
     #dashStatsRow {
         grid-template-columns: 1fr !important;
     }
+    /* Roster stats stay 3-col but smaller */
+    #panel-roster > .stats-row {
+        grid-template-columns: 1fr 1fr 1fr !important;
+    }
+    #panel-roster .stat-number { font-size: 20px; }
     .stat-number { font-size: 22px; }
 
     /* Edit modal — full screen takeover */
