@@ -21,12 +21,21 @@
     .top-bar { padding: 8px 14px; }
     .top-bar-title { font-size: 13px; letter-spacing: 2px; }
     .hamburger { display: flex; align-items: center; justify-content: center; }
-    /* Hide text labels on small screens, keep icon buttons */
     .top-btn span.btn-label { display: none; }
     .user-identity #topbarName { font-size: 11px; }
     .user-identity #topbarRole { font-size: 8px; }
 
-    /* SIDEBAR — slides in from left */
+    /* ── SIDEBAR ──────────────────────────────────────────────────
+       CRITICAL FIXES:
+       1. pointer-events:none when closed — closed sidebar was
+          intercepting all taps on the left side of the screen
+       2. visibility:hidden when closed (belt-and-suspenders)
+       3. app-layout switched to block — was reserving 240px for
+          the sidebar in flexbox even when it was off-screen,
+          making the left portion of main content untappable       */
+    .app-layout {
+        display: block !important;
+    }
     .sidebar {
         position: fixed;
         top: 0;
@@ -34,13 +43,19 @@
         width: 260px;
         height: 100vh;
         z-index: 50;
-        transition: left .3s ease;
+        transition: left .3s ease, visibility .3s ease;
         padding-top: 56px;
         overflow-y: auto;
+        pointer-events: none;
+        visibility: hidden;
     }
-    .sidebar.open { left: 0; }
+    .sidebar.open {
+        left: 0;
+        pointer-events: auto;
+        visibility: visible;
+    }
 
-    /* MAIN CONTENT — full width when sidebar is hidden */
+    /* MAIN CONTENT — full width now sidebar is out of flow */
     .main-content {
         padding: 16px 12px;
         width: 100%;
@@ -55,13 +70,13 @@
     .stat-number { font-size: 24px; }
     .stat-label { font-size: 8px; }
 
-    /* ── DASH GRID (pending / recent) ── */
+    /* ── DASH GRID ── */
     .dash-grid { grid-template-columns: 1fr; gap: 10px; }
 
     /* ── PANEL TITLE ── */
     .panel-title { font-size: 16px; letter-spacing: 2px; }
 
-    /* ── USER CARDS (register / active panels) ── */
+    /* ── USER CARDS ── */
     .user-card {
         flex-direction: column;
         align-items: flex-start;
@@ -72,14 +87,13 @@
     .user-actions .action-btn,
     .user-actions .upload-btn { font-size: 11px; padding: 7px 12px; flex: 1; text-align: center; }
 
-    /* ── USER TABLE (register panel grid) ── */
+    /* ── USER TABLE ── */
     .table-header, .table-row {
         grid-template-columns: 1fr 1fr;
         font-size: 9px;
     }
 
     /* ── ROSTER PANEL ── */
-    /* Wrap the roster grid in a horizontal scroll container */
     #panel-roster .roster-scroll-wrap {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
@@ -90,7 +104,6 @@
         font-size: 8px;
     }
     .roster-cell:nth-child(n+3) { display: none; }
-    /* Restore all columns inside the scroll wrap */
     #panel-roster .roster-scroll-wrap .roster-header,
     #panel-roster .roster-scroll-wrap .roster-row {
         grid-template-columns: 1.6fr 1fr .8fr 1fr 1.4fr .8fr .65fr 1fr .45fr .75fr;
@@ -118,7 +131,6 @@
     .upload-btn { width: 100%; text-align: center; padding: 11px 16px; font-size: 13px; }
 
     /* ── SETTINGS: WEBHOOK GRID ── */
-    /* The 3-col grid (label / input / TEST) stacks to single column */
     div[style*="grid-template-columns:200px 1fr auto"] {
         display: flex !important;
         flex-direction: column;
@@ -140,10 +152,7 @@
         padding: 16px !important;
         max-height: 92vh;
     }
-    #editUserModal .edit-modal-content {
-        max-width: 96% !important;
-    }
-    /* Stack the 2-col details grid to 1 col */
+    #editUserModal .edit-modal-content { max-width: 96% !important; }
     #editPane-details > div[style*="grid-template-columns:1fr 1fr"] {
         grid-template-columns: 1fr !important;
     }
@@ -156,10 +165,7 @@
     .edit-modal-actions .action-btn { flex: 1; text-align: center; }
 
     /* ── HISTORY ADD ROW ── */
-    .history-add-row {
-        flex-direction: column;
-        gap: 6px;
-    }
+    .history-add-row { flex-direction: column; gap: 6px; }
     .history-add-row input,
     .history-add-row select {
         width: 100% !important;
@@ -191,10 +197,8 @@
         grid-template-columns: 1fr !important;
     }
 
-    /* ── ACTION BUTTONS — min tap target ── */
-    .action-btn, .upload-btn, .top-btn {
-        min-height: 40px;
-    }
+    /* ── MIN TAP TARGETS ── */
+    .action-btn, .upload-btn, .top-btn { min-height: 40px; }
     .action-btn.small { min-height: 32px; }
 }
 
@@ -203,34 +207,20 @@
 
     .top-bar-title { font-size: 11px; letter-spacing: 1px; }
     .top-bar-right { gap: 6px; }
-
-    /* Stats row: single column on very small phones */
     .stats-row { grid-template-columns: 1fr; }
-
-    /* Sidebar takes full width on smallest screens */
     .sidebar { width: 100%; left: -100%; }
-
     .main-content { padding: 12px 8px; }
 
-    /* Edit modal full screen feel */
     .edit-modal-content {
         width: 100% !important;
         max-height: 100vh !important;
-        border-radius: 0 !important;
         border-left: none !important;
         border-right: none !important;
     }
 
-    /* Medal picker scrollable on small screens */
     .medal-picker { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; }
     .medal-opt { min-width: 50px; flex-shrink: 0; }
 
-    /* Filter bar in roster/register panels */
-    .filter-bar, div[style*="display:flex"][style*="gap:8px"] {
-        flex-direction: column;
-    }
     input[type="text"][placeholder*="SEARCH"],
-    input[type="text"][placeholder*="search"] {
-        width: 100%;
-    }
+    input[type="text"][placeholder*="search"] { width: 100%; }
 }
