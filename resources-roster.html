@@ -468,9 +468,9 @@
                                 <tr>
                                     <td class="name-cell">${esc(formatMemberName(r))}</td>
                                     <td><span class="rank-badge">${esc(r.rank||'—')}</span></td>
-                                    <td>${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—'}</td>
+                                    <td>${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-US'):'—'}</td>
                                     <td class="time-val">${calcPeriod(r.joinedPlatoon)}</td>
-                                    <td>${r.graduation?new Date(r.graduation).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—'}</td>
+                                    <td>${r.graduation?new Date(r.graduation).toLocaleDateString('en-US'):'—'}</td>
                                     <td class="time-val">${calcPeriod(r.graduation)}</td>
                                     <td>${attPips(r.attendance||0)}</td>
                                     <td><span class="pt-val">${r.promotionTracker||0}</span></td>

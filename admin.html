@@ -167,7 +167,7 @@
         window.aarResultChange=function(){[['success','#7FFF7F'],['partial','#FFD700'],['failure','#FF4444']].forEach(([v,bc])=>{const el=document.getElementById('ropt-'+v);if(!el)return;const checked=document.querySelector('input[name="aarResult"][value="'+v+'"]')?.checked;el.style.background=checked?bc+'18':'transparent';el.style.borderColor=checked?bc:bc+'40';el.style.color=checked?bc:bc+'66';});};
         window.aarClassChange=function(){const v=document.getElementById('aarClassification')?.value||'CL-5';const prev=document.getElementById('aarClassPreview');if(prev)prev.textContent=v;};
         async function loadAARPanel(){aarObjectives=[];renderAARObjs();document.getElementById('aarDate').value=new Date().toISOString().split('T')[0];document.getElementById('aarSubmitStatus').textContent='';await loadRecentAARs();}
-        async function loadRecentAARs(){const c=document.getElementById('aarRecentList');if(!c)return;c.innerHTML='<div class="empty-state">LOADING...</div>';try{const s=await getDocs(query(collection(db,'aars'),orderBy('date','desc'),limit(20)));if(s.empty){c.innerHTML='<div class="empty-state">NO REPORTS SUBMITTED YET</div>';return;}const rows=[];s.forEach(d=>rows.push({id:d.id,...d.data()}));c.innerHTML=rows.map(a=>{const dt=a.date?.toDate?a.date.toDate().toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):(a.date?new Date(a.date).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—');return`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03)"><img src="${UNIT_LOGOS[a.unit]||'images/logo.png'}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0"><div style="flex:1;color:#ccc;font-size:11px;letter-spacing:1px">${esc(a.title||'Untitled')}</div><div style="color:#aaa;font-size:9px;white-space:nowrap">${dt}</div><div style="font-size:8px;letter-spacing:1px;padding:1px 5px;border:1px solid;color:${a.result==='success'?'#7FFF7F':a.result==='partial'?'#FFD700':'#FF4444'};border-color:${a.result==='success'?'#7FFF7F':a.result==='partial'?'#FFD700':'#FF4444'}">${RES_LABELS[a.result]||'—'}</div><button class="action-btn remove-btn small" onclick="deleteAAR('${a.id}')">DELETE</button></div>`;}).join('');}catch(e){c.innerHTML=`<div class="empty-state">ERROR: ${esc(e.message)}</div>`;}}
+        async function loadRecentAARs(){const c=document.getElementById('aarRecentList');if(!c)return;c.innerHTML='<div class="empty-state">LOADING...</div>';try{const s=await getDocs(query(collection(db,'aars'),orderBy('date','desc'),limit(20)));if(s.empty){c.innerHTML='<div class="empty-state">NO REPORTS SUBMITTED YET</div>';return;}const rows=[];s.forEach(d=>rows.push({id:d.id,...d.data()}));c.innerHTML=rows.map(a=>{const dt=a.date?.toDate?a.date.toDate().toLocaleDateString('en-GB'):(a.date?new Date(a.date).toLocaleDateString('en-GB'):'—');return`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03)"><img src="${UNIT_LOGOS[a.unit]||'images/logo.png'}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0"><div style="flex:1;color:#ccc;font-size:11px;letter-spacing:1px">${esc(a.title||'Untitled')}</div><div style="color:#aaa;font-size:9px;white-space:nowrap">${dt}</div><div style="font-size:8px;letter-spacing:1px;padding:1px 5px;border:1px solid;color:${a.result==='success'?'#7FFF7F':a.result==='partial'?'#FFD700':'#FF4444'};border-color:${a.result==='success'?'#7FFF7F':a.result==='partial'?'#FFD700':'#FF4444'}">${RES_LABELS[a.result]||'—'}</div><button class="action-btn remove-btn small" onclick="deleteAAR('${a.id}')">DELETE</button></div>`;}).join('');}catch(e){c.innerHTML=`<div class="empty-state">ERROR: ${esc(e.message)}</div>`;}}
         // DISCORD WEBHOOK — paste your webhook URL here
         const AAR_WEBHOOK_URL = 'https://discord.com/api/webhooks/1482237463224258632/mDIN6irczttLRoxE1vk81dloso5pLKJ74_vARw2C0rUUyw5vBvsaO_LxaN6nKrxMVLP5';
 
@@ -245,7 +245,7 @@
                 const RC={success:0x00FF41,partial:0xFFD700,failure:0xFF4444};
                 const RI={success:'✅ Mission Success',partial:'🟡 Partial Success',failure:'❌ Mission Failure'};
                 const OI={main_op:'🔴 Main Op',patrol:'🔵 Patrol',deployment:'🟢 Deployment',fun_op:'🟡 Fun Op'};
-                const desc='**'+title+'**\n\n• **Submitted by:** '+(filedBy||currentUserData.callsign)+'\n• **Unit:** '+(UNIT_LABELS[unit]||unit)+'\n• **Type:** '+(OI[opType]||opType)+'\n• **Date:** '+new Date(dateVal).toLocaleDateString('en-US',{day:'2-digit',month:'long',year:'numeric',timeZone:'America/Los_Angeles'})+'\n• **Result:** '+(RI[result]||result)+'\n\n[📄 View full report](https://www.505expeditionaryforce.com/resources-aar.html)';
+                const desc='**'+title+'**\n\n• **Submitted by:** '+(filedBy||currentUserData.callsign)+'\n• **Unit:** '+(UNIT_LABELS[unit]||unit)+'\n• **Type:** '+(OI[opType]||opType)+'\n• **Date:** '+new Date(dateVal).toLocaleDateString('en-US',{day:'2-digit',month:'long',year:'numeric'})+'\n• **Result:** '+(RI[result]||result)+'\n\n[📄 View full report](https://www.505expeditionaryforce.com/resources-aar.html)';
                 // Use configured webhook URL if set, otherwise fall back to hardcoded
                 if(wh.aar) {
                     fireWebhook('aar', {description:desc, color:RC[result]||0x2b2d31});
@@ -329,10 +329,10 @@
                         ? `<span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;padding:3px 10px;border:1px solid rgba(0,217,255,.35);color:var(--accent)">${esc(r.platoon)}</span>`
                         : `<span style="color:#555;font-size:10px">—</span>`
                     }</div>
-                    <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.joinedAt?new Date(r.joinedAt).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—'}</div>
+                    <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.joinedAt?new Date(r.joinedAt).toLocaleDateString('en-US'):'—'}</div>
                     <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;color:#ccc">${calcPeriod(r.joinedPlatoon)}</div>
                     <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500">${esc(r.rank||'—')}</div>
-                    <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.graduation?new Date(r.graduation).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—'}</div>
+                    <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.graduation?new Date(r.graduation).toLocaleDateString('en-US'):'—'}</div>
                     <div class="roster-cell">
                         <div style="display:flex;align-items:center;gap:6px">
                             <span style="color:${attColor};font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;min-width:22px">${att}/3</span>
@@ -957,7 +957,7 @@
                     function rsvTime(ds){ if(!ds) return null; const d=Math.floor((now2-new Date(ds))/(864e5)); if(d<1) return 'Today'; if(d<7) return d+' day'+(d!==1?'s':''); const w=Math.floor(d/7),r=d%7; if(w<4) return w+' wk'+(w!==1?'s':'')+(r>0?' '+r+'d':''); const m=Math.floor(d/30),rd=d%30; return m+' mo'+(m!==1?'s':'')+(rd>0?' '+rd+'d':''); }
                     function rsvColor(ds){ if(!ds) return '#aaa'; const d=Math.floor((now2-new Date(ds))/(864e5)); return d>=90?'#FF6B6B':d>=30?'#FFD700':'#7FFF7F'; }
                     if(!reserves.length){ resWidget.innerHTML='<div style="font-family:Rajdhani,sans-serif;font-size:13px;color:#7FFF7F;letter-spacing:1px;padding:8px 0">✓ NO PERSONNEL IN RESERVES</div>'; }
-                    else { resWidget.innerHTML=`<div style="margin-bottom:8px;font-family:Rajdhani,sans-serif;font-size:12px;color:#aaa;letter-spacing:2px">${reserves.length} PERSONNEL IN RESERVES</div><div style="display:flex;flex-direction:column;gap:4px;max-height:240px;overflow-y:auto">${reserves.map(u=>{ const dur=rsvTime(u.joinedPlatoon),color=rsvColor(u.joinedPlatoon); return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-left:2px solid ${color}"><div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;background:${color};flex-shrink:0;border-radius:50%"></div><div><div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:600;color:#ddd">${esc(formatMemberName(u)||u.callsign)}</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;letter-spacing:1px">${esc(u.rank||'—')}</div></div></div><div style="text-align:right"><div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:${color}">${dur?'IN RESERVES '+dur.toUpperCase():'—'}</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;margin-top:1px">${u.joinedPlatoon?new Date(u.joinedPlatoon).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—'}</div></div></div>`; }).join('')}</div><div style="margin-top:8px;display:flex;gap:12px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px"><span style="color:#7FFF7F">● &lt;1 MONTH</span><span style="color:#FFD700">● 1-3 MONTHS</span><span style="color:#FF6B6B">● 3+ MONTHS</span></div>`; }
+                    else { resWidget.innerHTML=`<div style="margin-bottom:8px;font-family:Rajdhani,sans-serif;font-size:12px;color:#aaa;letter-spacing:2px">${reserves.length} PERSONNEL IN RESERVES</div><div style="display:flex;flex-direction:column;gap:4px;max-height:240px;overflow-y:auto">${reserves.map(u=>{ const dur=rsvTime(u.joinedPlatoon),color=rsvColor(u.joinedPlatoon); return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-left:2px solid ${color}"><div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;background:${color};flex-shrink:0;border-radius:50%"></div><div><div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:600;color:#ddd">${esc(formatMemberName(u)||u.callsign)}</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;letter-spacing:1px">${esc(u.rank||'—')}</div></div></div><div style="text-align:right"><div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:${color}">${dur?'IN RESERVES '+dur.toUpperCase():'—'}</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;margin-top:1px">${u.joinedPlatoon?new Date(u.joinedPlatoon).toLocaleDateString('en-US'):'—'}</div></div></div>`; }).join('')}</div><div style="margin-top:8px;display:flex;gap:12px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px"><span style="color:#7FFF7F">● &lt;1 MONTH</span><span style="color:#FFD700">● 1-3 MONTHS</span><span style="color:#FF6B6B">● 3+ MONTHS</span></div>`; }
                 }
 
                 // Attendance Health widget
@@ -1480,7 +1480,7 @@
                         title: '📋 New Registration Request',
                         color: 0xF59E0B,
                         footer: {...BASE.footer, text:'505th Expeditionary Force • Enlistment'},
-                        description: `A new operative has submitted a registration request and is awaiting approval.\n\n• **Full Name:** ${data.name||'—'}\n• **Email:** ${data.email||'—'}\n• **Submitted:** ${data.ts||new Date().toLocaleString('en-US',{timeZone:'America/Los_Angeles'})}`
+                        description: `A new operative has submitted a registration request and is awaiting approval.\n\n• **Full Name:** ${data.name||'—'}\n• **Email:** ${data.email||'—'}\n• **Submitted:** ${data.ts||new Date().toLocaleString('en-US')}`
                     }; break;
 
                 case 'approved':
@@ -1647,7 +1647,7 @@
                         <div style="display:grid;grid-template-columns:1fr 160px 120px;gap:8px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);align-items:center">
                             <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:#e0e0e0">${esc(formatMemberName(u)||u.callsign)}</div>
                             <div style="font-size:10px;letter-spacing:1px;color:${sourceColors[u.recruitSource]||'#aaa'}">${esc(u.recruitSource)}</div>
-                            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#555">${u.joinedAt?new Date(u.joinedAt).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—'}</div>
+                            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#555">${u.joinedAt?new Date(u.joinedAt).toLocaleDateString('en-US'):'—'}</div>
                         </div>`).join('') || '<div class="empty-state">NO TAGGED RECRUITS YET</div>';
                 }
             } catch(e){ c.innerHTML='<div class="empty-state">ERROR: '+e.message+'</div>'; }
@@ -2236,7 +2236,7 @@
                 if(countEl) countEl.textContent = items.length;
                 if(!items.length) { grid.innerHTML='<div class="empty-state">NO IMAGES IN COMMS LIBRARY — UPLOAD ONE ABOVE OR VIA A PAGE EDITOR</div>'; return; }
                 grid.innerHTML = items.map(m => {
-                    const date = m.uploadedAt ? new Date(m.uploadedAt).toLocaleDateString('en-US',{day:'2-digit',month:'short',year:'numeric',timeZone:'America/Los_Angeles'}) : '—';
+                    const date = m.uploadedAt ? new Date(m.uploadedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
                     return `<div class="media-card-v2">
                         <div class="media-thumb-v2"><img src="${m.url}" loading="lazy"></div>
                         <div class="media-body-v2">
@@ -2323,7 +2323,7 @@
                 c.innerHTML=items.map(m=>{
                     const isEnabled=m.enabled!==false;
                     const cat=m.category||'uncategorised';
-                    const date=m.uploadedAt?(new Date(m.uploadedAt)).toLocaleDateString('en-US',{day:'2-digit',month:'short',year:'numeric',timeZone:'America/Los_Angeles'}):'—';
+                    const date=m.uploadedAt?(new Date(m.uploadedAt)).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—';
                     const dimStyle=isEnabled?'':'opacity:.4;';
 
                     if(type==='image') {
