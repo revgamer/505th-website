@@ -26,7 +26,7 @@
             // Same as commander but CANNOT touch commander role assignments.
             'developer': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,canDeleteUsers:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Personnel (active+register, NO promote) + Media + Unit Management + Page Content + Discord setting.
-            'staff_nco': {personnel:1,activePersonnel:1,registerPanel:1,promote:0,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,canDeleteUsers:0,auditLog:0,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
+            'staff_nco': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,canDeleteUsers:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Register Panel only + Media Gallery + AAR + Battalion Roster. NO Unit Cards.
             'nco':       {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,canDeleteUsers:0,auditLog:0,aar:1,discordLink:0,roster:1,unitcards:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Register Panel only.
@@ -1385,7 +1385,7 @@
                 }
                 await loadAttendancePanel();
             } catch(e){ notify('SAVE FAILED: '+e.message,1); }
-            if(btn){ btn.disabled=false; btn.textContent='SAVE'; }
+            if(btn){ btn.disabled=false; btn.textContent='LOG ATTENDANCE'; }
         };
         // ── END ATTENDANCE TRACKER ────────────────────────────────────────────
 
@@ -2061,6 +2061,75 @@
             } catch(e){notify('ERROR: '+e.message,1);}
         };
         window.closeEditModal = function(){ document.getElementById('editUserModal').classList.remove('active'); };
+
+        // ── BULK MEDAL AWARD ──
+        window.openBulkMedalModal = function() {
+            const modal = document.getElementById('bulkMedalModal');
+            // Reset fields
+            document.getElementById('bmTitle').value = '';
+            document.getElementById('bmCitation').value = '';
+            document.querySelectorAll('.bm-medal-opt').forEach((o,i) => {
+                const active = i === 0;
+                o.style.borderColor = active ? '#C9A227' : 'rgba(255,255,255,.1)';
+                o.style.background  = active ? 'rgba(185,150,50,.12)' : '';
+                if(active) o.classList.add('selected'); else o.classList.remove('selected');
+            });
+            // Build personnel list from rosterData
+            const list = document.getElementById('bmPersonnelList');
+            const sorted = [...rosterData].sort((a,b) => (formatMemberName(a)||'').localeCompare(formatMemberName(b)||''));
+            list.innerHTML = sorted.map(r => `
+                <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.03);font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;color:#ccc">
+                    <input type="checkbox" data-uid="${r.id}" style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer">
+                    <span>${esc(formatMemberName(r)||r.callsign)}</span>
+                    <span style="margin-left:auto;font-size:10px;color:#555">${esc(r.platoon||'')}</span>
+                </label>`).join('');
+            modal.style.display = 'flex';
+        };
+
+        window.closeBulkMedalModal = function() {
+            document.getElementById('bulkMedalModal').style.display = 'none';
+        };
+
+        window.selectBmMedal = function(el) {
+            document.querySelectorAll('.bm-medal-opt').forEach(o => {
+                o.style.borderColor = 'rgba(255,255,255,.1)';
+                o.style.background  = '';
+                o.classList.remove('selected');
+            });
+            el.style.borderColor = '#C9A227';
+            el.style.background  = 'rgba(185,150,50,.12)';
+            el.classList.add('selected');
+        };
+
+        window.bmSelectAll = function(check) {
+            document.querySelectorAll('#bmPersonnelList input[type="checkbox"]').forEach(cb => cb.checked = check);
+        };
+
+        window.submitBulkMedal = async function() {
+            const title    = document.getElementById('bmTitle').value.trim();
+            const citation = document.getElementById('bmCitation').value.trim();
+            if(!title) { notify('AWARD TITLE IS REQUIRED', 1); return; }
+            const selectedMedal = document.querySelector('.bm-medal-opt.selected');
+            const medalImg = selectedMedal?.dataset?.medal || '';
+            const checked  = [...document.querySelectorAll('#bmPersonnelList input[type="checkbox"]:checked')];
+            if(!checked.length) { notify('SELECT AT LEAST ONE RECIPIENT', 1); return; }
+            const today = new Date().toISOString().split('T')[0];
+            const by    = currentUserData?.callsign || 'Staff';
+            let awarded = 0;
+            for(const cb of checked) {
+                const uid = cb.dataset.uid;
+                const u   = rosterData.find(x => x.id === uid); if(!u) continue;
+                const entry = {date:today, title, note:citation, medalImg, addedBy:by, addedAt:new Date().toISOString()};
+                const updated = [...(u.commendationHistory||[]), entry];
+                try {
+                    await updateDoc(doc(db,'users',uid), {commendationHistory: updated});
+                    u.commendationHistory = updated;
+                    awarded++;
+                } catch(e) { console.warn('Medal award failed for '+uid, e.message); }
+            }
+            notify(`&#9733; MEDAL AWARDED TO ${awarded} MARINE${awarded!==1?'S':''}`);
+            closeBulkMedalModal();
+        };
 
         // ── BATTALION ROSTER CONTEXT MENU ──
         let ctxUserId = null;
@@ -2799,7 +2868,15 @@
             if(unitcardsLink) unitcardsLink.style.display = p.unitcards?'':'none';
             if(recruitLink)   recruitLink.style.display   = p.roster?'':'none';
 
-            // Dashboard widgets — hide sections the role doesn't need
+            // Attendance — LOCK & FINALISE only for Staff NCO+
+            const attLockBtn  = document.getElementById('attLockBtn');
+            const attLockHint = document.getElementById('attLockHint');
+            const canLock = ['staff_nco','developer','commander'].includes(currentUserData?.role);
+            if(attLockBtn)  attLockBtn.style.display  = canLock ? '' : 'none';
+            if(attLockHint) attLockHint.style.display = canLock ? '' : 'none';
+
+            // Attendance tracker save button text already set in static HTML
+
             const dashStatsRow    = document.getElementById('dashStatsRow');
             const dashDiscordSect = document.getElementById('dashDiscordSection');
             const dashRosterGrid  = document.getElementById('dashRosterGrid');
@@ -2986,6 +3063,72 @@
 
     <div class="notification" id="notification"></div>
     <div class="media-picker-modal" id="mediaPickerModal"><div class="picker-content"><div class="picker-header"><h3>SELECT MEDIA</h3><button class="picker-close" onclick="closeMediaPicker()">&times;</button></div><div class="picker-grid" id="pickerGrid"></div></div></div>
+    <!-- ── BULK MEDAL AWARD MODAL ── -->
+    <div id="bulkMedalModal" style="display:none;position:fixed;inset:0;z-index:5500;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+        <div style="background:#0d1217;border:1px solid rgba(185,150,50,.5);box-shadow:0 0 40px rgba(185,150,50,.15);padding:24px 28px;width:90%;max-width:560px;max-height:85vh;overflow-y:auto;font-family:Rajdhani,sans-serif">
+            <div style="font-size:16px;font-weight:700;letter-spacing:3px;color:#C9A227;margin-bottom:18px;border-bottom:1px solid rgba(185,150,50,.2);padding-bottom:10px">&#9733; BULK MEDAL AWARD</div>
+
+            <!-- Medal picker -->
+            <div style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7);margin-bottom:8px">SELECT MEDAL</div>
+            <div id="bmMedalGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+                <div class="bm-medal-opt selected" data-medal="" data-name="Custom / No Medal" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid #C9A227;background:rgba(185,150,50,.12);cursor:pointer;min-width:60px;transition:all .15s">
+                    <span style="font-size:22px">★</span><span style="font-size:9px;letter-spacing:1px;color:#ccc">CUSTOM</span>
+                </div>
+                <div class="bm-medal-opt" data-medal="Medal of Honor Medal.png" data-name="Medal of Honor" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid rgba(255,255,255,.1);cursor:pointer;min-width:60px;transition:all .15s">
+                    <img src="images/medal_emojis/Medal of Honor Medal.png" style="width:28px;height:28px;object-fit:contain"><span style="font-size:9px;letter-spacing:1px;color:#ccc;text-align:center">MEDAL OF HONOR</span>
+                </div>
+                <div class="bm-medal-opt" data-medal="Navy Cross Medal.png" data-name="Navy Cross" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid rgba(255,255,255,.1);cursor:pointer;min-width:60px;transition:all .15s">
+                    <img src="images/medal_emojis/Navy Cross Medal.png" style="width:28px;height:28px;object-fit:contain"><span style="font-size:9px;letter-spacing:1px;color:#ccc;text-align:center">NAVY CROSS</span>
+                </div>
+                <div class="bm-medal-opt" data-medal="Air Force Cross Medal.png" data-name="Air Force Cross" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid rgba(255,255,255,.1);cursor:pointer;min-width:60px;transition:all .15s">
+                    <img src="images/medal_emojis/Air Force Cross Medal.png" style="width:28px;height:28px;object-fit:contain"><span style="font-size:9px;letter-spacing:1px;color:#ccc;text-align:center">AF CROSS</span>
+                </div>
+                <div class="bm-medal-opt" data-medal="Silver Medal.png" data-name="Silver Star" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid rgba(255,255,255,.1);cursor:pointer;min-width:60px;transition:all .15s">
+                    <img src="images/medal_emojis/Silver Medal.png" style="width:28px;height:28px;object-fit:contain"><span style="font-size:9px;letter-spacing:1px;color:#ccc;text-align:center">SILVER STAR</span>
+                </div>
+                <div class="bm-medal-opt" data-medal="Bronze Star Medal.png" data-name="Bronze Star" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid rgba(255,255,255,.1);cursor:pointer;min-width:60px;transition:all .15s">
+                    <img src="images/medal_emojis/Bronze Star Medal.png" style="width:28px;height:28px;object-fit:contain"><span style="font-size:9px;letter-spacing:1px;color:#ccc;text-align:center">BRONZE STAR</span>
+                </div>
+                <div class="bm-medal-opt" data-medal="Navy Achievement Medal.png" data-name="Navy Achievement Medal" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid rgba(255,255,255,.1);cursor:pointer;min-width:60px;transition:all .15s">
+                    <img src="images/medal_emojis/Navy Achievement Medal.png" style="width:28px;height:28px;object-fit:contain"><span style="font-size:9px;letter-spacing:1px;color:#ccc;text-align:center">NAVY ACHVMT</span>
+                </div>
+                <div class="bm-medal-opt" data-medal="Air Force Achivement Medal.png" data-name="Air Force Achievement Medal" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid rgba(255,255,255,.1);cursor:pointer;min-width:60px;transition:all .15s">
+                    <img src="images/medal_emojis/Air Force Achivement Medal.png" style="width:28px;height:28px;object-fit:contain"><span style="font-size:9px;letter-spacing:1px;color:#ccc;text-align:center">AF ACHVMT</span>
+                </div>
+                <div class="bm-medal-opt" data-medal="POW Medal.png" data-name="POW Medal" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid rgba(255,255,255,.1);cursor:pointer;min-width:60px;transition:all .15s">
+                    <img src="images/medal_emojis/POW Medal.png" style="width:28px;height:28px;object-fit:contain"><span style="font-size:9px;letter-spacing:1px;color:#ccc;text-align:center">POW MEDAL</span>
+                </div>
+            </div>
+
+            <!-- Award title + citation -->
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+                <div style="display:flex;flex-direction:column;gap:4px">
+                    <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">AWARD TITLE *</label>
+                    <input id="bmTitle" type="text" placeholder="e.g. Operation Ironveil — Meritorious Service" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.25);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:7px 10px;outline:none">
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                    <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">CITATION / REASON (OPTIONAL)</label>
+                    <input id="bmCitation" type="text" placeholder="Reason for award..." style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.25);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:7px 10px;outline:none">
+                </div>
+            </div>
+
+            <!-- Personnel selector -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <div style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">SELECT RECIPIENTS</div>
+                <div style="display:flex;gap:8px">
+                    <span onclick="bmSelectAll(true)" style="font-size:10px;letter-spacing:1px;color:var(--accent);cursor:pointer;text-decoration:underline">SELECT ALL</span>
+                    <span onclick="bmSelectAll(false)" style="font-size:10px;letter-spacing:1px;color:#888;cursor:pointer;text-decoration:underline">CLEAR</span>
+                </div>
+            </div>
+            <div id="bmPersonnelList" style="max-height:200px;overflow-y:auto;border:1px solid rgba(0,217,255,.12);background:rgba(0,0,0,.3);padding:4px"></div>
+
+            <div style="display:flex;gap:10px;margin-top:16px">
+                <button onclick="submitBulkMedal()" class="upload-btn" style="flex:1;font-size:12px;letter-spacing:2px">&#9733; AWARD TO SELECTED</button>
+                <button onclick="closeBulkMedalModal()" class="action-btn remove-btn" style="font-size:12px;letter-spacing:2px">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ── BATTALION ROSTER CONTEXT MENU ── -->
     <div id="rosterCtxMenu" style="display:none;position:fixed;z-index:4000;background:#0d1217;border:1px solid rgba(0,217,255,.35);box-shadow:0 8px 32px rgba(0,0,0,.7),0 0 20px rgba(0,217,255,.15);min-width:200px;font-family:Rajdhani,sans-serif">
         <div id="rosterCtxName" style="padding:10px 14px;font-size:13px;font-weight:700;letter-spacing:1px;color:var(--accent);border-bottom:1px solid rgba(0,217,255,.15);background:rgba(0,217,255,.05)"></div>
@@ -3535,8 +3678,9 @@
                         <button class="action-btn approve-btn" onclick="loadAttendancePanel()" style="padding:8px 18px;font-size:11px;letter-spacing:2px">&#8635; REFRESH</button>
                         <button class="action-btn" onclick="attClearForm()" style="padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:#555;color:#aaa">&#10005; CLEAR</button>
                         <button class="action-btn" onclick="attMarkAllExcused()" style="padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:#FFD70088;color:#FFD700;background:rgba(255,212,0,.06)">&#128274; MARK EXCUSED</button>
-                        <button id="attSaveBtn" class="upload-btn" onclick="saveAttendance(false)" style="padding:8px 20px;font-size:11px;letter-spacing:2px">&#10003; SAVE ATTENDANCE</button>
-                        <button class="action-btn" onclick="saveAttendance(true)" style="padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:rgba(0,217,255,.3);color:var(--accent)">&#128274; SAVE &amp; LOCK</button>
+                        <button id="attSaveBtn" class="upload-btn" onclick="saveAttendance(false)" style="padding:8px 20px;font-size:11px;letter-spacing:2px">&#10003; LOG ATTENDANCE</button>
+                        <button id="attLockBtn" class="action-btn" onclick="saveAttendance(true)" style="display:none;padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:rgba(0,217,255,.3);color:var(--accent)">&#128274; LOCK &amp; FINALISE</button>
+                        <span id="attLockHint" style="display:none;font-size:9px;color:#555;letter-spacing:1px;font-family:Rajdhani,sans-serif">&#9432; Unlock: load locked event → LOG ATTENDANCE to edit → re-lock</span>
                         <div style="flex:1"></div>
                         <button class="action-btn remove-btn" onclick="resetAllAttendanceCounters()" style="padding:6px 12px;font-size:9px;letter-spacing:2px;opacity:.6" title="Reset all member attendance counters to 0 — use only to clear test data">&#9888; RESET ALL COUNTERS</button>
                     </div>
@@ -3794,6 +3938,7 @@
                         <button class="action-btn approve-btn" onclick="loadRosterPanel()">&#8635; REFRESH</button>
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
                         <button id="forceResetBtn" class="action-btn" onclick="forceMonthlyReset()" style="border:1px solid rgba(255,200,0,.45);color:#FFD700;background:rgba(255,200,0,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer" title="Award +1 PT to all 3/3 members then wipe attendance — same as month-end auto-reset">&#9654; MONTH-END RESET</button>
+                        <button class="action-btn" onclick="openBulkMedalModal()" style="border:1px solid rgba(185,150,50,.6);color:#C9A227;background:rgba(185,150,50,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer">&#9733; AWARD MEDAL</button>
                         <div style="display:flex;align-items:center;gap:6px;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.25);padding:4px 10px;position:relative">
                             <span style="color:#aaa;font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:2px;white-space:nowrap">&#9998; EDIT MEMBER:</span>
                             <div style="position:relative;min-width:160px">
@@ -3801,7 +3946,7 @@
                                     onclick="toggleRosterEditDropdown(true)"
                                     oninput="filterRosterEditList(this.value)"
                                     style="background:#0A0E12;border:none;border-bottom:1px solid rgba(0,217,255,.3);color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;outline:none;cursor:text;width:100%;padding:2px 0">
-                                <div id="rosterEditDropdown" style="display:none;position:absolute;top:100%;left:0;min-width:220px;max-height:240px;overflow-y:auto;background:#0A0E12;border:1px solid rgba(0,217,255,.35);z-index:3000;box-shadow:0 8px 24px rgba(0,0,0,.7)"></div>
+                                <div id="rosterEditDropdown" style="display:none;position:absolute;bottom:100%;left:0;min-width:220px;max-height:240px;overflow-y:auto;background:#0A0E12;border:1px solid rgba(0,217,255,.35);z-index:3000;box-shadow:0 -8px 24px rgba(0,0,0,.7)"></div>
                             </div>
                         </div>
                         <div style="display:flex;gap:4px;margin-left:8px;align-items:center">
