@@ -1922,9 +1922,16 @@
             }
             const updated = [...(u[fieldKey]||[]), entry];
             try {
-                await updateDoc(doc(db,'users',uid),{[fieldKey]:updated});
+                const updatePayload = {[fieldKey]:updated};
+                // When a platoon transfer is logged, update joinedPlatoon so Battalion
+                // Roster "Platoon Service" reflects the new transfer date
+                if(type==='platoon' && entry.to) {
+                    updatePayload.joinedPlatoon = entry.date || new Date().toISOString().split('T')[0];
+                    updatePayload.platoon = entry.to;
+                    if(u) { u.joinedPlatoon = updatePayload.joinedPlatoon; u.platoon = entry.to; }
+                }
+                await updateDoc(doc(db,'users',uid), updatePayload);
                 u[fieldKey]=updated;
-                renderHistoryList(type==='platoon'?'histPlatoonList':type==='promo'?'histPromoList':type==='warn'?'histWarnList':'histCommendList', updated, type);
                 notify('ENTRY ADDED');
                 const memberName = formatMemberName(u)||u.callsign||'Unknown';
                 const by = currentUserData?.callsign||'Staff';
