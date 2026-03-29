@@ -2099,8 +2099,9 @@
         });
 
         window.ctxAction = async function(action) {
+            const uid = ctxUserId;
             closeRosterCtx();
-            const uid = ctxUserId; if(!uid) return;
+            if(!uid) return;
             const u = rosterData.find(x => x.id === uid); if(!u) return;
             const name = formatMemberName(u) || u.callsign || uid;
             const today = new Date().toISOString().split('T')[0];
