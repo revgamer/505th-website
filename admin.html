@@ -710,8 +710,10 @@
                 return null;
             }
 
-            function renderSlotCard(unit, section, slot, isStaff=false) {
-                const key = (`${unit}__${section}__${slot}`).split(' ').join('_');
+            function renderSlotCard(unit, section, slot, isStaff=false, squad='') {
+                // Include squad in key so Marine 1 in KJ 1-1 differs from Marine 1 in KJ 1-2
+                const keySlot = squad ? `${squad}__${slot}` : slot;
+                const key = (`${unit}__${section}__${keySlot}`).split(' ').join('_');
                 const val = unitCardData[key] || {status:'open', name:'', userId:''};
                 const isFilled = val.status==='filled';
                 const isClosed = val.status==='closed';
@@ -770,7 +772,7 @@
                     // Staff slots row
                     if(staffSlots.length){
                         html += `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;padding-bottom:8px;border-bottom:${squadOrder.length?'1px solid rgba(255,255,255,.04)':'none'}">`;
-                        staffSlots.forEach(slot => { html += renderSlotCard(unit, section, slot, true); });
+                        staffSlots.forEach(slot => { html += renderSlotCard(unit, section, slot, true, ''); });
                         html += `</div>`;
                     }
 
@@ -781,7 +783,7 @@
                             html += `<div style="background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.04);padding:7px 10px">`;
                             html += `<div style="font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:${cfg.accent};opacity:.7;margin-bottom:6px">${sqName.toUpperCase()}</div>`;
                             html += `<div style="display:flex;flex-wrap:wrap;gap:5px">`;
-                            squadGroups[sqName].forEach(slot => { html += renderSlotCard(unit, section, slot, false); });
+                            squadGroups[sqName].forEach(slot => { html += renderSlotCard(unit, section, slot, false, sqName); });
                             html += `</div></div>`;
                         }
                         html += `</div>`;

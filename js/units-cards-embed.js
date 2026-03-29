@@ -3,7 +3,7 @@
 // Add container: <div id="unitCardsEmbed" data-unit="Alpha Company"></div>
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
@@ -77,7 +77,11 @@ function getSquadGroup(slot) {
     return null;
 }
 function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
-function makeKey(unit, section, slot) { return `${unit}__${section}__${slot}`.split(' ').join('_'); }
+// Include squad name in key so Marine 1 in KJ 1-1 differs from Marine 1 in KJ 1-2
+function makeKey(unit, section, slot, squad='') {
+    const keySlot = squad ? `${squad}__${slot}` : slot;
+    return `${unit}__${section}__${keySlot}`.split(' ').join('_');
+}
 
 async function loadUnitCards() {
     const container = document.getElementById('unitCardsEmbed');
@@ -89,24 +93,40 @@ async function loadUnitCards() {
 
     container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--accent);font-size:11px;letter-spacing:3px;opacity:.5">LOADING UNIT ROSTER...</div>';
 
-    let ucData = {};
+    let ucData = {}, userNames = {};
     try {
-        const snap = await getDoc(doc(db, 'settings', 'unit_cards'));
+        const [snap, usersSnap] = await Promise.all([
+            getDoc(doc(db, 'settings', 'unit_cards')),
+            getDocs(collection(db, 'users'))
+        ]);
         if (snap.exists()) ucData = snap.data();
+        usersSnap.forEach(d => {
+            const u = d.data();
+            const RANK_ABBR = {'O9 / Lieutenant General':'LtGen','O8 / Major General':'MajGen','O7 / Brigadier General':'BGen','O6 / Colonel':'Col','O5 / Lieutenant Colonel':'LtCol','O4 / Major':'Maj','O3 / Captain':'Capt','O2 / First Lieutenant':'1stLt','O1 / Second Lieutenant':'2ndLt','E9 / Sergeant Major':'SgtMaj','E9 / Master Gunnery Sergeant':'MGySgt','E9 / First Sergeant':'1stSgt','E8 / Master Sergeant':'MSgt','E7 / Gunnery Sergeant':'GySgt','E6 / Staff Sergeant':'SSgt','E5 / Sergeant':'Sgt','E4 / Corporal':'Cpl','E3 / Lance Corporal':'LCpl','E2 / Private First Class':'PFC','E1 / Private':'Pvt','E9 / Master Chief Hospital Corpsman':'MCPO','E8 / Senior Chief Corpsman':'SCPO','E7 / Chief Corpsman':'CPO','E6 / Corpsman First Class':'HM1','E5 / Corpsman Second Class':'HM2','E4 / Corpsman Third Class':'HM3','E3 / Hospitalman':'HN','E2 / Hospitalman Apprentice':'HA','E6 / Technical Sergeant':'TSgt','E4 / Senior Airman':'SrA','E3 / Airman First Class':'A1C','E2 / Airman':'Amn','E1 / Airman Basic':'AB'};
+            const rank = RANK_ABBR[u.rank||''] || (u.rank ? u.rank.split('/').pop().trim() : '');
+            const first = (u.firstName||'').trim(), last = (u.lastName||'').trim(), cs = (u.callsign||'').trim();
+            const init = first ? first.charAt(0).toUpperCase()+'.' : '';
+            const hasCs = cs && cs !== first && cs !== (first+' '+last);
+            let nm = ''; if(init) nm += init+' '; if(hasCs) nm += '"'+cs+'"'; else if(last) nm += last; else if(cs) nm += '"'+cs+'"';
+            userNames[d.id] = [rank, nm.trim()].filter(Boolean).join(' ');
+        });
     } catch(e) { console.warn('Unit card data:', e.message); }
 
     let html = '';
     for (const [section, slots] of Object.entries(cfg.sections)) {
-        // Separate staff from squads
+        // Group using SQL slots as anchors — everything after SQL belongs to that squad
         const staffSlots = [];
         const squadGroups = {};
         const squadOrder = [];
+        let currentSquad = null;
 
         for (const slot of slots) {
-            const sq = getSquadGroup(slot);
-            if (sq) {
-                if (!squadGroups[sq]) { squadGroups[sq] = []; squadOrder.push(sq); }
-                squadGroups[sq].push(slot);
+            if (slot.endsWith(' SQL') || slot.endsWith('SQL')) {
+                currentSquad = slot.replace(/ SQL$/, '').trim();
+                if (!squadGroups[currentSquad]) { squadGroups[currentSquad] = []; squadOrder.push(currentSquad); }
+                squadGroups[currentSquad].push(slot);
+            } else if (currentSquad) {
+                squadGroups[currentSquad].push(slot);
             } else {
                 staffSlots.push(slot);
             }
@@ -115,15 +135,13 @@ async function loadUnitCards() {
         html += `<div class="uc-section">
             <div class="uc-section-title" style="color:${cfg.accent}">${section}</div>`;
 
-        // Staff
+        // Staff slots
         if (staffSlots.length) {
             html += '<div class="uc-grid">';
             for (const slot of staffSlots) {
-                const key = makeKey(unitName, section, slot);
+                const key = makeKey(unitName, section, slot, '');
                 const val = ucData[key] || {};
-                const status = val.status || 'open';
-                const name = val.name || '';
-                html += renderSlot(slot, status, name, cfg.accent);
+                html += renderSlot(slot, val.status||'open', val.userId?(userNames[val.userId]||val.name||''):(val.name||''), cfg.accent);
             }
             html += '</div>';
         }
@@ -134,9 +152,9 @@ async function loadUnitCards() {
                 <div class="uc-squad-label" style="color:${cfg.accent}">${sqName.toUpperCase()}</div>
                 <div class="uc-grid">`;
             for (const slot of squadGroups[sqName]) {
-                const key = makeKey(unitName, section, slot);
+                const key = makeKey(unitName, section, slot, sqName);
                 const val = ucData[key] || {};
-                html += renderSlot(slot, val.status||'open', val.name||'', cfg.accent);
+                html += renderSlot(slot, val.status||'open', val.userId?(userNames[val.userId]||val.name||''):(val.name||''), cfg.accent);
             }
             html += '</div></div>';
         }
