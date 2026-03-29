@@ -2109,6 +2109,7 @@
             document.getElementById('rosterCtxName').textContent = formatMemberName(u) || u.callsign || uid;
             // Show/hide options based on permissions
             document.getElementById('rosterCtxEdit').style.display     = P().canEditProfiles ? '' : 'none';
+            document.getElementById('rosterCtxStats').style.display    = P().canEditProfiles ? '' : 'none';
             document.getElementById('rosterCtxPromote').style.display  = P().canEditProfiles ? '' : 'none';
             document.getElementById('rosterCtxTransfer').style.display = P().canEditProfiles ? '' : 'none';
             document.getElementById('rosterCtxWarn').style.display     = P().canEditProfiles ? '' : 'none';
@@ -2159,6 +2160,29 @@
             const body  = document.getElementById('qaBody');
             modal._action = action;
             modal._uid    = uid;
+
+            if(action === 'stats') {
+                title.textContent = '⊞ EDIT ROSTER STATS — ' + name.toUpperCase();
+                body.innerHTML = `
+                    <div style="display:flex;flex-direction:column;gap:12px">
+                        <div style="font-size:10px;letter-spacing:2px;color:#aaa;margin-bottom:2px">CORRECT ATTENDANCE OR PT IN CASE OF MISTAKE</div>
+                        <div style="display:flex;gap:16px">
+                            <div style="display:flex;flex-direction:column;gap:4px;flex:1">
+                                <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">ATTENDANCE (0–3)</label>
+                                <input id="qaStatsAtt" type="number" min="0" max="3" value="${u.attendance||0}"
+                                    style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:700;padding:8px 10px;outline:none;text-align:center;width:100%">
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;flex:1">
+                                <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">PT POINTS</label>
+                                <input id="qaStatsPt" type="number" min="0" value="${u.promotionTracker||0}"
+                                    style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:700;padding:8px 10px;outline:none;text-align:center;width:100%">
+                            </div>
+                        </div>
+                        <div style="font-size:9px;color:#555;letter-spacing:1px">Current: ATT ${u.attendance||0}/3 &nbsp;|&nbsp; PT ${u.promotionTracker||0}</div>
+                    </div>`;
+                modal.style.display = 'flex';
+                return;
+            }
 
             if(action === 'promote') {
                 title.textContent = '↑ PROMOTE — ' + name.toUpperCase();
@@ -2263,7 +2287,15 @@
             const memberName = formatMemberName(u) || u.callsign || uid;
 
             try {
-                if(action === 'promote') {
+                if(action === 'stats') {
+                    const att = Math.min(3, Math.max(0, parseInt(document.getElementById('qaStatsAtt').value)||0));
+                    const pt  = Math.max(0, parseInt(document.getElementById('qaStatsPt').value)||0);
+                    await updateDoc(doc(db,'users',uid), {attendance:att, promotionTracker:pt, updatedAt:new Date().toISOString()});
+                    u.attendance = att; u.promotionTracker = pt;
+                    notify('ROSTER STATS UPDATED — ' + memberName);
+                }
+
+                else if(action === 'promote') {
                     const newRank = document.getElementById('qaPromoRank').value;
                     const note    = document.getElementById('qaPromoNote').value.trim();
                     if(!newRank) { notify('SELECT A RANK',1); return; }
@@ -3097,10 +3129,11 @@
     <!-- ── BATTALION ROSTER CONTEXT MENU ── -->
     <div id="rosterCtxMenu" style="display:none;position:fixed;z-index:4000;background:#0d1217;border:1px solid rgba(0,217,255,.35);box-shadow:0 8px 32px rgba(0,0,0,.7),0 0 20px rgba(0,217,255,.15);min-width:200px;font-family:Rajdhani,sans-serif">
         <div id="rosterCtxName" style="padding:10px 14px;font-size:13px;font-weight:700;letter-spacing:1px;color:var(--accent);border-bottom:1px solid rgba(0,217,255,.15);background:rgba(0,217,255,.05)"></div>
-        <div id="rosterCtxEdit"     class="ctx-item" onclick="ctxAction('edit')"    >&#9998; Edit Personnel File</div>
-        <div id="rosterCtxPromote"  class="ctx-item" onclick="ctxAction('promote')" >&#8679; Promote</div>
-        <div id="rosterCtxTransfer" class="ctx-item" onclick="ctxAction('transfer')">&#8644; Transfer Platoon</div>
-        <div id="rosterCtxWarn"     class="ctx-item" onclick="ctxAction('warn')"    style="color:#FFD700">&#9888; File Warning</div>
+        <div id="rosterCtxEdit"     class="ctx-item" onclick="ctxAction('edit')"       >&#9998; Edit Personnel File</div>
+        <div id="rosterCtxStats"    class="ctx-item" onclick="ctxAction('stats')"      >&#9635; Edit Roster Stats</div>
+        <div id="rosterCtxPromote"  class="ctx-item" onclick="ctxAction('promote')"    >&#8679; Promote</div>
+        <div id="rosterCtxTransfer" class="ctx-item" onclick="ctxAction('transfer')"   >&#8644; Transfer Platoon</div>
+        <div id="rosterCtxWarn"     class="ctx-item" onclick="ctxAction('warn')"       style="color:#FFD700">&#9888; File Warning</div>
     </div>
 
     <!-- ── QUICK ACTION MODAL ── -->
