@@ -324,7 +324,7 @@
                 const ptReady=att>=3;
                 const ptStyle=ptReady?'color:#7FFF7F;font-weight:700;font-size:14px;text-shadow:0 0 8px rgba(127,255,127,.6);animation:ptGlow 1s ease-in-out infinite':'color:var(--accent);font-weight:700;font-size:14px';
                 return`<div class="roster-row">
-                    <div class="roster-cell roster-name">${esc(formatMemberName(r)||r.callsign)}</div>
+                    <div class="roster-cell roster-name" onclick="openRosterCtx(event,'${r.id}')">${esc(formatMemberName(r)||r.callsign)}</div>
                     <div class="roster-cell">${r.platoon
                         ? `<span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;padding:3px 10px;border:1px solid rgba(0,217,255,.35);color:var(--accent)">${esc(r.platoon)}</span>`
                         : `<span style="color:#555;font-size:10px">—</span>`
@@ -348,22 +348,50 @@
             }).join('');
             // Ensure scroll-wrap is applied after data renders
             if(typeof window.applyRosterScrollWrap==='function') window.applyRosterScrollWrap();
-            // Populate the edit-member selector
-            const sel=document.getElementById('rosterEditSelect');
-            if(sel){
-                sel.innerHTML='<option value="">— SELECT PERSONNEL —</option>';
-                // Sort selector alphabetically by display name
-                const selSorted=[...rosterData].sort((a,b)=>(formatMemberName(a)||'').localeCompare(formatMemberName(b)||''));
-                selSorted.forEach(r=>{
-                    const opt=document.createElement('option');
-                    opt.value=r.id;
-                    opt.textContent=formatMemberName(r)||(r.callsign||r.id);
-                    opt.style.background='#0A0E12';
-                    opt.style.color='#00D9FF';
-                    sel.appendChild(opt);
-                });
-            }
+            // Populate the searchable edit-member dropdown
+            window._rosterEditSorted = [...rosterData].sort((a,b)=>(formatMemberName(a)||'').localeCompare(formatMemberName(b)||''));
+            buildRosterEditList(window._rosterEditSorted);
         }
+
+        function buildRosterEditList(members) {
+            const dd = document.getElementById('rosterEditDropdown');
+            if(!dd) return;
+            if(!members.length) {
+                dd.innerHTML = '<div style="padding:8px 12px;color:#555;font-family:Rajdhani,sans-serif;font-size:11px;letter-spacing:1px">NO RESULTS</div>';
+                return;
+            }
+            dd.innerHTML = members.map(r => {
+                const name = esc(formatMemberName(r)||(r.callsign||r.id));
+                return `<div onclick="selectRosterEditMember('${r.id}','${name}')" style="padding:8px 12px;color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;border-bottom:1px solid rgba(0,217,255,.06);transition:background .1s" onmouseover="this.style.background='rgba(0,217,255,.08)'" onmouseout="this.style.background=''">${name}</div>`;
+            }).join('');
+        }
+
+        window.toggleRosterEditDropdown = function(show) {
+            const dd = document.getElementById('rosterEditDropdown');
+            if(dd) dd.style.display = show ? 'block' : 'none';
+        };
+
+        window.filterRosterEditList = function(val) {
+            const q = val.toLowerCase().trim();
+            const filtered = q
+                ? (window._rosterEditSorted||[]).filter(r => (formatMemberName(r)||r.callsign||'').toLowerCase().includes(q))
+                : (window._rosterEditSorted||[]);
+            buildRosterEditList(filtered);
+            toggleRosterEditDropdown(true);
+        };
+
+        window.selectRosterEditMember = function(uid, name) {
+            const input = document.getElementById('rosterEditSearch');
+            if(input) input.value = name;
+            toggleRosterEditDropdown(false);
+            openEditUser && allUsers.length ? openEditUser(uid) : (async()=>{ if(!allUsers.length) await loadAllUsers(); openEditUser(uid); })();
+        };
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const wrap = document.getElementById('rosterEditSearch')?.closest('div[style*="position:relative"]');
+            if(wrap && !wrap.contains(e.target)) toggleRosterEditDropdown(false);
+        });
 
         window.openRosterEditFromSelect=function(sel){
             const id=sel.value;
@@ -579,34 +607,34 @@
                 color:'#4A5D23', accent:'#8aad44',
                 sections:{
                     '1st Platoon — Killjoy': ['Platoon Commander','Platoon Sergeant',
-                        'KJ 1-1 SQL','KJ 1-1 Marine 1','KJ 1-1 Marine 2','KJ 1-1 Marine 3','KJ 1-1 Marine 4','KJ 1-1 Marine 5','KJ 1-1 Marine 6','KJ 1-1 Marine 7','KJ 1-1 Marine 8',
-                        'KJ 1-2 SQL','KJ 1-2 Marine 1','KJ 1-2 Marine 2','KJ 1-2 Marine 3','KJ 1-2 Marine 4','KJ 1-2 Marine 5','KJ 1-2 Marine 6','KJ 1-2 Marine 7','KJ 1-2 Marine 8',
-                        'KJ 1-3 SQL','KJ 1-3 Marine 1','KJ 1-3 Marine 2','KJ 1-3 Marine 3','KJ 1-3 Marine 4','KJ 1-3 Marine 5','KJ 1-3 Marine 6','KJ 1-3 Marine 7','KJ 1-3 Marine 8'],
+                        'KJ 1-1 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6','Marine 7','Marine 8',
+                        'KJ 1-2 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6','Marine 7','Marine 8',
+                        'KJ 1-3 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6','Marine 7','Marine 8'],
                     '2nd Platoon': ['Platoon Commander','Platoon Sergeant',
-                        'Alpha 2-1 SQL','Alpha 2-1 Marine 1','Alpha 2-1 Marine 2','Alpha 2-1 Marine 3','Alpha 2-1 Marine 4','Alpha 2-1 Marine 5','Alpha 2-1 Marine 6','Alpha 2-1 Marine 7','Alpha 2-1 Marine 8',
-                        'Bravo 2-2 SQL','Bravo 2-2 Marine 1','Bravo 2-2 Marine 2','Bravo 2-2 Marine 3','Bravo 2-2 Marine 4','Bravo 2-2 Marine 5','Bravo 2-2 Marine 6','Bravo 2-2 Marine 7','Bravo 2-2 Marine 8',
-                        'Charlie 2-3 SQL','Charlie 2-3 Marine 1','Charlie 2-3 Marine 2','Charlie 2-3 Marine 3','Charlie 2-3 Marine 4','Charlie 2-3 Marine 5','Charlie 2-3 Marine 6','Charlie 2-3 Marine 7','Charlie 2-3 Marine 8'],
+                        'Alpha 2-1 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6','Marine 7','Marine 8',
+                        'Bravo 2-2 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6','Marine 7','Marine 8',
+                        'Charlie 2-3 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6','Marine 7','Marine 8'],
                     '3rd Platoon': ['Platoon Commander','Platoon Sergeant',
-                        'Alpha 3-1 SQL','Alpha 3-1 Marine 1','Alpha 3-1 Marine 2','Alpha 3-1 Marine 3','Alpha 3-1 Marine 4','Alpha 3-1 Marine 5','Alpha 3-1 Marine 6','Alpha 3-1 Marine 7','Alpha 3-1 Marine 8',
-                        'Bravo 3-2 SQL','Bravo 3-2 Marine 1','Bravo 3-2 Marine 2','Bravo 3-2 Marine 3','Bravo 3-2 Marine 4','Bravo 3-2 Marine 5','Bravo 3-2 Marine 6','Bravo 3-2 Marine 7','Bravo 3-2 Marine 8',
-                        'Charlie 3-3 SQL','Charlie 3-3 Marine 1','Charlie 3-3 Marine 2','Charlie 3-3 Marine 3','Charlie 3-3 Marine 4','Charlie 3-3 Marine 5','Charlie 3-3 Marine 6','Charlie 3-3 Marine 7','Charlie 3-3 Marine 8'],
+                        'Alpha 3-1 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6','Marine 7','Marine 8',
+                        'Bravo 3-2 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6','Marine 7','Marine 8',
+                        'Charlie 3-3 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6','Marine 7','Marine 8'],
                 }
             },
             'JSOTF-23': {
                 color:'#6B3FA0', accent:'#a47de0',
                 sections:{
-                    '1st Plt — Marine Recon': ['Platoon Commander','Platoon Sergeant','Platoon JTAC',
-                        'Stalker 1-0 SQL','Stalker 1-0 Marine 1','Stalker 1-0 Marine 2','Stalker 1-0 Marine 3','Stalker 1-0 Marine 4','Stalker 1-0 Marine 5','Stalker 1-0 Marine 6',
-                        'Stalker 2-0 SQL','Stalker 2-0 Marine 1','Stalker 2-0 Marine 2','Stalker 2-0 Marine 3','Stalker 2-0 Marine 4','Stalker 2-0 Marine 5','Stalker 2-0 Marine 6'],
-                    '2nd Plt — Marine Raiders': ['Platoon Commander','Platoon Sergeant','Platoon JTAC',
-                        'Bravo 1-0 SQL','Bravo 1-0 Marine 1','Bravo 1-0 Marine 2','Bravo 1-0 Marine 3','Bravo 1-0 Marine 4','Bravo 1-0 Marine 5','Bravo 1-0 Marine 6',
-                        'Bravo 2-0 SQL','Bravo 2-0 Marine 1','Bravo 2-0 Marine 2','Bravo 2-0 Marine 3','Bravo 2-0 Marine 4','Bravo 2-0 Marine 5','Bravo 2-0 Marine 6'],
-                    '3rd Plt — Special Tactics Sq': ['Platoon Commander','Platoon Sergeant','Platoon JTAC',
-                        'Charlie 1-0 SQL','Charlie 1-0 Marine 1','Charlie 1-0 Marine 2','Charlie 1-0 Marine 3','Charlie 1-0 Marine 4','Charlie 1-0 Marine 5','Charlie 1-0 Marine 6',
-                        'Charlie 2-0 SQL','Charlie 2-0 Marine 1','Charlie 2-0 Marine 2','Charlie 2-0 Marine 3','Charlie 2-0 Marine 4','Charlie 2-0 Marine 5','Charlie 2-0 Marine 6'],
-                    '4th Plt — Pararescue Sq': ['Platoon Commander','Platoon Sergeant','Platoon JTAC',
-                        'Delta 1-0 SQL','Delta 1-0 Marine 1','Delta 1-0 Marine 2','Delta 1-0 Marine 3','Delta 1-0 Marine 4','Delta 1-0 Marine 5','Delta 1-0 Marine 6',
-                        'Delta 2-0 SQL','Delta 2-0 Marine 1','Delta 2-0 Marine 2','Delta 2-0 Marine 3','Delta 2-0 Marine 4','Delta 2-0 Marine 5','Delta 2-0 Marine 6'],
+                    '1st Plt — Marine Recon': ['Platoon Commander','Platoon Sergeant',
+                        'Stalker 1-0 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6',
+                        'Stalker 2-0 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6'],
+                    '2nd Plt — Marine Raiders': ['Platoon Commander','Platoon Sergeant',
+                        'Bravo 1-0 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6',
+                        'Bravo 2-0 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6'],
+                    '3rd Plt — Special Tactics Sq': ['Platoon Commander','Platoon Sergeant',
+                        'Charlie 1-0 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6',
+                        'Charlie 2-0 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6'],
+                    '4th Plt — Pararescue Sq': ['Platoon Commander','Platoon Sergeant',
+                        'Delta 1-0 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6',
+                        'Delta 2-0 SQL','Marine 1','Marine 2','Marine 3','Marine 4','Marine 5','Marine 6'],
                 }
             },
             '54th Air Wing': {
@@ -682,20 +710,22 @@
                 return null;
             }
 
-            function renderSlotCard(unit, section, slot) {
+            function renderSlotCard(unit, section, slot, isStaff=false) {
                 const key = (`${unit}__${section}__${slot}`).split(' ').join('_');
                 const val = unitCardData[key] || {status:'open', name:'', userId:''};
-                const statusColor = val.status==='closed'?'#556':val.status==='filled'?'#6a8d33':'rgba(0,217,255,.5)';
                 const isFilled = val.status==='filled';
-                return `<div style="display:flex;flex-direction:column;gap:4px;background:rgba(0,0,0,.4);border:1px solid ${statusColor};padding:8px 10px;min-width:170px;flex:1;max-width:230px">
-                    <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;color:#ddd;margin-bottom:2px">${slot}</div>
-                    <select data-uc-key="${key}" data-uc-field="status" onchange="ucLocalChange(this)" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.18);color:#e0e0e0;font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;padding:6px 8px;outline:none">
+                const isClosed = val.status==='closed';
+                const borderColor = isClosed?'rgba(80,80,100,.5)':isFilled?'rgba(106,141,51,.8)':'rgba(0,217,255,.2)';
+                const bgColor     = isClosed?'rgba(0,0,0,.3)':isFilled?'rgba(106,141,51,.08)':'rgba(0,0,0,.25)';
+                return `<div style="display:flex;flex-direction:column;gap:3px;background:${bgColor};border:1px solid ${borderColor};padding:7px 9px;min-width:${isStaff?'180px':'150px'};flex:${isStaff?'0 1 200px':'1'};max-width:${isStaff?'220px':'190px'}">
+                    <div style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:${isFilled?'#c8e88a':isClosed?'#666':'#bbb'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${slot}</div>
+                    <select data-uc-key="${key}" data-uc-field="status" onchange="ucLocalChange(this)" style="background:rgba(0,0,0,.5);border:1px solid rgba(0,217,255,.15);color:#ccc;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:600;padding:4px 6px;outline:none;letter-spacing:1px">
                         <option value="open"   ${val.status==='open'  ?'selected':''}>OPEN</option>
                         <option value="closed" ${val.status==='closed'?'selected':''}>CLOSED</option>
                         <option value="filled" ${val.status==='filled'?'selected':''}>FILLED</option>
                     </select>
                     <select data-uc-key="${key}" data-uc-field="userId" onchange="ucPersonnelChange(this)"
-                        style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);color:${isFilled?'#e0e0e0':'#555'};font-family:Rajdhani,sans-serif;font-size:11px;font-weight:500;padding:6px 8px;outline:none;opacity:${isFilled?'1':'0.25'};pointer-events:${isFilled?'auto':'none'}">
+                        style="background:rgba(0,0,0,.35);border:1px solid rgba(0,217,255,.1);color:${isFilled?'#d0e8a0':'#444'};font-family:Rajdhani,sans-serif;font-size:10px;font-weight:500;padding:4px 6px;outline:none;opacity:${isFilled?'1':'0.3'};pointer-events:${isFilled?'auto':'none'}">
                         ${personnelOptions(val.userId||'', val.name||'')}
                     </select>
                 </div>`;
@@ -704,53 +734,60 @@
             let html = '';
             for(const [unit, cfg] of Object.entries(UNIT_CARD_STRUCTURE)) {
                 if(unit !== ucActiveTab) continue;
-                html += `<div style="margin-bottom:20px;border:1px solid ${cfg.color}55;padding:14px 16px;background:rgba(0,0,0,.25)">`;
-                html += `<div style="color:${cfg.accent};font-family:Rajdhani,sans-serif;font-size:16px;font-weight:700;letter-spacing:4px;margin-bottom:12px">${unit.toUpperCase()}</div>`;
-
-                if(unit === '54th Air Wing') {
-                    const staffSlots = cfg.sections['Wing Staff'] || [];
-                    if(staffSlots.length) {
-                        html += `<div style="color:#ccc;font-family:Rajdhani,sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)">Wing Staff</div>`;
-                        html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">`;
-                        staffSlots.forEach(slot => { html += renderSlotCard(unit, 'Wing Staff', slot); });
-                        html += `</div>`;
-                    }
-                    html += `<div style="display:flex;gap:16px;flex-wrap:wrap">`;
-                    for(const [section, slots] of Object.entries(cfg.sections)) {
-                        if(section === 'Wing Staff') continue;
-                        html += `<div style="flex:0 1 300px">`;
-                        html += `<div style="color:#ccc;font-family:Rajdhani,sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)">${section}</div>`;
-                        html += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
-                        slots.forEach(slot => { html += renderSlotCard(unit, section, slot); });
-                        html += `</div></div>`;
-                    }
-                    html += `</div></div>`;
-                    continue;
-                }
+                html += `<div style="border:1px solid ${cfg.color}44;background:rgba(0,0,0,.2)">`;
+                // Unit header bar
+                html += `<div style="background:${cfg.color}22;border-bottom:2px solid ${cfg.color}66;padding:10px 16px;display:flex;align-items:center;gap:10px">
+                    <div style="width:3px;height:20px;background:${cfg.accent}"></div>
+                    <div style="color:${cfg.accent};font-family:Rajdhani,sans-serif;font-size:15px;font-weight:700;letter-spacing:4px">${unit.toUpperCase()}</div>
+                </div>`;
+                html += `<div style="padding:12px 16px">`;
 
                 for(const [section, slots] of Object.entries(cfg.sections)) {
-                    html += `<div style="color:#ccc;font-family:Rajdhani,sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)">${section}</div>`;
+                    // Section header
+                    html += `<div style="display:flex;align-items:center;gap:8px;margin:12px 0 8px">
+                        <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:3px;color:rgba(0,217,255,.6);text-transform:uppercase">${section}</div>
+                        <div style="flex:1;height:1px;background:rgba(0,217,255,.1)"></div>
+                        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#444;letter-spacing:1px">${slots.length} SLOTS</div>
+                    </div>`;
+
                     const staffSlots = [], squadGroups = {}, squadOrder = [];
+                    let currentSquad = null;
                     for(const slot of slots){
-                        const sq = getSquadGroup(slot);
-                        if(sq){ if(!squadGroups[sq]){squadGroups[sq]=[];squadOrder.push(sq);} squadGroups[sq].push(slot); }
-                        else { staffSlots.push(slot); }
+                        if(slot.endsWith(' SQL') || slot.endsWith('SQL')){
+                            // This slot is a Squad Leader — start a new squad group named after it
+                            currentSquad = slot.replace(/ SQL$/, '').trim();
+                            if(!squadGroups[currentSquad]){ squadGroups[currentSquad]=[]; squadOrder.push(currentSquad); }
+                            squadGroups[currentSquad].push(slot);
+                        } else if(currentSquad){
+                            // Slot belongs to current squad
+                            squadGroups[currentSquad].push(slot);
+                        } else {
+                            // No squad yet — staff slot
+                            staffSlots.push(slot);
+                        }
                     }
+
+                    // Staff slots row
                     if(staffSlots.length){
-                        html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">`;
-                        staffSlots.forEach(slot => { html += renderSlotCard(unit, section, slot); });
+                        html += `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;padding-bottom:8px;border-bottom:${squadOrder.length?'1px solid rgba(255,255,255,.04)':'none'}">`;
+                        staffSlots.forEach(slot => { html += renderSlotCard(unit, section, slot, true); });
                         html += `</div>`;
                     }
-                    for(const sqName of squadOrder){
-                        const sqSlots = squadGroups[sqName];
-                        html += `<div style="margin:8px 0 10px;padding:8px 10px;border-left:2px solid ${cfg.accent}88;background:rgba(0,0,0,.15)">`;
-                        html += `<div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;color:${cfg.accent};opacity:.9;margin-bottom:6px">${sqName.toUpperCase()}</div>`;
-                        html += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
-                        sqSlots.forEach(slot => { html += renderSlotCard(unit, section, slot); });
-                        html += `</div></div>`;
+
+                    // Squad groups
+                    if(squadOrder.length){
+                        html += `<div style="display:flex;flex-direction:column;gap:6px">`;
+                        for(const sqName of squadOrder){
+                            html += `<div style="background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.04);padding:7px 10px">`;
+                            html += `<div style="font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:${cfg.accent};opacity:.7;margin-bottom:6px">${sqName.toUpperCase()}</div>`;
+                            html += `<div style="display:flex;flex-wrap:wrap;gap:5px">`;
+                            squadGroups[sqName].forEach(slot => { html += renderSlotCard(unit, section, slot, false); });
+                            html += `</div></div>`;
+                        }
+                        html += `</div>`;
                     }
                 }
-                html += `</div>`;
+                html += `</div></div>`;
             }
             c.innerHTML = html;
         }
@@ -809,7 +846,7 @@
             try {
                 await setDoc(doc(db,'settings','unit_cards'), unitCardData);
                 logAction('UNIT_CARDS_SAVE','Saved all unit card data');
-                notify('UNIT CARDS SAVED — OOB PAGE WILL SHOW UPDATED DATA ON REFRESH');
+                notify('UNIT CARDS SAVED — CAREER PATH PAGES WILL SHOW UPDATED DATA ON REFRESH');
                 if(btn) { btn.textContent='SAVED ✓'; btn.style.borderColor='var(--success)'; btn.style.color='var(--success)'; }
                 setTimeout(()=>{ if(btn){btn.textContent='SAVE CHANGES';btn.style.borderColor='';btn.style.color='';btn.disabled=false;} }, 3000);
                 renderUnitCards();
@@ -2023,6 +2060,214 @@
         };
         window.closeEditModal = function(){ document.getElementById('editUserModal').classList.remove('active'); };
 
+        // ── BATTALION ROSTER CONTEXT MENU ──
+        let ctxUserId = null;
+
+        window.openRosterCtx = function(e, uid) {
+            e.stopPropagation();
+            const u = rosterData.find(x => x.id === uid); if(!u) return;
+            ctxUserId = uid;
+            const menu = document.getElementById('rosterCtxMenu');
+            document.getElementById('rosterCtxName').textContent = formatMemberName(u) || u.callsign || uid;
+            // Show/hide options based on permissions
+            document.getElementById('rosterCtxEdit').style.display     = P().canEditProfiles ? '' : 'none';
+            document.getElementById('rosterCtxPromote').style.display  = P().canEditProfiles ? '' : 'none';
+            document.getElementById('rosterCtxTransfer').style.display = P().canEditProfiles ? '' : 'none';
+            document.getElementById('rosterCtxWarn').style.display     = P().canEditProfiles ? '' : 'none';
+            // Position near click — keep within viewport
+            const vw = window.innerWidth, vh = window.innerHeight;
+            let x = e.clientX, y = e.clientY;
+            menu.style.display = 'block';
+            const mw = menu.offsetWidth, mh = menu.offsetHeight;
+            if(x + mw > vw - 8) x = vw - mw - 8;
+            if(y + mh > vh - 8) y = vh - mh - 8;
+            menu.style.left = x + 'px';
+            menu.style.top  = y + 'px';
+        };
+
+        window.closeRosterCtx = function() {
+            document.getElementById('rosterCtxMenu').style.display = 'none';
+            ctxUserId = null;
+        };
+
+        // Close menu on any outside click
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('rosterCtxMenu');
+            if(menu && menu.style.display !== 'none' && !menu.contains(e.target)) {
+                closeRosterCtx();
+            }
+        });
+
+        window.ctxAction = async function(action) {
+            closeRosterCtx();
+            const uid = ctxUserId; if(!uid) return;
+            const u = rosterData.find(x => x.id === uid); if(!u) return;
+            const name = formatMemberName(u) || u.callsign || uid;
+            const today = new Date().toISOString().split('T')[0];
+
+            if(action === 'edit') {
+                // Ensure allUsers is populated (may be empty if Personnel Files panel not visited)
+                if(!allUsers.length) {
+                    notify('LOADING...');
+                    await loadAllUsers();
+                }
+                openEditUser(uid);
+                return;
+            }
+
+            const modal = document.getElementById('quickActionModal');
+            const title = document.getElementById('qaTitle');
+            const body  = document.getElementById('qaBody');
+            modal._action = action;
+            modal._uid    = uid;
+
+            if(action === 'promote') {
+                title.textContent = '↑ PROMOTE — ' + name.toUpperCase();
+                body.innerHTML = `
+                    <div style="display:flex;flex-direction:column;gap:10px">
+                        <div style="font-size:11px;letter-spacing:2px;color:#aaa">CURRENT RANK: <span style="color:var(--accent)">${esc(u.rank||'—')}</span></div>
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">PROMOTE TO</label>
+                            <select id="qaPromoRank" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none">
+                                <optgroup label="── OFFICERS ──">
+                                    <option>O9 / Lieutenant General</option><option>O8 / Major General</option><option>O7 / Brigadier General</option>
+                                    <option>O6 / Colonel</option><option>O5 / Lieutenant Colonel</option><option>O4 / Major</option>
+                                    <option>O3 / Captain</option><option>O2 / First Lieutenant</option><option>O1 / Second Lieutenant</option>
+                                </optgroup>
+                                <optgroup label="── MARINES ──">
+                                    <option>E9 / Sergeant Major</option><option>E9 / Master Gunnery Sergeant</option><option>E9 / First Sergeant</option>
+                                    <option>E8 / Master Sergeant</option><option>E7 / Gunnery Sergeant</option><option>E6 / Staff Sergeant</option>
+                                    <option>E5 / Sergeant</option><option>E4 / Corporal</option><option>E3 / Lance Corporal</option>
+                                    <option>E2 / Private First Class</option><option>E1 / Private</option>
+                                </optgroup>
+                                <optgroup label="── CORPSMEN ──">
+                                    <option>E9 / Master Chief Hospital Corpsman</option><option>E8 / Senior Chief Corpsman</option><option>E7 / Chief Corpsman</option>
+                                    <option>E6 / Corpsman First Class</option><option>E5 / Corpsman Second Class</option><option>E4 / Corpsman Third Class</option>
+                                    <option>E3 / Hospitalman</option><option>E2 / Hospitalman Apprentice</option>
+                                </optgroup>
+                                <optgroup label="── AIR WING ──">
+                                    <option>E6 / Technical Sergeant</option><option>E4 / Senior Airman</option>
+                                    <option>E3 / Airman First Class</option><option>E2 / Airman</option><option>E1 / Airman Basic</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">NOTE (OPTIONAL)</label>
+                            <input id="qaPromoNote" type="text" placeholder="e.g. Promoted for outstanding service..." style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none">
+                        </div>
+                    </div>`;
+                // Pre-select current rank if possible
+                const sel = body.querySelector('#qaPromoRank');
+                if(sel) { const opt = Array.from(sel.options).find(o=>o.value===u.rank); if(opt) sel.value=opt.value; }
+            }
+
+            else if(action === 'transfer') {
+                title.textContent = '⇄ TRANSFER — ' + name.toUpperCase();
+                body.innerHTML = `
+                    <div style="display:flex;flex-direction:column;gap:10px">
+                        <div style="font-size:11px;letter-spacing:2px;color:#aaa">CURRENT PLATOON: <span style="color:var(--accent)">${esc(u.platoon||'—')}</span></div>
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">TRANSFER TO</label>
+                            <select id="qaTransferPlatoon" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none">
+                                <option value="">— SELECT PLATOON —</option>
+                                <option>Command</option><option>1st Platoon</option><option>2nd Platoon</option><option>3rd Platoon</option>
+                                <option>Force Recon</option><option>Corpsmen</option><option>Pilot</option>
+                                <option>Awaiting BCT</option><option>Reserves</option>
+                            </select>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">NOTE (OPTIONAL)</label>
+                            <input id="qaTransferNote" type="text" placeholder="Reason for transfer..." style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none">
+                        </div>
+                    </div>`;
+            }
+
+            else if(action === 'warn') {
+                title.style.color = '#FFD700';
+                title.textContent = '⚠ FILE WARNING — ' + name.toUpperCase();
+                body.innerHTML = `
+                    <div style="display:flex;flex-direction:column;gap:10px">
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">SEVERITY</label>
+                            <select id="qaWarnSeverity" style="background:rgba(0,0,0,.7);border:1px solid rgba(255,215,0,.35);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none">
+                                <option value="minor">MINOR</option>
+                                <option value="major">MAJOR</option>
+                                <option value="severe">SEVERE</option>
+                            </select>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">REASON *</label>
+                            <textarea id="qaWarnReason" placeholder="Describe the reason for this warning..." rows="3" style="background:rgba(0,0,0,.7);border:1px solid rgba(255,215,0,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none;resize:vertical;width:100%"></textarea>
+                        </div>
+                    </div>`;
+                title.style.color = '#FFD700';
+            }
+
+            modal.style.display = 'flex';
+        };
+
+        window.closeQuickAction = function() {
+            const modal = document.getElementById('quickActionModal');
+            modal.style.display = 'none';
+            modal._action = null; modal._uid = null;
+            document.getElementById('qaTitle').style.color = 'var(--accent)';
+        };
+
+        window.quickActionSubmit = async function() {
+            const modal  = document.getElementById('quickActionModal');
+            const action = modal._action;
+            const uid    = modal._uid;
+            if(!uid || !action) return;
+            const u = rosterData.find(x => x.id === uid); if(!u) return;
+            const today = new Date().toISOString().split('T')[0];
+            const by = currentUserData?.callsign || 'Staff';
+            const memberName = formatMemberName(u) || u.callsign || uid;
+
+            try {
+                if(action === 'promote') {
+                    const newRank = document.getElementById('qaPromoRank').value;
+                    const note    = document.getElementById('qaPromoNote').value.trim();
+                    if(!newRank) { notify('SELECT A RANK',1); return; }
+                    const entry = {date:today,fromRank:u.rank||'—',toRank:newRank,note:note||'Quick promote via roster',addedBy:by,addedAt:new Date().toISOString(),auto:false};
+                    const updateData = {rank:newRank, promotionHistory:[...(u.promotionHistory||[]),entry]};
+                    if(newRank.startsWith('E2') && !u.graduation) updateData.graduation = today;
+                    await updateDoc(doc(db,'users',uid), updateData);
+                    u.rank = newRank;
+                    if(updateData.graduation) u.graduation = today;
+                    u.promotionHistory = updateData.promotionHistory;
+                    fireWebhook('promote', {name:memberName, fromRank:u.rank||'—', toRank:newRank, note:entry.note, by});
+                    notify('PROMOTED: ' + memberName);
+                }
+
+                else if(action === 'transfer') {
+                    const toPlatoon = document.getElementById('qaTransferPlatoon').value;
+                    const note      = document.getElementById('qaTransferNote').value.trim();
+                    if(!toPlatoon) { notify('SELECT A PLATOON',1); return; }
+                    const entry = {date:today,from:u.platoon||'—',to:toPlatoon,note:note||'Quick transfer via roster',addedBy:by,addedAt:new Date().toISOString(),auto:false};
+                    const updateData = {platoon:toPlatoon, joinedPlatoon:today, platoonHistory:[...(u.platoonHistory||[]),entry]};
+                    await updateDoc(doc(db,'users',uid), updateData);
+                    u.platoon = toPlatoon; u.joinedPlatoon = today; u.platoonHistory = updateData.platoonHistory;
+                    fireWebhook('platoon', {name:memberName, from:entry.from, to:toPlatoon, note:entry.note, by});
+                    notify('TRANSFERRED: ' + memberName + ' → ' + toPlatoon);
+                }
+
+                else if(action === 'warn') {
+                    const severity = document.getElementById('qaWarnSeverity').value;
+                    const reason   = document.getElementById('qaWarnReason').value.trim();
+                    if(!reason) { notify('REASON IS REQUIRED',1); return; }
+                    const entry = {date:today,severity,note:reason,addedBy:by,addedAt:new Date().toISOString()};
+                    const updateData = {warningHistory:[...(u.warningHistory||[]),entry]};
+                    await updateDoc(doc(db,'users',uid), updateData);
+                    u.warningHistory = updateData.warningHistory;
+                    fireWebhook('warning', {name:memberName, severity, reason, by});
+                    notify('WARNING FILED: ' + memberName);
+                }
+
+                closeQuickAction();
+                renderRosterTable();
+            } catch(e) { notify('ERROR: '+e.message, 1); }
+        };
+
         window.loadPromotePanel = async function() {
             const c=document.getElementById('promoteList'); if(!c) return;
             c.innerHTML='<div class="empty-state">LOADING...</div>';
@@ -2724,6 +2969,13 @@
 
     <link rel="stylesheet" href="css/admin.css">
     <link rel="stylesheet" href="css/admin-mobile.css">
+    <style>
+        .ctx-item { padding:10px 16px; font-family:Rajdhani,sans-serif; font-size:13px; font-weight:600; letter-spacing:1px; color:#ccc; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.04); transition:background .15s,color .15s; }
+        .ctx-item:hover { background:rgba(0,217,255,.08); color:var(--accent); }
+        .ctx-item:last-child { border-bottom:none; }
+        .roster-name { cursor:pointer !important; }
+        .roster-name:hover { color:var(--accent) !important; text-decoration:underline; }
+    </style>
 </head>
 <body>
     <div class="scanlines"></div>
@@ -2731,6 +2983,27 @@
 
     <div class="notification" id="notification"></div>
     <div class="media-picker-modal" id="mediaPickerModal"><div class="picker-content"><div class="picker-header"><h3>SELECT MEDIA</h3><button class="picker-close" onclick="closeMediaPicker()">&times;</button></div><div class="picker-grid" id="pickerGrid"></div></div></div>
+    <!-- ── BATTALION ROSTER CONTEXT MENU ── -->
+    <div id="rosterCtxMenu" style="display:none;position:fixed;z-index:4000;background:#0d1217;border:1px solid rgba(0,217,255,.35);box-shadow:0 8px 32px rgba(0,0,0,.7),0 0 20px rgba(0,217,255,.15);min-width:200px;font-family:Rajdhani,sans-serif">
+        <div id="rosterCtxName" style="padding:10px 14px;font-size:13px;font-weight:700;letter-spacing:1px;color:var(--accent);border-bottom:1px solid rgba(0,217,255,.15);background:rgba(0,217,255,.05)"></div>
+        <div id="rosterCtxEdit"     class="ctx-item" onclick="ctxAction('edit')"    >&#9998; Edit Personnel File</div>
+        <div id="rosterCtxPromote"  class="ctx-item" onclick="ctxAction('promote')" >&#8679; Promote</div>
+        <div id="rosterCtxTransfer" class="ctx-item" onclick="ctxAction('transfer')">&#8644; Transfer Platoon</div>
+        <div id="rosterCtxWarn"     class="ctx-item" onclick="ctxAction('warn')"    style="color:#FFD700">&#9888; File Warning</div>
+    </div>
+
+    <!-- ── QUICK ACTION MODAL ── -->
+    <div id="quickActionModal" style="display:none;position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+        <div style="background:#0d1217;border:1px solid rgba(0,217,255,.4);box-shadow:0 0 40px rgba(0,217,255,.15);padding:24px 28px;min-width:340px;max-width:480px;width:90%;font-family:Rajdhani,sans-serif">
+            <div id="qaTitle" style="font-size:16px;font-weight:700;letter-spacing:3px;color:var(--accent);margin-bottom:18px;border-bottom:1px solid rgba(0,217,255,.15);padding-bottom:10px"></div>
+            <div id="qaBody"></div>
+            <div style="display:flex;gap:10px;margin-top:18px">
+                <button id="qaSubmit" class="upload-btn" onclick="quickActionSubmit()" style="flex:1;font-size:12px;letter-spacing:2px">CONFIRM</button>
+                <button class="action-btn remove-btn" onclick="closeQuickAction()" style="font-size:12px;letter-spacing:2px">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
     <div class="edit-modal" id="editUserModal">
         <div class="edit-modal-content">
             <div class="edit-modal-title" id="editModalTitle">EDIT OPERATIVE</div>
@@ -3518,11 +3791,15 @@
                         <button class="action-btn approve-btn" onclick="loadRosterPanel()">&#8635; REFRESH</button>
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
                         <button id="forceResetBtn" class="action-btn" onclick="forceMonthlyReset()" style="border:1px solid rgba(255,200,0,.45);color:#FFD700;background:rgba(255,200,0,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer" title="Award +1 PT to all 3/3 members then wipe attendance — same as month-end auto-reset">&#9654; MONTH-END RESET</button>
-                        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.25);padding:4px 10px">
+                        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.25);padding:4px 10px;position:relative">
                             <span style="color:#aaa;font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:2px;white-space:nowrap">&#9998; EDIT MEMBER:</span>
-                            <select id="rosterEditSelect" onchange="openRosterEditFromSelect(this)" style="background:#0A0E12;border:none;color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;outline:none;cursor:pointer;min-width:140px">
-                                <option value="" style="background:#0A0E12;color:#00D9FF">— SELECT PERSONNEL —</option>
-                            </select>
+                            <div style="position:relative;min-width:160px">
+                                <input id="rosterEditSearch" type="text" placeholder="— SEARCH PERSONNEL —" autocomplete="off"
+                                    onclick="toggleRosterEditDropdown(true)"
+                                    oninput="filterRosterEditList(this.value)"
+                                    style="background:#0A0E12;border:none;border-bottom:1px solid rgba(0,217,255,.3);color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;outline:none;cursor:text;width:100%;padding:2px 0">
+                                <div id="rosterEditDropdown" style="display:none;position:absolute;top:100%;left:0;min-width:220px;max-height:240px;overflow-y:auto;background:#0A0E12;border:1px solid rgba(0,217,255,.35);z-index:3000;box-shadow:0 8px 24px rgba(0,0,0,.7)"></div>
+                            </div>
                         </div>
                         <div style="display:flex;gap:4px;margin-left:8px;align-items:center">
                             <span style="color:#aaa;font-family:Rajdhani,sans-serif;font-size:11px;letter-spacing:2px;margin-right:4px">SORT:</span>
