@@ -348,50 +348,17 @@
             }).join('');
             // Ensure scroll-wrap is applied after data renders
             if(typeof window.applyRosterScrollWrap==='function') window.applyRosterScrollWrap();
-            // Populate the searchable edit-member dropdown
-            window._rosterEditSorted = [...rosterData].sort((a,b)=>(formatMemberName(a)||'').localeCompare(formatMemberName(b)||''));
-            buildRosterEditList(window._rosterEditSorted);
         }
 
-        function buildRosterEditList(members) {
-            const dd = document.getElementById('rosterEditDropdown');
-            if(!dd) return;
-            if(!members.length) {
-                dd.innerHTML = '<div style="padding:8px 12px;color:#555;font-family:Rajdhani,sans-serif;font-size:11px;letter-spacing:1px">NO RESULTS</div>';
-                return;
-            }
-            dd.innerHTML = members.map(r => {
-                const name = esc(formatMemberName(r)||(r.callsign||r.id));
-                return `<div onclick="selectRosterEditMember('${r.id}','${name}')" style="padding:8px 12px;color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;border-bottom:1px solid rgba(0,217,255,.06);transition:background .1s" onmouseover="this.style.background='rgba(0,217,255,.08)'" onmouseout="this.style.background=''">${name}</div>`;
-            }).join('');
-        }
-
-        window.toggleRosterEditDropdown = function(show) {
-            const dd = document.getElementById('rosterEditDropdown');
-            if(dd) dd.style.display = show ? 'block' : 'none';
+        window.filterRosterRows = function(val) {
+            const q = val.trim().toLowerCase();
+            const rows = document.querySelectorAll('#rosterList .roster-row');
+            rows.forEach(row => {
+                const name = row.querySelector('.roster-name');
+                if(!name) return;
+                row.style.display = (!q || name.textContent.toLowerCase().includes(q)) ? '' : 'none';
+            });
         };
-
-        window.filterRosterEditList = function(val) {
-            const q = val.toLowerCase().trim();
-            const filtered = q
-                ? (window._rosterEditSorted||[]).filter(r => (formatMemberName(r)||r.callsign||'').toLowerCase().includes(q))
-                : (window._rosterEditSorted||[]);
-            buildRosterEditList(filtered);
-            toggleRosterEditDropdown(true);
-        };
-
-        window.selectRosterEditMember = function(uid, name) {
-            const input = document.getElementById('rosterEditSearch');
-            if(input) input.value = name;
-            toggleRosterEditDropdown(false);
-            openEditUser && allUsers.length ? openEditUser(uid) : (async()=>{ if(!allUsers.length) await loadAllUsers(); openEditUser(uid); })();
-        };
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            const wrap = document.getElementById('rosterEditSearch')?.closest('div[style*="position:relative"]');
-            if(wrap && !wrap.contains(e.target)) toggleRosterEditDropdown(false);
-        });
 
         window.openRosterEditFromSelect=function(sel){
             const id=sel.value;
@@ -3071,10 +3038,8 @@
             <!-- Medal picker -->
             <div style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7);margin-bottom:8px">SELECT MEDAL</div>
             <div id="bmMedalGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-                <div class="bm-medal-opt selected" data-medal="" data-name="Custom / No Medal" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid #C9A227;background:rgba(185,150,50,.12);cursor:pointer;min-width:60px;transition:all .15s">
-                    <span style="font-size:22px">★</span><span style="font-size:9px;letter-spacing:1px;color:#ccc">CUSTOM</span>
-                </div>
-                <div class="bm-medal-opt" data-medal="Medal of Honor Medal.png" data-name="Medal of Honor" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid rgba(255,255,255,.1);cursor:pointer;min-width:60px;transition:all .15s">
+
+                <div class="bm-medal-opt" data-medal="Medal of Honor Medal.png" data-name="Medal of Honor" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid #C9A227;background:rgba(185,150,50,.12);cursor:pointer;min-width:60px;transition:all .15s">
                     <img src="images/medal_emojis/Medal of Honor Medal.png" style="width:28px;height:28px;object-fit:contain"><span style="font-size:9px;letter-spacing:1px;color:#ccc;text-align:center">MEDAL OF HONOR</span>
                 </div>
                 <div class="bm-medal-opt" data-medal="Navy Cross Medal.png" data-name="Navy Cross" onclick="selectBmMedal(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:2px solid rgba(255,255,255,.1);cursor:pointer;min-width:60px;transition:all .15s">
@@ -3330,18 +3295,15 @@
                             <button class="history-add-btn" onclick="addHistoryEntry('warn')">+ ADD</button>
                         </div>
                     </div>
-                    <!-- COMMENDATION HISTORY -->
+                    <!-- MEDAL HISTORY -->
                     <div class="history-section">
                         <div class="history-section-hd">
-                            <span class="history-section-title" style="color:#a78bfa">&#9733; COMMENDATION / MEDAL HISTORY</span>
+                            <span class="history-section-title" style="color:#a78bfa">&#9733; MEDAL HISTORY</span>
                         </div>
                         <div id="histCommendList"></div>
                         <div class="medal-picker" id="medalPickerGrid">
                             <div class="medal-picker-label">SELECT MEDAL / AWARD</div>
-                            <div class="medal-opt selected" data-medal="" data-name="Custom / No Medal" onclick="selectMedal(this)">
-                                <span style="font-size:18px;opacity:.4">✦</span>
-                                <span>CUSTOM</span>
-                            </div>
+
                             <div class="medal-opt" data-medal="Medal of Honor Medal.png" data-name="Medal of Honor" onclick="selectMedal(this)">
                                 <img src="images/medal_emojis/Medal of Honor Medal.png" alt="Medal of Honor">
                                 <span>MEDAL OF HONOR</span>
@@ -3387,7 +3349,6 @@
                                 <option value="Navy Achievement Medal">Navy Achievement Medal</option>
                                 <option value="Air Force Achivement Medal">Air Force Achievement Medal</option>
                                 <option value="POW Medal">POW Medal</option>
-                                <option value="Custom">Custom Award</option>
                             </select>
                             <input type="text" id="histCommendNote" placeholder="Reason / citation...">
                             <button class="history-add-btn" onclick="addHistoryEntry('commend')">+ ADD</button>
@@ -3939,15 +3900,12 @@
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
                         <button id="forceResetBtn" class="action-btn" onclick="forceMonthlyReset()" style="border:1px solid rgba(255,200,0,.45);color:#FFD700;background:rgba(255,200,0,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer" title="Award +1 PT to all 3/3 members then wipe attendance — same as month-end auto-reset">&#9654; MONTH-END RESET</button>
                         <button class="action-btn" onclick="openBulkMedalModal()" style="border:1px solid rgba(185,150,50,.6);color:#C9A227;background:rgba(185,150,50,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer">&#9733; AWARD MEDAL</button>
-                        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.25);padding:4px 10px;position:relative">
+                        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.25);padding:4px 10px">
                             <span style="color:#aaa;font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:2px;white-space:nowrap">&#9998; EDIT MEMBER:</span>
-                            <div style="position:relative;min-width:160px">
-                                <input id="rosterEditSearch" type="text" placeholder="— SEARCH PERSONNEL —" autocomplete="off"
-                                    onclick="toggleRosterEditDropdown(true)"
-                                    oninput="filterRosterEditList(this.value)"
-                                    style="background:#0A0E12;border:none;border-bottom:1px solid rgba(0,217,255,.3);color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;outline:none;cursor:text;width:100%;padding:2px 0">
-                                <div id="rosterEditDropdown" style="display:none;position:absolute;bottom:100%;left:0;min-width:220px;max-height:240px;overflow-y:auto;background:#0A0E12;border:1px solid rgba(0,217,255,.35);z-index:3000;box-shadow:0 -8px 24px rgba(0,0,0,.7)"></div>
-                            </div>
+                            <input id="rosterEditSearch" type="text" placeholder="TYPE TO FILTER..." autocomplete="off"
+                                oninput="filterRosterRows(this.value)"
+                                style="background:transparent;border:none;border-bottom:1px solid rgba(0,217,255,.3);color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;outline:none;cursor:text;min-width:160px;padding:2px 0">
+                            <span onclick="document.getElementById('rosterEditSearch').value='';filterRosterRows('')" style="color:#555;font-size:14px;cursor:pointer;line-height:1" title="Clear">&#10005;</span>
                         </div>
                         <div style="display:flex;gap:4px;margin-left:8px;align-items:center">
                             <span style="color:#aaa;font-family:Rajdhani,sans-serif;font-size:11px;letter-spacing:2px;margin-right:4px">SORT:</span>
