@@ -312,6 +312,11 @@
                             <option value="Pilot">Pilot</option>
                             <option value="Reserves">Reserves</option>
                         </select>
+                        <select id="rankSort">
+                            <option value="">SORT: DEFAULT</option>
+                            <option value="rank-asc">RANK: HIGH → LOW</option>
+                            <option value="rank-desc">RANK: LOW → HIGH</option>
+                        </select>
                     </div>
 
                     <div id="rosterGroups"></div>
@@ -480,22 +485,34 @@
             document.getElementById('rosterGroups').innerHTML = html;
         }
 
+        function getRankSortOrder(rank) {
+            if(!rank) return 999;
+            const m = rank.match(/^([OE])(\d+)/);
+            if(!m) return 998;
+            const tier = m[1]==='O' ? 0 : 100;
+            return tier + (99 - parseInt(m[2]));
+        }
+
         function applyFilters() {
-            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            const search  = document.getElementById('searchInput').value.toLowerCase().trim();
             const platoon = document.getElementById('platoonFilter').value;
+            const rankSortVal = document.getElementById('rankSort').value;
             let filtered = allRoster;
-            if (search) filtered = filtered.filter(r =>
+            if (search)  filtered = filtered.filter(r =>
                 (r.callsign||'').toLowerCase().includes(search) ||
                 (r.firstName||'').toLowerCase().includes(search) ||
                 (r.lastName||'').toLowerCase().includes(search) ||
                 formatMemberName(r).toLowerCase().includes(search)
             );
             if (platoon) filtered = filtered.filter(r => r.platoon === platoon);
+            if (rankSortVal === 'rank-asc')  filtered = [...filtered].sort((a,b) => getRankSortOrder(a.rank) - getRankSortOrder(b.rank));
+            if (rankSortVal === 'rank-desc') filtered = [...filtered].sort((a,b) => getRankSortOrder(b.rank) - getRankSortOrder(a.rank));
             renderRoster(filtered);
         }
 
         document.getElementById('searchInput').addEventListener('input', applyFilters);
         document.getElementById('platoonFilter').addEventListener('change', applyFilters);
+        document.getElementById('rankSort').addEventListener('change', applyFilters);
 
         // Animate loading dots
         let dotInterval = setInterval(() => {

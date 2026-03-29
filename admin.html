@@ -292,6 +292,14 @@
             }catch(e){if(c)c.innerHTML='<div class="empty-state">ERROR: '+e.message+'</div>';}
         }
 
+        function getRankSortOrder(rank) {
+            if(!rank) return 999;
+            const m = rank.match(/^([OE])(\d+)/);
+            if(!m) return 998;
+            const tier = m[1]==='O' ? 0 : 100;
+            return tier + (99 - parseInt(m[2]));
+        }
+
         function renderRosterTable(){
             const c=document.getElementById('rosterList');if(!c)return;
             const sorted=[...rosterData];
@@ -300,6 +308,8 @@
             if(rosterSort==='joined')          sorted.sort((a,b)=>new Date(a.joinedAt||'9999')-new Date(b.joinedAt||'9999'));
             if(rosterSort==='platoon-service') sorted.sort((a,b)=>new Date(a.joinedPlatoon||'9999')-new Date(b.joinedPlatoon||'9999'));
             if(rosterSort==='time-in-unit')    sorted.sort((a,b)=>new Date(a.graduation||'9999')-new Date(b.graduation||'9999'));
+            if(rosterSort==='rank-asc')        sorted.sort((a,b)=>getRankSortOrder(a.rank)-getRankSortOrder(b.rank));
+            if(rosterSort==='rank-desc')       sorted.sort((a,b)=>getRankSortOrder(b.rank)-getRankSortOrder(a.rank));
             const active=sorted.filter(r=>r.platoon!=='Reserves');
             const reserves=sorted.filter(r=>r.platoon==='Reserves');
             const tot=document.getElementById('rosterTotal'),act=document.getElementById('rosterActiveCount'),res=document.getElementById('rosterReservesCount');
@@ -348,6 +358,8 @@
                     const opt=document.createElement('option');
                     opt.value=r.id;
                     opt.textContent=formatMemberName(r)||(r.callsign||r.id);
+                    opt.style.background='#0A0E12';
+                    opt.style.color='#00D9FF';
                     sel.appendChild(opt);
                 });
             }
@@ -615,6 +627,19 @@
         };
         let unitCardData = {};
 
+        let ucActiveTab = 'Battalion Command';
+
+        window.setUcTab = function(tabKey) {
+            ucActiveTab = tabKey;
+            document.querySelectorAll('.uc-tab').forEach(btn => {
+                const isActive = btn.dataset.ucTab === tabKey;
+                btn.style.background  = isActive ? 'rgba(0,217,255,.12)' : 'transparent';
+                btn.style.color       = isActive ? 'var(--accent)' : '#888';
+                btn.style.borderColor = isActive ? 'rgba(0,217,255,.35)' : 'rgba(0,217,255,.15)';
+            });
+            renderUnitCards();
+        };
+
         async function loadUnitCards() {
             const c = document.getElementById('unitCardsList');
             if(c) c.innerHTML = '<div class="empty-state">LOADING...</div>';
@@ -636,8 +661,11 @@
                 .filter(u=>u.status!=='pending'&&u.status!=='denied')
                 .sort((a,b)=>(formatMemberName(a)||a.callsign||'').localeCompare(formatMemberName(b)||b.callsign||''));
 
-            function personnelOptions(selectedUserId) {
-                return `<option value="">— OPEN —</option>`
+            function personnelOptions(selectedUserId, fallbackName) {
+                const fallback = (!selectedUserId && fallbackName)
+                    ? `<option value="" selected>★ ${esc(fallbackName)} (no user link)</option>`
+                    : `<option value="">— OPEN —</option>`;
+                return fallback
                     + activeUsers.map(u=>{
                         const label = formatMemberName(u)||u.callsign;
                         return `<option value="${u.id}" data-name="${esc(label)}" ${u.id===selectedUserId?'selected':''}>${esc(label)}</option>`;
@@ -668,13 +696,14 @@
                     </select>
                     <select data-uc-key="${key}" data-uc-field="userId" onchange="ucPersonnelChange(this)"
                         style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);color:${isFilled?'#e0e0e0':'#555'};font-family:Rajdhani,sans-serif;font-size:11px;font-weight:500;padding:6px 8px;outline:none;${!isFilled?'opacity:.5':''}">
-                        ${personnelOptions(val.userId||'')}
+                        ${personnelOptions(val.userId||'', val.name||'')}
                     </select>
                 </div>`;
             }
 
             let html = '';
             for(const [unit, cfg] of Object.entries(UNIT_CARD_STRUCTURE)) {
+                if(unit !== ucActiveTab) continue;
                 html += `<div style="margin-bottom:20px;border:1px solid ${cfg.color}55;padding:14px 16px;background:rgba(0,0,0,.25)">`;
                 html += `<div style="color:${cfg.accent};font-family:Rajdhani,sans-serif;font-size:16px;font-weight:700;letter-spacing:4px;margin-bottom:12px">${unit.toUpperCase()}</div>`;
 
@@ -1091,6 +1120,15 @@
                 renderAttRoster();
                 notify('EVENT LOADED — '+attEventData.title);
             } catch(e){ notify('LOAD FAILED: '+e.message,1); }
+        };
+
+        window.toggleAttRecentEvents = function() {
+            const wrap  = document.getElementById('attEventListWrap');
+            const arrow = document.getElementById('attRecentArrow');
+            if(!wrap) return;
+            const isOpen = wrap.style.display !== 'none';
+            wrap.style.display  = isOpen ? 'none' : 'block';
+            if(arrow) arrow.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
         };
 
         window.attNewEvent = function() {
@@ -1705,7 +1743,7 @@
             const updateData = {rank};
             const today = new Date().toISOString().split('T')[0];
             if(u && rank && rank !== (u.rank||'')) {
-                const entry = {date:today,fromRank:u.rank||'—',toRank:rank,note:'Updated via Personnel Files (inline)',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
+                const entry = {date:today,fromRank:u.rank||'—',toRank:rank,note:'Updated via Personnel Files',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
                 updateData.promotionHistory = [...(u.promotionHistory||[]), entry];
                 // Auto-set graduation date when promoted to any E2 rank (BCT completion)
                 if(rank.startsWith('E2') && !u.graduation) {
@@ -1717,7 +1755,7 @@
                     name:      formatMemberName(u)||u.callsign||uid,
                     fromRank:  u.rank||'—',
                     toRank:    rank,
-                    note:      'Updated via Personnel Files (inline)',
+                    note:      'Updated via Personnel Files)',
                     by:        currentUserData?.callsign||'Staff'
                 });
             }
@@ -1746,6 +1784,8 @@
             document.getElementById('editLastName').value   = u.lastName||'';
             const jEl = document.getElementById('editJoinedAt');
             if(jEl) jEl.value = u.joinedAt ? u.joinedAt.split('T')[0] : '';
+            const gEl = document.getElementById('editGraduation');
+            if(gEl) gEl.value = u.graduation ? u.graduation.split('T')[0] : '';
             document.getElementById('editPlatoon').value    = u.platoon||'';
             // Role dropdown — hide commander option if no canDemoteCommander
             const roleSelect = document.getElementById('editRoleSelect');
@@ -1921,6 +1961,8 @@
             if(canEditCallsign) data.callsign = document.getElementById('editCallsign').value.trim();
             const jEl = document.getElementById('editJoinedAt');
             if(jEl && jEl.value) data.joinedAt = jEl.value+'T00:00:00.000Z';
+            const gEl = document.getElementById('editGraduation');
+            if(gEl && gEl.value) data.graduation = gEl.value; else if(gEl && gEl.value==='') data.graduation = null;
             // Auto-log promotion if rank changed
             if(oldUser && newRank && newRank !== (oldUser.rank||'')) {
                 const entry = {date:new Date().toISOString().split('T')[0],fromRank:oldUser.rank||'—',toRank:newRank,note:'Updated via Personnel Files',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
@@ -2758,6 +2800,7 @@
                         </div>
                         <div class="edit-field"><label>LAST NAME</label><input type="text" id="editLastName"></div>
                         <div class="edit-field"><label>DATE JOINED UNIT</label><input type="date" id="editJoinedAt"></div>
+                        <div class="edit-field"><label>GRADUATION DATE <span style="color:#aaa;font-size:9px;letter-spacing:1px">(BCT COMPLETE)</span></label><input type="date" id="editGraduation"></div>
                         <div class="edit-field">
                             <label>PLATOON</label>
                             <select id="editPlatoon" style="width:100%;padding:9px;background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none">
@@ -3142,15 +3185,15 @@
                         <div class="dash-section-title">&#9998; CREATE / SELECT EVENT</div>
                         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
                             <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px">
-                                <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.5)">OPERATION / EVENT NAME</div>
+                                <div style="font-size:11px;letter-spacing:2px;color:rgba(0,217,255,.85);font-family:Rajdhani,sans-serif;font-weight:600">OPERATION / EVENT NAME</div>
                                 <input type="text" id="attEventTitle" placeholder="e.g. Operation Ironveil Phase 2..." style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none;width:100%">
                             </div>
                             <div style="display:flex;flex-direction:column;gap:4px;min-width:130px">
-                                <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.5)">DATE</div>
+                                <div style="font-size:11px;letter-spacing:2px;color:rgba(0,217,255,.85);font-family:Rajdhani,sans-serif;font-weight:600">DATE</div>
                                 <input type="date" id="attEventDate" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none">
                             </div>
                             <div style="display:flex;flex-direction:column;gap:4px;min-width:120px">
-                                <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.5)">TYPE</div>
+                                <div style="font-size:11px;letter-spacing:2px;color:rgba(0,217,255,.85);font-family:Rajdhani,sans-serif;font-weight:600">TYPE</div>
                                 <select id="attEventType" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none">
                                     <option value="main_op">MAIN OP</option>
                                     <option value="patrol">PATROL</option>
@@ -3160,12 +3203,14 @@
                             </div>
                             <button class="upload-btn" onclick="attNewEvent()" style="padding:8px 16px;font-size:11px;white-space:nowrap">&#43; NEW EVENT</button>
                         </div>
-                        <!-- Recent events list (collapsible) -->
-                        <div style="margin-top:12px">
-                            <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.4);cursor:pointer;display:flex;align-items:center;gap:6px;padding-bottom:6px;border-bottom:1px solid rgba(0,217,255,.08)" onclick="document.getElementById('attEventListWrap').style.display=document.getElementById('attEventListWrap').style.display==='none'?'block':'none'">
-                                &#9660; RECENT EVENTS — CLICK TO LOAD A PREVIOUS EVENT
+                        <!-- Recent events list -->
+                        <div style="margin-top:14px">
+                            <div id="attRecentToggle" onclick="toggleAttRecentEvents()" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--accent);cursor:pointer;display:flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid rgba(0,217,255,.3);background:rgba(0,217,255,.06);transition:background .15s;user-select:none">
+                                <span id="attRecentArrow" style="font-size:10px;display:inline-block;transition:transform .2s;transform:rotate(0deg)">&#9660;</span>
+                                &#128337; RECENT EVENTS — CLICK HERE TO LOAD A PREVIOUS EVENT
+                                <span style="font-size:10px;color:#aaa;font-weight:500;letter-spacing:1px;margin-left:auto">TAP TO EXPAND / COLLAPSE</span>
                             </div>
-                            <div id="attEventListWrap" style="display:none;max-height:200px;overflow-y:auto;margin-top:6px">
+                            <div id="attEventListWrap" style="display:block;max-height:200px;overflow-y:auto;border:1px solid rgba(0,217,255,.12);border-top:none">
                                 <div id="attEventList"><div class="empty-state">NO EVENTS YET</div></div>
                             </div>
                         </div>
@@ -3200,7 +3245,7 @@
                         <button class="action-btn remove-btn" onclick="resetAllAttendanceCounters()" style="padding:6px 12px;font-size:9px;letter-spacing:2px;opacity:.6" title="Reset all member attendance counters to 0 — use only to clear test data">&#9888; RESET ALL COUNTERS</button>
                     </div>
                 </div>
-                <div class="panel hidden" id="panel-active"><div class="panel-title">PERSONNEL FILES</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">VIEW, EDIT AND MANAGE RANK &amp; ROLE FOR ALL ACTIVE MEMBERS — USE DROPDOWNS INLINE PER ROW</p><div id="activeList"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-active"><div class="panel-title">PERSONNEL FILES</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">VIEW, EDIT AND MANAGE RANK &amp; ROLE FOR ALL ACTIVE MEMBERS — USE DROPDOWNS PER ROW</p><div id="activeList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-register"><div class="panel-title">ENLISTMENT QUEUE</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PENDING APPLICANTS AWAITING APPROVAL — APPROVE TO GRANT ENLISTEE ACCESS, DENY TO REJECT</p><div id="registerList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-promote">
                     <div class="panel-title">PROMOTE RANKS</div>
@@ -3455,8 +3500,8 @@
                         <button id="forceResetBtn" class="action-btn" onclick="forceMonthlyReset()" style="border:1px solid rgba(255,200,0,.45);color:#FFD700;background:rgba(255,200,0,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer" title="Award +1 PT to all 3/3 members then wipe attendance — same as month-end auto-reset">&#9654; MONTH-END RESET</button>
                         <div style="display:flex;align-items:center;gap:6px;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.25);padding:4px 10px">
                             <span style="color:#aaa;font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:2px;white-space:nowrap">&#9998; EDIT MEMBER:</span>
-                            <select id="rosterEditSelect" onchange="openRosterEditFromSelect(this)" style="background:transparent;border:none;color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;outline:none;cursor:pointer;min-width:140px">
-                                <option value="">— SELECT PERSONNEL —</option>
+                            <select id="rosterEditSelect" onchange="openRosterEditFromSelect(this)" style="background:#0A0E12;border:none;color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;outline:none;cursor:pointer;min-width:140px">
+                                <option value="" style="background:#0A0E12;color:#00D9FF">— SELECT PERSONNEL —</option>
                             </select>
                         </div>
                         <div style="display:flex;gap:4px;margin-left:8px;align-items:center">
@@ -3466,6 +3511,8 @@
                             <button class="roster-sort-btn" data-sort="joined" onclick="setRosterSort('joined')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">JOINED</button>
                             <button class="roster-sort-btn" data-sort="platoon-service" onclick="setRosterSort('platoon-service')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">PLATOON SERVICE</button>
                             <button class="roster-sort-btn" data-sort="time-in-unit" onclick="setRosterSort('time-in-unit')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">TIME IN UNIT</button>
+                            <button class="roster-sort-btn" data-sort="rank-asc" onclick="setRosterSort('rank-asc')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">RANK ↑</button>
+                            <button class="roster-sort-btn" data-sort="rank-desc" onclick="setRosterSort('rank-desc')" style="background:transparent;border:1px solid rgba(0,217,255,.2);color:#aaa;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer">RANK ↓</button>
                         </div>
                         <span style="color:#ccc;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;margin-left:8px">&#9998; CHECKBOX = +1 ATT &nbsp;|&nbsp; 3/3 = GLOWING PT — STAFF CLICKS +1 PT TO PROMOTE &nbsp;|&nbsp; RESETS MONTHLY &nbsp;|&nbsp; USE SELECTOR ABOVE TO EDIT A MEMBER</span>
                     </div>
@@ -3484,6 +3531,14 @@
                         <button class="action-btn approve-btn" onclick="loadUnitCards()">&#8635; REFRESH</button>
                         <a href="resources-order-of-battle.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW OOB PAGE</a>
                         <span style="color:#bbb;font-size:9px;letter-spacing:2px">&#9432; CHANGE STATUS / NAME THEN HIT SAVE</span>
+                    </div>
+                    <!-- Unit Cards Tabs -->
+                    <div id="ucTabBar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;border-bottom:1px solid rgba(0,217,255,.15);padding-bottom:8px">
+                        <button class="uc-tab active" data-uc-tab="Battalion Command"   onclick="setUcTab('Battalion Command')"   style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:6px 14px;border:1px solid rgba(0,217,255,.35);background:rgba(0,217,255,.12);color:var(--accent);cursor:pointer;transition:all .15s">COMMAND</button>
+                        <button class="uc-tab"        data-uc-tab="Alpha Company"       onclick="setUcTab('Alpha Company')"       style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:6px 14px;border:1px solid rgba(0,217,255,.15);background:transparent;color:#888;cursor:pointer;transition:all .15s">ALPHA COMPANY</button>
+                        <button class="uc-tab"        data-uc-tab="JSOTF-23"            onclick="setUcTab('JSOTF-23')"            style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:6px 14px;border:1px solid rgba(0,217,255,.15);background:transparent;color:#888;cursor:pointer;transition:all .15s">JTF-23 FORCE RECON</button>
+                        <button class="uc-tab"        data-uc-tab="Support Company"     onclick="setUcTab('Support Company')"     style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:6px 14px;border:1px solid rgba(0,217,255,.15);background:transparent;color:#888;cursor:pointer;transition:all .15s">HOSPITAL CORPSMAN</button>
+                        <button class="uc-tab"        data-uc-tab="54th Air Wing"       onclick="setUcTab('54th Air Wing')"       style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:6px 14px;border:1px solid rgba(0,217,255,.15);background:transparent;color:#888;cursor:pointer;transition:all .15s">54TH AIR WING</button>
                     </div>
                     <div id="unitCardsList"><div class="empty-state">LOADING...</div></div>
                 </div>

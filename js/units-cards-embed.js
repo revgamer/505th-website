@@ -55,16 +55,16 @@ const STRUCTURE = {
     '54th Air Wing': {
         accent:'#00c4b7',
         sections:{
-            '22nd Air Mobility Sq': ['Squadron Leader','Squadron Assistant','Pilot 1','Pilot 2','Pilot 3','Pilot 4','Pilot 5','Pilot 6','Pilot 7','Pilot 8','Pilot 9','Pilot 10','Pilot 11','Pilot 12','Pilot 13','Pilot 14','Pilot 15'],
-            '31st Fighter Sq':      ['Squadron Leader','Squadron Assistant','Pilot 1','Pilot 2','Pilot 3','Pilot 4','Pilot 5','Pilot 6','Pilot 7','Pilot 8','Pilot 9','Pilot 10','Pilot 11','Pilot 12','Pilot 13','Pilot 14','Pilot 15'],
-            '5th Special Ops Sq':   ['Squadron Leader','Squadron Assistant','Pilot 1','Pilot 2','Pilot 3','Pilot 4','Pilot 5','Pilot 6','Pilot 7','Pilot 8','Pilot 9','Pilot 10','Pilot 11','Pilot 12','Pilot 13','Pilot 14','Pilot 15'],
+            'Wing Staff':      ['Wing Commander','Deputy Wing Commander'],
+            'Alpha Squadron':  ['Squadron CO','Squadron XO','Pilot 1','Pilot 2','Pilot 3','Pilot 4'],
+            'Bravo Squadron':  ['Squadron CO','Squadron XO','Pilot 1','Pilot 2','Pilot 3','Pilot 4'],
         }
     },
     'Support Company': {
         accent:'#e05a4a',
         sections:{
-            'Hospital Corpsman': ['Hospital Overseer','Hospital Supervisor','Head of Training','Corpsman 1','Corpsman 2','Corpsman 3','Corpsman 4','Corpsman 5','Corpsman 6','Corpsman 7','Corpsman 8','Corpsman 9'],
-            'Reserves': ['Reserve 1','Reserve 2','Reserve 3','Reserve 4','Reserve 5','Reserve 6'],
+            'Hospital Corpsman': ['Hospital Overseer','Hospital Supervisor','Head of Training',
+                'Corpsman 1','Corpsman 2','Corpsman 3','Corpsman 4','Corpsman 5','Corpsman 6'],
         }
     }
 };
