@@ -912,35 +912,35 @@
             overlay.addEventListener('click', closeLightbox);
             document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
 
-            // Use event delegation so clicks work after CMS loads images asynchronously
-            document.addEventListener('click', function(e) {
-                // Slider images
-                var wrapper = e.target.closest('.slider-image-wrapper');
-                if (wrapper) {
-                    var img = wrapper.querySelector('img');
-                    if (!img || !img.src) return;
-                    var slide = wrapper.closest('.slider-slide');
+            // Slider images
+            document.querySelectorAll('.slider-image-wrapper').forEach(function(wrapper) {
+                wrapper.addEventListener('click', function() {
+                    var img = this.querySelector('img');
+                    if (!img) return;
+                    var slide = this.closest('.slider-slide');
                     var title = slide ? slide.querySelector('.slider-description h4') : null;
-                    var desc  = slide ? slide.querySelector('.slider-description p')  : null;
+                    var desc = slide ? slide.querySelector('.slider-description p') : null;
                     openLightbox(img.src, title ? title.textContent : '', desc ? desc.textContent : '');
-                    return;
-                }
-                // Equipment/operation card images
-                var eqWrapper = e.target.closest('.equipment-image, .gallery-placeholder');
-                if (eqWrapper) {
-                    var img2 = eqWrapper.querySelector('img');
-                    if (!img2 || !img2.src) return;
-                    var card = eqWrapper.closest('.equipment-card, .gallery-item');
-                    var title2 = card ? card.querySelector('.equipment-info h4, .gallery-caption h4') : null;
-                    var desc2  = card ? card.querySelector('.equipment-info p,  .gallery-caption p')  : null;
-                    openLightbox(img2.src, title2 ? title2.textContent : '', desc2 ? desc2.textContent : '');
-                }
+                });
             });
 
-            // Set zoom cursor once CMS images load
+            // Equipment images
+            document.querySelectorAll('.equipment-image').forEach(function(wrapper) {
+                wrapper.addEventListener('click', function() {
+                    var img = this.querySelector('img');
+                    if (!img) return;
+                    var card = this.closest('.equipment-card');
+                    var title = card ? card.querySelector('.equipment-info h4') : null;
+                    var desc = card ? card.querySelector('.equipment-info p') : null;
+                    openLightbox(img.src, title ? title.textContent : '', desc ? desc.textContent : '');
+                });
+            });
+
+            // Re-bind after CMS loads images (slight delay for Firestore)
             setTimeout(function() {
-                document.querySelectorAll('.slider-image-wrapper img, .equipment-image img, .gallery-placeholder img').forEach(function(img) {
-                    img.style.cursor = 'zoom-in';
+                document.querySelectorAll('.slider-image-wrapper, .equipment-image').forEach(function(el) {
+                    var img = el.querySelector('img');
+                    if (img) img.style.cursor = 'zoom-in';
                 });
             }, 3000);
         })();
@@ -948,14 +948,14 @@
 
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
         const fc={apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",authDomain:"th-website-91533.firebaseapp.com",projectId:"th-website-91533",storageBucket:"th-website-91533.firebasestorage.app",messagingSenderId:"1046139150142",appId:"1:1046139150142:web:01f409ae4a38c4f79d966f"};
         const app=getApps().length?getApps()[0]:initializeApp(fc);
         const db=getFirestore(app);
         const el=document.getElementById('unitCardsEmbed');
         if(el){
             const UNIT='Alpha Company';
-            const cfg={"accent": "#8aad44", "sections": {"1st Platoon \u2014 Killjoy": ["Platoon Commander", "Platoon Sergeant", "KJ 1-1 SQL", "KJ 1-1 Marine 1", "KJ 1-1 Marine 2", "KJ 1-1 Marine 3", "KJ 1-1 Marine 4", "KJ 1-1 Marine 5", "KJ 1-1 Marine 6", "KJ 1-1 Marine 7", "KJ 1-1 Marine 8", "KJ 1-2 SQL", "KJ 1-2 Marine 1", "KJ 1-2 Marine 2", "KJ 1-2 Marine 3", "KJ 1-2 Marine 4", "KJ 1-2 Marine 5", "KJ 1-2 Marine 6", "KJ 1-2 Marine 7", "KJ 1-2 Marine 8", "KJ 1-3 SQL", "KJ 1-3 Marine 1", "KJ 1-3 Marine 2", "KJ 1-3 Marine 3", "KJ 1-3 Marine 4", "KJ 1-3 Marine 5", "KJ 1-3 Marine 6", "KJ 1-3 Marine 7", "KJ 1-3 Marine 8"], "2nd Platoon": ["Platoon Commander", "Platoon Sergeant", "Alpha 2-1 SQL", "Alpha 2-1 Marine 1", "Alpha 2-1 Marine 2", "Alpha 2-1 Marine 3", "Alpha 2-1 Marine 4", "Alpha 2-1 Marine 5", "Alpha 2-1 Marine 6", "Alpha 2-1 Marine 7", "Alpha 2-1 Marine 8", "Bravo 2-2 SQL", "Bravo 2-2 Marine 1", "Bravo 2-2 Marine 2", "Bravo 2-2 Marine 3", "Bravo 2-2 Marine 4", "Bravo 2-2 Marine 5", "Bravo 2-2 Marine 6", "Bravo 2-2 Marine 7", "Bravo 2-2 Marine 8", "Charlie 2-3 SQL", "Charlie 2-3 Marine 1", "Charlie 2-3 Marine 2", "Charlie 2-3 Marine 3", "Charlie 2-3 Marine 4", "Charlie 2-3 Marine 5", "Charlie 2-3 Marine 6", "Charlie 2-3 Marine 7", "Charlie 2-3 Marine 8"], "3rd Platoon": ["Platoon Commander", "Platoon Sergeant", "Alpha 3-1 SQL", "Alpha 3-1 Marine 1", "Alpha 3-1 Marine 2", "Alpha 3-1 Marine 3", "Alpha 3-1 Marine 4", "Alpha 3-1 Marine 5", "Alpha 3-1 Marine 6", "Alpha 3-1 Marine 7", "Alpha 3-1 Marine 8", "Bravo 3-2 SQL", "Bravo 3-2 Marine 1", "Bravo 3-2 Marine 2", "Bravo 3-2 Marine 3", "Bravo 3-2 Marine 4", "Bravo 3-2 Marine 5", "Bravo 3-2 Marine 6", "Bravo 3-2 Marine 7", "Bravo 3-2 Marine 8", "Charlie 3-3 SQL", "Charlie 3-3 Marine 1", "Charlie 3-3 Marine 2", "Charlie 3-3 Marine 3", "Charlie 3-3 Marine 4", "Charlie 3-3 Marine 5", "Charlie 3-3 Marine 6", "Charlie 3-3 Marine 7", "Charlie 3-3 Marine 8"]}};
+            const cfg={"accent": "#8aad44", "sections": {"1st Platoon \u2014 Killjoy": ["Platoon Commander", "Platoon Sergeant", "Platoon JTAC", "KJ 1-1 SQL", "KJ 1-1 Marine 1", "KJ 1-1 Marine 2", "KJ 1-1 Marine 3", "KJ 1-1 Marine 4", "KJ 1-1 Marine 5", "KJ 1-1 Marine 6", "KJ 1-1 Marine 7", "KJ 1-1 Marine 8", "KJ 1-2 SQL", "KJ 1-2 Marine 1", "KJ 1-2 Marine 2", "KJ 1-2 Marine 3", "KJ 1-2 Marine 4", "KJ 1-2 Marine 5", "KJ 1-2 Marine 6", "KJ 1-2 Marine 7", "KJ 1-2 Marine 8", "KJ 1-3 SQL", "KJ 1-3 Marine 1", "KJ 1-3 Marine 2", "KJ 1-3 Marine 3", "KJ 1-3 Marine 4", "KJ 1-3 Marine 5", "KJ 1-3 Marine 6", "KJ 1-3 Marine 7", "KJ 1-3 Marine 8"], "2nd Platoon": ["Platoon Commander", "Platoon Sergeant", "Platoon JTAC", "Alpha 2-1 SQL", "Alpha 2-1 Marine 1", "Alpha 2-1 Marine 2", "Alpha 2-1 Marine 3", "Alpha 2-1 Marine 4", "Alpha 2-1 Marine 5", "Alpha 2-1 Marine 6", "Alpha 2-1 Marine 7", "Alpha 2-1 Marine 8", "Bravo 2-2 SQL", "Bravo 2-2 Marine 1", "Bravo 2-2 Marine 2", "Bravo 2-2 Marine 3", "Bravo 2-2 Marine 4", "Bravo 2-2 Marine 5", "Bravo 2-2 Marine 6", "Bravo 2-2 Marine 7", "Bravo 2-2 Marine 8", "Charlie 2-3 SQL", "Charlie 2-3 Marine 1", "Charlie 2-3 Marine 2", "Charlie 2-3 Marine 3", "Charlie 2-3 Marine 4", "Charlie 2-3 Marine 5", "Charlie 2-3 Marine 6", "Charlie 2-3 Marine 7", "Charlie 2-3 Marine 8"], "3rd Platoon": ["Platoon Commander", "Platoon Sergeant", "Platoon JTAC", "Alpha 3-1 SQL", "Alpha 3-1 Marine 1", "Alpha 3-1 Marine 2", "Alpha 3-1 Marine 3", "Alpha 3-1 Marine 4", "Alpha 3-1 Marine 5", "Alpha 3-1 Marine 6", "Alpha 3-1 Marine 7", "Alpha 3-1 Marine 8", "Bravo 3-2 SQL", "Bravo 3-2 Marine 1", "Bravo 3-2 Marine 2", "Bravo 3-2 Marine 3", "Bravo 3-2 Marine 4", "Bravo 3-2 Marine 5", "Bravo 3-2 Marine 6", "Bravo 3-2 Marine 7", "Bravo 3-2 Marine 8", "Charlie 3-3 SQL", "Charlie 3-3 Marine 1", "Charlie 3-3 Marine 2", "Charlie 3-3 Marine 3", "Charlie 3-3 Marine 4", "Charlie 3-3 Marine 5", "Charlie 3-3 Marine 6", "Charlie 3-3 Marine 7", "Charlie 3-3 Marine 8"]}};
             const PFX=['KJ','Alpha','Bravo','Charlie','Stalker','Delta'];
             function sq(s){ for(const p of PFX){ if(s.startsWith(p))return s.split(' ').slice(0,2).join(' '); } return null; }
             function e(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
@@ -967,8 +967,31 @@
                 return `<div class="uc-slot"><div class="uc-slot-name">${e(nm)}</div><div class="uc-slot-status ${cl}">${tx}</div></div>`;
             }
             try{
-                const snap=await getDoc(doc(db,'settings','unit_cards'));
-                const uc=snap.exists()?snap.data():{};
+                const [snap, usersSnap] = await Promise.all([
+                    getDoc(doc(db,'settings','unit_cards')),
+                    getDocs(collection(db,'users'))
+                ]);
+                const uc = snap.exists() ? snap.data() : {};
+                // Build userId → live formatted name map
+                const userNames = {};
+                usersSnap.forEach(d => {
+                    const u = d.data();
+                    const rankAbbr = (function(r){
+                        const map={'O9 / Lieutenant General':'LtGen','O8 / Major General':'MajGen','O7 / Brigadier General':'BGen','O6 / Colonel':'Col','O5 / Lieutenant Colonel':'LtCol','O4 / Major':'Maj','O3 / Captain':'Capt','O2 / First Lieutenant':'1stLt','O1 / Second Lieutenant':'2ndLt','E9 / Sergeant Major':'SgtMaj','E9 / Master Gunnery Sergeant':'MGySgt','E9 / First Sergeant':'1stSgt','E8 / Master Sergeant':'MSgt','E7 / Gunnery Sergeant':'GySgt','E6 / Staff Sergeant':'SSgt','E5 / Sergeant':'Sgt','E4 / Corporal':'Cpl','E3 / Lance Corporal':'LCpl','E2 / Private First Class':'PFC','E1 / Private':'Pvt','E9 / Master Chief Hospital Corpsman':'MCPO','E8 / Senior Chief Corpsman':'SCPO','E7 / Chief Corpsman':'CPO','E6 / Corpsman First Class':'HM1','E5 / Corpsman Second Class':'HM2','E4 / Corpsman Third Class':'HM3','E3 / Hospitalman':'HN','E2 / Hospitalman Apprentice':'HA','E6 / Technical Sergeant':'TSgt','E5 / Staff Sergeant':'SSgt','E4 / Senior Airman':'SrA','E3 / Airman First Class':'A1C','E2 / Airman':'Amn','E1 / Airman Basic':'AB'};
+                        return map[r] || (r ? r.split('/').pop().trim() : '');
+                    })(u.rank||'');
+                    const first = (u.firstName||'').trim();
+                    const last  = (u.lastName||'').trim();
+                    const cs    = (u.callsign||'').trim();
+                    const init  = first ? first.charAt(0).toUpperCase()+'.' : '';
+                    const hasCs = cs && cs !== first && cs !== (first+' '+last);
+                    let nm = '';
+                    if(init) nm += init+' ';
+                    if(hasCs) nm += '"'+cs+'"';
+                    else if(last) nm += last;
+                    else if(cs) nm += '"'+cs+'"';
+                    userNames[d.id] = [rankAbbr, nm.trim()].filter(Boolean).join(' ');
+                });
                 let h='';
                 for(const [sec,slots] of Object.entries(cfg.sections)){
                     const staff=[],squads={},so=[];
@@ -978,7 +1001,7 @@
                     // Staff vertical list
                     if(staff.length){
                         h+='<div class="uc-staff">';
-                        for(const s of staff){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||'',cfg.accent); }
+                        for(const s of staff){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.userId?(userNames[v.userId]||v.name||''):(v.name||''),cfg.accent); }
                         h+='</div>';
                     }
                     // Squads side by side
@@ -986,7 +1009,7 @@
                         h+='<div class="uc-squads-row">';
                         for(const sn of so){
                             h+=`<div class="uc-squad-card"><div class="uc-squad-label" style="color:${cfg.accent}">${sn.toUpperCase()}</div>`;
-                            for(const s of squads[sn]){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||'',cfg.accent); }
+                            for(const s of squads[sn]){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.userId?(userNames[v.userId]||v.name||''):(v.name||''),cfg.accent); }
                             h+='</div>';
                         }
                         h+='</div>';
