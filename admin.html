@@ -22,15 +22,15 @@
         const ADMIN_ROLES = ['commander','developer','staff_nco','nco','recruiter'];
         const ROLE_PERMISSIONS = {
             // Full access. Can demote/assign anyone including other commanders.
-            'commander': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:1,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
+            'commander': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,canDeleteUsers:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:1,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Same as commander but CANNOT touch commander role assignments.
-            'developer': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
+            'developer': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,canDeleteUsers:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Personnel (active+register, NO promote) + Media + Unit Management + Page Content + Discord setting.
-            'staff_nco': {personnel:1,activePersonnel:1,registerPanel:1,promote:0,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,auditLog:0,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
+            'staff_nco': {personnel:1,activePersonnel:1,registerPanel:1,promote:0,media:1,content:1,pages:1,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:1,canDeleteUsers:0,auditLog:0,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Register Panel only + Media Gallery + AAR + Battalion Roster. NO Unit Cards.
-            'nco':       {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:1,discordLink:0,roster:1,unitcards:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
+            'nco':       {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:1,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,canDeleteUsers:0,auditLog:0,aar:1,discordLink:0,roster:1,unitcards:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Register Panel only.
-            'recruiter': {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,auditLog:0,aar:0,discordLink:0,roster:0,unitcards:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:0,dash_inactive:0,dash_pending:1,dash_recent:0,dash_reserve:0},
+            'recruiter': {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,canDeleteUsers:0,auditLog:0,aar:0,discordLink:0,roster:0,unitcards:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:0,dash_inactive:0,dash_pending:1,dash_recent:0,dash_reserve:0},
         };
         function P() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
@@ -167,7 +167,7 @@
         window.aarResultChange=function(){[['success','#7FFF7F'],['partial','#FFD700'],['failure','#FF4444']].forEach(([v,bc])=>{const el=document.getElementById('ropt-'+v);if(!el)return;const checked=document.querySelector('input[name="aarResult"][value="'+v+'"]')?.checked;el.style.background=checked?bc+'18':'transparent';el.style.borderColor=checked?bc:bc+'40';el.style.color=checked?bc:bc+'66';});};
         window.aarClassChange=function(){const v=document.getElementById('aarClassification')?.value||'CL-5';const prev=document.getElementById('aarClassPreview');if(prev)prev.textContent=v;};
         async function loadAARPanel(){aarObjectives=[];renderAARObjs();document.getElementById('aarDate').value=new Date().toISOString().split('T')[0];document.getElementById('aarSubmitStatus').textContent='';await loadRecentAARs();}
-        async function loadRecentAARs(){const c=document.getElementById('aarRecentList');if(!c)return;c.innerHTML='<div class="empty-state">LOADING...</div>';try{const s=await getDocs(query(collection(db,'aars'),orderBy('date','desc'),limit(20)));if(s.empty){c.innerHTML='<div class="empty-state">NO REPORTS SUBMITTED YET</div>';return;}const rows=[];s.forEach(d=>rows.push({id:d.id,...d.data()}));c.innerHTML=rows.map(a=>{const dt=a.date?.toDate?a.date.toDate().toLocaleDateString('en-GB'):(a.date?new Date(a.date).toLocaleDateString('en-GB'):'—');return`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03)"><img src="${UNIT_LOGOS[a.unit]||'images/logo.png'}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0"><div style="flex:1;color:#ccc;font-size:11px;letter-spacing:1px">${esc(a.title||'Untitled')}</div><div style="color:#aaa;font-size:9px;white-space:nowrap">${dt}</div><div style="font-size:8px;letter-spacing:1px;padding:1px 5px;border:1px solid;color:${a.result==='success'?'#7FFF7F':a.result==='partial'?'#FFD700':'#FF4444'};border-color:${a.result==='success'?'#7FFF7F':a.result==='partial'?'#FFD700':'#FF4444'}">${RES_LABELS[a.result]||'—'}</div><button class="action-btn remove-btn small" onclick="deleteAAR('${a.id}')">DELETE</button></div>`;}).join('');}catch(e){c.innerHTML=`<div class="empty-state">ERROR: ${esc(e.message)}</div>`;}}
+        async function loadRecentAARs(){const c=document.getElementById('aarRecentList');if(!c)return;c.innerHTML='<div class="empty-state">LOADING...</div>';try{const s=await getDocs(query(collection(db,'aars'),orderBy('date','desc'),limit(20)));if(s.empty){c.innerHTML='<div class="empty-state">NO REPORTS SUBMITTED YET</div>';return;}const rows=[];s.forEach(d=>rows.push({id:d.id,...d.data()}));c.innerHTML=rows.map(a=>{const dt=a.date?.toDate?a.date.toDate().toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):(a.date?new Date(a.date).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—');return`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03)"><img src="${UNIT_LOGOS[a.unit]||'images/logo.png'}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0"><div style="flex:1;color:#ccc;font-size:11px;letter-spacing:1px">${esc(a.title||'Untitled')}</div><div style="color:#aaa;font-size:9px;white-space:nowrap">${dt}</div><div style="font-size:8px;letter-spacing:1px;padding:1px 5px;border:1px solid;color:${a.result==='success'?'#7FFF7F':a.result==='partial'?'#FFD700':'#FF4444'};border-color:${a.result==='success'?'#7FFF7F':a.result==='partial'?'#FFD700':'#FF4444'}">${RES_LABELS[a.result]||'—'}</div><button class="action-btn remove-btn small" onclick="deleteAAR('${a.id}')">DELETE</button></div>`;}).join('');}catch(e){c.innerHTML=`<div class="empty-state">ERROR: ${esc(e.message)}</div>`;}}
         // DISCORD WEBHOOK — paste your webhook URL here
         const AAR_WEBHOOK_URL = 'https://discord.com/api/webhooks/1482237463224258632/mDIN6irczttLRoxE1vk81dloso5pLKJ74_vARw2C0rUUyw5vBvsaO_LxaN6nKrxMVLP5';
 
@@ -245,7 +245,7 @@
                 const RC={success:0x00FF41,partial:0xFFD700,failure:0xFF4444};
                 const RI={success:'✅ Mission Success',partial:'🟡 Partial Success',failure:'❌ Mission Failure'};
                 const OI={main_op:'🔴 Main Op',patrol:'🔵 Patrol',deployment:'🟢 Deployment',fun_op:'🟡 Fun Op'};
-                const desc='**'+title+'**\n\n• **Submitted by:** '+(filedBy||currentUserData.callsign)+'\n• **Unit:** '+(UNIT_LABELS[unit]||unit)+'\n• **Type:** '+(OI[opType]||opType)+'\n• **Date:** '+new Date(dateVal).toLocaleDateString('en-US',{day:'2-digit',month:'long',year:'numeric'})+'\n• **Result:** '+(RI[result]||result)+'\n\n[📄 View full report](https://www.505expeditionaryforce.com/resources-aar.html)';
+                const desc='**'+title+'**\n\n• **Submitted by:** '+(filedBy||currentUserData.callsign)+'\n• **Unit:** '+(UNIT_LABELS[unit]||unit)+'\n• **Type:** '+(OI[opType]||opType)+'\n• **Date:** '+new Date(dateVal).toLocaleDateString('en-US',{day:'2-digit',month:'long',year:'numeric',timeZone:'America/Los_Angeles'})+'\n• **Result:** '+(RI[result]||result)+'\n\n[📄 View full report](https://www.505expeditionaryforce.com/resources-aar.html)';
                 // Use configured webhook URL if set, otherwise fall back to hardcoded
                 if(wh.aar) {
                     fireWebhook('aar', {description:desc, color:RC[result]||0x2b2d31});
@@ -329,10 +329,10 @@
                         ? `<span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;padding:3px 10px;border:1px solid rgba(0,217,255,.35);color:var(--accent)">${esc(r.platoon)}</span>`
                         : `<span style="color:#555;font-size:10px">—</span>`
                     }</div>
-                    <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.joinedAt?new Date(r.joinedAt).toLocaleDateString('en-US'):'—'}</div>
+                    <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.joinedAt?new Date(r.joinedAt).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—'}</div>
                     <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;color:#ccc">${calcPeriod(r.joinedPlatoon)}</div>
                     <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500">${esc(r.rank||'—')}</div>
-                    <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.graduation?new Date(r.graduation).toLocaleDateString('en-US'):'—'}</div>
+                    <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;color:#bbb">${r.graduation?new Date(r.graduation).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—'}</div>
                     <div class="roster-cell">
                         <div style="display:flex;align-items:center;gap:6px">
                             <span style="color:${attColor};font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;min-width:22px">${att}/3</span>
@@ -578,15 +578,15 @@
             'Alpha Company': {
                 color:'#4A5D23', accent:'#8aad44',
                 sections:{
-                    '1st Platoon — Killjoy': ['Platoon Commander','Platoon Sergeant','Platoon JTAC',
+                    '1st Platoon — Killjoy': ['Platoon Commander','Platoon Sergeant',
                         'KJ 1-1 SQL','KJ 1-1 Marine 1','KJ 1-1 Marine 2','KJ 1-1 Marine 3','KJ 1-1 Marine 4','KJ 1-1 Marine 5','KJ 1-1 Marine 6','KJ 1-1 Marine 7','KJ 1-1 Marine 8',
                         'KJ 1-2 SQL','KJ 1-2 Marine 1','KJ 1-2 Marine 2','KJ 1-2 Marine 3','KJ 1-2 Marine 4','KJ 1-2 Marine 5','KJ 1-2 Marine 6','KJ 1-2 Marine 7','KJ 1-2 Marine 8',
                         'KJ 1-3 SQL','KJ 1-3 Marine 1','KJ 1-3 Marine 2','KJ 1-3 Marine 3','KJ 1-3 Marine 4','KJ 1-3 Marine 5','KJ 1-3 Marine 6','KJ 1-3 Marine 7','KJ 1-3 Marine 8'],
-                    '2nd Platoon': ['Platoon Commander','Platoon Sergeant','Platoon JTAC',
+                    '2nd Platoon': ['Platoon Commander','Platoon Sergeant',
                         'Alpha 2-1 SQL','Alpha 2-1 Marine 1','Alpha 2-1 Marine 2','Alpha 2-1 Marine 3','Alpha 2-1 Marine 4','Alpha 2-1 Marine 5','Alpha 2-1 Marine 6','Alpha 2-1 Marine 7','Alpha 2-1 Marine 8',
                         'Bravo 2-2 SQL','Bravo 2-2 Marine 1','Bravo 2-2 Marine 2','Bravo 2-2 Marine 3','Bravo 2-2 Marine 4','Bravo 2-2 Marine 5','Bravo 2-2 Marine 6','Bravo 2-2 Marine 7','Bravo 2-2 Marine 8',
                         'Charlie 2-3 SQL','Charlie 2-3 Marine 1','Charlie 2-3 Marine 2','Charlie 2-3 Marine 3','Charlie 2-3 Marine 4','Charlie 2-3 Marine 5','Charlie 2-3 Marine 6','Charlie 2-3 Marine 7','Charlie 2-3 Marine 8'],
-                    '3rd Platoon': ['Platoon Commander','Platoon Sergeant','Platoon JTAC',
+                    '3rd Platoon': ['Platoon Commander','Platoon Sergeant',
                         'Alpha 3-1 SQL','Alpha 3-1 Marine 1','Alpha 3-1 Marine 2','Alpha 3-1 Marine 3','Alpha 3-1 Marine 4','Alpha 3-1 Marine 5','Alpha 3-1 Marine 6','Alpha 3-1 Marine 7','Alpha 3-1 Marine 8',
                         'Bravo 3-2 SQL','Bravo 3-2 Marine 1','Bravo 3-2 Marine 2','Bravo 3-2 Marine 3','Bravo 3-2 Marine 4','Bravo 3-2 Marine 5','Bravo 3-2 Marine 6','Bravo 3-2 Marine 7','Bravo 3-2 Marine 8',
                         'Charlie 3-3 SQL','Charlie 3-3 Marine 1','Charlie 3-3 Marine 2','Charlie 3-3 Marine 3','Charlie 3-3 Marine 4','Charlie 3-3 Marine 5','Charlie 3-3 Marine 6','Charlie 3-3 Marine 7','Charlie 3-3 Marine 8'],
@@ -695,7 +695,7 @@
                         <option value="filled" ${val.status==='filled'?'selected':''}>FILLED</option>
                     </select>
                     <select data-uc-key="${key}" data-uc-field="userId" onchange="ucPersonnelChange(this)"
-                        style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);color:${isFilled?'#e0e0e0':'#555'};font-family:Rajdhani,sans-serif;font-size:11px;font-weight:500;padding:6px 8px;outline:none;${!isFilled?'opacity:.5':''}">
+                        style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);color:${isFilled?'#e0e0e0':'#555'};font-family:Rajdhani,sans-serif;font-size:11px;font-weight:500;padding:6px 8px;outline:none;opacity:${isFilled?'1':'0.25'};pointer-events:${isFilled?'auto':'none'}">
                         ${personnelOptions(val.userId||'', val.name||'')}
                     </select>
                 </div>`;
@@ -778,12 +778,26 @@
             const field = el.dataset.ucField;
             if(!unitCardData[key]) unitCardData[key] = {status:'open', name:'', userId:''};
             unitCardData[key][field] = el.value;
-            // If set back to open/closed — clear personnel
-            if(field==='status' && el.value!=='filled'){
-                unitCardData[key].userId = '';
-                unitCardData[key].name   = '';
+            // If set back to open/closed — clear personnel and lock dropdown
+            if(field==='status'){
+                const isFilled = el.value === 'filled';
                 const personnelSel = document.querySelector(`select[data-uc-key="${key}"][data-uc-field="userId"]`);
-                if(personnelSel) personnelSel.value = '';
+                if(!isFilled){
+                    unitCardData[key].userId = '';
+                    unitCardData[key].name   = '';
+                    if(personnelSel){
+                        personnelSel.value = '';
+                        personnelSel.style.opacity       = '0.25';
+                        personnelSel.style.pointerEvents = 'none';
+                        personnelSel.style.color         = '#555';
+                    }
+                } else {
+                    if(personnelSel){
+                        personnelSel.style.opacity       = '1';
+                        personnelSel.style.pointerEvents = 'auto';
+                        personnelSel.style.color         = '#e0e0e0';
+                    }
+                }
             }
             const btn = document.getElementById('ucSaveBtn');
             if(btn){ btn.textContent='SAVE CHANGES ●'; btn.style.borderColor='#FFD700'; btn.style.color='#FFD700'; }
@@ -943,7 +957,7 @@
                     function rsvTime(ds){ if(!ds) return null; const d=Math.floor((now2-new Date(ds))/(864e5)); if(d<1) return 'Today'; if(d<7) return d+' day'+(d!==1?'s':''); const w=Math.floor(d/7),r=d%7; if(w<4) return w+' wk'+(w!==1?'s':'')+(r>0?' '+r+'d':''); const m=Math.floor(d/30),rd=d%30; return m+' mo'+(m!==1?'s':'')+(rd>0?' '+rd+'d':''); }
                     function rsvColor(ds){ if(!ds) return '#aaa'; const d=Math.floor((now2-new Date(ds))/(864e5)); return d>=90?'#FF6B6B':d>=30?'#FFD700':'#7FFF7F'; }
                     if(!reserves.length){ resWidget.innerHTML='<div style="font-family:Rajdhani,sans-serif;font-size:13px;color:#7FFF7F;letter-spacing:1px;padding:8px 0">✓ NO PERSONNEL IN RESERVES</div>'; }
-                    else { resWidget.innerHTML=`<div style="margin-bottom:8px;font-family:Rajdhani,sans-serif;font-size:12px;color:#aaa;letter-spacing:2px">${reserves.length} PERSONNEL IN RESERVES</div><div style="display:flex;flex-direction:column;gap:4px;max-height:240px;overflow-y:auto">${reserves.map(u=>{ const dur=rsvTime(u.joinedPlatoon),color=rsvColor(u.joinedPlatoon); return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-left:2px solid ${color}"><div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;background:${color};flex-shrink:0;border-radius:50%"></div><div><div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:600;color:#ddd">${esc(formatMemberName(u)||u.callsign)}</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;letter-spacing:1px">${esc(u.rank||'—')}</div></div></div><div style="text-align:right"><div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:${color}">${dur?'IN RESERVES '+dur.toUpperCase():'—'}</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;margin-top:1px">${u.joinedPlatoon?new Date(u.joinedPlatoon).toLocaleDateString('en-US'):'—'}</div></div></div>`; }).join('')}</div><div style="margin-top:8px;display:flex;gap:12px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px"><span style="color:#7FFF7F">● &lt;1 MONTH</span><span style="color:#FFD700">● 1-3 MONTHS</span><span style="color:#FF6B6B">● 3+ MONTHS</span></div>`; }
+                    else { resWidget.innerHTML=`<div style="margin-bottom:8px;font-family:Rajdhani,sans-serif;font-size:12px;color:#aaa;letter-spacing:2px">${reserves.length} PERSONNEL IN RESERVES</div><div style="display:flex;flex-direction:column;gap:4px;max-height:240px;overflow-y:auto">${reserves.map(u=>{ const dur=rsvTime(u.joinedPlatoon),color=rsvColor(u.joinedPlatoon); return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-left:2px solid ${color}"><div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;background:${color};flex-shrink:0;border-radius:50%"></div><div><div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:600;color:#ddd">${esc(formatMemberName(u)||u.callsign)}</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;letter-spacing:1px">${esc(u.rank||'—')}</div></div></div><div style="text-align:right"><div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:${color}">${dur?'IN RESERVES '+dur.toUpperCase():'—'}</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;margin-top:1px">${u.joinedPlatoon?new Date(u.joinedPlatoon).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—'}</div></div></div>`; }).join('')}</div><div style="margin-top:8px;display:flex;gap:12px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px"><span style="color:#7FFF7F">● &lt;1 MONTH</span><span style="color:#FFD700">● 1-3 MONTHS</span><span style="color:#FF6B6B">● 3+ MONTHS</span></div>`; }
                 }
 
                 // Attendance Health widget
@@ -1403,7 +1417,7 @@
                                     </optgroup>
                                 </select>
                             </div>`:''}
-                            ${P().canEditProfiles && !isLockedCommander?`<button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>`:''}
+                            ${P().canDeleteUsers && !isLockedCommander?`<button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>`:''}
                         </div>
                     </div>`;
                 }).join('') : '<div class="empty-state">NO ACTIVE PERSONNEL</div>';
@@ -1424,8 +1438,7 @@
                         <div class="user-info"><div class="user-callsign">${esc(formatMemberName(u)||u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
                         <div class="user-actions">
                             <button class="action-btn approve-btn small" onclick="approveUser('${u.id}','${esc(u.callsign)}')">RE-APPROVE</button>
-                            <button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>
-                        </div>
+                            ${P().canDeleteUsers?`<button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>`:''}\n                        </div>
                     </div>`).join('');}
                 registerList.innerHTML = h || '<div class="empty-state">NO PENDING OR DENIED</div>';
             }
@@ -1467,7 +1480,7 @@
                         title: '📋 New Registration Request',
                         color: 0xF59E0B,
                         footer: {...BASE.footer, text:'505th Expeditionary Force • Enlistment'},
-                        description: `A new operative has submitted a registration request and is awaiting approval.\n\n• **Full Name:** ${data.name||'—'}\n• **Email:** ${data.email||'—'}\n• **Submitted:** ${data.ts||new Date().toLocaleString('en-US')}`
+                        description: `A new operative has submitted a registration request and is awaiting approval.\n\n• **Full Name:** ${data.name||'—'}\n• **Email:** ${data.email||'—'}\n• **Submitted:** ${data.ts||new Date().toLocaleString('en-US',{timeZone:'America/Los_Angeles'})}`
                     }; break;
 
                 case 'approved':
@@ -1634,7 +1647,7 @@
                         <div style="display:grid;grid-template-columns:1fr 160px 120px;gap:8px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);align-items:center">
                             <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:#e0e0e0">${esc(formatMemberName(u)||u.callsign)}</div>
                             <div style="font-size:10px;letter-spacing:1px;color:${sourceColors[u.recruitSource]||'#aaa'}">${esc(u.recruitSource)}</div>
-                            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#555">${u.joinedAt?new Date(u.joinedAt).toLocaleDateString('en-US'):'—'}</div>
+                            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#555">${u.joinedAt?new Date(u.joinedAt).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—'}</div>
                         </div>`).join('') || '<div class="empty-state">NO TAGGED RECRUITS YET</div>';
                 }
             } catch(e){ c.innerHTML='<div class="empty-state">ERROR: '+e.message+'</div>'; }
@@ -2223,7 +2236,7 @@
                 if(countEl) countEl.textContent = items.length;
                 if(!items.length) { grid.innerHTML='<div class="empty-state">NO IMAGES IN COMMS LIBRARY — UPLOAD ONE ABOVE OR VIA A PAGE EDITOR</div>'; return; }
                 grid.innerHTML = items.map(m => {
-                    const date = m.uploadedAt ? new Date(m.uploadedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+                    const date = m.uploadedAt ? new Date(m.uploadedAt).toLocaleDateString('en-US',{day:'2-digit',month:'short',year:'numeric',timeZone:'America/Los_Angeles'}) : '—';
                     return `<div class="media-card-v2">
                         <div class="media-thumb-v2"><img src="${m.url}" loading="lazy"></div>
                         <div class="media-body-v2">
@@ -2310,7 +2323,7 @@
                 c.innerHTML=items.map(m=>{
                     const isEnabled=m.enabled!==false;
                     const cat=m.category||'uncategorised';
-                    const date=m.uploadedAt?(new Date(m.uploadedAt)).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—';
+                    const date=m.uploadedAt?(new Date(m.uploadedAt)).toLocaleDateString('en-US',{day:'2-digit',month:'short',year:'numeric',timeZone:'America/Los_Angeles'}):'—';
                     const dimStyle=isEnabled?'':'opacity:.4;';
 
                     if(type==='image') {
@@ -3529,8 +3542,7 @@
                     <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <button id="ucSaveBtn" class="upload-btn" onclick="saveAllCards()" style="font-size:10px;letter-spacing:2px">SAVE CHANGES</button>
                         <button class="action-btn approve-btn" onclick="loadUnitCards()">&#8635; REFRESH</button>
-                        <a href="resources-order-of-battle.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW OOB PAGE</a>
-                        <span style="color:#bbb;font-size:9px;letter-spacing:2px">&#9432; CHANGE STATUS / NAME THEN HIT SAVE</span>
+                        <span style="color:#bbb;font-size:9px;letter-spacing:2px">&#9432; SET STATUS TO FILLED → SELECT PERSONNEL FROM DROPDOWN → HIT SAVE → CLICK REFRESH TO CONFIRM</span>
                     </div>
                     <!-- Unit Cards Tabs -->
                     <div id="ucTabBar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;border-bottom:1px solid rgba(0,217,255,.15);padding-bottom:8px">

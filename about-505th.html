@@ -662,6 +662,21 @@
             --text-muted: #999 !important;
         }
     </style>
+    <style>
+        .uc-slot { display:flex; justify-content:space-between; align-items:center; padding:6px 8px; border-bottom:1px solid rgba(255,255,255,.04); }
+        .uc-slot-name { font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:600; color:#e0e0e0; }
+        .uc-slot-status { font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:500; text-align:right; }
+        .uc-open   { color:rgba(201,162,39,.6); font-style:italic; }
+        .uc-filled { color:#b0d860; font-weight:600; }
+        .uc-closed { color:#888; }
+        .uc-squads-row { display:flex; flex-wrap:wrap; gap:16px; margin-bottom:12px; }
+        .uc-squad-card { flex:1; min-width:260px; padding:12px 16px; border:1px solid rgba(255,255,255,.08); background:rgba(0,0,0,.25); }
+        .uc-squad-label { font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,.08); }
+        .stat-strip { display:flex; gap:12px; flex-wrap:wrap; }
+        .stat-pill { background:rgba(0,217,255,.04); border:1px solid rgba(0,217,255,.12); padding:10px 20px; font-family:'Share Tech Mono',monospace; display:flex; flex-direction:column; gap:2px; flex:1; min-width:120px; text-align:center; }
+        .stat-pill .val { font-size:26px; font-weight:700; line-height:1; }
+        .stat-pill .lbl { font-size:11px; letter-spacing:3px; color:#aaa; }
+    </style>
 </head>
 <body data-cms-page="about-505th">
     <!-- Navigation -->
@@ -948,6 +963,32 @@
                 </div>
             </div>
 
+            <!-- Active Stats -->
+            <div class="stat-strip" style="margin-bottom:2rem">
+                <a href="resources-roster.html" class="stat-pill" style="text-decoration:none;cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='rgba(0,217,255,.12)'">
+                    <span class="val" id="statDaysService" style="color:var(--accent)">—</span>
+                    <span class="lbl">DAYS IN SERVICE</span>
+                </a>
+                <a href="resources-roster.html" class="stat-pill" style="text-decoration:none;cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='#7FFF7F'" onmouseout="this.style.borderColor='rgba(0,217,255,.12)'">
+                    <span class="val" id="statActiveCount" style="color:#7FFF7F">—</span>
+                    <span class="lbl">ACTIVE</span>
+                </a>
+                <a href="resources-roster.html?platoon=Reserves" class="stat-pill" style="text-decoration:none;cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='#FFD700'" onmouseout="this.style.borderColor='rgba(0,217,255,.12)'">
+                    <span class="val" id="statReserveCount" style="color:#FFD700">—</span>
+                    <span class="lbl">RESERVES</span>
+                </a>
+                <a href="resources-roster.html" class="stat-pill" style="text-decoration:none;cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='rgba(0,217,255,.12)'">
+                    <span class="val" id="statDetachCount" style="color:var(--accent)">—</span>
+                    <span class="lbl">ACTIVE DETACHMENTS</span>
+                </a>
+            </div>
+
+            <!-- Battalion Command Unit Cards -->
+            <section style="margin-bottom:3rem">
+                <h3 style="font-family:'Rajdhani',sans-serif;color:var(--accent);font-size:1.8rem;letter-spacing:4px;text-align:center;margin-bottom:1.5rem;text-shadow:0 0 10px var(--accent-glow)">BATTALION COMMAND</h3>
+                <div id="unitCardsEmbed" data-unit="Battalion Command"></div>
+            </section>
+
             <div class="cta-box">
                 <h3>JOIN THE 505TH</h3>
                 <p>Ready to be part of something greater? The 505th Expeditionary Force is always looking for dedicated operators. Join our Discord to begin your journey.</p>
@@ -980,6 +1021,61 @@
     <script src="js/scroll.js" defer></script>
     <script type="module" src="js/auth.js"></script>
     <script type="module" src="js/cms.js"></script>
+    <script type="module">
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        const fc={apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",authDomain:"th-website-91533.firebaseapp.com",projectId:"th-website-91533",storageBucket:"th-website-91533.firebasestorage.app",messagingSenderId:"1046139150142",appId:"1:1046139150142:web:01f409ae4a38c4f79d966f"};
+        const app=getApps().length?getApps()[0]:initializeApp(fc);
+        const db=getFirestore(app);
+
+        // ===== ACTIVE STATS =====
+        try {
+            const snap = await getDocs(collection(db,'users'));
+            let active=0, reserves=0, platoons=new Set(), earliest=null;
+            snap.forEach(d => {
+                const u = d.data();
+                if(u.status==='pending'||u.status==='denied') return;
+                if(u.platoon==='Reserves') reserves++;
+                else {
+                    active++;
+                    if(u.platoon) platoons.add(u.platoon);
+                }
+                // Track earliest joinedAt for days in service
+                if(u.joinedAt) {
+                    const jd = new Date(u.joinedAt);
+                    if(!earliest || jd < earliest) earliest = jd;
+                }
+            });
+            const days = earliest ? Math.floor((new Date() - earliest) / 86400000) : 0;
+            document.getElementById('statDaysService').textContent  = days > 0 ? days : '—';
+            document.getElementById('statActiveCount').textContent  = active;
+            document.getElementById('statReserveCount').textContent = reserves;
+            document.getElementById('statDetachCount').textContent  = platoons.size;
+        } catch(e) { console.warn('Stats:', e.message); }
+
+        // ===== BATTALION COMMAND UNIT CARDS =====
+        const el = document.getElementById('unitCardsEmbed');
+        if(el) {
+            const UNIT = 'Battalion Command';
+            const cfg = {"accent":"#C9A227","sections":{"Command Staff":["O9 / Lieutenant General","O8 / Major General","O7 / Brigadier General","O6 / Colonel","O5 / Lieutenant Colonel","O4 / Major","O3 / Captain","O2 / First Lieutenant","O1 / Second Lieutenant"]}};
+            function e(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+            function k(u,s,l){ return (u+'__'+s+'__'+l).split(' ').join('_'); }
+            function slot(nm,st,n){
+                const sc=st==='closed'?'#667':st==='filled'?'#6a8d33':'rgba(201,162,39,.4)';
+                const tx=st==='closed'?'CLOSED':st==='filled'?e(n):'OPEN';
+                const cl=st==='filled'?'uc-filled':st==='closed'?'uc-closed':'uc-open';
+                return `<div class="uc-slot"><div class="uc-slot-name">${e(nm)}</div><div class="uc-slot-status ${cl}">${tx}</div></div>`;
+            }
+            try {
+                const snap=await getDoc(doc(db,'settings','unit_cards'));
+                const uc=snap.exists()?snap.data():{};
+                let h='<div class="uc-squads-row" style="justify-content:center"><div class="uc-squad-card" style="flex:0 1 500px;max-width:500px"><div class="uc-squad-label" style="color:'+cfg.accent+'">COMMAND STAFF</div>';
+                for(const s of cfg.sections['Command Staff']){ const v=uc[k(UNIT,'Command Staff',s)]||{};h+=slot(s,v.status||'open',v.name||''); }
+                h+='</div></div>';
+                el.innerHTML=h;
+            } catch(er){ console.warn('Unit cards:',er.message); }
+        }
+    </script>
     <script>
         // ===== Photo Slider =====
         (function() {

@@ -1146,11 +1146,11 @@
                     staffSlots.forEach(s=>{const v=uc[k(UNIT,'Wing Staff',s)]||{};h+=slot(s,v.status||'open',v.name||'');});
                     h+=`</div></div>`;
                 }
-                // Alpha and Bravo side by side
-                h+=`<div class="uc-squads-row" style="justify-content:center">`;
+                // Alpha and Bravo side by side — force nowrap
+                h+=`<div class="uc-squads-row" style="justify-content:center;flex-wrap:nowrap;align-items:flex-start">`;
                 for(const [sec,slots] of Object.entries(cfg.sections)){
                     if(sec==='Wing Staff') continue;
-                    h+=`<div class="uc-squad-card" style="flex:0 1 300px;max-width:300px"><div class="uc-squad-label" style="color:${cfg.accent}">${sec}</div>`;
+                    h+=`<div class="uc-squad-card" style="flex:1;min-width:0;max-width:50%"><div class="uc-squad-label" style="color:${cfg.accent}">${sec}</div>`;
                     slots.forEach(s=>{const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.name||'');});
                     h+=`</div>`;
                 }

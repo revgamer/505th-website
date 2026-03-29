@@ -468,9 +468,9 @@
                                 <tr>
                                     <td class="name-cell">${esc(formatMemberName(r))}</td>
                                     <td><span class="rank-badge">${esc(r.rank||'—')}</span></td>
-                                    <td>${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-US'):'—'}</td>
+                                    <td>${r.joinedPlatoon?new Date(r.joinedPlatoon).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—'}</td>
                                     <td class="time-val">${calcPeriod(r.joinedPlatoon)}</td>
-                                    <td>${r.graduation?new Date(r.graduation).toLocaleDateString('en-US'):'—'}</td>
+                                    <td>${r.graduation?new Date(r.graduation).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles'}):'—'}</td>
                                     <td class="time-val">${calcPeriod(r.graduation)}</td>
                                     <td>${attPips(r.attendance||0)}</td>
                                     <td><span class="pt-val">${r.promotionTracker||0}</span></td>
@@ -556,7 +556,15 @@
                 clearInterval(dotInterval);
                 loadState.style.display = 'none';
                 rosterBody.style.display = 'block';
+                // Apply URL query param filter if present (e.g. ?platoon=Reserves)
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlPlatoon = urlParams.get('platoon');
+                if(urlPlatoon) {
+                    const pf = document.getElementById('platoonFilter');
+                    if(pf) { pf.value = urlPlatoon; }
+                }
                 renderRoster(allRoster);
+                if(urlPlatoon) applyFilters();
             } catch(e) {
                 clearInterval(dotInterval);
                 loadState.textContent = 'ERROR LOADING ROSTER: ' + e.message;

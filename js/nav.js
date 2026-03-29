@@ -6,22 +6,15 @@ const menuClose = document.getElementById('menuClose');
 const menuOverlay = document.getElementById('menuOverlay');
 
 // ===== NAV HINT — bouncing ▼ chevron on logo =====
-// Shows until user opens the menu once per session, then permanently hides.
+// Fades out when menu opens, fades back in when menu closes. Always visible.
 (function initNavHint() {
-    const SESSION_KEY = 'navHintDismissed';
-    if (sessionStorage.getItem(SESSION_KEY)) return;
 
-    // Inject keyframe + hint styles
     const style = document.createElement('style');
     style.textContent = `
         @keyframes navHintBounce {
             0%, 100% { transform: translateY(0);  opacity: 1;   }
             45%       { transform: translateY(6px); opacity: 1;   }
             65%       { transform: translateY(2px); opacity: 0.7; }
-        }
-        @keyframes navHintFadeOut {
-            from { opacity: 1; transform: translateY(0);  }
-            to   { opacity: 0; transform: translateY(5px); }
         }
         .nav-hint-chevron {
             display: inline-flex;
@@ -36,9 +29,7 @@ const menuOverlay = document.getElementById('menuOverlay');
             user-select: none;
             vertical-align: middle;
             text-shadow: 0 0 8px var(--accent-glow, rgba(0,217,255,.5));
-        }
-        .nav-hint-chevron.nav-hint-out {
-            animation: navHintFadeOut 0.3s ease forwards;
+            transition: opacity 0.3s ease;
         }
         .nav-hint-label {
             font-family: 'Rajdhani', 'Share Tech Mono', monospace;
@@ -50,12 +41,12 @@ const menuOverlay = document.getElementById('menuOverlay');
             pointer-events: none;
             user-select: none;
             vertical-align: middle;
+            transition: opacity 0.3s ease;
         }
     `;
     document.head.appendChild(style);
 
-    // Build hint element
-    const hint = document.createElement('span');
+    const hint  = document.createElement('span');
     hint.className = 'nav-hint-chevron';
     hint.setAttribute('aria-hidden', 'true');
     hint.innerHTML = '▼';
@@ -71,26 +62,24 @@ const menuOverlay = document.getElementById('menuOverlay');
         brand.appendChild(label);
     }
 
-    function dismissHint() {
-        sessionStorage.setItem(SESSION_KEY, '1');
-        hint.classList.add('nav-hint-out');
+    function hideHint() {
+        hint.style.opacity  = '0';
         label.style.opacity = '0';
-        label.style.transition = 'opacity 0.3s ease';
-        hint.addEventListener('animationend', () => {
-            hint.remove();
-            label.remove();
-        }, { once: true });
     }
 
-    // Attach once DOM ready
+    function showHint() {
+        hint.style.opacity  = '1';
+        label.style.opacity = '1';
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', attachHint);
     } else {
         attachHint();
     }
 
-    // Dismiss when menu opens — hook into the click below
-    window._navHintDismiss = dismissHint;
+    window._navHintHide = hideHint;
+    window._navHintShow = showHint;
 })();
 
 // Open menu when clicking logo
@@ -98,23 +87,21 @@ logoMenu.addEventListener('click', (e) => {
     e.preventDefault();
     tacticalMenu.classList.add('active');
     document.body.style.overflow = 'hidden';
-    // Dismiss nav hint on first menu open
-    if (typeof window._navHintDismiss === 'function') {
-        window._navHintDismiss();
-        window._navHintDismiss = null;
-    }
+    if (typeof window._navHintHide === 'function') window._navHintHide();
 });
 
 // Close menu when clicking X button
 menuClose.addEventListener('click', () => {
     tacticalMenu.classList.remove('active');
     document.body.style.overflow = 'auto';
+    if (typeof window._navHintShow === 'function') window._navHintShow();
 });
 
 // Close menu when clicking overlay
 menuOverlay.addEventListener('click', () => {
     tacticalMenu.classList.remove('active');
     document.body.style.overflow = 'auto';
+    if (typeof window._navHintShow === 'function') window._navHintShow();
 });
 
 // Close menu with ESC key
@@ -122,6 +109,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && tacticalMenu.classList.contains('active')) {
         tacticalMenu.classList.remove('active');
         document.body.style.overflow = 'auto';
+        if (typeof window._navHintShow === 'function') window._navHintShow();
     }
 });
 

@@ -21,15 +21,15 @@ const STRUCTURE = {
     'Alpha Company': {
         accent:'#8aad44',
         sections:{
-            '1st Platoon — Killjoy': ['Platoon Commander','Platoon Sergeant','Platoon JTAC',
+            '1st Platoon — Killjoy': ['Platoon Commander','Platoon Sergeant',
                 'KJ 1-1 SQL','KJ 1-1 Marine 1','KJ 1-1 Marine 2','KJ 1-1 Marine 3','KJ 1-1 Marine 4','KJ 1-1 Marine 5','KJ 1-1 Marine 6','KJ 1-1 Marine 7','KJ 1-1 Marine 8',
                 'KJ 1-2 SQL','KJ 1-2 Marine 1','KJ 1-2 Marine 2','KJ 1-2 Marine 3','KJ 1-2 Marine 4','KJ 1-2 Marine 5','KJ 1-2 Marine 6','KJ 1-2 Marine 7','KJ 1-2 Marine 8',
                 'KJ 1-3 SQL','KJ 1-3 Marine 1','KJ 1-3 Marine 2','KJ 1-3 Marine 3','KJ 1-3 Marine 4','KJ 1-3 Marine 5','KJ 1-3 Marine 6','KJ 1-3 Marine 7','KJ 1-3 Marine 8'],
-            '2nd Platoon': ['Platoon Commander','Platoon Sergeant','Platoon JTAC',
+            '2nd Platoon': ['Platoon Commander','Platoon Sergeant',
                 'Alpha 2-1 SQL','Alpha 2-1 Marine 1','Alpha 2-1 Marine 2','Alpha 2-1 Marine 3','Alpha 2-1 Marine 4','Alpha 2-1 Marine 5','Alpha 2-1 Marine 6','Alpha 2-1 Marine 7','Alpha 2-1 Marine 8',
                 'Bravo 2-2 SQL','Bravo 2-2 Marine 1','Bravo 2-2 Marine 2','Bravo 2-2 Marine 3','Bravo 2-2 Marine 4','Bravo 2-2 Marine 5','Bravo 2-2 Marine 6','Bravo 2-2 Marine 7','Bravo 2-2 Marine 8',
                 'Charlie 2-3 SQL','Charlie 2-3 Marine 1','Charlie 2-3 Marine 2','Charlie 2-3 Marine 3','Charlie 2-3 Marine 4','Charlie 2-3 Marine 5','Charlie 2-3 Marine 6','Charlie 2-3 Marine 7','Charlie 2-3 Marine 8'],
-            '3rd Platoon': ['Platoon Commander','Platoon Sergeant','Platoon JTAC',
+            '3rd Platoon': ['Platoon Commander','Platoon Sergeant',
                 'Alpha 3-1 SQL','Alpha 3-1 Marine 1','Alpha 3-1 Marine 2','Alpha 3-1 Marine 3','Alpha 3-1 Marine 4','Alpha 3-1 Marine 5','Alpha 3-1 Marine 6','Alpha 3-1 Marine 7','Alpha 3-1 Marine 8',
                 'Bravo 3-2 SQL','Bravo 3-2 Marine 1','Bravo 3-2 Marine 2','Bravo 3-2 Marine 3','Bravo 3-2 Marine 4','Bravo 3-2 Marine 5','Bravo 3-2 Marine 6','Bravo 3-2 Marine 7','Bravo 3-2 Marine 8',
                 'Charlie 3-3 SQL','Charlie 3-3 Marine 1','Charlie 3-3 Marine 2','Charlie 3-3 Marine 3','Charlie 3-3 Marine 4','Charlie 3-3 Marine 5','Charlie 3-3 Marine 6','Charlie 3-3 Marine 7','Charlie 3-3 Marine 8'],
