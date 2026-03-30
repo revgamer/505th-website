@@ -1096,7 +1096,18 @@
         // onSnapshot on the collection keeps the indicator live for everyone.
 
         async function _attPresJoin() {
-            if (!currentUserData) return;
+            // Wait up to 5s for auth to resolve before giving up
+            if (!currentUserData) {
+                let waited = 0;
+                await new Promise(resolve => {
+                    const poll = setInterval(() => {
+                        waited += 100;
+                        if (currentUserData || waited >= 5000) { clearInterval(poll); resolve(); }
+                    }, 100);
+                });
+            }
+            if (!currentUserData) { console.warn('presence: currentUserData still null after wait'); return; }
+            if (_attPresSession) return; // already joined
             try {
                 const sessionRef = await addDoc(collection(db, 'presence_sessions'), {
                     panel:     'attendance',
@@ -1166,55 +1177,56 @@
             const badge  = document.getElementById('attNavBadge');
             if (!bar || !chips) return;
 
-            // Others = everyone except this tab's session
+            // Show ALL sessions — including yourself so bar is always visible once on panel
+            // "others" = everyone except this tab, used for warning + nav badge count
             const others = sessions.filter(s => s.id !== _attPresSession);
 
-            // Update sidebar nav badge
+            // Sidebar nav badge — only count others (not self)
             if (badge) {
                 if (others.length > 0) {
-                    badge.textContent  = others.length;
+                    badge.textContent   = others.length;
                     badge.style.display = 'inline-block';
                 } else {
                     badge.style.display = 'none';
                 }
             }
 
-            // Hide bar if alone
-            if (others.length === 0) {
+            // Always show bar as long as we have a session (i.e. panel is open)
+            if (sessions.length === 0) {
                 bar.style.display = 'none';
                 return;
             }
-
             bar.style.display = 'block';
 
-            // Build chips — Rank + Callsign (or Last Name fallback)
-            chips.innerHTML = others.map(s => {
+            // Build chips for ALL sessions — self gets a "YOU" label
+            chips.innerHTML = sessions.map(s => {
+                const isSelf    = s.id === _attPresSession;
                 const rankAbbr  = getRankAbbr(s.rank || '');
                 const callsign  = (s.callsign || '').trim();
                 const lastName  = (s.lastName  || '').trim();
                 const firstName = (s.firstName || '').trim();
-                // Display: "SSgt \"Davy\"" or "SSgt Jones"
                 let namePart = '';
                 if (callsign && callsign !== firstName) namePart = `"${callsign}"`;
                 else if (lastName) namePart = lastName;
                 else namePart = callsign || 'Unknown';
                 const displayName = [rankAbbr, namePart].filter(Boolean).join(' ');
 
-                // Colour the chip differently if they're on the same event
-                const sameEvent = s.eventId && attEventData?.id && s.eventId === attEventData.id;
-                const chipBorder = sameEvent ? 'rgba(255,68,68,.6)'  : 'rgba(0,217,255,.35)';
-                const chipBg     = sameEvent ? 'rgba(255,68,68,.08)' : 'rgba(0,217,255,.06)';
-                const dotColor   = sameEvent ? '#FF6B6B' : '#00D9FF';
-                const textColor  = sameEvent ? '#FF9999' : 'rgba(0,217,255,.9)';
+                // Self = solid cyan, others on same event = red, others on different event = dimmed cyan
+                const sameEvent  = !isSelf && s.eventId && attEventData?.id && s.eventId === attEventData.id;
+                const chipBorder = isSelf ? 'rgba(0,217,255,.6)' : sameEvent ? 'rgba(255,68,68,.6)'  : 'rgba(0,217,255,.2)';
+                const chipBg     = isSelf ? 'rgba(0,217,255,.1)' : sameEvent ? 'rgba(255,68,68,.08)' : 'rgba(0,217,255,.03)';
+                const dotColor   = isSelf ? '#00D9FF'            : sameEvent ? '#FF6B6B'             : 'rgba(0,217,255,.5)';
+                const textColor  = isSelf ? '#00D9FF'            : sameEvent ? '#FF9999'             : 'rgba(0,217,255,.6)';
 
                 return `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid ${chipBorder};background:${chipBg};font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:${textColor}">
                     <span style="width:7px;height:7px;border-radius:50%;background:${dotColor};flex-shrink:0;animation:attPresencePulse 1.4s ease-in-out infinite"></span>
                     ${esc(displayName)}
+                    ${isSelf   ? '<span style="font-size:8px;opacity:.6;margin-left:2px">YOU</span>' : ''}
                     ${sameEvent ? '<span style="font-size:8px;opacity:.7;margin-left:2px">SAME EVENT</span>' : ''}
                 </span>`;
             }).join('');
 
-            // Warning banner — show if ANY other user is on the same event
+            // Warning banner — show if any OTHER user is on the same event
             const sameEventCount = others.filter(s => s.eventId && attEventData?.id && s.eventId === attEventData.id).length;
             if (warn) warn.style.display = sameEventCount > 0 ? 'block' : 'none';
         }
@@ -1284,15 +1296,11 @@
         }
 
         function _attUpdateEditorBadge(evData) {
-            let badge = document.getElementById('attLiveBadge');
-            if (!badge) {
-                const lbl = document.getElementById('attCurrentEventLabel');
-                if (!lbl) return;
-                badge = document.createElement('span');
-                badge.id = 'attLiveBadge';
-                badge.style.cssText = 'margin-left:10px;font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:1px;padding:2px 8px;border:1px solid rgba(0,217,255,.3);color:rgba(0,217,255,.7);vertical-align:middle';
-                lbl.parentNode.insertBefore(badge, lbl.nextSibling);
-            }
+            const lbl   = document.getElementById('attCurrentEventLabel');
+            const badge = document.getElementById('attLiveBadge');
+            if (lbl) lbl.textContent = evData.title ? '— ' + evData.title : '';
+            if (!badge) return;
+            badge.style.display = 'inline';
             if (evData.locked) {
                 badge.textContent  = '🔒 LOCKED';
                 badge.style.color  = '#FFD700';
@@ -1393,22 +1401,94 @@
         };
 
         window.attNewEvent = function() {
+            // Just reset the form — used internally by clear/delete
             _attUnsubscribe();
             attEventData = null;
             document.getElementById('attEventTitle').value = '';
             document.getElementById('attEventDate').value  = new Date().toISOString().split('T')[0];
             document.getElementById('attEventType').value  = 'main_op';
-            const lbl = document.getElementById('attCurrentEventLabel');
-            if (lbl) lbl.textContent = 'New Event';
+            const lbl   = document.getElementById('attCurrentEventLabel');
             const badge = document.getElementById('attLiveBadge');
-            if (badge) badge.remove();
-            // Update presence to show no event loaded
+            if (lbl)   lbl.textContent   = '';
+            if (badge) { badge.textContent=''; badge.style.display='none'; }
             if (_attPresSession) {
                 updateDoc(doc(db, 'presence_sessions', _attPresSession), {
                     eventId: null, updatedAt: new Date().toISOString()
                 }).catch(() => {});
             }
             renderAttRoster();
+        };
+
+        // + ADD NEW EVENT button — validates, saves to Firestore, reloads recent list, starts live sync
+        window.attCreateNewEvent = async function() {
+            const title = document.getElementById('attEventTitle').value.trim();
+            const date  = document.getElementById('attEventDate').value;
+            const type  = document.getElementById('attEventType').value;
+            if (!title) { notify('ENTER AN OPERATION / EVENT NAME FIRST', 1); return; }
+            if (!date)  { notify('DATE REQUIRED', 1); return; }
+
+            const btn = document.querySelector('button[onclick="attCreateNewEvent()"]');
+            if (btn) { btn.disabled=true; btn.textContent='CREATING...'; }
+
+            try {
+                // Check for duplicate title+date
+                const existing = await getDocs(query(
+                    collection(db, 'attendance_events'),
+                    where('title', '==', title),
+                    where('date',  '==', date)
+                ));
+                if (!existing.empty) {
+                    notify('AN EVENT WITH THIS NAME AND DATE ALREADY EXISTS — LOAD IT FROM RECENT EVENTS', 1);
+                    if (btn) { btn.disabled=false; btn.textContent='+ ADD NEW EVENT'; }
+                    return;
+                }
+
+                _attUnsubscribe();
+                const ref = await addDoc(collection(db, 'attendance_events'), {
+                    title,
+                    date,
+                    type,
+                    attendees:  [],
+                    excused:    [],
+                    locked:     false,
+                    createdBy:  currentUserData?.callsign || 'Staff',
+                    createdAt:  new Date().toISOString(),
+                    updatedBy:  currentUserData?.callsign || 'Staff',
+                    updatedAt:  new Date().toISOString(),
+                });
+
+                attEventData = { id: ref.id, title, date, type, attendees:[], excused:[], locked:false };
+
+                // Update label + badge
+                const lbl   = document.getElementById('attCurrentEventLabel');
+                const badge = document.getElementById('attLiveBadge');
+                if (lbl)   lbl.textContent   = '— ' + title;
+                if (badge) { badge.textContent='● LIVE'; badge.style.display='inline'; badge.style.color='rgba(0,217,255,.7)'; badge.style.border='1px solid rgba(0,217,255,.3)'; }
+
+                // Update presence
+                if (_attPresSession) {
+                    updateDoc(doc(db, 'presence_sessions', _attPresSession), {
+                        eventId: ref.id, updatedAt: new Date().toISOString()
+                    }).catch(() => {});
+                }
+
+                _attSubscribe(ref.id);
+                renderAttRoster();
+
+                // Reload recent events list so new event appears immediately
+                const snap = await getDocs(query(collection(db,'attendance_events'), orderBy('date','desc'), limit(20)));
+                const events = []; snap.forEach(d => events.push({id:d.id,...d.data()}));
+                renderAttEventList(events);
+
+                // Expand recent events panel so user can see it appeared
+                const wrap  = document.getElementById('attEventListWrap');
+                const arrow = document.getElementById('attRecentArrow');
+                if (wrap)  wrap.style.display = 'block';
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+
+                notify('EVENT CREATED — ' + title + ' — READY TO LOG ATTENDANCE');
+            } catch(e) { notify('CREATE FAILED: ' + e.message, 1); }
+            if (btn) { btn.disabled=false; btn.textContent='+ ADD NEW EVENT'; }
         };
 
         window.attClearForm = function() {
@@ -3249,6 +3329,12 @@
             // Load Discord link and default panel
             loadDiscordLink();
             showPanel('panel-dashboard');
+
+            // If attendance panel somehow already visible, join presence now that auth is ready
+            const attPanelEl = document.getElementById('panel-attendance');
+            if (attPanelEl && !attPanelEl.classList.contains('hidden') && !_attPresSession) {
+                _attPresJoin();
+            }
         });
 
         // ===== MEDIA LIBRARY UPLOAD =====
@@ -3970,7 +4056,11 @@
 
                     <!-- Event form -->
                     <div class="dash-section" style="margin-bottom:16px">
-                        <div class="dash-section-title">&#9998; CREATE / SELECT EVENT</div>
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                            <div class="dash-section-title" style="margin:0">&#9998; CREATE / SELECT EVENT</div>
+                            <span id="attCurrentEventLabel" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,217,255,.5);letter-spacing:1px"></span>
+                            <span id="attLiveBadge" style="display:none;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;padding:2px 8px;border:1px solid rgba(0,217,255,.3);color:rgba(0,217,255,.7)"></span>
+                        </div>
                         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
                             <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px">
                                 <div style="font-size:11px;letter-spacing:2px;color:rgba(0,217,255,.85);font-family:Rajdhani,sans-serif;font-weight:600">OPERATION / EVENT NAME</div>
@@ -3989,7 +4079,7 @@
                                     <option value="fun_op">FUN OP</option>
                                 </select>
                             </div>
-                            <button class="upload-btn" onclick="attNewEvent()" style="padding:8px 16px;font-size:11px;white-space:nowrap">&#43; NEW EVENT</button>
+                            <button class="upload-btn" onclick="attCreateNewEvent()" style="padding:8px 16px;font-size:11px;white-space:nowrap">&#43; ADD NEW EVENT</button>
                         </div>
                         <!-- Recent events list -->
                         <div style="margin-top:14px">
