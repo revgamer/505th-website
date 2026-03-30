@@ -955,12 +955,12 @@
         const el=document.getElementById('unitCardsEmbed');
         if(el){
             const UNIT='Alpha Company';
-            const cfg={"accent": "#8aad44", "sections": {"1st Platoon \u2014 Killjoy": ["Platoon Commander", "Platoon Sergeant", "KJ 1-1 SQL", "Marine 1", "Marine 2", "Marine 3", "Marine 4", "Marine 5", "Marine 6", "Marine 7", "Marine 8", "KJ 1-2 SQL", "Marine 1", "Marine 2", "Marine 3", "Marine 4", "Marine 5", "Marine 6", "Marine 7", "Marine 8", "KJ 1-3 SQL", "Marine 1", "Marine 2", "Marine 3", "Marine 4", "Marine 5", "Marine 6", "Marine 7", "Marine 8"], "2nd Platoon": ["Platoon Commander", "Platoon Sergeant", "Alpha 2-1 SQL", "Marine 1", "Marine 2", "Marine 3", "Marine 4", "Marine 5", "Marine 6", "Marine 7", "Marine 8", "Bravo 2-2 SQL", "Marine 1", "Marine 2", "Marine 3", "Marine 4", "Marine 5", "Marine 6", "Marine 7", "Marine 8", "Charlie 2-3 SQL", "Marine 1", "Marine 2", "Marine 3", "Marine 4", "Marine 5", "Marine 6", "Marine 7", "Marine 8"], "3rd Platoon": ["Platoon Commander", "Platoon Sergeant", "Alpha 3-1 SQL", "Marine 1", "Marine 2", "Marine 3", "Marine 4", "Marine 5", "Marine 6", "Marine 7", "Marine 8", "Bravo 3-2 SQL", "Marine 1", "Marine 2", "Marine 3", "Marine 4", "Marine 5", "Marine 6", "Marine 7", "Marine 8", "Charlie 3-3 SQL", "Marine 1", "Marine 2", "Marine 3", "Marine 4", "Marine 5", "Marine 6", "Marine 7", "Marine 8"]}};
+            const cfg={"accent":"#8aad44","sections":{"1st Platoon — Killjoy":["Platoon Commander","Platoon Sergeant","KJ 1-1 SQL","Marine 1","Marine 2","Marine 3","Marine 4","Marine 5","Marine 6","Marine 7","Marine 8","KJ 1-2 SQL","Marine 1","Marine 2","Marine 3","Marine 4","Marine 5","Marine 6","Marine 7","Marine 8","KJ 1-3 SQL","Marine 1","Marine 2","Marine 3","Marine 4","Marine 5","Marine 6","Marine 7","Marine 8"],"2nd Platoon":["Platoon Commander","Platoon Sergeant","Alpha 2-1 SQL","Marine 1","Marine 2","Marine 3","Marine 4","Marine 5","Marine 6","Marine 7","Marine 8","Bravo 2-2 SQL","Marine 1","Marine 2","Marine 3","Marine 4","Marine 5","Marine 6","Marine 7","Marine 8","Charlie 2-3 SQL","Marine 1","Marine 2","Marine 3","Marine 4","Marine 5","Marine 6","Marine 7","Marine 8"],"3rd Platoon":["Platoon Commander","Platoon Sergeant","Alpha 3-1 SQL","Marine 1","Marine 2","Marine 3","Marine 4","Marine 5","Marine 6","Marine 7","Marine 8","Bravo 3-2 SQL","Marine 1","Marine 2","Marine 3","Marine 4","Marine 5","Marine 6","Marine 7","Marine 8","Charlie 3-3 SQL","Marine 1","Marine 2","Marine 3","Marine 4","Marine 5","Marine 6","Marine 7","Marine 8"]}};
             const PFX=['KJ','Alpha','Bravo','Charlie','Stalker','Delta'];
-            function sq(s){ for(const p of PFX){ if(s.startsWith(p))return s.split(' ').slice(0,2).join(' '); } return null; }
             function e(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
-            function k(u,s,l){ return (u+'__'+s+'__'+l).split(' ').join('_'); }
-            function slot(nm,st,n,ac){
+            // KEY must match admin: unit__section__squad__slot (spaces → underscores)
+            function makeKey(u,s,sq,slot){ const ks=sq?(sq+'__'+slot):slot; return (u+'__'+s+'__'+ks).split(' ').join('_'); }
+            function renderSlot(nm,st,n){
                 const sc=st==='closed'?'#667':st==='filled'?'#6a8d33':'rgba(0,217,255,.4)';
                 const tx=st==='closed'?'CLOSED':st==='filled'?e(n):'OPEN';
                 const cl=st==='filled'?'uc-filled':st==='closed'?'uc-closed':'uc-open';
@@ -972,44 +972,43 @@
                     getDocs(collection(db,'users'))
                 ]);
                 const uc = snap.exists() ? snap.data() : {};
-                // Build userId → live formatted name map
                 const userNames = {};
                 usersSnap.forEach(d => {
-                    const u = d.data();
-                    const rankAbbr = (function(r){
-                        const map={'O9 / Lieutenant General':'LtGen','O8 / Major General':'MajGen','O7 / Brigadier General':'BGen','O6 / Colonel':'Col','O5 / Lieutenant Colonel':'LtCol','O4 / Major':'Maj','O3 / Captain':'Capt','O2 / First Lieutenant':'1stLt','O1 / Second Lieutenant':'2ndLt','E9 / Sergeant Major':'SgtMaj','E9 / Master Gunnery Sergeant':'MGySgt','E9 / First Sergeant':'1stSgt','E8 / Master Sergeant':'MSgt','E7 / Gunnery Sergeant':'GySgt','E6 / Staff Sergeant':'SSgt','E5 / Sergeant':'Sgt','E4 / Corporal':'Cpl','E3 / Lance Corporal':'LCpl','E2 / Private First Class':'PFC','E1 / Private':'Pvt','E9 / Master Chief Hospital Corpsman':'MCPO','E8 / Senior Chief Corpsman':'SCPO','E7 / Chief Corpsman':'CPO','E6 / Corpsman First Class':'HM1','E5 / Corpsman Second Class':'HM2','E4 / Corpsman Third Class':'HM3','E3 / Hospitalman':'HN','E2 / Hospitalman Apprentice':'HA','E6 / Technical Sergeant':'TSgt','E5 / Staff Sergeant':'SSgt','E4 / Senior Airman':'SrA','E3 / Airman First Class':'A1C','E2 / Airman':'Amn','E1 / Airman Basic':'AB'};
-                        return map[r] || (r ? r.split('/').pop().trim() : '');
-                    })(u.rank||'');
-                    const first = (u.firstName||'').trim();
-                    const last  = (u.lastName||'').trim();
-                    const cs    = (u.callsign||'').trim();
-                    const init  = first ? first.charAt(0).toUpperCase()+'.' : '';
-                    const hasCs = cs && cs !== first && cs !== (first+' '+last);
-                    let nm = '';
-                    if(init) nm += init+' ';
-                    if(hasCs) nm += '"'+cs+'"';
-                    else if(last) nm += last;
-                    else if(cs) nm += '"'+cs+'"';
-                    userNames[d.id] = [rankAbbr, nm.trim()].filter(Boolean).join(' ');
+                    const u=d.data();
+                    const RANK={'O9 / Lieutenant General':'LtGen','O8 / Major General':'MajGen','O7 / Brigadier General':'BGen','O6 / Colonel':'Col','O5 / Lieutenant Colonel':'LtCol','O4 / Major':'Maj','O3 / Captain':'Capt','O2 / First Lieutenant':'1stLt','O1 / Second Lieutenant':'2ndLt','E9 / Sergeant Major':'SgtMaj','E9 / Master Gunnery Sergeant':'MGySgt','E9 / First Sergeant':'1stSgt','E8 / Master Sergeant':'MSgt','E7 / Gunnery Sergeant':'GySgt','E6 / Staff Sergeant':'SSgt','E5 / Sergeant':'Sgt','E4 / Corporal':'Cpl','E3 / Lance Corporal':'LCpl','E2 / Private First Class':'PFC','E1 / Private':'Pvt','E9 / Master Chief Hospital Corpsman':'MCPO','E8 / Senior Chief Corpsman':'SCPO','E7 / Chief Corpsman':'CPO','E6 / Corpsman First Class':'HM1','E5 / Corpsman Second Class':'HM2','E4 / Corpsman Third Class':'HM3','E3 / Hospitalman':'HN','E2 / Hospitalman Apprentice':'HA','E6 / Technical Sergeant':'TSgt','E4 / Senior Airman':'SrA','E3 / Airman First Class':'A1C','E2 / Airman':'Amn','E1 / Airman Basic':'AB'};
+                    const rk=RANK[u.rank||'']||(u.rank?u.rank.split('/').pop().trim():'');
+                    const first=(u.firstName||'').trim(),last=(u.lastName||'').trim(),cs=(u.callsign||'').trim();
+                    const init=first?first.charAt(0).toUpperCase()+'.':''
+                    const hasCs=cs&&cs!==first&&cs!==(first+' '+last);
+                    let nm=''; if(init) nm+=init+' '; if(hasCs) nm+='"'+cs+'"'; else if(last) nm+=last; else if(cs) nm+='"'+cs+'"';
+                    userNames[d.id]=[rk,nm.trim()].filter(Boolean).join(' ');
                 });
                 let h='';
                 for(const [sec,slots] of Object.entries(cfg.sections)){
                     const staff=[],squads={},so=[];
-                    for(const s of slots){ const g=sq(s); if(g){ if(!squads[g]){ squads[g]=[];so.push(g); } squads[g].push(s); } else staff.push(s); }
-                    // Platoon header
+                    let curSq=null;
+                    for(const s of slots){
+                        if(s.endsWith(' SQL')||s.endsWith('SQL')){
+                            curSq=s.replace(/ SQL$/,'').trim();
+                            if(!squads[curSq]){squads[curSq]=[];so.push(curSq);}
+                            squads[curSq].push(s);
+                        } else if(curSq){ squads[curSq].push(s); }
+                        else { staff.push(s); }
+                    }
                     h+=`<div class="uc-section"><div class="uc-section-title" style="color:${cfg.accent}">${sec}</div>`;
-                    // Staff vertical list
                     if(staff.length){
                         h+='<div class="uc-staff">';
-                        for(const s of staff){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.userId?(userNames[v.userId]||v.name||''):(v.name||''),cfg.accent); }
+                        for(const s of staff){ const v=uc[makeKey(UNIT,sec,'',s)]||{}; h+=renderSlot(s,v.status||'open',v.userId?(userNames[v.userId]||v.name||''):(v.name||'')); }
                         h+='</div>';
                     }
-                    // Squads side by side
+                    // Check section-level hidden flag — set per platoon in admin
+                    const secHiddenKey=('__SECTION_HIDDEN__'+UNIT+'__'+sec).split(' ').join('_');
+                    if(uc[secHiddenKey]===true){ h+='</div>'; continue; }
                     if(so.length){
                         h+='<div class="uc-squads-row">';
                         for(const sn of so){
                             h+=`<div class="uc-squad-card"><div class="uc-squad-label" style="color:${cfg.accent}">${sn.toUpperCase()}</div>`;
-                            for(const s of squads[sn]){ const v=uc[k(UNIT,sec,s)]||{};h+=slot(s,v.status||'open',v.userId?(userNames[v.userId]||v.name||''):(v.name||''),cfg.accent); }
+                            for(const s of squads[sn]){ const v=uc[makeKey(UNIT,sec,sn,s)]||{}; h+=renderSlot(s,v.status||'open',v.userId?(userNames[v.userId]||v.name||''):(v.name||'')); }
                             h+='</div>';
                         }
                         h+='</div>';
