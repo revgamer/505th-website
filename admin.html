@@ -276,7 +276,7 @@
             renderRosterTable();
         };
 
-        async function loadRosterPanel(){
+        window.loadRosterPanel = async function loadRosterPanel(){
             const c=document.getElementById('rosterList');
             if(c)c.innerHTML='<div class="empty-state">LOADING...</div>';
             try{
