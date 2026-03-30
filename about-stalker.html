@@ -1167,15 +1167,14 @@
                         } else if(curSq){ squads[curSq].push(s); }
                         else { staff.push(s); }
                     }
+                    const secHiddenKey=('__SECTION_HIDDEN__'+UNIT+'__'+sec).split(' ').join('_');
+                    if(uc[secHiddenKey]===true) continue;
                     h+=`<div class="uc-section"><div class="uc-section-title" style="color:${cfg.accent}">${sec}</div>`;
                     if(staff.length){
                         h+='<div class="uc-staff">';
                         for(const s of staff){ const v=uc[makeKey(UNIT,sec,'',s)]||{}; h+=renderSlot(s,v.status||'open',v.userId?(userNames[v.userId]||v.name||''):(v.name||'')); }
                         h+='</div>';
                     }
-                    // Check section-level hidden flag
-                    const secHiddenKey=('__SECTION_HIDDEN__'+UNIT+'__'+sec).split(' ').join('_');
-                    if(uc[secHiddenKey]===true){ h+='</div>'; continue; }
                     if(so.length){
                         h+='<div class="uc-squads-row">';
                         for(const sn of so){
