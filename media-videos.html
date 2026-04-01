@@ -47,7 +47,7 @@
             --text-muted: #999 !important;
         }
     </style>
-    <style>
+<style>
     /* ================================================================
        DESKTOP SIDEBAR — rail + slide panel  (>=1024px only)
        Everything below 1024px is untouched mobile behaviour
@@ -72,7 +72,7 @@
             align-items: center;
             justify-content: center;
             gap: 14px;
-            background: rgba(8, 10, 14, 0.97);
+            background: #0A0E12;
             border-bottom: 1px solid rgba(0,217,255,0.2);
             box-shadow: 0 2px 24px rgba(0,217,255,0.08);
             z-index: 300;
@@ -132,10 +132,6 @@
             flex: 1; display: flex; flex-direction: column;
             align-items: center; width: 100%; padding-top: 4px;
         }
-        .rail-bottom {
-            display: flex; flex-direction: column;
-            align-items: center; width: 100%; padding-bottom: 8px;
-        }
 
         /* Crosshair toggle */
         .rail-crosshair {
@@ -156,14 +152,6 @@
         .crosshair-svg line {
             stroke: var(--accent,#00D9FF); stroke-width: 1.5;
             stroke-linecap: round; transition: all 0.3s;
-        }
-        .rail-crosshair:hover .crosshair-svg circle,
-        .rail-crosshair.active .crosshair-svg circle {
-            filter: drop-shadow(0 0 4px rgba(0,217,255,0.8));
-        }
-        .rail-crosshair:hover .crosshair-svg line,
-        .rail-crosshair.active .crosshair-svg line {
-            filter: drop-shadow(0 0 3px rgba(0,217,255,0.8));
         }
         .rail-crosshair.active::after {
             content: ''; position: absolute; inset: 8px;
@@ -258,13 +246,13 @@
         ════════════════════════════════ */
         .desktop-account-panel {
             display: block !important;
-            position: fixed; bottom: 60px; left: 52px; width: 220px;
+            position: fixed; top: 200px; left: 52px; width: 220px;
             background: rgba(10,13,17,0.98);
             border: 1px solid rgba(0,217,255,0.25);
             box-shadow: 4px 0 30px rgba(0,0,0,0.6), 0 0 20px rgba(0,217,255,0.06);
             z-index: 250;
             transform: translateX(-110%) scale(0.95);
-            transform-origin: left bottom;
+            transform-origin: left center;
             transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.22s;
             opacity: 0; pointer-events: none;
         }
@@ -315,117 +303,12 @@
         .rail-btn.acct-active { background: rgba(0,217,255,0.06); border-left-color: var(--accent,#00D9FF); }
 
     } /* end @media >=1024px */
-/* ── Settings icon ── */
-        .rail-settings-btn {
-            width: 52px; height: 48px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; border: none; background: none;
-            padding: 0; position: relative;
-            transition: background 0.2s; border-left: 2px solid transparent;
-            flex-shrink: 0;
-        }
-        .rail-settings-btn svg {
-            width: 20px; height: 20px;
-            transition: transform 0.4s ease, opacity 0.2s;
-            opacity: 0.45;
-        }
-        .rail-settings-btn:hover svg,
-        .rail-settings-btn.active svg {
-            opacity: 1;
-            transform: rotate(60deg);
-            filter: drop-shadow(0 0 4px rgba(0,217,255,0.7));
-        }
-        .rail-settings-btn:hover,
-        .rail-settings-btn.active {
-            background: rgba(0,217,255,0.06);
-            border-left-color: var(--accent,#00D9FF);
-        }
-        .rail-settings-btn::after {
-            content: 'SETTINGS';
-            position: absolute; left: 58px; top: 50%; transform: translateY(-50%);
-            background: rgba(8,10,14,0.95); border: 1px solid rgba(0,217,255,0.3);
-            color: var(--accent,#00D9FF); font-family: 'Rajdhani',sans-serif;
-            font-size: 0.7rem; font-weight: 700; letter-spacing: 2px;
-            padding: 4px 10px; white-space: nowrap;
-            pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 500;
-        }
-        .rail-settings-btn:hover::after { opacity: 1; }
-        /* Hidden when logged out */
-        .rail-settings-btn.hidden-guest { display: none; }
-
-        /* ── Settings popup panel ── */
-        .desktop-settings-panel {
-            display: block !important;
-            position: fixed;
-            bottom: 110px; left: 52px;
-            width: 240px;
-            background: rgba(10,13,17,0.98);
-            border: 1px solid rgba(0,217,255,0.25);
-            box-shadow: 4px 0 30px rgba(0,0,0,0.6), 0 0 20px rgba(0,217,255,0.06);
-            z-index: 250;
-            transform: translateX(-110%) scale(0.95);
-            transform-origin: left bottom;
-            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.22s;
-            opacity: 0; pointer-events: none;
-        }
-        .desktop-settings-panel.open {
-            transform: translateX(0) scale(1);
-            opacity: 1; pointer-events: auto;
-        }
-        .settings-panel-inner { padding: 14px 16px; }
-        .settings-panel-title {
-            font-family: 'Rajdhani',sans-serif;
-            font-size: 0.65rem; font-weight: 700;
-            letter-spacing: 3px; color: rgba(0,217,255,0.5);
-            margin-bottom: 14px;
-        }
-        .settings-row {
-            margin-bottom: 16px;
-        }
-        .settings-label {
-            font-family: 'Rajdhani',sans-serif;
-            font-size: 0.72rem; font-weight: 700;
-            letter-spacing: 2px; color: #a0a0a0;
-            display: flex; justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        .settings-label span { color: var(--accent,#00D9FF); }
-        .settings-slider {
-            -webkit-appearance: none;
-            width: 100%; height: 3px;
-            background: rgba(0,217,255,0.15);
-            border-radius: 2px; outline: none; cursor: pointer;
-        }
-        .settings-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 14px; height: 14px;
-            border-radius: 50%;
-            background: var(--accent,#00D9FF);
-            box-shadow: 0 0 6px rgba(0,217,255,0.6);
-            cursor: pointer;
-        }
-        .settings-slider::-moz-range-thumb {
-            width: 14px; height: 14px;
-            border-radius: 50%; border: none;
-            background: var(--accent,#00D9FF);
-            box-shadow: 0 0 6px rgba(0,217,255,0.6);
-            cursor: pointer;
-        }
-        .settings-reset {
-            display: block; width: 100%; margin-top: 4px;
-            padding: 7px; text-align: center;
-            background: transparent;
-            border: 1px solid rgba(0,217,255,0.15);
-            color: #666; font-family: 'Rajdhani',sans-serif;
-            font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
-            cursor: pointer; transition: all 0.18s;
-        }
-        .settings-reset:hover { border-color: #ef4444; color: #ef4444; }
-
     </style>
 </head>
 <body data-cms-media="video">
-    <!-- DESKTOP SIDEBAR (hidden on mobile via inline CSS) -->
+    <!-- Navigation -->
+    
+    <!-- DESKTOP SIDEBAR (hidden on mobile) -->
     <a href="home.html" class="desktop-logo-header">
         <img src="images/logo.png" alt="505th Logo">
         <span class="hdr-title">505TH EXPEDITIONARY FORCE</span>
@@ -466,15 +349,7 @@
             <button class="rail-btn" id="rail-join" data-tip="JOIN US">
                 <img src="images/icons/Join Us.png" alt="Join Us">
             </button>
-        </div>
-        <div class="rail-bottom">
             <hr class="rail-divider">
-            <button class="rail-settings-btn hidden-guest" id="rail-settings" title="Settings">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="3" stroke="#00D9FF" stroke-width="1.5"/>
-                    <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#00D9FF" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-            </button>
             <button class="rail-btn" id="rail-account" data-tip="ACCOUNT">
                 <img src="images/icons/Account.png" alt="Account">
             </button>
@@ -498,26 +373,7 @@
         </div>
     </div>
 
-    <div class="desktop-settings-panel" id="desktopSettingsPanel">
-        <div class="settings-panel-inner">
-            <div class="settings-panel-title">&#9881; DISPLAY SETTINGS</div>
-            <div class="settings-row">
-                <div class="settings-label">FONT SIZE <span id="settingsFontLabel">100%</span></div>
-                <input type="range" class="settings-slider" id="settingsFontSlider"
-                    min="80" max="130" step="5" value="100">
-            </div>
-            <div class="settings-row">
-                <div class="settings-label">BRIGHTNESS <span id="settingsBrightLabel">100%</span></div>
-                <input type="range" class="settings-slider" id="settingsBrightSlider"
-                    min="50" max="150" step="5" value="100">
-            </div>
-            <button class="settings-reset" id="settingsResetBtn">RESET DEFAULTS</button>
-        </div>
-    </div>
-
     <!-- MOBILE NAV (hidden on desktop) -->
-
-    <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <div class="nav-brand" id="logoMenu">
@@ -580,15 +436,12 @@
                     <div class="section-title" data-submenu="account">
                         <span class="section-icon"><img src="images/icons/Account.png" alt="" style="width:24px;height:24px;"></span>
                         <span>ACCOUNT</span>
-                        <span class="submenu-arrow">▼</span>
                     </div>
-                    <div class="submenu" id="submenu-account">
-                        <div id="menuAuthSection">
-                            <a href="login.html" class="submenu-item">
-                                <span class="submenu-bullet">&#x25B8;</span>
-                                Login
-                            </a>
-                        </div>
+                    <div id="menuAuthSection">
+                        <a href="login.html" class="submenu-item">
+                            <span class="submenu-bullet">&#x25B8;</span>
+                            System Login
+                        </a>
                     </div>
                 </div>
             </div>
@@ -659,15 +512,10 @@
     
     <!-- Vercel Speed Insights -->
         <!-- Vercel Speed Insights -->
-    <script>
-        window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
-    </script>
-    <script defer src="/_vercel/speed-insights/script.js"></script>
-    <script type="module" src="js/speed-insights.js"></script>
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
@@ -699,59 +547,44 @@
         };
 
         function getRankAbbr(r) { return RANK_ABBR[r] || (r ? r.split('/').pop().trim() : ''); }
-
         function formatSidebarName(u) {
             const rank = getRankAbbr(u.rank || '');
-            const first = (u.firstName || '').trim();
-            const last  = (u.lastName  || '').trim();
-            const cs    = (u.callsign  || '').trim();
-            const init  = first ? first.charAt(0).toUpperCase() + '.' : '';
+            const first = (u.firstName || '').trim(), last = (u.lastName || '').trim(), cs = (u.callsign || '').trim();
+            const init = first ? first.charAt(0).toUpperCase() + '.' : '';
             const hasCs = cs && cs !== first && cs !== (first + ' ' + last);
-            let name = '';
-            if (init) name += init + ' ';
-            if (hasCs)      name += '"' + cs + '"';
-            else if (last)  name += last;
-            else if (cs)    name += '"' + cs + '"';
+            let name = ''; if (init) name += init + ' ';
+            if (hasCs) name += '"' + cs + '"'; else if (last) name += last; else if (cs) name += '"' + cs + '"';
             return [rank, name.trim()].filter(Boolean).join(' ');
         }
 
         const PANEL_CONTENT = {
-            career: {
-                label: 'CAREER PATHS',
-                items: [
-                    { label: '505th Expeditionary Force', href: 'about-505th.html' },
-                    { label: 'Alpha Company',             href: 'about-alpha-company.html' },
-                    { label: 'JTF-23 Force Recon',        href: 'about-stalker.html' },
-                    { label: 'Hospital Corpsman',          href: 'about-corpsman.html' },
-                    { label: '54th Air Wing',              href: 'about-54th-air-wing.html' },
-                ]
-            },
-            media: {
-                label: 'MEDIA',
-                items: [
-                    { label: 'Gallery', href: 'media-gallery.html' },
-                    { label: 'Videos',  href: 'media-videos.html'  },
-                ]
-            },
-            resources: {
-                label: 'RESOURCES',
-                items: [
-                    { label: 'Discord Rules',           href: 'resources-discord-rules.html' },
-                    { label: 'General Handbook',        href: 'resources-handbook.html' },
-                    { label: 'Hospital Corps Handbook', href: 'resources-hospital-corps-handbook.html' },
-                    { label: 'Control Reference',       href: 'resources-keybinds.html' },
-                    { label: 'Roster',                  href: 'resources-roster.html' },
-                    { label: 'After Action Reports',    href: 'resources-aar.html' },
-                    { label: 'Field Lexicon',           href: 'resources-field-lexicon.html' },
-                ]
-            }
+            career: { label: 'CAREER PATHS', items: [
+                { label: '505th Expeditionary Force', href: 'about-505th.html' },
+                { label: 'Alpha Company',             href: 'about-alpha-company.html' },
+                { label: 'JTF-23 Force Recon',        href: 'about-stalker.html' },
+                { label: 'Hospital Corpsman',          href: 'about-corpsman.html' },
+                { label: '54th Air Wing',              href: 'about-54th-air-wing.html' },
+            ]},
+            media: { label: 'MEDIA', items: [
+                { label: 'Gallery', href: 'media-gallery.html' },
+                { label: 'Videos',  href: 'media-videos.html'  },
+            ]},
+            resources: { label: 'RESOURCES', items: [
+                { label: 'Discord Rules',           href: 'resources-discord-rules.html' },
+                { label: 'General Handbook',        href: 'resources-handbook.html' },
+                { label: 'Hospital Corps Handbook', href: 'resources-hospital-corps-handbook.html' },
+                { label: 'Control Reference',       href: 'resources-keybinds.html' },
+                { label: 'Roster',                  href: 'resources-roster.html' },
+                { label: 'After Action Reports',    href: 'resources-aar.html' },
+                { label: 'Field Lexicon',           href: 'resources-field-lexicon.html' },
+            ]}
         };
 
         let activePanel = null, acctOpen = false;
 
         function switchPanel(key) {
-            const panel     = document.getElementById('desktopNavPanel');
-            const overlay   = document.getElementById('panelOverlay');
+            const panel = document.getElementById('desktopNavPanel');
+            const overlay = document.getElementById('panelOverlay');
             const crosshair = document.getElementById('railCrosshair');
             document.querySelectorAll('.rail-btn[id^="rail-"]').forEach(b => b.classList.remove('active'));
             if (activePanel === key) {
@@ -776,9 +609,8 @@
         }
 
         function closeNavPanel() {
-            const panel = document.getElementById('desktopNavPanel');
+            document.getElementById('desktopNavPanel').classList.remove('open');
             document.getElementById('panelOverlay').classList.remove('active');
-            panel.classList.remove('open');
             document.body.classList.remove('panel-open');
             document.getElementById('railCrosshair').classList.remove('active');
             document.querySelectorAll('.rail-btn[id^="rail-"]').forEach(b => b.classList.remove('active'));
@@ -789,14 +621,16 @@
             const panel = document.getElementById('desktopAccountPanel');
             const btn   = document.getElementById('rail-account');
             acctOpen = !acctOpen;
+            if (acctOpen) {
+                const rect = btn.getBoundingClientRect();
+                panel.style.top = rect.top + 'px';
+            }
             panel.classList.toggle('open', acctOpen);
             btn.classList.toggle('acct-active', acctOpen);
         }
 
-        // Wire up buttons directly — no onclick attrs needed
         document.getElementById('railCrosshair').addEventListener('click', () => {
-            const panel = document.getElementById('desktopNavPanel');
-            if (panel.classList.contains('open')) closeNavPanel();
+            if (document.getElementById('desktopNavPanel').classList.contains('open')) closeNavPanel();
             else switchPanel(activePanel || 'career');
         });
         document.getElementById('rail-home')     .addEventListener('click', () => window.location.href = 'home.html');
@@ -824,94 +658,6 @@
             if (acctOpen) toggleAcct();
         });
 
-        // ── DISPLAY SETTINGS ──────────────────────────────────────────────
-        let settingsOpen = false;
-
-        function applyPrefs(prefs) {
-            const fs = prefs.fontSize || 100;
-            const br = prefs.brightness || 100;
-            document.documentElement.style.fontSize = (fs / 100) + 'rem';
-            document.body.style.filter = 'brightness(' + br + '%)';
-            const fsLbl = document.getElementById('settingsFontLabel');
-            const brLbl = document.getElementById('settingsBrightLabel');
-            const fsSlider = document.getElementById('settingsFontSlider');
-            const brSlider = document.getElementById('settingsBrightSlider');
-            if (fsLbl) fsLbl.textContent = fs + '%';
-            if (brLbl) brLbl.textContent = br + '%';
-            if (fsSlider) fsSlider.value = fs;
-            if (brSlider) brSlider.value = br;
-        }
-
-        function restoreDefaults() {
-            document.documentElement.style.fontSize = '';
-            document.body.style.filter = '';
-        }
-
-        async function loadPrefs(uid) {
-            try {
-                const snap = await getDoc(doc(db, 'users', uid));
-                if (snap.exists()) {
-                    const prefs = snap.data().displayPrefs || {};
-                    if (prefs.fontSize || prefs.brightness) applyPrefs(prefs);
-                }
-            } catch(e) { console.warn('loadPrefs:', e); }
-        }
-
-        async function savePrefs(uid, prefs) {
-            try {
-                await updateDoc(doc(db, 'users', uid), { displayPrefs: prefs });
-            } catch(e) { console.warn('savePrefs:', e); }
-        }
-
-        function toggleSettings() {
-            const panel = document.getElementById('desktopSettingsPanel');
-            const btn   = document.getElementById('rail-settings');
-            if (!panel) return;
-            settingsOpen = !settingsOpen;
-            panel.classList.toggle('open', settingsOpen);
-            if (btn) btn.classList.toggle('active', settingsOpen);
-        }
-
-        // Wire settings button
-        const settingsBtn = document.getElementById('rail-settings');
-        settingsBtn && settingsBtn.addEventListener('click', toggleSettings);
-
-        // Close settings on outside click
-        document.addEventListener('click', e => {
-            if (!settingsOpen) return;
-            const panel = document.getElementById('desktopSettingsPanel');
-            const btn   = document.getElementById('rail-settings');
-            if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
-                settingsOpen = false;
-                panel.classList.remove('open');
-                btn && btn.classList.remove('active');
-            }
-        });
-
-        // Slider events — apply live and debounce Firestore save
-        let _prefSaveTimer = null;
-        function onSliderChange() {
-            const fs = parseInt(document.getElementById('settingsFontSlider').value);
-            const br = parseInt(document.getElementById('settingsBrightSlider').value);
-            applyPrefs({ fontSize: fs, brightness: br });
-            clearTimeout(_prefSaveTimer);
-            _prefSaveTimer = setTimeout(() => {
-                if (_settingsUid) savePrefs(_settingsUid, { fontSize: fs, brightness: br });
-            }, 600);
-        }
-        document.getElementById('settingsFontSlider')  && document.getElementById('settingsFontSlider').addEventListener('input', onSliderChange);
-        document.getElementById('settingsBrightSlider') && document.getElementById('settingsBrightSlider').addEventListener('input', onSliderChange);
-
-        // Reset button
-        document.getElementById('settingsResetBtn') && document.getElementById('settingsResetBtn').addEventListener('click', async () => {
-            applyPrefs({ fontSize: 100, brightness: 100 });
-            restoreDefaults();
-            if (_settingsUid) await savePrefs(_settingsUid, { fontSize: 100, brightness: 100 });
-        });
-
-        let _settingsUid = null;
-
-        // Auth
         onAuthStateChanged(auth, async user => {
             const loginBtn  = document.getElementById('acctLoginBtn');
             const userDisp  = document.getElementById('acctUserDisplay');
@@ -930,27 +676,20 @@
                         userRole.textContent  = (d.role||'').replace(/_/g,' ').toUpperCase();
                         userRole.className    = 'acct-user-role acct-role-' + (d.role||'marine');
                         if (ADMIN_ROLES.includes(d.role)) panelLink.style.display = '';
-                        _settingsUid = user.uid;
-                        const settingsIcon = document.getElementById('rail-settings');
-                        if (settingsIcon) settingsIcon.classList.remove('hidden-guest');
-                        loadPrefs(user.uid);
-                        logoutBtn.addEventListener('click', async () => {
-                            await signOut(auth);
-                            window.location.href = 'home.html';
-                        });
+                        logoutBtn.addEventListener('click', async () => { await signOut(auth); window.location.href = 'home.html'; });
                     }
                 } catch(e) { console.warn('Sidebar auth:', e); }
             } else {
                 loginBtn.style.display = '';
                 userDisp.classList.remove('visible');
-                _settingsUid = null;
-                const settingsIcon = document.getElementById('rail-settings');
-                if (settingsIcon) settingsIcon.classList.add('hidden-guest');
-                restoreDefaults();
-                applyPrefs({ fontSize: 100, brightness: 100 });
             }
         });
     </script>
 
+    <script>
+        window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
+    <script type="module" src="js/speed-insights.js"></script>
 </body>
 </html>

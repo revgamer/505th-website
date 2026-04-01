@@ -25,18 +25,19 @@ Official website for the **505th Expeditionary Force**, a UNSC/Halo-themed Arma 
 | **Hospital Corps Handbook** | Corpsman-specific SOPs and medical protocols |
 | **Control Reference** | Arma 3 keybind guide |
 | **Battalion Roster** | Live personnel database grouped by platoon with attendance pips and PT tracking |
-| **After Action Reports** | Searchable mission archive with detail modals |
+| **After Action Reports** | Searchable mission archive with detail modals. Firebase v11.8.1 with real credentials — previously had placeholder config. |
 | **Field Lexicon** | Military terminology glossary with category filtering |
 
 ### Desktop Navigation (≥1024px)
 All public pages use a **fixed icon rail sidebar** on the left:
-- Crosshair icon — opens/closes the slide-out nav panel
-- Icons for Home, Career Paths, Media, Resources, Join Us
-- Account icon — popup showing logged-in member name, rank, role with profile/panel/logout links
-- Settings icon (logged-in only) — font size and brightness sliders saved to Firestore per user
+- Crosshair icon — opens/closes the slide-out nav panel with smooth slide animation
+- Icons for Home, Career Paths, Media, Resources, Join Us, Account
+- Clicking a nav icon opens a 200px slide panel with sub-links; clicking same icon or outside closes it
+- Account icon popup — shows formatted rank + name + role when logged in, with My Profile, Command Panel (admin only), Logout links
+- Panel overlay closes nav when clicking outside the rail
 
 ### Mobile Navigation (≤1023px)
-Original top navbar + tactical slide-down menu — unchanged.
+Original top navbar + tactical slide-down menu — unchanged. Account section has dropdown with Profile, Command Panel, Logout.
 
 ---
 
@@ -49,19 +50,23 @@ Access via `/admin.html` → `/boot.html` after login. Role-gated — admin role
 - **Who's Online** — live presence widget showing all members currently in the admin panel
 - Discord invite link status checker (live Discord API)
 - Roster strength by platoon
-- Inactive members widget (no op attended in 3+ months)
+- Inactive members widget — members flagged by `lastAttendedDate` > 3 months ago OR `status === inactive` OR never attended (uses same logic as Personnel Files INACTIVE tab)
 - Reserves widget with colour-coded time indicators
-- **Attendance Health widget:**
-  - OPS THIS MONTH, AT RISK (3M+), FULL ATT (3/3), OVERALL ATT %, BELOW 50%, PERFECT ATT
-  - Each stat has a hover tooltip explaining what it means
-  - AT-RISK list is a scrollable vertical list showing name + how long since last op
+- **Attendance Health widget (6 cards):**
+  - OPS THIS MONTH — ops logged this calendar month
+  - AT RISK (3M+) — members with no op in 3+ months (based on `lastAttendedDate`)
+  - FULL ATT (3/3) — members at max monthly attendance
+  - OVERALL ATT % — unit-wide all-time rate from `opsAttended`/`opsEligible`
+  - BELOW 50% — members whose all-time rate is under 50%
+  - PERFECT ATT — members with 100% all-time attendance
+  - Each card has a hover tooltip. AT-RISK shows a scrollable list with name + duration since last op (colour coded by severity)
 - Recruitment Source vertical bar chart
 - Pending registrations list
 - Recent joins
 
 ### Manpower
 - **Personnel Files** — Full member list with platoon tabs for instant filtering. Tabs: ALL, COMMAND, 1ST PLT, 2ND PLT, 3RD PLT, FORCE RECON, CORPSMEN, PILOT, AWAITING BCT, RESERVES, INACTIVE. Member count shown per tab. Inline rank/role dropdowns, edit modal, remove.
-  - **INACTIVE tab** — shows members where `status === 'inactive'` (manually set by staff) OR `lastAttendedDate` is 3+ months ago OR never attended any op
+  - **INACTIVE tab** — shows members where `status === 'inactive'` (manually set by staff) OR `lastAttendedDate` is 3+ months ago OR `opsAttended === 0` with eligible ops (never attended). Same 3-month logic used across dashboard AT-RISK, inactive widget, and Personnel Files.
 - **Enlistment Queue** — Approve/deny pending registrations; amber badge on nav link
 
 **Edit Operative Modal (Details tab)**
@@ -81,8 +86,9 @@ Access via `/admin.html` → `/boot.html` after login. Role-gated — admin role
 
 ### Battalion Ops
 - **Attendance Tracker** — Log op attendance per event. Present/Excused/Absent cycle, platoon filter tabs, live multi-user sync via Firestore `onSnapshot`, presence bar showing other staff on same event, SAVE & LOCK finalises and writes to member counters.
-  - Stats row: THIS EVENT, ATTENDANCE RATE, EXCUSED, ABSENT, TOTAL OPS (all-time locked events), OVERALL ATTEND % (unit-wide all-time)
+  - **Stats row (6 cards):** THIS EVENT, ATTENDANCE RATE, EXCUSED, ABSENT / UA, TOTAL OPS (all-time locked count), OVERALL ATTEND % (unit-wide all-time rate)
   - Locking an event writes `opsAttended`, `opsEligible`, and `lastAttendedDate` to each member's user doc
+  - `loadAttGlobalStats()` recalculates TOTAL OPS and OVERALL ATTEND % after allUsers loads and after every lock
 - **After Action Reports** — 10-section report builder with Discord webhook and Cloudinary image attachments
 - **Battalion Roster** — Live view from `users` collection. Attendance checkbox (+1), PT glow system, graduation date, time-in-unit
 - **Unit Cards** — Open/Closed/Filled slot management synced to public about pages
@@ -120,16 +126,6 @@ Access via `/admin.html` → `/boot.html` after login. Role-gated — admin role
 - Login → boot animation → admin panel or return-to-origin
 - Registration collects: recruit source, name, email, password. Callsign assigned by staff after approval
 - Pending/denied members cannot log in
-
----
-
-## Display Settings (Member Preference)
-
-Logged-in members can adjust site-wide display via the Settings icon in the sidebar:
-- **Font Size** slider (80%–130%) — scales `html` root font size
-- **Brightness** slider (50%–150%) — applies CSS `filter: brightness()` to `body`
-- Settings saved to `users/{uid}/displayPrefs` in Firestore
-- Applied on login, removed on logout — guests see default styling
 
 ---
 

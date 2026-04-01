@@ -1044,7 +1044,13 @@
                 // Inactive Members (reads users)
                 const inWidget=document.getElementById('dashInactiveMembers');
                 if(inWidget && P().dash_inactive){
-                    const inactive=roster.filter(u=>u.platoon!=='Reserves'&&u.platoon!=='Awaiting BCT'&&(u.attendance||0)===0);
+                    const _threeMonthsAgo=new Date(); _threeMonthsAgo.setMonth(_threeMonthsAgo.getMonth()-3); const _threeMAgoStr=_threeMonthsAgo.toISOString().slice(0,10);
+                    const inactive=roster.filter(u=>{
+                        if(u.platoon==='Reserves'||u.platoon==='Awaiting BCT') return false;
+                        const last=u.lastAttendedDate||null;
+                        if(!last) return (u.opsAttended||0)===0 && (u.opsEligible||0)>0;
+                        return last<_threeMAgoStr;
+                    });
                     const awaitingBCT=roster.filter(u=>u.platoon==='Awaiting BCT');
                     const now=new Date();
                     function bctDur(u){ const ref=u.joinedAt||null; if(!ref) return null; const d=Math.floor((now-new Date(ref))/(864e5)); if(d<7) return d+' day'+(d!==1?'s':''); const w=Math.floor(d/7),r=d%7; if(w<4) return w+' wk'+(w!==1?'s':'')+(r>0?' '+r+'d':''); return Math.floor(d/30)+' month'+(Math.floor(d/30)!==1?'s':''); }
@@ -1076,14 +1082,36 @@
                         const events=[]; evSnap.forEach(d=>events.push({id:d.id,...d.data()}));
                         const thisMonth=new Date().toISOString().slice(0,7);
                         const monthEvents=events.filter(e=>(e.date||'').startsWith(thisMonth));
-                        const atRisk=roster.filter(u=>u.platoon!=='Reserves'&&u.platoon!=='Awaiting BCT'&&(u.attendance||0)===0);
                         const fullAtt=roster.filter(u=>u.platoon!=='Reserves'&&u.platoon!=='Awaiting BCT'&&(u.attendance||0)>=3);
+                        const threeMonthsAgo=new Date(); threeMonthsAgo.setMonth(threeMonthsAgo.getMonth()-3); const threeMonthsAgoStr=threeMonthsAgo.toISOString().slice(0,10);
+                        const atRisk=roster.filter(u=>{
+                            if(u.platoon==='Reserves'||u.platoon==='Awaiting BCT') return false;
+                            const last=u.lastAttendedDate||null;
+                            if(!last) return (u.opsAttended||0)===0 && (u.opsEligible||0)>0;
+                            return last<threeMonthsAgoStr;
+                        });
+                        const activeRoster=roster.filter(u=>u.platoon!=='Reserves'&&u.platoon!=='Awaiting BCT');
+                        let totalAtt2=0,totalElig2=0;
+                        activeRoster.forEach(u=>{totalAtt2+=(u.opsAttended||0);totalElig2+=(u.opsEligible||0);});
+                        const overallRate2=totalElig2>0?Math.round((totalAtt2/totalElig2)*100):0;
+                        const overallColor2=overallRate2>=75?'#7FFF7F':overallRate2>=50?'#FFD700':'#FF4444';
+                        const below50=activeRoster.filter(u=>(u.opsEligible||0)>0&&Math.round(((u.opsAttended||0)/(u.opsEligible||1))*100)<50).length;
+                        const perfect=activeRoster.filter(u=>(u.opsEligible||0)>0&&(u.opsAttended||0)===(u.opsEligible||0)).length;
                         attWidget.innerHTML=`<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-                            <div style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);padding:10px 14px;flex:1;min-width:72px;text-align:center"><div style="font-family:Rajdhani,sans-serif;font-size:22px;font-weight:700;color:var(--accent)">${monthEvents.length}</div><div style="font-size:8px;letter-spacing:2px;color:#888;margin-top:2px">OPS THIS MONTH</div></div>
-                            <div style="background:rgba(0,0,0,.4);border:1px solid rgba(${atRisk.length>0?'255,68,68':'0,217,255'},.15);padding:10px 14px;flex:1;min-width:72px;text-align:center"><div style="font-family:Rajdhani,sans-serif;font-size:22px;font-weight:700;color:${atRisk.length>0?'#FF4444':'#7FFF7F'}">${atRisk.length}</div><div style="font-size:8px;letter-spacing:2px;color:#888;margin-top:2px">AT RISK (0 ATT)</div></div>
-                            <div style="background:rgba(0,0,0,.4);border:1px solid rgba(127,255,127,.15);padding:10px 14px;flex:1;min-width:72px;text-align:center"><div style="font-family:Rajdhani,sans-serif;font-size:22px;font-weight:700;color:#7FFF7F">${fullAtt.length}</div><div style="font-size:8px;letter-spacing:2px;color:#888;margin-top:2px">FULL ATT (3/3)</div></div>
+                            <div title="Operations logged this calendar month." style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);padding:10px 14px;flex:1;min-width:70px;text-align:center;cursor:help"><div style="font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700;color:var(--accent)">${monthEvents.length}</div><div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">OPS THIS MONTH</div></div>
+                            <div title="Members who haven't attended any op in 3+ months. May require command review." style="background:rgba(0,0,0,.4);border:1px solid rgba(${atRisk.length>0?'255,68,68':'0,217,255'},.15);padding:10px 14px;flex:1;min-width:70px;text-align:center;cursor:help"><div style="font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700;color:${atRisk.length>0?'#FF4444':'#7FFF7F'}">${atRisk.length}</div><div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">AT RISK (3M+)</div></div>
+                            <div title="Members at max attendance (3/3) this cycle — eligible for PT award." style="background:rgba(0,0,0,.4);border:1px solid rgba(127,255,127,.15);padding:10px 14px;flex:1;min-width:70px;text-align:center;cursor:help"><div style="font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700;color:#7FFF7F">${fullAtt.length}</div><div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">FULL ATT (3/3)</div></div>
+                            <div title="Unit-wide all-time rate — total ops attended ÷ total ops eligible, excused and reserves excluded." style="background:rgba(0,0,0,.4);border:1px solid rgba(${overallRate2>=75?'127,255,127':overallRate2>=50?'255,215,0':'255,68,68'},.15);padding:10px 14px;flex:1;min-width:70px;text-align:center;cursor:help"><div style="font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700;color:${overallColor2}">${totalElig2>0?overallRate2+'%':'—'}</div><div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">OVERALL ATT %</div></div>
+                            <div title="Members whose all-time attendance rate is under 50%. May require command attention." style="background:rgba(0,0,0,.4);border:1px solid rgba(${below50>0?'255,68,68':'0,217,255'},.15);padding:10px 14px;flex:1;min-width:70px;text-align:center;cursor:help"><div style="font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700;color:${below50>0?'#FF4444':'#7FFF7F'}">${below50}</div><div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">BELOW 50%</div></div>
+                            <div title="Members with 100% all-time attendance — never missed an eligible op." style="background:rgba(0,0,0,.4);border:1px solid rgba(127,255,127,.15);padding:10px 14px;flex:1;min-width:70px;text-align:center;cursor:help"><div style="font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700;color:#7FFF7F">${perfect}</div><div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">PERFECT ATT</div></div>
                         </div>
-                        ${atRisk.length?`<div style="font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:2px;color:#FF4444;margin-bottom:6px">⚠ AT-RISK MEMBERS</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">${atRisk.slice(0,8).map(u=>`<span style="font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;padding:2px 8px;border:1px solid rgba(255,68,68,.3);color:#FF6B6B">${esc(formatMemberName(u)||u.callsign)}</span>`).join('')}${atRisk.length>8?`<span style="font-size:9px;color:#555;padding:2px 4px">+${atRisk.length-8} more</span>`:''}</div>`:''}
+                        ${atRisk.length?`<div style="font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:2px;color:#FF4444;margin-bottom:6px">⚠ AT-RISK MEMBERS (${atRisk.length})</div><div style="max-height:200px;overflow-y:auto;margin-bottom:10px;border:1px solid rgba(255,68,68,.15);">${atRisk.map(u=>{
+                            const lastD=u.lastAttendedDate?new Date(u.lastAttendedDate):null;
+                            const daysSince=lastD?Math.floor((Date.now()-lastD.getTime())/864e5):null;
+                            const dur=daysSince===null?'Never attended':(daysSince<30?daysSince+' days ago':daysSince<365?Math.floor(daysSince/30)+' month'+(Math.floor(daysSince/30)!==1?'s':'')+' ago':Math.floor(daysSince/365)+' year'+(Math.floor(daysSince/365)!==1?'s':'')+' ago');
+                            const durColor=daysSince===null?'#FF4444':daysSince>180?'#FF4444':daysSince>90?'#FFD700':'#FF6B6B';
+                            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 10px;border-bottom:1px solid rgba(255,68,68,.08)"><span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:#FF6B6B">${esc(formatMemberName(u)||u.callsign)}</span><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:${durColor};letter-spacing:1px">${dur}</span></div>`;
+                        }).join('')}</div>`:''}
                         <button class="action-btn approve-btn" onclick="showPanel('panel-attendance')" style="font-size:10px;padding:5px 12px">&#9654; OPEN ATTENDANCE TRACKER</button>`;
                     } catch(e){ attWidget.innerHTML='<div class="empty-state">NO ATTENDANCE DATA YET — START BY LOGGING AN EVENT</div>'; }
                 }
@@ -1438,6 +1466,7 @@
             const c = document.getElementById('attEventList');
             if (c) c.innerHTML = '<div class="empty-state">LOADING...</div>';
             if (!allUsers.length) await loadAllUsers();
+                loadAttGlobalStats();
             try {
                 const snap = await getDocs(query(collection(db,'attendance_events'), orderBy('date','desc'), limit(20)));
                 const events = []; snap.forEach(d => events.push({id:d.id,...d.data()}));
@@ -1684,11 +1713,13 @@
                         const opsEligible = (u.opsEligible||0) + (wasExcused?0:1);
                         const opsAttended = (u.opsAttended||0) + (wasPresent?1:0);
                         const att = wasPresent ? Math.min((u.attendance||0)+1, 3) : (u.attendance||0);
-                        await updateDoc(doc(db,'users',u.id), {attendance:att, opsAttended, opsEligible, updatedAt:new Date().toISOString()});
+                        const lastAttUpdate = wasPresent ? { lastAttendedDate: date } : {};
+                        await updateDoc(doc(db,'users',u.id), {attendance:att, opsAttended, opsEligible, updatedAt:new Date().toISOString(), ...lastAttUpdate});
                         const local = allUsers.find(x=>x.id===u.id);
-                        if (local) { local.attendance=att; local.opsAttended=opsAttended; local.opsEligible=opsEligible; }
+                        if (local) { local.attendance=att; local.opsAttended=opsAttended; local.opsEligible=opsEligible; if(wasPresent) local.lastAttendedDate=date; }
                     }
                     notify('EVENT LOCKED & ATTENDANCE SAVED — ' + attendees.length + ' PRESENT');
+                        loadAttGlobalStats();
                     fireWebhook('attendance', {
                         title, date,
                         type:    {main_op:'Main Op',patrol:'Patrol',training:'Training',fun_op:'Fun Op'}[type] || type,
@@ -4182,11 +4213,13 @@
                     <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">BATTALION OPS — LOG ATTENDANCE PER OPERATION / TRAINING EVENT</p>
 
                     <!-- Stats row -->
-                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+                    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px">
                         <div class="stat-card"><div class="stat-number" id="attStatPresent">0</div><div class="stat-label">THIS EVENT</div><div style="height:3px;background:rgba(255,255,255,.06);margin-top:8px"><div id="attStatPresentBar" style="height:100%;background:var(--accent);width:0%;transition:width .3s"></div></div></div>
                         <div class="stat-card"><div class="stat-number" id="attStatRate" style="color:#7FFF7F">0%</div><div class="stat-label">ATTENDANCE RATE</div><div style="height:3px;background:rgba(255,255,255,.06);margin-top:8px"><div id="attStatRateBar" style="height:100%;background:#7FFF7F;width:0%;transition:width .3s"></div></div></div>
                         <div class="stat-card"><div class="stat-number" id="attStatExcused" style="color:#FFD700">0</div><div class="stat-label">EXCUSED</div><div style="height:3px;background:rgba(255,255,255,.06);margin-top:8px"><div id="attStatExcusedBar" style="height:100%;background:#FFD700;width:0%;transition:width .3s"></div></div></div>
                         <div class="stat-card"><div class="stat-number" id="attStatAbsent" style="color:#FF4444">0</div><div class="stat-label">ABSENT / UA</div><div style="height:3px;background:rgba(255,255,255,.06);margin-top:8px"><div id="attStatAbsentBar" style="height:100%;background:#FF4444;width:0%;transition:width .3s"></div></div></div>
+                        <div class="stat-card"><div class="stat-number" id="attStatTotalOps" style="color:var(--accent)">0</div><div class="stat-label">TOTAL OPS</div><div style="height:3px;background:rgba(255,255,255,.06);margin-top:8px"><div id="attStatTotalOpsBar" style="height:100%;background:var(--accent);width:100%;transition:width .3s"></div></div></div>
+                        <div class="stat-card"><div class="stat-number" id="attStatOverall" style="color:#7FFF7F">0%</div><div class="stat-label">OVERALL ATTEND %</div><div style="height:3px;background:rgba(255,255,255,.06);margin-top:8px"><div id="attStatOverallBar" style="height:100%;background:#7FFF7F;width:0%;transition:width .3s"></div></div></div>
                     </div>
 
                     <!-- Event form -->

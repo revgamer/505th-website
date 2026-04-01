@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>General Handbook - 505th</title>
+    <title>Discord Rules - 505th </title>
     
     <!-- Favicon -->
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
@@ -15,10 +15,10 @@
     <link rel="manifest" href="images/site.webmanifest">
     
     <link rel="stylesheet" href="css/pages.css">
-    <link rel="stylesheet" href="css/handbook.css">
+    <link rel="stylesheet" href="css/discord-rules.css">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/auth.css">
-    <style>
+<style>
     /* ================================================================
        DESKTOP SIDEBAR — rail + slide panel  (>=1024px only)
        Everything below 1024px is untouched mobile behaviour
@@ -43,7 +43,7 @@
             align-items: center;
             justify-content: center;
             gap: 14px;
-            background: rgba(8, 10, 14, 0.97);
+            background: #0A0E12;
             border-bottom: 1px solid rgba(0,217,255,0.2);
             box-shadow: 0 2px 24px rgba(0,217,255,0.08);
             z-index: 300;
@@ -103,10 +103,6 @@
             flex: 1; display: flex; flex-direction: column;
             align-items: center; width: 100%; padding-top: 4px;
         }
-        .rail-bottom {
-            display: flex; flex-direction: column;
-            align-items: center; width: 100%; padding-bottom: 8px;
-        }
 
         /* Crosshair toggle */
         .rail-crosshair {
@@ -127,14 +123,6 @@
         .crosshair-svg line {
             stroke: var(--accent,#00D9FF); stroke-width: 1.5;
             stroke-linecap: round; transition: all 0.3s;
-        }
-        .rail-crosshair:hover .crosshair-svg circle,
-        .rail-crosshair.active .crosshair-svg circle {
-            filter: drop-shadow(0 0 4px rgba(0,217,255,0.8));
-        }
-        .rail-crosshair:hover .crosshair-svg line,
-        .rail-crosshair.active .crosshair-svg line {
-            filter: drop-shadow(0 0 3px rgba(0,217,255,0.8));
         }
         .rail-crosshair.active::after {
             content: ''; position: absolute; inset: 8px;
@@ -229,13 +217,13 @@
         ════════════════════════════════ */
         .desktop-account-panel {
             display: block !important;
-            position: fixed; bottom: 60px; left: 52px; width: 220px;
+            position: fixed; top: 200px; left: 52px; width: 220px;
             background: rgba(10,13,17,0.98);
             border: 1px solid rgba(0,217,255,0.25);
             box-shadow: 4px 0 30px rgba(0,0,0,0.6), 0 0 20px rgba(0,217,255,0.06);
             z-index: 250;
             transform: translateX(-110%) scale(0.95);
-            transform-origin: left bottom;
+            transform-origin: left center;
             transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.22s;
             opacity: 0; pointer-events: none;
         }
@@ -286,117 +274,12 @@
         .rail-btn.acct-active { background: rgba(0,217,255,0.06); border-left-color: var(--accent,#00D9FF); }
 
     } /* end @media >=1024px */
-/* ── Settings icon ── */
-        .rail-settings-btn {
-            width: 52px; height: 48px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; border: none; background: none;
-            padding: 0; position: relative;
-            transition: background 0.2s; border-left: 2px solid transparent;
-            flex-shrink: 0;
-        }
-        .rail-settings-btn svg {
-            width: 20px; height: 20px;
-            transition: transform 0.4s ease, opacity 0.2s;
-            opacity: 0.45;
-        }
-        .rail-settings-btn:hover svg,
-        .rail-settings-btn.active svg {
-            opacity: 1;
-            transform: rotate(60deg);
-            filter: drop-shadow(0 0 4px rgba(0,217,255,0.7));
-        }
-        .rail-settings-btn:hover,
-        .rail-settings-btn.active {
-            background: rgba(0,217,255,0.06);
-            border-left-color: var(--accent,#00D9FF);
-        }
-        .rail-settings-btn::after {
-            content: 'SETTINGS';
-            position: absolute; left: 58px; top: 50%; transform: translateY(-50%);
-            background: rgba(8,10,14,0.95); border: 1px solid rgba(0,217,255,0.3);
-            color: var(--accent,#00D9FF); font-family: 'Rajdhani',sans-serif;
-            font-size: 0.7rem; font-weight: 700; letter-spacing: 2px;
-            padding: 4px 10px; white-space: nowrap;
-            pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 500;
-        }
-        .rail-settings-btn:hover::after { opacity: 1; }
-        /* Hidden when logged out */
-        .rail-settings-btn.hidden-guest { display: none; }
-
-        /* ── Settings popup panel ── */
-        .desktop-settings-panel {
-            display: block !important;
-            position: fixed;
-            bottom: 110px; left: 52px;
-            width: 240px;
-            background: rgba(10,13,17,0.98);
-            border: 1px solid rgba(0,217,255,0.25);
-            box-shadow: 4px 0 30px rgba(0,0,0,0.6), 0 0 20px rgba(0,217,255,0.06);
-            z-index: 250;
-            transform: translateX(-110%) scale(0.95);
-            transform-origin: left bottom;
-            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.22s;
-            opacity: 0; pointer-events: none;
-        }
-        .desktop-settings-panel.open {
-            transform: translateX(0) scale(1);
-            opacity: 1; pointer-events: auto;
-        }
-        .settings-panel-inner { padding: 14px 16px; }
-        .settings-panel-title {
-            font-family: 'Rajdhani',sans-serif;
-            font-size: 0.65rem; font-weight: 700;
-            letter-spacing: 3px; color: rgba(0,217,255,0.5);
-            margin-bottom: 14px;
-        }
-        .settings-row {
-            margin-bottom: 16px;
-        }
-        .settings-label {
-            font-family: 'Rajdhani',sans-serif;
-            font-size: 0.72rem; font-weight: 700;
-            letter-spacing: 2px; color: #a0a0a0;
-            display: flex; justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        .settings-label span { color: var(--accent,#00D9FF); }
-        .settings-slider {
-            -webkit-appearance: none;
-            width: 100%; height: 3px;
-            background: rgba(0,217,255,0.15);
-            border-radius: 2px; outline: none; cursor: pointer;
-        }
-        .settings-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 14px; height: 14px;
-            border-radius: 50%;
-            background: var(--accent,#00D9FF);
-            box-shadow: 0 0 6px rgba(0,217,255,0.6);
-            cursor: pointer;
-        }
-        .settings-slider::-moz-range-thumb {
-            width: 14px; height: 14px;
-            border-radius: 50%; border: none;
-            background: var(--accent,#00D9FF);
-            box-shadow: 0 0 6px rgba(0,217,255,0.6);
-            cursor: pointer;
-        }
-        .settings-reset {
-            display: block; width: 100%; margin-top: 4px;
-            padding: 7px; text-align: center;
-            background: transparent;
-            border: 1px solid rgba(0,217,255,0.15);
-            color: #666; font-family: 'Rajdhani',sans-serif;
-            font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
-            cursor: pointer; transition: all 0.18s;
-        }
-        .settings-reset:hover { border-color: #ef4444; color: #ef4444; }
-
     </style>
 </head>
 <body>
-    <!-- DESKTOP SIDEBAR (hidden on mobile via inline CSS) -->
+    <!-- Navigation -->
+    
+    <!-- DESKTOP SIDEBAR (hidden on mobile) -->
     <a href="home.html" class="desktop-logo-header">
         <img src="images/logo.png" alt="505th Logo">
         <span class="hdr-title">505TH EXPEDITIONARY FORCE</span>
@@ -437,15 +320,7 @@
             <button class="rail-btn" id="rail-join" data-tip="JOIN US">
                 <img src="images/icons/Join Us.png" alt="Join Us">
             </button>
-        </div>
-        <div class="rail-bottom">
             <hr class="rail-divider">
-            <button class="rail-settings-btn hidden-guest" id="rail-settings" title="Settings">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="3" stroke="#00D9FF" stroke-width="1.5"/>
-                    <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#00D9FF" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-            </button>
             <button class="rail-btn" id="rail-account" data-tip="ACCOUNT">
                 <img src="images/icons/Account.png" alt="Account">
             </button>
@@ -469,26 +344,7 @@
         </div>
     </div>
 
-    <div class="desktop-settings-panel" id="desktopSettingsPanel">
-        <div class="settings-panel-inner">
-            <div class="settings-panel-title">&#9881; DISPLAY SETTINGS</div>
-            <div class="settings-row">
-                <div class="settings-label">FONT SIZE <span id="settingsFontLabel">100%</span></div>
-                <input type="range" class="settings-slider" id="settingsFontSlider"
-                    min="80" max="130" step="5" value="100">
-            </div>
-            <div class="settings-row">
-                <div class="settings-label">BRIGHTNESS <span id="settingsBrightLabel">100%</span></div>
-                <input type="range" class="settings-slider" id="settingsBrightSlider"
-                    min="50" max="150" step="5" value="100">
-            </div>
-            <button class="settings-reset" id="settingsResetBtn">RESET DEFAULTS</button>
-        </div>
-    </div>
-
     <!-- MOBILE NAV (hidden on desktop) -->
-
-    <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <div class="nav-brand" id="logoMenu">
@@ -577,11 +433,11 @@
                         <span class="submenu-arrow">▼</span>
                     </div>
                                                             <div class="submenu" id="submenu-resources">
-                        <a href="resources-discord-rules.html" class="submenu-item">
+                        <a href="resources-discord-rules.html" class="submenu-item" style="color:var(--accent)">
                             <span class="submenu-bullet">▸</span>
                             Discord Rules
                         </a>
-                        <a href="resources-handbook.html" class="submenu-item" style="color:var(--accent)">
+                        <a href="resources-handbook.html" class="submenu-item">
                             <span class="submenu-bullet">▸</span>
                             General Handbook
                         </a>
@@ -621,15 +477,12 @@
                     <div class="section-title" data-submenu="account">
                         <span class="section-icon"><img src="images/icons/Account.png" alt="" style="width:24px;height:24px;"></span>
                         <span>ACCOUNT</span>
-                        <span class="submenu-arrow">▼</span>
                     </div>
-                    <div class="submenu" id="submenu-account">
-                        <div id="menuAuthSection">
-                            <a href="login.html" class="submenu-item">
-                                <span class="submenu-bullet">&#x25B8;</span>
-                                Login
-                            </a>
-                        </div>
+                    <div id="menuAuthSection">
+                        <a href="login.html" class="submenu-item">
+                            <span class="submenu-bullet">&#x25B8;</span>
+                            System Login
+                        </a>
                     </div>
                 </div>
             </div>
@@ -645,495 +498,133 @@
         <div class="container">
             <!-- Page Header -->
             <div class="page-header">
-                <span class="page-tag">CLASSIFIED: LEVEL 2</span>
-                <h1>GENERAL HANDBOOK</h1>
-                <p class="version">Version 2.0</p>
+                <span class="page-tag">DISCORD SERVER POLICY</span>
+                <h1>SERVER RULES</h1>
                 <div class="header-line"></div>
             </div>
 
             <!-- Introduction -->
-            <div class="intro-section">
-                <p>This handbook contains information that will be referenced by administrators when addressing rules and regulations. You will find expected unit etiquette and infraction punishments in this handbook. You will be expected to know this information in order not to unknowingly break unit regulations. These rules may be updated at any time. Rule violations may result in client restrictions or bans.</p>
+            <div class="intro-box">
+                <p>By joining, you agree to follow the rules below:</p>
             </div>
 
-            <!-- Table of Contents -->
-            <div class="toc-section">
-                <h2>TABLE OF CONTENTS</h2>
-                <div class="toc-grid">
-                    <a href="#community-guidelines" class="toc-item">Community Guidelines</a>
-                    <a href="#etiquette" class="toc-item">In-Game Etiquette</a>
-                    <a href="#infractions" class="toc-item">Infractions</a>
-                    <a href="#attendance" class="toc-item">Attendance</a>
-                    <a href="#enlisted-ranks" class="toc-item">Enlisted Ranks</a>
-                    <a href="#officer-ranks" class="toc-item">Officer Ranks</a>
+            <!-- Rules Grid -->
+            <div class="rules-grid">
+                <!-- Rule 1 -->
+                <div class="rule-card">
+                    <div class="rule-number">1</div>
+                    <div class="rule-content">
+                        <h3>No NSFW Content</h3>
+                        <p>Includes text, images, links, and usernames.</p>
+                    </div>
+                </div>
+
+                <!-- Rule 2 -->
+                <div class="rule-card">
+                    <div class="rule-number">2</div>
+                    <div class="rule-content">
+                        <h3>Be Respectful</h3>
+                        <p>Treat others respectfully. No trolling, harassment, or toxicity.</p>
+                    </div>
+                </div>
+
+                <!-- Rule 3 -->
+                <div class="rule-card">
+                    <div class="rule-number">3</div>
+                    <div class="rule-content">
+                        <h3>No Advertising</h3>
+                        <p>No promotion of other servers, products, or services.</p>
+                    </div>
+                </div>
+
+                <!-- Rule 4 -->
+                <div class="rule-card">
+                    <div class="rule-number">4</div>
+                    <div class="rule-content">
+                        <h3>No Spam</h3>
+                        <p>Avoid message spam, reaction spam, or disruptive behavior.</p>
+                    </div>
+                </div>
+
+                <!-- Rule 5 -->
+                <div class="rule-card warning">
+                    <div class="rule-number">5</div>
+                    <div class="rule-content">
+                        <h3>Zero Tolerance Policy</h3>
+                        <p>Racism, sexism, homophobia, or hate speech results in a ban.</p>
+                    </div>
+                </div>
+
+                <!-- Rule 6 -->
+                <div class="rule-card">
+                    <div class="rule-number">6</div>
+                    <div class="rule-content">
+                        <h3>Access Limits</h3>
+                        <p>TeamSpeak and Arma operations are for verified 505th members only.</p>
+                    </div>
+                </div>
+
+                <!-- Rule 7 -->
+                <div class="rule-card">
+                    <div class="rule-number">7</div>
+                    <div class="rule-content">
+                        <h3>Age Requirement</h3>
+                        <p>Members must be 18 years or older.</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Community Guidelines -->
-            <section id="community-guidelines" class="handbook-section">
-                <h2 class="section-title">
-                    <span class="section-number">01</span>
-                    COMMUNITY GUIDELINES
-                </h2>
-                
-                <div class="quote-block">
-                    <p>"Men, keep your eyes downrange, fingers on the triggers, and we all come home in one piece. Am I right, Marines?"</p>
-                </div>
-
-                <div class="subsection">
-                    <h3>Global Guidelines</h3>
-                    <p>The following apply to any instances you are with the 505th.</p>
-                    <ol class="rule-list">
-                        <li>You cannot be in multiple Halo units with the 505th.</li>
-                        <li>Any form of harassment, racism, bullying, sexism, implied or otherwise, is strictly prohibited.</li>
-                        <li>No arguing or fighting. If you have a disagreement, handle it like adults with conversation. If that cannot happen, contact your NCO.</li>
-                        <li>Respect the rank of senior soldiers. Follow orders even if you disagree with them. You are encouraged to bring up grievances after the operation in a constructive way.</li>
-                        <li>If there is an NCO abusing their power, please report them to an Officer immediately and a case will be opened.</li>
-                        <li>Privates are not allowed to join 505th Combat Operations until they have passed Boot Camp.</li>
-                        <li>The 505th TeamSpeak and Arma server are for members ONLY.</li>
-                    </ol>
-                </div>
-
-                <div class="subsection">
-                    <h3>Discord</h3>
-                    <p>When in our Discord server you must know the rules listed in the discord and abide by them. Additionally, Discord TOS will be strictly enforced as well within our server.</p>
-                </div>
-
-                <div class="subsection">
-                    <h3>TeamSpeak</h3>
-                    <p>When in our Teamspeak you will abide by the rules following:</p>
-                    <ol class="rule-list">
-                        <li>All content shared on our TeamSpeak server must adhere to our Global guidelines.</li>
-                        <li>Soundboarding is prohibited.</li>
-                        <li>Malicious links are prohibited.</li>
-                        <li>Advertising is prohibited.</li>
-                        <li>Microphone spam is prohibited.</li>
-                        <li>Entering unauthorized channels without the express permission of the channel admin is prohibited.</li>
-                    </ol>
-                </div>
-
-                <div class="subsection">
-                    <h3>In-Game</h3>
-                    <p>The following is a list of the in-game rules you will be expected to abide by.</p>
-                    <ol class="rule-list">
-                        <li>Follow the instructions of your Squad leader and/or mission Commander.</li>
-                        <li>No trolling or griefing.</li>
-                        <li>No political or religious discussions or references including names.</li>
-                        <li>Do not destroy the spirit of the Operation by commenting on Zeusing issues, poor performance, and other things that could break immersion during an operation.</li>
-                        <li>Do not discharge or fire weapons on base unless you are at an appropriate location to do so.</li>
-                        <li>Do not discharge or fire weapons to frighten or scare civilians unless given expressed orders.</li>
-                        <li>Do not harm or kill any civilians. (Some extreme exceptions can bypass this rule but only for story purposes)</li>
-                        <li>Do not lone wolf or separate from your squad without express orders.</li>
-                        <li>SIDE channel is used for important zeus issues only. All other communications are to be done in the group channel or direct.</li>
-                    </ol>
-                </div>
-            </section>
-
-            <!-- In-Game Etiquette -->
-            <section id="etiquette" class="handbook-section">
-                <h2 class="section-title">
-                    <span class="section-number">02</span>
-                    IN-GAME ETIQUETTE
-                </h2>
-
-                <div class="subsection">
-                    <h3>Asset Use</h3>
-                    <div class="info-box">
-                        <strong>What is an asset?</strong>
-                        <p>An asset is any equipment that the unit may use on the battlefield. This may include mortars, tanks, ships, or planes.</p>
-                    </div>
-                    <ul class="bullet-list">
-                        <li>Not everyone is allowed to use them and <strong>certification is typically required</strong> beforehand.</li>
-                        <li>If you are unsure whether you are authorized to use an asset, <strong>ask an NCO first</strong> to avoid receiving an infraction.</li>
-                    </ul>
-                    
-                    <h4>Usage Rules:</h4>
-                    <ul class="bullet-list">
-                        <li><strong>Artillery</strong>, including mortars, must remain <strong>silent until called to fire by infantry</strong>.</li>
-                        <li><strong>Support assets</strong>—with the exception of tanks—<strong>must not engage the enemy on their own accord</strong>.</li>
-                        <li>Assets in <strong>immediate danger</strong> may defend themselves, but <strong>must not initiate</strong> engagements.</li>
-                        <li>All personnel using assets <strong>must have a working microphone</strong> for proper coordination.</li>
-                        <li><strong>Yellow Tow Carts</strong> are <strong>reserved for Air Force use only</strong>. Unauthorized use is strictly prohibited.</li>
+            <!-- Additional Info -->
+            <div class="additional-info">
+                <h2>Enforcement</h2>
+                <div class="info-section">
+                    <h3>Violation Consequences</h3>
+                    <ul class="consequence-list">
+                        <li><strong>First Offense:</strong> Warning and explanation of violated rule</li>
+                        <li><strong>Second Offense:</strong> Temporary mute or timeout</li>
+                        <li><strong>Third Offense:</strong> Temporary ban (duration varies)</li>
+                        <li><strong>Severe Violations:</strong> Immediate permanent ban</li>
                     </ul>
                 </div>
 
-                <div class="subsection">
-                    <h3>Fratricide</h3>
-                    <div class="info-box warning">
-                        <strong>What is fratricide?</strong>
-                        <p>It is the killing of one's own forces. This includes destroying friendly equipment.</p>
-                    </div>
-                    <p>Fratricide will trigger a <strong>case to be opened by an NCO</strong>. An account of the incident will be created by gathering <strong>eyewitness statements</strong>.</p>
-                    <ul class="bullet-list">
-                        <li>If the fratricide is deemed <strong>accidental</strong>, no punishment will occur.</li>
-                        <li>If the fratricide affects <strong>more than 5 individuals</strong>, a <strong>mark will appear</strong> on the offender's record to track repeated offenses.</li>
-                        <li>If repeated marks appear, <strong>retraining may be required</strong>.</li>
-                        <li>If the fratricide is deemed <strong>intentional</strong>, the offender will receive infractions, depending on the severity.</li>
+                <div class="info-section">
+                    <h3>Zero Tolerance Offenses</h3>
+                    <p>The following result in <strong>immediate permanent ban</strong> without warning:</p>
+                    <ul class="zero-tolerance-list">
+                        <li>Racism, sexism, homophobia, or any hate speech</li>
+                        <li>Sharing NSFW content involving minors</li>
+                        <li>Doxxing or sharing personal information</li>
+                        <li>Threats of violence or harm</li>
+                        <li>Repeated ban evasion</li>
                     </ul>
                 </div>
 
-                <div class="subsection">
-                    <h3>Loadouts</h3>
-                    <p>Upon entering an event, you'll have access to the <strong>Loadout Locker</strong>, where all approved unit loadouts are available for selection.</p>
-                    <p>You are free to choose from the roles you're qualified for, but remember: <strong>The Squad Leader has final authority</strong> and may override your selection to better suit the needs of the mission.</p>
-                    <div class="quote-block small">
-                        <p>Mission first. Team always.</p>
-                    </div>
-                </div>
-
-                <div class="subsection">
-                    <h3>Squad Play</h3>
-                    <p><strong>Teamwork is the backbone of success.</strong> In the 505th, squads operate as tight-knit units where coordination, communication, and mutual support are non-negotiable.</p>
-                    <ul class="bullet-list">
-                        <li><strong>Follow your squad leader's instructions at all times.</strong></li>
-                        <li><strong>Watch each other's backs</strong>—your survival often depends on it.</li>
-                        <li><strong>Work as a team</strong>, not as individuals.</li>
+                <div class="info-section">
+                    <h3>Appeals Process</h3>
+                    <p>If you believe you were banned in error, you may appeal by:</p>
+                    <ul class="appeal-list">
+                        <li>Contacting a Staff Member or Officer directly</li>
+                        <li>Providing your Discord username and case details</li>
+                        <li>Waiting for Staff review (may take 48-72 hours)</li>
                     </ul>
-                    <p>You are highly encouraged to:</p>
-                    <ul class="bullet-list">
-                        <li>Discuss tactics and strategies with your fireteam</li>
-                        <li>Share gameplay tips to elevate each other</li>
-                        <li>Organize or attend extra training sessions to strengthen unit cohesion</li>
-                    </ul>
-                    <div class="quote-block small">
-                        <p>A strong squad is built in downtime, tested in combat, and remembered in victory.</p>
-                    </div>
+                    <p class="note"><strong>Note:</strong> Zero Tolerance violations are not eligible for appeal.</p>
                 </div>
+            </div>
 
-                <div class="subsection">
-                    <h3>Insubordination</h3>
-                    <p>Disobeying orders undermines operational effectiveness and disrupts the immersive experience we aim to create.</p>
-                    <p><strong>Orders are to be followed.</strong> If you disagree with a directive, you are encouraged to <strong>voice your concerns respectfully</strong>, but the <strong>squad leader's decision is final</strong> during the mission.</p>
-                    <div class="warning-box">
-                        <p>If you believe a squad leader is abusing their authority or acting inappropriately, <strong>do not escalate the situation mid-mission.</strong> Instead, report the issue to an <strong>NCO</strong> after the operation.</p>
-                    </div>
-                </div>
+            <!-- Discord Link -->
+            <div class="discord-cta">
+                <h2>Join Our Community</h2>
+                <p>Ready to join the fight? Click below to access our Discord server.</p>
+                <a href="https://discord.gg/pNkbaUtcw6" class="discord-btn" target="_blank">
+                    <span class="btn-icon">💬</span>
+                    <span class="btn-text">JOIN DISCORD</span>
+                </a>
+            </div>
 
-                <div class="subsection">
-                    <h3>Event Types</h3>
-                    
-                    <div class="event-card">
-                        <h4>Deployment (Large-Scale Operation)</h4>
-                        <p>Deployments are our most extensive missions, spanning entire regions and involving coordinated <strong>combined arms warfare</strong>.</p>
-                        <div class="event-details">
-                            <span><strong>Duration:</strong> Up to 3 hours</span>
-                            <span><strong>Frequency:</strong> Once per month</span>
-                            <span><strong>Attendance:</strong> High-priority</span>
-                        </div>
-                    </div>
-
-                    <div class="event-card">
-                        <h4>Operations (Mid-Scale Combat Missions)</h4>
-                        <p>Operations are medium-tier events hosted more frequently and are generally <strong>infantry-centric</strong>.</p>
-                        <div class="event-details">
-                            <span><strong>Duration:</strong> Variable</span>
-                            <span><strong>Frequency:</strong> Weekly (Fridays/Saturdays)</span>
-                            <span><strong>Focus:</strong> Tactical, squad-based gameplay</span>
-                        </div>
-                    </div>
-
-                    <div class="event-card">
-                        <h4>Patrols (Low-Intensity Sector Engagements)</h4>
-                        <p>Patrols are smaller, immersive events that emphasize <strong>roleplay</strong>, <strong>sector control</strong>, and <strong>civilian interaction</strong>.</p>
-                        <div class="event-details">
-                            <span><strong>Duration:</strong> Up to 1 hour</span>
-                            <span><strong>Frequency:</strong> Any day of the week</span>
-                            <span><strong>Limit:</strong> One Patrol per day</span>
-                        </div>
-                    </div>
-
-                    <div class="event-card">
-                        <h4>Field Trainings (FTX)</h4>
-                        <p>Field Training Exercises (FTX) are designed to improve unit cohesion, communication, and tactical proficiency.</p>
-                        <div class="event-details">
-                            <span><strong>Duration:</strong> Up to 2 hours</span>
-                            <span><strong>Scheduling:</strong> One week in advance</span>
-                            <span><strong>Host:</strong> Qualified Zeus required</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="subsection">
-                    <h3>Name Rules</h3>
-                    <div class="info-box">
-                        <p>Names must be your typical first and last names found in cultures around the world. You cannot use "usernames" for your name.</p>
-                        <div class="example-box">
-                            <p><strong>Discord User:</strong> Pvt John D. Doe</p>
-                            <p><strong>In-Game User:</strong> Pvt J. Doe</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Infractions -->
-            <section id="infractions" class="handbook-section">
-                <h2 class="section-title">
-                    <span class="section-number">03</span>
-                    INFRACTIONS
-                </h2>
-                <p>Infractions are issued as disciplinary action to individuals who violate unit rules, both in-game and within community spaces.</p>
-                <div class="warning-box">
-                    <ul class="bullet-list">
-                        <li><strong>Three Infractions:</strong> Upon receiving a third infraction, the member will be demoted to <strong>Private</strong>, with all ranks and specialist roles revoked.</li>
-                        <li><strong>Additional Infractions:</strong> Any infractions beyond this point will result in a <strong>permanent ban</strong> from the unit.</li>
-                    </ul>
-                </div>
-                <p>NCOs (Non-Commissioned Officers) may issue additional consequences based on the severity or context of the offense. These may include, but are not limited to:</p>
-                <ul class="bullet-list">
-                    <li>Temporary suspension from operations or deployments</li>
-                    <li>Loss of privileges</li>
-                    <li>Mandatory retraining or probation</li>
-                </ul>
-            </section>
-
-            <!-- Attendance -->
-            <section id="attendance" class="handbook-section">
-                <h2 class="section-title">
-                    <span class="section-number">04</span>
-                    ATTENDANCE
-                </h2>
-                <p>Active participation is essential to maintaining unit cohesion and operational readiness. In the <strong>505th</strong>, all members are expected to:</p>
-                <ul class="bullet-list">
-                    <li>Attend <strong>at least three official events per month</strong>, this includes Patrols, Field Trainings, and Operations.</li>
-                    <li>Remain <strong>reasonably active on Discord</strong></li>
-                </ul>
-                <div class="warning-box">
-                    <p>Failure to meet these expectations may result in being placed on <strong>inactive notice</strong>. If you are unable to attend due to personal circumstances (e.g., work, school, emergencies), it is your responsibility to <strong>notify an NCO</strong> in advance to arrange an exemption or temporary leave.</p>
-                    <p><strong>Important:</strong> If you fail to communicate your absence, you will be reported <strong>AWOL</strong> after three months of no activity. Being designated <strong>AWOL</strong> will see you stripped of rank and removed from the unit.</p>
-                </div>
-            </section>
-
-            <!-- Enlisted Ranks -->
-            <section id="enlisted-ranks" class="handbook-section">
-                <h2 class="section-title">
-                    <span class="section-number">05</span>
-                    ENLISTED RANKS
-                </h2>
-
-                <div class="rank-card">
-                    <div class="rank-header enlisted">
-                        <h3>Pvt – Private</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> Enlistment into the UNSC</p>
-                        <p>Entry-level rank. Starting point for all new members.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header enlisted">
-                        <h3>PFC – Private First Class</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> Passing Basic Training</p>
-                        <p>The backbone of the core. Performs frontline duties and focuses on gaining combat and strategic experience.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header enlisted">
-                        <h3>LCpl – Lance Corporal</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> 2 months TIS or meritorious promotion</p>
-                        <p>The first step into leadership. Leads by example, mentors juniors, and takes on higher tactical roles.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header nco">
-                        <h3>Cpl – Corporal</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> 4 months TIS or meritorious promotion</p>
-                        <p>First noncommissioned officer (NCO) rank. Responsible for small-unit leadership, supervising juniors, enforcing standards, and mission execution. Eligible to be Squad second-in-command.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header nco">
-                        <h3>Sgt – Sergeant</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> 8 months TIS, clean record, and good conduct</p>
-                        <p>Leads entire squads, helps plan and execute missions, serves as liaison between junior Marines and command, and advises Platoon Commanders.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header nco">
-                        <h3>SSgt – Staff Sergeant</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> 12 months TIS and passing evaluation</p>
-                        <p>Staff Sergeants serve as experienced noncommissioned officers who provide critical leadership at the squad and platoon level. They are responsible for mentoring junior NCOs and enlisted personnel.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header senior-nco">
-                        <h3>GSgt – Gunnery Sergeant</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> 15 months TIS and passing evaluation</p>
-                        <p><strong>Role:</strong> Assistant Company Commander</p>
-                        <p>Gunnery Sergeants are senior noncommissioned officers who serve as key leaders and tactical experts within the company.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header senior-nco">
-                        <h3>MSgt – Master Sergeant</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> 20 months TIS and selection</p>
-                        <p><strong>Role:</strong> Division Administration</p>
-                        <p>Master Sergeants serve as senior enlisted advisors and administrators at the division level.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header senior-nco">
-                        <h3>First Sergeant</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> 25 months TIS and selection</p>
-                        <p><strong>Role:</strong> Assistant Battalion Commander</p>
-                        <p>The First Sergeant is a senior noncommissioned officer who acts as the principal enlisted advisor to the Battalion Commander.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header senior-nco">
-                        <h3>Master Gunnery Sergeant</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> Selection</p>
-                        <p><strong>Role:</strong> Staff Leader</p>
-                        <p>The Master Gunnery Sergeant is a senior enlisted leader responsible for overseeing the training, discipline, and professional development of enlisted personnel across the unit.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header senior-nco">
-                        <h3>Sergeant Major</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> Selection</p>
-                        <p><strong>Role:</strong> Assistant Division Commander</p>
-                        <p>The Sergeant Major is the highest enlisted rank and serves as the principal enlisted advisor to the Division Commander.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Officer Ranks -->
-            <section id="officer-ranks" class="handbook-section">
-                <h2 class="section-title">
-                    <span class="section-number">06</span>
-                    OFFICER RANKS
-                </h2>
-
-                <div class="rank-card">
-                    <div class="rank-header officer">
-                        <h3>2nd Lt – Second Lieutenant</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> Selection</p>
-                        <p><strong>Role:</strong> Platoon Commander</p>
-                        <p>Second Lieutenants are junior commissioned officers who lead platoons in combat and training operations.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header officer">
-                        <h3>1st Lt – First Lieutenant</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> Selection</p>
-                        <p><strong>Role:</strong> Company Executive Officer (XO)</p>
-                        <p>First Lieutenants serve as the Company Executive Officers, acting as the second-in-command within a company.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header officer">
-                        <h3>Captain</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> Selection</p>
-                        <p><strong>Role:</strong> Company Commander (CO)</p>
-                        <p>Captains serve as the commanding officers of a company, responsible for the overall leadership, training, and combat effectiveness of their unit.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header senior-officer">
-                        <h3>Major</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> Selection</p>
-                        <p><strong>Role:</strong> Battalion Executive Officer (XO)</p>
-                        <p>Majors serve as the Executive Officers of battalions, assisting the Battalion Commander in managing the unit's operations, logistics, and administration.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header senior-officer">
-                        <h3>Lt Col – Lieutenant Colonel</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> Selection</p>
-                        <p><strong>Role:</strong> Battalion Commander (CO)</p>
-                        <p>Lieutenant Colonels serve as commanding officers of battalions, responsible for the overall leadership, strategic planning, and operational effectiveness of their units.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header senior-officer">
-                        <h3>Colonel</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> Selection</p>
-                        <p><strong>Role:</strong> Brigade Commander (CO)</p>
-                        <p>Colonels serve as commanding officers of brigades, overseeing multiple battalions and their subordinate units.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header general">
-                        <h3>Brig Gen – Brigadier General</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> Selection</p>
-                        <p><strong>Role:</strong> Division Commander (CO)</p>
-                        <p>Brigadier Generals command entire divisions, overseeing multiple brigades and coordinating large-scale operations.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header general">
-                        <h3>Maj Gen – Major General</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Requirement:</strong> Selection</p>
-                        <p><strong>Role:</strong> Task Force Commander (CO)</p>
-                        <p>Major Generals lead task forces composed of multiple divisions or specialized units.</p>
-                    </div>
-                </div>
-
-                <div class="rank-card">
-                    <div class="rank-header general">
-                        <h3>Lt Gen – Lieutenant General</h3>
-                    </div>
-                    <div class="rank-body">
-                        <p><strong>Unit Leader:</strong> CENTCOM Commander Drake P. Oliver</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Closing Quote -->
-            <div class="closing-quote">
-                <p>"Men, here is where we show those split-chin, squid-head, sons of bitches that they could not have picked a worse enemy than the human race. We are going to blow the hell out of those dumb bugs until we don't have anything left to shoot 'em with! And then, we are going to strangle them with their own living guts! Am I right, Marines?"</p>
+            <!-- Footer Notice -->
+            <div class="rules-footer">
+                <p>⚠️ Rules are subject to change at staff discretion.</p>
+                <p class="last-updated">Last Updated: May 7, 2025</p>
             </div>
         </div>
     </main>
@@ -1141,25 +632,19 @@
     <!-- Footer -->
     <footer class="page-footer">
         <p>© 2026 505th Expeditionary Force • 505th Dev Team</p>
-        <p>Handbook Version 2.0 • Last Updated: December 2024</p>
+        <p>Discord Rules • Community Standards</p>
     </footer>
 
     <script src="js/nav.js" defer></script>
-    <script src="js/handbook.js"></script>
     <script src="js/scroll.js" defer></script>
     <script type="module" src="js/auth.js"></script>
     
     <!-- Vercel Speed Insights -->
         <!-- Vercel Speed Insights -->
-    <script>
-        window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
-    </script>
-    <script defer src="/_vercel/speed-insights/script.js"></script>
-    <script type="module" src="js/speed-insights.js"></script>
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
@@ -1191,59 +676,44 @@
         };
 
         function getRankAbbr(r) { return RANK_ABBR[r] || (r ? r.split('/').pop().trim() : ''); }
-
         function formatSidebarName(u) {
             const rank = getRankAbbr(u.rank || '');
-            const first = (u.firstName || '').trim();
-            const last  = (u.lastName  || '').trim();
-            const cs    = (u.callsign  || '').trim();
-            const init  = first ? first.charAt(0).toUpperCase() + '.' : '';
+            const first = (u.firstName || '').trim(), last = (u.lastName || '').trim(), cs = (u.callsign || '').trim();
+            const init = first ? first.charAt(0).toUpperCase() + '.' : '';
             const hasCs = cs && cs !== first && cs !== (first + ' ' + last);
-            let name = '';
-            if (init) name += init + ' ';
-            if (hasCs)      name += '"' + cs + '"';
-            else if (last)  name += last;
-            else if (cs)    name += '"' + cs + '"';
+            let name = ''; if (init) name += init + ' ';
+            if (hasCs) name += '"' + cs + '"'; else if (last) name += last; else if (cs) name += '"' + cs + '"';
             return [rank, name.trim()].filter(Boolean).join(' ');
         }
 
         const PANEL_CONTENT = {
-            career: {
-                label: 'CAREER PATHS',
-                items: [
-                    { label: '505th Expeditionary Force', href: 'about-505th.html' },
-                    { label: 'Alpha Company',             href: 'about-alpha-company.html' },
-                    { label: 'JTF-23 Force Recon',        href: 'about-stalker.html' },
-                    { label: 'Hospital Corpsman',          href: 'about-corpsman.html' },
-                    { label: '54th Air Wing',              href: 'about-54th-air-wing.html' },
-                ]
-            },
-            media: {
-                label: 'MEDIA',
-                items: [
-                    { label: 'Gallery', href: 'media-gallery.html' },
-                    { label: 'Videos',  href: 'media-videos.html'  },
-                ]
-            },
-            resources: {
-                label: 'RESOURCES',
-                items: [
-                    { label: 'Discord Rules',           href: 'resources-discord-rules.html' },
-                    { label: 'General Handbook',        href: 'resources-handbook.html' },
-                    { label: 'Hospital Corps Handbook', href: 'resources-hospital-corps-handbook.html' },
-                    { label: 'Control Reference',       href: 'resources-keybinds.html' },
-                    { label: 'Roster',                  href: 'resources-roster.html' },
-                    { label: 'After Action Reports',    href: 'resources-aar.html' },
-                    { label: 'Field Lexicon',           href: 'resources-field-lexicon.html' },
-                ]
-            }
+            career: { label: 'CAREER PATHS', items: [
+                { label: '505th Expeditionary Force', href: 'about-505th.html' },
+                { label: 'Alpha Company',             href: 'about-alpha-company.html' },
+                { label: 'JTF-23 Force Recon',        href: 'about-stalker.html' },
+                { label: 'Hospital Corpsman',          href: 'about-corpsman.html' },
+                { label: '54th Air Wing',              href: 'about-54th-air-wing.html' },
+            ]},
+            media: { label: 'MEDIA', items: [
+                { label: 'Gallery', href: 'media-gallery.html' },
+                { label: 'Videos',  href: 'media-videos.html'  },
+            ]},
+            resources: { label: 'RESOURCES', items: [
+                { label: 'Discord Rules',           href: 'resources-discord-rules.html' },
+                { label: 'General Handbook',        href: 'resources-handbook.html' },
+                { label: 'Hospital Corps Handbook', href: 'resources-hospital-corps-handbook.html' },
+                { label: 'Control Reference',       href: 'resources-keybinds.html' },
+                { label: 'Roster',                  href: 'resources-roster.html' },
+                { label: 'After Action Reports',    href: 'resources-aar.html' },
+                { label: 'Field Lexicon',           href: 'resources-field-lexicon.html' },
+            ]}
         };
 
         let activePanel = null, acctOpen = false;
 
         function switchPanel(key) {
-            const panel     = document.getElementById('desktopNavPanel');
-            const overlay   = document.getElementById('panelOverlay');
+            const panel = document.getElementById('desktopNavPanel');
+            const overlay = document.getElementById('panelOverlay');
             const crosshair = document.getElementById('railCrosshair');
             document.querySelectorAll('.rail-btn[id^="rail-"]').forEach(b => b.classList.remove('active'));
             if (activePanel === key) {
@@ -1268,9 +738,8 @@
         }
 
         function closeNavPanel() {
-            const panel = document.getElementById('desktopNavPanel');
+            document.getElementById('desktopNavPanel').classList.remove('open');
             document.getElementById('panelOverlay').classList.remove('active');
-            panel.classList.remove('open');
             document.body.classList.remove('panel-open');
             document.getElementById('railCrosshair').classList.remove('active');
             document.querySelectorAll('.rail-btn[id^="rail-"]').forEach(b => b.classList.remove('active'));
@@ -1281,14 +750,16 @@
             const panel = document.getElementById('desktopAccountPanel');
             const btn   = document.getElementById('rail-account');
             acctOpen = !acctOpen;
+            if (acctOpen) {
+                const rect = btn.getBoundingClientRect();
+                panel.style.top = rect.top + 'px';
+            }
             panel.classList.toggle('open', acctOpen);
             btn.classList.toggle('acct-active', acctOpen);
         }
 
-        // Wire up buttons directly — no onclick attrs needed
         document.getElementById('railCrosshair').addEventListener('click', () => {
-            const panel = document.getElementById('desktopNavPanel');
-            if (panel.classList.contains('open')) closeNavPanel();
+            if (document.getElementById('desktopNavPanel').classList.contains('open')) closeNavPanel();
             else switchPanel(activePanel || 'career');
         });
         document.getElementById('rail-home')     .addEventListener('click', () => window.location.href = 'home.html');
@@ -1316,94 +787,6 @@
             if (acctOpen) toggleAcct();
         });
 
-        // ── DISPLAY SETTINGS ──────────────────────────────────────────────
-        let settingsOpen = false;
-
-        function applyPrefs(prefs) {
-            const fs = prefs.fontSize || 100;
-            const br = prefs.brightness || 100;
-            document.documentElement.style.fontSize = (fs / 100) + 'rem';
-            document.body.style.filter = 'brightness(' + br + '%)';
-            const fsLbl = document.getElementById('settingsFontLabel');
-            const brLbl = document.getElementById('settingsBrightLabel');
-            const fsSlider = document.getElementById('settingsFontSlider');
-            const brSlider = document.getElementById('settingsBrightSlider');
-            if (fsLbl) fsLbl.textContent = fs + '%';
-            if (brLbl) brLbl.textContent = br + '%';
-            if (fsSlider) fsSlider.value = fs;
-            if (brSlider) brSlider.value = br;
-        }
-
-        function restoreDefaults() {
-            document.documentElement.style.fontSize = '';
-            document.body.style.filter = '';
-        }
-
-        async function loadPrefs(uid) {
-            try {
-                const snap = await getDoc(doc(db, 'users', uid));
-                if (snap.exists()) {
-                    const prefs = snap.data().displayPrefs || {};
-                    if (prefs.fontSize || prefs.brightness) applyPrefs(prefs);
-                }
-            } catch(e) { console.warn('loadPrefs:', e); }
-        }
-
-        async function savePrefs(uid, prefs) {
-            try {
-                await updateDoc(doc(db, 'users', uid), { displayPrefs: prefs });
-            } catch(e) { console.warn('savePrefs:', e); }
-        }
-
-        function toggleSettings() {
-            const panel = document.getElementById('desktopSettingsPanel');
-            const btn   = document.getElementById('rail-settings');
-            if (!panel) return;
-            settingsOpen = !settingsOpen;
-            panel.classList.toggle('open', settingsOpen);
-            if (btn) btn.classList.toggle('active', settingsOpen);
-        }
-
-        // Wire settings button
-        const settingsBtn = document.getElementById('rail-settings');
-        settingsBtn && settingsBtn.addEventListener('click', toggleSettings);
-
-        // Close settings on outside click
-        document.addEventListener('click', e => {
-            if (!settingsOpen) return;
-            const panel = document.getElementById('desktopSettingsPanel');
-            const btn   = document.getElementById('rail-settings');
-            if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
-                settingsOpen = false;
-                panel.classList.remove('open');
-                btn && btn.classList.remove('active');
-            }
-        });
-
-        // Slider events — apply live and debounce Firestore save
-        let _prefSaveTimer = null;
-        function onSliderChange() {
-            const fs = parseInt(document.getElementById('settingsFontSlider').value);
-            const br = parseInt(document.getElementById('settingsBrightSlider').value);
-            applyPrefs({ fontSize: fs, brightness: br });
-            clearTimeout(_prefSaveTimer);
-            _prefSaveTimer = setTimeout(() => {
-                if (_settingsUid) savePrefs(_settingsUid, { fontSize: fs, brightness: br });
-            }, 600);
-        }
-        document.getElementById('settingsFontSlider')  && document.getElementById('settingsFontSlider').addEventListener('input', onSliderChange);
-        document.getElementById('settingsBrightSlider') && document.getElementById('settingsBrightSlider').addEventListener('input', onSliderChange);
-
-        // Reset button
-        document.getElementById('settingsResetBtn') && document.getElementById('settingsResetBtn').addEventListener('click', async () => {
-            applyPrefs({ fontSize: 100, brightness: 100 });
-            restoreDefaults();
-            if (_settingsUid) await savePrefs(_settingsUid, { fontSize: 100, brightness: 100 });
-        });
-
-        let _settingsUid = null;
-
-        // Auth
         onAuthStateChanged(auth, async user => {
             const loginBtn  = document.getElementById('acctLoginBtn');
             const userDisp  = document.getElementById('acctUserDisplay');
@@ -1422,27 +805,20 @@
                         userRole.textContent  = (d.role||'').replace(/_/g,' ').toUpperCase();
                         userRole.className    = 'acct-user-role acct-role-' + (d.role||'marine');
                         if (ADMIN_ROLES.includes(d.role)) panelLink.style.display = '';
-                        _settingsUid = user.uid;
-                        const settingsIcon = document.getElementById('rail-settings');
-                        if (settingsIcon) settingsIcon.classList.remove('hidden-guest');
-                        loadPrefs(user.uid);
-                        logoutBtn.addEventListener('click', async () => {
-                            await signOut(auth);
-                            window.location.href = 'home.html';
-                        });
+                        logoutBtn.addEventListener('click', async () => { await signOut(auth); window.location.href = 'home.html'; });
                     }
                 } catch(e) { console.warn('Sidebar auth:', e); }
             } else {
                 loginBtn.style.display = '';
                 userDisp.classList.remove('visible');
-                _settingsUid = null;
-                const settingsIcon = document.getElementById('rail-settings');
-                if (settingsIcon) settingsIcon.classList.add('hidden-guest');
-                restoreDefaults();
-                applyPrefs({ fontSize: 100, brightness: 100 });
             }
         });
     </script>
 
+    <script>
+        window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
+    <script type="module" src="js/speed-insights.js"></script>
 </body>
 </html>
