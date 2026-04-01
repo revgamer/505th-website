@@ -681,8 +681,346 @@
             --text-muted: #999 !important;
         }
     </style>
+    <style>
+    /* ================================================================
+       DESKTOP SIDEBAR — rail + slide panel  (>=1024px only)
+       Everything below 1024px is untouched mobile behaviour
+    ================================================================ */
+
+    .desktop-logo-header,
+    .desktop-sidebar-rail,
+    .desktop-nav-panel,
+    .desktop-account-panel,
+    .panel-overlay { display: none; }
+
+    @media (min-width: 1024px) {
+
+        .navbar, .tactical-menu { display: none !important; }
+
+        /* ── Fixed logo header ── */
+        .desktop-logo-header {
+            display: flex !important;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 72px;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            background: rgba(8, 10, 14, 0.97);
+            border-bottom: 1px solid rgba(0,217,255,0.2);
+            box-shadow: 0 2px 24px rgba(0,217,255,0.08);
+            z-index: 300;
+            backdrop-filter: blur(12px);
+            text-decoration: none;
+            padding-left: 52px;
+        }
+        .desktop-logo-header img {
+            width: 44px; height: 44px;
+            filter: drop-shadow(0 0 10px rgba(0,217,255,0.55));
+            animation: logoBreathing 3s ease-in-out infinite;
+        }
+        @keyframes logoBreathing {
+            0%,100% { filter: drop-shadow(0 0 10px rgba(0,217,255,0.5)); }
+            50%      { filter: drop-shadow(0 0 22px rgba(0,217,255,0.9)); }
+        }
+        .desktop-logo-header .hdr-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.15rem; font-weight: 700;
+            color: var(--accent, #00D9FF);
+            letter-spacing: 5px;
+            text-shadow: 0 0 16px rgba(0,217,255,0.45);
+        }
+
+        /* ── Push content below header and right of rail ── */
+        main, .homepage-content, .page-content, .media-page-content {
+            margin-top: 72px !important;
+            margin-left: 52px !important;
+            transition: margin-left 0.28s cubic-bezier(0.4,0,0.2,1);
+        }
+        footer.page-footer {
+            margin-left: 52px !important;
+            transition: margin-left 0.28s cubic-bezier(0.4,0,0.2,1);
+        }
+        body.panel-open main,
+        body.panel-open .homepage-content,
+        body.panel-open .page-content,
+        body.panel-open .media-page-content { margin-left: 252px !important; }
+        body.panel-open footer.page-footer  { margin-left: 252px !important; }
+
+        /* ════════════════════════════════
+           ICON RAIL  52px fixed strip
+        ════════════════════════════════ */
+        .desktop-sidebar-rail {
+            display: flex !important;
+            flex-direction: column;
+            align-items: center;
+            width: 52px;
+            position: fixed;
+            top: 72px; left: 0; bottom: 0;
+            background: rgba(8,10,14,0.98);
+            border-right: 1px solid rgba(0,217,255,0.15);
+            z-index: 200;
+            padding: 6px 0;
+        }
+        .rail-nav {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; width: 100%; padding-top: 4px;
+        }
+        .rail-bottom {
+            display: flex; flex-direction: column;
+            align-items: center; width: 100%; padding-bottom: 8px;
+        }
+
+        /* Crosshair toggle */
+        .rail-crosshair {
+            width: 52px; height: 52px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: none; background: none;
+            padding: 0; position: relative; margin-bottom: 6px; flex-shrink: 0;
+        }
+        .crosshair-svg {
+            width: 26px; height: 26px;
+            transition: transform 0.35s ease; overflow: visible;
+        }
+        .rail-crosshair:hover .crosshair-svg,
+        .rail-crosshair.active .crosshair-svg { transform: rotate(45deg); }
+        .crosshair-svg circle {
+            fill: none; stroke: var(--accent,#00D9FF); stroke-width: 1.5; transition: all 0.3s;
+        }
+        .crosshair-svg line {
+            stroke: var(--accent,#00D9FF); stroke-width: 1.5;
+            stroke-linecap: round; transition: all 0.3s;
+        }
+        .rail-crosshair:hover .crosshair-svg circle,
+        .rail-crosshair.active .crosshair-svg circle {
+            filter: drop-shadow(0 0 4px rgba(0,217,255,0.8));
+        }
+        .rail-crosshair:hover .crosshair-svg line,
+        .rail-crosshair.active .crosshair-svg line {
+            filter: drop-shadow(0 0 3px rgba(0,217,255,0.8));
+        }
+        .rail-crosshair.active::after {
+            content: ''; position: absolute; inset: 8px;
+            border-radius: 50%; border: 1px solid rgba(0,217,255,0.25);
+            animation: crosshairPing 1.5s ease-in-out infinite;
+        }
+        @keyframes crosshairPing {
+            0%,100% { transform: scale(1); opacity: 0.4; }
+            50%      { transform: scale(1.3); opacity: 0; }
+        }
+
+        /* Rail icon buttons */
+        .rail-btn {
+            width: 52px; height: 48px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: none; background: none;
+            padding: 0; position: relative;
+            transition: background 0.2s; border-left: 2px solid transparent; flex-shrink: 0;
+        }
+        .rail-btn img {
+            width: 22px; height: 22px; opacity: 0.45;
+            transition: opacity 0.2s, filter 0.2s; pointer-events: none;
+        }
+        .rail-btn:hover img, .rail-btn.active img {
+            opacity: 1; filter: drop-shadow(0 0 5px rgba(0,217,255,0.7));
+        }
+        .rail-btn:hover, .rail-btn.active {
+            background: rgba(0,217,255,0.06);
+            border-left-color: var(--accent,#00D9FF);
+        }
+        .rail-btn::after {
+            content: attr(data-tip);
+            position: absolute; left: 58px; top: 50%; transform: translateY(-50%);
+            background: rgba(8,10,14,0.95); border: 1px solid rgba(0,217,255,0.3);
+            color: var(--accent,#00D9FF); font-family: 'Rajdhani',sans-serif;
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 2px;
+            padding: 4px 10px; white-space: nowrap;
+            pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 500;
+        }
+        .rail-btn:hover::after { opacity: 1; }
+        .rail-divider {
+            width: 28px; border: none;
+            border-top: 1px solid rgba(0,217,255,0.12); margin: 4px 0; flex-shrink: 0;
+        }
+
+        /* ════════════════════════════════
+           NAV SLIDE PANEL
+        ════════════════════════════════ */
+        .desktop-nav-panel {
+            display: block !important;
+            position: fixed; top: 72px; left: 52px; bottom: 0; width: 200px;
+            background: rgba(10,13,17,0.97);
+            border-right: 1px solid rgba(0,217,255,0.15);
+            z-index: 190; overflow-y: auto; overflow-x: hidden;
+            transform: translateX(-100%);
+            transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+            backdrop-filter: blur(8px);
+        }
+        .desktop-nav-panel.open { transform: translateX(0); }
+        .desktop-nav-panel::-webkit-scrollbar { width: 3px; }
+        .desktop-nav-panel::-webkit-scrollbar-thumb { background: rgba(0,217,255,0.15); }
+        .panel-section-title {
+            font-family: 'Rajdhani',sans-serif; font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 3px; color: rgba(0,217,255,0.4); padding: 16px 16px 6px;
+        }
+        .panel-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+            color: #b0b0b0; font-family: 'Rajdhani',sans-serif; font-size: 0.88rem;
+            font-weight: 600; letter-spacing: 1.5px; text-decoration: none;
+            border-left: 2px solid transparent; transition: all 0.18s;
+        }
+        .panel-item:hover {
+            color: var(--accent,#00D9FF); background: rgba(0,217,255,0.04);
+            border-left-color: rgba(0,217,255,0.5); padding-left: 14px;
+        }
+        .panel-item::before {
+            content: '▸'; color: rgba(0,217,255,0.35);
+            font-size: 0.65rem; flex-shrink: 0; transition: color 0.18s;
+        }
+        .panel-item:hover::before { color: var(--accent,#00D9FF); }
+        .panel-divider {
+            border: none; border-top: 1px solid rgba(0,217,255,0.08); margin: 6px 14px;
+        }
+        .panel-overlay {
+            display: none; position: fixed;
+            top: 72px; left: 52px; right: 0; bottom: 0; z-index: 180;
+        }
+        .panel-overlay.active { display: block; }
+
+        /* ════════════════════════════════
+           ACCOUNT POPUP
+        ════════════════════════════════ */
+        .desktop-account-panel {
+            display: block !important;
+            position: fixed; bottom: 60px; left: 52px; width: 220px;
+            background: rgba(10,13,17,0.98);
+            border: 1px solid rgba(0,217,255,0.25);
+            box-shadow: 4px 0 30px rgba(0,0,0,0.6), 0 0 20px rgba(0,217,255,0.06);
+            z-index: 250;
+            transform: translateX(-110%) scale(0.95);
+            transform-origin: left bottom;
+            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.22s;
+            opacity: 0; pointer-events: none;
+        }
+        .desktop-account-panel.open {
+            transform: translateX(0) scale(1); opacity: 1; pointer-events: auto;
+        }
+        .acct-panel-inner { padding: 14px 16px; }
+        .acct-login-btn {
+            display: block; text-align: center; padding: 10px;
+            background: transparent; border: 1px solid var(--accent,#00D9FF);
+            color: var(--accent,#00D9FF); font-family: 'Rajdhani',sans-serif;
+            font-size: 0.85rem; font-weight: 700; letter-spacing: 3px;
+            text-decoration: none; transition: all 0.22s;
+            clip-path: polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+        }
+        .acct-login-btn:hover {
+            background: var(--accent,#00D9FF); color: #0A0E12;
+            box-shadow: 0 0 14px rgba(0,217,255,0.35);
+        }
+        .acct-user-display { display: none; }
+        .acct-user-display.visible { display: block; }
+        .acct-user-name {
+            font-family: 'Rajdhani',sans-serif; font-size: 1rem; font-weight: 700;
+            color: #e8e8e8; letter-spacing: 1px; line-height: 1.3; margin-bottom: 3px;
+        }
+        .acct-user-role {
+            font-family: 'Rajdhani',sans-serif; font-size: 0.68rem;
+            font-weight: 700; letter-spacing: 3px; margin-bottom: 12px;
+        }
+        .acct-role-commander { color: #f59e0b; }
+        .acct-role-developer  { color: #a78bfa; }
+        .acct-role-staff_nco  { color: #2DD4BF; }
+        .acct-role-nco        { color: #34d399; }
+        .acct-role-recruiter  { color: #fb923c; }
+        .acct-role-marine     { color: #94a3b8; }
+        .acct-role-enlistee   { color: #64748b; }
+        .acct-links { display: flex; flex-direction: column; gap: 4px; }
+        .acct-link {
+            display: block; padding: 7px 10px; background: transparent;
+            border: 1px solid rgba(0,217,255,0.15); color: #a0a0a0;
+            font-family: 'Rajdhani',sans-serif; font-size: 0.75rem;
+            font-weight: 700; letter-spacing: 2px; text-decoration: none;
+            cursor: pointer; transition: all 0.18s; text-align: left; width: 100%;
+        }
+        .acct-link:hover { border-color: var(--accent,#00D9FF); color: var(--accent,#00D9FF); background: rgba(0,217,255,0.04); }
+        .acct-link.logout:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.04); }
+        .rail-btn.acct-active img { opacity: 1; filter: drop-shadow(0 0 5px rgba(0,217,255,0.7)); }
+        .rail-btn.acct-active { background: rgba(0,217,255,0.06); border-left-color: var(--accent,#00D9FF); }
+
+    } /* end @media >=1024px */
+    </style>
 </head>
 <body data-cms-page="about-stalker">
+    <!-- DESKTOP SIDEBAR (hidden on mobile via inline CSS) -->
+    <a href="home.html" class="desktop-logo-header">
+        <img src="images/logo.png" alt="505th Logo">
+        <span class="hdr-title">505TH EXPEDITIONARY FORCE</span>
+    </a>
+
+    <div class="panel-overlay" id="panelOverlay"></div>
+
+    <div class="desktop-sidebar-rail" id="desktopRail">
+        <div class="rail-nav">
+            <button class="rail-crosshair" id="railCrosshair" title="Navigation">
+                <svg class="crosshair-svg" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="13" cy="13" r="9"/>
+                    <circle cx="13" cy="13" r="1.5" style="fill:rgba(0,217,255,0.7);stroke:none"/>
+                    <line x1="13" y1="2"  x2="13" y2="9"/>
+                    <line x1="13" y1="17" x2="13" y2="24"/>
+                    <line x1="2"  y1="13" x2="9"  y2="13"/>
+                    <line x1="17" y1="13" x2="24" y2="13"/>
+                    <line x1="7.5"  y1="7.5"   x2="9.5"  y2="9.5"/>
+                    <line x1="18.5" y1="7.5"   x2="16.5" y2="9.5"/>
+                    <line x1="7.5"  y1="18.5"  x2="9.5"  y2="16.5"/>
+                    <line x1="18.5" y1="18.5"  x2="16.5" y2="16.5"/>
+                </svg>
+            </button>
+            <hr class="rail-divider">
+            <button class="rail-btn" id="rail-home" data-tip="HOME">
+                <img src="images/icons/Home.png" alt="Home">
+            </button>
+            <button class="rail-btn" id="rail-career" data-tip="CAREER PATHS">
+                <img src="images/icons/About Us.png" alt="Career Paths">
+            </button>
+            <button class="rail-btn" id="rail-media" data-tip="MEDIA">
+                <img src="images/icons/Media.png" alt="Media">
+            </button>
+            <button class="rail-btn" id="rail-resources" data-tip="RESOURCES">
+                <img src="images/icons/Resources.png" alt="Resources">
+            </button>
+            <hr class="rail-divider">
+            <button class="rail-btn" id="rail-join" data-tip="JOIN US">
+                <img src="images/icons/Join Us.png" alt="Join Us">
+            </button>
+        </div>
+        <div class="rail-bottom">
+            <hr class="rail-divider">
+            <button class="rail-btn" id="rail-account" data-tip="ACCOUNT">
+                <img src="images/icons/Account.png" alt="Account">
+            </button>
+        </div>
+    </div>
+
+    <div class="desktop-nav-panel" id="desktopNavPanel"></div>
+
+    <div class="desktop-account-panel" id="desktopAccountPanel">
+        <div class="acct-panel-inner">
+            <a href="login.html" class="acct-login-btn" id="acctLoginBtn">LOGIN</a>
+            <div class="acct-user-display" id="acctUserDisplay">
+                <div class="acct-user-name" id="acctUserName">---</div>
+                <div class="acct-user-role" id="acctUserRole">---</div>
+                <div class="acct-links">
+                    <a href="profile.html" class="acct-link">&#x2299; MY PROFILE</a>
+                    <a href="boot.html" class="acct-link" id="acctPanelLink" style="display:none">&#x229E; COMMAND PANEL</a>
+                    <button class="acct-link logout" id="acctLogoutBtn">&#x23FB; LOGOUT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILE NAV (hidden on desktop) -->
+
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
@@ -1198,5 +1536,197 @@
     </script>
     <script defer src="/_vercel/speed-insights/script.js"></script>
     <script type="module" src="js/speed-insights.js"></script>
+    <script type="module">
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
+            authDomain: "th-website-91533.firebaseapp.com",
+            projectId: "th-website-91533",
+            storageBucket: "th-website-91533.firebasestorage.app",
+            messagingSenderId: "1046139150142",
+            appId: "1:1046139150142:web:01f409ae4a38c4f79d966f"
+        };
+
+        const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db   = getFirestore(app);
+        const ADMIN_ROLES = ['commander','developer','staff_nco','nco','recruiter'];
+
+        const RANK_ABBR = {
+            'O9 / Lieutenant General':'LtGen','O8 / Major General':'MajGen','O7 / Brigadier General':'BGen',
+            'O6 / Colonel':'Col','O5 / Lieutenant Colonel':'LtCol','O4 / Major':'Maj',
+            'O3 / Captain':'Capt','O2 / First Lieutenant':'1stLt','O1 / Second Lieutenant':'2ndLt',
+            'E9 / Sergeant Major':'SgtMaj','E9 / Master Gunnery Sergeant':'MGySgt','E9 / First Sergeant':'1stSgt',
+            'E8 / Master Sergeant':'MSgt','E7 / Gunnery Sergeant':'GySgt','E6 / Staff Sergeant':'SSgt',
+            'E5 / Sergeant':'Sgt','E4 / Corporal':'Cpl','E3 / Lance Corporal':'LCpl',
+            'E2 / Private First Class':'PFC','E1 / Private':'Pvt',
+            'E9 / Master Chief Hospital Corpsman':'MCPO','E8 / Senior Chief Corpsman':'SCPO',
+            'E7 / Chief Corpsman':'CPO','E6 / Corpsman First Class':'HM1','E5 / Corpsman Second Class':'HM2',
+            'E4 / Corpsman Third Class':'HM3','E3 / Hospitalman':'HN','E2 / Hospitalman Apprentice':'HA',
+            'E6 / Technical Sergeant':'TSgt','E4 / Senior Airman':'SrA',
+            'E3 / Airman First Class':'A1C','E2 / Airman':'Amn','E1 / Airman Basic':'AB','Reservist':'Res'
+        };
+
+        function getRankAbbr(r) { return RANK_ABBR[r] || (r ? r.split('/').pop().trim() : ''); }
+
+        function formatSidebarName(u) {
+            const rank = getRankAbbr(u.rank || '');
+            const first = (u.firstName || '').trim();
+            const last  = (u.lastName  || '').trim();
+            const cs    = (u.callsign  || '').trim();
+            const init  = first ? first.charAt(0).toUpperCase() + '.' : '';
+            const hasCs = cs && cs !== first && cs !== (first + ' ' + last);
+            let name = '';
+            if (init) name += init + ' ';
+            if (hasCs)      name += '"' + cs + '"';
+            else if (last)  name += last;
+            else if (cs)    name += '"' + cs + '"';
+            return [rank, name.trim()].filter(Boolean).join(' ');
+        }
+
+        const PANEL_CONTENT = {
+            career: {
+                label: 'CAREER PATHS',
+                items: [
+                    { label: '505th Expeditionary Force', href: 'about-505th.html' },
+                    { label: 'Alpha Company',             href: 'about-alpha-company.html' },
+                    { label: 'JTF-23 Force Recon',        href: 'about-stalker.html' },
+                    { label: 'Hospital Corpsman',          href: 'about-corpsman.html' },
+                    { label: '54th Air Wing',              href: 'about-54th-air-wing.html' },
+                ]
+            },
+            media: {
+                label: 'MEDIA',
+                items: [
+                    { label: 'Gallery', href: 'media-gallery.html' },
+                    { label: 'Videos',  href: 'media-videos.html'  },
+                ]
+            },
+            resources: {
+                label: 'RESOURCES',
+                items: [
+                    { label: 'Discord Rules',           href: 'resources-discord-rules.html' },
+                    { label: 'General Handbook',        href: 'resources-handbook.html' },
+                    { label: 'Hospital Corps Handbook', href: 'resources-hospital-corps-handbook.html' },
+                    { label: 'Control Reference',       href: 'resources-keybinds.html' },
+                    { label: 'Roster',                  href: 'resources-roster.html' },
+                    { label: 'After Action Reports',    href: 'resources-aar.html' },
+                    { label: 'Field Lexicon',           href: 'resources-field-lexicon.html' },
+                ]
+            }
+        };
+
+        let activePanel = null, acctOpen = false;
+
+        function switchPanel(key) {
+            const panel     = document.getElementById('desktopNavPanel');
+            const overlay   = document.getElementById('panelOverlay');
+            const crosshair = document.getElementById('railCrosshair');
+            document.querySelectorAll('.rail-btn[id^="rail-"]').forEach(b => b.classList.remove('active'));
+            if (activePanel === key) {
+                panel.classList.remove('open');
+                overlay.classList.remove('active');
+                document.body.classList.remove('panel-open');
+                crosshair.classList.remove('active');
+                activePanel = null;
+                return;
+            }
+            activePanel = key;
+            const cfg = PANEL_CONTENT[key];
+            if (!cfg) return;
+            panel.innerHTML = `<div class="panel-section-title">${cfg.label}</div><hr class="panel-divider">` +
+                cfg.items.map(i => `<a href="${i.href}" class="panel-item">${i.label}</a>`).join('');
+            panel.classList.add('open');
+            overlay.classList.add('active');
+            document.body.classList.add('panel-open');
+            crosshair.classList.add('active');
+            const btn = document.getElementById('rail-' + key);
+            if (btn) btn.classList.add('active');
+        }
+
+        function closeNavPanel() {
+            const panel = document.getElementById('desktopNavPanel');
+            document.getElementById('panelOverlay').classList.remove('active');
+            panel.classList.remove('open');
+            document.body.classList.remove('panel-open');
+            document.getElementById('railCrosshair').classList.remove('active');
+            document.querySelectorAll('.rail-btn[id^="rail-"]').forEach(b => b.classList.remove('active'));
+            activePanel = null;
+        }
+
+        function toggleAcct() {
+            const panel = document.getElementById('desktopAccountPanel');
+            const btn   = document.getElementById('rail-account');
+            acctOpen = !acctOpen;
+            panel.classList.toggle('open', acctOpen);
+            btn.classList.toggle('acct-active', acctOpen);
+        }
+
+        // Wire up buttons directly — no onclick attrs needed
+        document.getElementById('railCrosshair').addEventListener('click', () => {
+            const panel = document.getElementById('desktopNavPanel');
+            if (panel.classList.contains('open')) closeNavPanel();
+            else switchPanel(activePanel || 'career');
+        });
+        document.getElementById('rail-home')     .addEventListener('click', () => window.location.href = 'home.html');
+        document.getElementById('rail-career')   .addEventListener('click', () => switchPanel('career'));
+        document.getElementById('rail-media')    .addEventListener('click', () => switchPanel('media'));
+        document.getElementById('rail-resources').addEventListener('click', () => switchPanel('resources'));
+        document.getElementById('rail-join')     .addEventListener('click', () => window.open('https://discord.gg/pNkbaUtcw6','_blank'));
+        document.getElementById('rail-account')  .addEventListener('click', toggleAcct);
+        document.getElementById('panelOverlay')  .addEventListener('click', closeNavPanel);
+
+        document.addEventListener('click', e => {
+            if (!acctOpen) return;
+            const panel = document.getElementById('desktopAccountPanel');
+            const btn   = document.getElementById('rail-account');
+            if (!panel.contains(e.target) && !btn.contains(e.target)) {
+                acctOpen = false;
+                panel.classList.remove('open');
+                btn.classList.remove('acct-active');
+            }
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Escape') return;
+            closeNavPanel();
+            if (acctOpen) toggleAcct();
+        });
+
+        // Auth
+        onAuthStateChanged(auth, async user => {
+            const loginBtn  = document.getElementById('acctLoginBtn');
+            const userDisp  = document.getElementById('acctUserDisplay');
+            const userName  = document.getElementById('acctUserName');
+            const userRole  = document.getElementById('acctUserRole');
+            const panelLink = document.getElementById('acctPanelLink');
+            const logoutBtn = document.getElementById('acctLogoutBtn');
+            if (user) {
+                try {
+                    const snap = await getDoc(doc(db,'users',user.uid));
+                    if (snap.exists()) {
+                        const d = snap.data();
+                        loginBtn.style.display = 'none';
+                        userDisp.classList.add('visible');
+                        userName.textContent = formatSidebarName(d) || d.callsign || 'UNKNOWN';
+                        userRole.textContent  = (d.role||'').replace(/_/g,' ').toUpperCase();
+                        userRole.className    = 'acct-user-role acct-role-' + (d.role||'marine');
+                        if (ADMIN_ROLES.includes(d.role)) panelLink.style.display = '';
+                        logoutBtn.addEventListener('click', async () => {
+                            await signOut(auth);
+                            window.location.href = 'home.html';
+                        });
+                    }
+                } catch(e) { console.warn('Sidebar auth:', e); }
+            } else {
+                loginBtn.style.display = '';
+                userDisp.classList.remove('visible');
+            }
+        });
+    </script>
+
 </body>
 </html>
