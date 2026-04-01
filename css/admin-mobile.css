@@ -449,3 +449,103 @@ html {
     }
     .sidebar.open { left: 0; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   NEW FEATURE MOBILE FIXES
+   ══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+    /* ── PERSONNEL FILES TABS ── */
+    #personnelTabs {
+        gap: 3px;
+        padding: 4px;
+    }
+    .pers-tab {
+        font-size: 10px;
+        letter-spacing: 1px;
+        padding: 6px 10px;
+        min-height: 36px;
+    }
+    #personnelTabCount {
+        font-size: 9px;
+    }
+
+    /* ── ATTENDANCE TRACKER — 6-col stats → 3-col 2-row ── */
+    #panel-attendance > div[style*="grid-template-columns:repeat(6"] ,
+    div[style*="grid-template-columns:repeat(6,1fr)"] {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    /* ── ATTENDANCE HEALTH — 6 mini cards → 3-col ── */
+    #dashAttendanceHealth div[style*="display:flex"][style*="flex-wrap:wrap"] {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+    }
+    #dashAttendanceHealth div[style*="display:flex"][style*="flex-wrap:wrap"] > div {
+        flex: none !important;
+        min-width: 0 !important;
+    }
+
+    /* ── WHO'S ONLINE WIDGET ── */
+    #dashOnlineSection { margin-bottom: 12px; }
+    #dashOnlineList > div {
+        padding: 6px 8px;
+    }
+
+    /* ── SETTINGS PANEL (display preferences) ── */
+    .desktop-settings-panel { display: none !important; }
+    .rail-settings-btn { display: none !important; }
+
+    /* ── AT-RISK SCROLLABLE LIST ── */
+    #dashAttendanceHealth div[style*="max-height:200px"] {
+        max-height: 150px;
+    }
+
+    /* ── DASHBOARD ONLINE COUNT BADGE ── */
+    #dashOnlineCount {
+        font-size: 8px;
+        padding: 1px 6px;
+    }
+
+    /* ── ATTENDANCE TRACKER STATS ROW (6 cards) ── */
+    #attStatTotalOps, #attStatOverall {
+        /* These are the 2 new cards — ensure they render in the 3-col grid */
+    }
+}
+
+@media (max-width: 480px) {
+
+    /* ── PERSONNEL TABS — 2 per row on small phones ── */
+    #personnelTabs {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 3px;
+    }
+    .pers-tab {
+        text-align: center;
+        font-size: 9px;
+        padding: 5px 6px;
+        letter-spacing: 1px;
+    }
+    .pers-tab.active::after { display: none; } /* dot too small at this size */
+
+    /* ── ATTENDANCE HEALTH — 2-col on small phones ── */
+    #dashAttendanceHealth div[style*="display:flex"][style*="flex-wrap:wrap"],
+    #dashAttendanceHealth div[style*="display:grid"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* ── ATTENDANCE TRACKER 6-COL → 2-COL ── */
+    div[style*="grid-template-columns:repeat(6,1fr)"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* ── WHO'S ONLINE — compact ── */
+    #dashOnlineSection .dash-section-title {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+}

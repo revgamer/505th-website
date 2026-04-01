@@ -112,13 +112,26 @@ onAuthStateChanged(auth, async (user) => {
 
                 // Update tactical menu auth section
                 if (authBtnMenu) {
+                    // Format display name same as sidebar
+                    const _first = (userData.firstName||'').trim();
+                    const _last  = (userData.lastName||'').trim();
+                    const _cs    = (userData.callsign||'').trim();
+                    const _init  = _first ? _first.charAt(0).toUpperCase()+'.' : '';
+                    const _hasCs = _cs && _cs !== _first && _cs !== (_first+' '+_last);
+                    let _namePart = '';
+                    if (_init) _namePart += _init + ' ';
+                    if (_hasCs)        _namePart += '"'+_cs+'"';
+                    else if (_last)    _namePart += _last;
+                    else if (_cs)      _namePart += '"'+_cs+'"';
+                    const _rankAbbr = escapeHtml(userData.rank ? userData.rank.split('/').pop().trim() : '');
+                    const _displayName = [_rankAbbr, _namePart.trim()].filter(Boolean).join(' ');
+                    const _roleLabel = (userData.role||'').replace(/_/g,' ').toUpperCase();
+
                     let menuHTML = `
                         <div class="menu-auth-info">
-                            <span class="menu-auth-callsign">${escapeHtml(userData.callsign)}</span>
-                            <span class="menu-auth-role">${userData.role.toUpperCase()}</span>
-                        </div>`;
-
-                    menuHTML += `
+                            <span class="menu-auth-callsign">${escapeHtml(_displayName||userData.callsign)}</span>
+                            <span class="menu-auth-role">${_roleLabel}</span>
+                        </div>
                         <a href="profile.html" class="submenu-item">
                             <span class="submenu-bullet">&#9655;</span>
                             My Profile
@@ -170,7 +183,7 @@ onAuthStateChanged(auth, async (user) => {
             authBtnMenu.innerHTML = `
                 <a href="login.html" class="submenu-item">
                     <span class="submenu-bullet">▸</span>
-                    System Login
+                    Login
                 </a>`;
         }
     }

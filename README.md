@@ -4,6 +4,8 @@ Official website for the **505th Expeditionary Force**, a UNSC/Halo-themed Arma 
 
 🔗 **Live Site:** [505expeditionaryforce.com](https://www.505expeditionaryforce.com)
 
+**Website Developer:** SSgt S. "Davy" (RevGamer)
+
 ---
 
 ## Public Pages
@@ -20,54 +22,71 @@ Official website for the **505th Expeditionary Force**, a UNSC/Halo-themed Arma 
 | **Media Videos** | Video showcase, admin-controlled visibility |
 | **Discord Rules** | Unit rules and enforcement policy |
 | **General Handbook** | Unit SOPs, rank structure, rules of engagement |
+| **Hospital Corps Handbook** | Corpsman-specific SOPs and medical protocols |
 | **Control Reference** | Arma 3 keybind guide |
-| **Order of Battle** | Interactive hierarchy tree (pan/zoom/collapse) with live unit card slot data |
 | **Battalion Roster** | Live personnel database grouped by platoon with attendance pips and PT tracking |
 | **After Action Reports** | Searchable mission archive with detail modals |
 | **Field Lexicon** | Military terminology glossary with category filtering |
+
+### Desktop Navigation (≥1024px)
+All public pages use a **fixed icon rail sidebar** on the left:
+- Crosshair icon — opens/closes the slide-out nav panel
+- Icons for Home, Career Paths, Media, Resources, Join Us
+- Account icon — popup showing logged-in member name, rank, role with profile/panel/logout links
+- Settings icon (logged-in only) — font size and brightness sliders saved to Firestore per user
+
+### Mobile Navigation (≤1023px)
+Original top navbar + tactical slide-down menu — unchanged.
 
 ---
 
 ## Admin Panel — Command Terminal
 
-Access via `/admin.html`. Role-gated — admin roles only.
+Access via `/admin.html` → `/boot.html` after login. Role-gated — admin roles only.
 
 ### Dashboard
 - Live stat counters: Pending / Active / Roster / Total
+- **Who's Online** — live presence widget showing all members currently in the admin panel
 - Discord invite link status checker (live Discord API)
-- Roster strength by platoon (bar chart)
-- Inactive members and Awaiting BCT tracker
+- Roster strength by platoon
+- Inactive members widget (no op attended in 3+ months)
 - Reserves widget with colour-coded time indicators
-- Attendance Health widget (ops this month, at-risk members, full attendance)
-- Recruitment Source vertical bar chart (all roles)
-- Pending registrations list → link to Enlistment Queue
+- **Attendance Health widget:**
+  - OPS THIS MONTH, AT RISK (3M+), FULL ATT (3/3), OVERALL ATT %, BELOW 50%, PERFECT ATT
+  - Each stat has a hover tooltip explaining what it means
+  - AT-RISK list is a scrollable vertical list showing name + how long since last op
+- Recruitment Source vertical bar chart
+- Pending registrations list
 - Recent joins
 
 ### Manpower
-- **Personnel Files** — Full member list with inline rank/role dropdowns, edit modal, remove
-- **Enlistment Queue** — Approve/deny pending registrations; source picker modal on approval; amber pending badge on nav link
+- **Personnel Files** — Full member list with platoon tabs for instant filtering. Tabs: ALL, COMMAND, 1ST PLT, 2ND PLT, 3RD PLT, FORCE RECON, CORPSMEN, PILOT, AWAITING BCT, RESERVES, INACTIVE. Member count shown per tab. Inline rank/role dropdowns, edit modal, remove.
+  - **INACTIVE tab** — shows members where `status === 'inactive'` (manually set by staff) OR `lastAttendedDate` is 3+ months ago OR never attended any op
+- **Enlistment Queue** — Approve/deny pending registrations; amber badge on nav link
 
 **Edit Operative Modal (Details tab)**
-- Rank (full E1–O9 dropdown, all branches). Auto-sets graduation date on any E2 promotion
+- Rank (full E1–O9 dropdown, all branches)
 - First Name, Middle Initial, Last Name
 - Callsign — locked to Staff NCO+ only
 - Date Joined Unit
 - Platoon — auto-logs transfer history on change
 - Role — Commander/Developer only
-- Recruitment Source — where they heard about the unit
+- Recruitment Source
 
 **Edit Operative Modal (History tab)**
 - Promotion History — auto-logged on rank change, manual entry supported
 - Warning History — Minor / Major / Final severity
 - Commendation / Medal History — 8-medal visual picker
-- Platoon / Transfer History — auto-logged on platoon change, manual entry supported
+- Platoon / Transfer History — auto-logged on platoon change
 
 ### Battalion Ops
-- **Attendance Tracker** — Log ops attendance per event. Present checkboxes, platoon filter tabs, draft save, SAVE & LOCK finalises and updates member counters. DELETE (blocked on locked events), CLEAR form, RESET ALL COUNTERS utility. Monthly rate shown as X/Y per member
+- **Attendance Tracker** — Log op attendance per event. Present/Excused/Absent cycle, platoon filter tabs, live multi-user sync via Firestore `onSnapshot`, presence bar showing other staff on same event, SAVE & LOCK finalises and writes to member counters.
+  - Stats row: THIS EVENT, ATTENDANCE RATE, EXCUSED, ABSENT, TOTAL OPS (all-time locked events), OVERALL ATTEND % (unit-wide all-time)
+  - Locking an event writes `opsAttended`, `opsEligible`, and `lastAttendedDate` to each member's user doc
 - **After Action Reports** — 10-section report builder with Discord webhook and Cloudinary image attachments
 - **Battalion Roster** — Live view from `users` collection. Attendance checkbox (+1), PT glow system, graduation date, time-in-unit
-- **Unit Cards** — Open/Closed/Filled slot management synced to Order of Battle public page
-- **Recruitment Source Tracker** — Bar chart + % breakdown + recent recruits table. Data collected at approval and via Edit Operative
+- **Unit Cards** — Open/Closed/Filled slot management synced to public about pages
+- **Recruitment Source Tracker** — Bar chart + % breakdown + recent recruits table
 
 ### Intel Archive
 - **Gallery** — Upload images to Cloudinary, categorise, toggle public visibility
@@ -75,6 +94,7 @@ Access via `/admin.html`. Role-gated — admin roles only.
 
 ### Public Comms
 - CMS slot system for all About pages — photo sliders, info cards, text content
+- Comms Library — dedicated media storage for public-facing assets
 
 ### Discord & Network
 - **Discord Invite Link** — Centralised URL used across all public pages, live status check
@@ -83,29 +103,46 @@ Access via `/admin.html`. Role-gated — admin roles only.
 
 ---
 
+## Member Profile Page
+
+- Dossier header: rank, name/callsign, platoon, role badge, status, time in unit, join date
+- Medals & Awards grid
+- Promotion History timeline
+- Platoon / Transfer History timeline
+- Editable name fields (first, middle, last)
+
+---
+
 ## Authentication & Access Control
 
 - Firebase Auth with role-based access
 - Roles: `commander`, `developer`, `staff_nco`, `nco`, `recruiter`, `marine`, `enlistee`
-- Pages handle their own auth gates
-- Login return-to-origin flow
-- Registration form collects: recruit source → first name → middle initial → last name → email → password. Callsign assigned by staff after approval
-- Profile page with dossier header, medals, promotion/transfer history timeline
+- Login → boot animation → admin panel or return-to-origin
+- Registration collects: recruit source, name, email, password. Callsign assigned by staff after approval
+- Pending/denied members cannot log in
+
+---
+
+## Display Settings (Member Preference)
+
+Logged-in members can adjust site-wide display via the Settings icon in the sidebar:
+- **Font Size** slider (80%–130%) — scales `html` root font size
+- **Brightness** slider (50%–150%) — applies CSS `filter: brightness()` to `body`
+- Settings saved to `users/{uid}/displayPrefs` in Firestore
+- Applied on login, removed on logout — guests see default styling
 
 ---
 
 ## Discord Webhooks
 
-All 7 webhooks use styled Discord embeds (author block, thumbnail, bullet-point description, colour-coded, footer with category, timestamp).
-
 | Webhook | Trigger | Colour |
 |---------|---------|--------|
-| New Registration | On form submit (`login.html`) | Amber |
+| New Registration | On form submit | Amber |
 | Approved | On enlistment approval | Green |
 | Denied | On pending user removal | Red |
-| Promotion | On any rank change (inline, modal, or manual) | Purple |
+| Promotion | On any rank change | Purple |
 | Warning | On warning history entry | Orange |
-| Platoon Transfer | On platoon change (modal or manual) | Cyan |
+| Platoon Transfer | On platoon change | Cyan |
 | AAR Submitted | On AAR submit | Result-dependent |
 | Attendance Locked | On SAVE & LOCK | Teal |
 
@@ -116,10 +153,10 @@ All 7 webhooks use styled Discord embeds (author block, thumbnail, bullet-point 
 | Layer | Technology |
 |-------|------------|
 | Frontend | HTML5, CSS3, Vanilla JavaScript |
-| Hosting | Vercel Hosting |
-| Database | Firebase Firestore | 
+| Hosting | Vercel |
+| Database | Firebase Firestore |
 | Auth | Firebase Authentication |
-| Media Storage | Cloudinary |
+| Media Storage | Cloudinary (`dwugtsdsx`) |
 | Fonts | Google Fonts (Rajdhani, Share Tech Mono) |
 | Webhooks | Discord Webhooks |
 
@@ -129,18 +166,17 @@ All 7 webhooks use styled Discord embeds (author block, thumbnail, bullet-point 
 
 | Collection | Purpose |
 |------------|---------|
-| `users` | Single source of truth — auth profile, rank, role, platoon, attendance, history arrays |
+| `users` | Single source of truth — auth profile, rank, role, platoon, attendance, history arrays, `displayPrefs`, `lastAttendedDate`, `opsAttended`, `opsEligible` |
 | `media` | Gallery/video entries with visibility toggle |
 | `aars` | After Action Report documents |
-| `attendance_events` | Attendance tracker events — attendees, excused, locked state |
+| `attendance_events` | Attendance tracker events — attendees[], excused[], locked state, date |
+| `presence_sessions` | Live presence tracking — admin dashboard and attendance tracker multi-user awareness |
 | `advert_logs` | Recruitment source logs |
 | `settings/unit_cards` | Order of Battle slot assignments |
 | `settings/page_content` | CMS slot data for About pages |
 | `settings/site` | Discord invite link |
 | `settings/webhooks` | Discord webhook URLs (7 keys) |
 | `settings/roster_meta` | Monthly attendance reset tracking |
-
-> **Note:** The old `roster` collection has been removed. All member data now lives in `users`.
 
 ---
 
@@ -161,7 +197,7 @@ All 7 webhooks use styled Discord embeds (author block, thumbnail, bullet-point 
 | Discord Invite Link | ✅ | ✅ | ✅ | — | — |
 | Discord Webhooks | ✅ | ✅ | — | — | — |
 | Cortana Bot Integration | ✅ | ✅ | — | — | — |
-| Recruitment Source Widget (Dashboard) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Dashboard Stats | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -170,25 +206,35 @@ All 7 webhooks use styled Discord embeds (author block, thumbnail, bullet-point 
 ```
 505th-website/
 ├── css/
+│   ├── style.css                      # Home page styles
 │   ├── pages.css                      # Shared layout, nav, footer
 │   ├── auth.css                       # Login button, dropdown, auth states
+│   ├── admin.css                      # Admin panel base styles
+│   ├── admin-mobile.css               # Admin panel mobile/tablet responsive
 │   ├── discord-rules.css              # Rules page styling
-│   └── handbook.css                   # Handbook sections, rank cards
+│   ├── handbook.css                   # Handbook sections, rank cards
+│   ├── roster.css                     # Roster page styles
+│   ├── splash.css                     # Splash/boot screen styles
+│   └── under-construction.css        # 404/under construction page
 ├── js/
 │   ├── nav.js                         # Tactical dropdown menu toggle
 │   ├── scroll.js                      # Auto-hide navbar on scroll
 │   ├── auth.js                        # Firebase auth state, navbar updates
-│   └── cms.js                         # CMS slot rendering, Discord link sync
+│   ├── cms.js                         # CMS slot rendering, Discord link sync
+│   ├── handbook.js                    # Handbook TOC smooth scroll
+│   ├── splash.js                      # Splash screen boot animation
+│   └── units-cards-embed.js           # Unit card slot embed for about pages
 ├── images/
 │   ├── logo.png
 │   ├── logos/                         # Branch logos
 │   ├── icons/                         # Nav menu icons
 │   └── medal_emojis/                  # 8 medal images for commendation picker
-├── home.html
+├── home.html                          # Landing page (desktop sidebar + mobile nav)
 ├── login.html                         # Registration + login
 ├── admin.html                         # Command Terminal (admin panel)
-├── profile.html                       # Operative profile page
+├── profile.html                       # Operative dossier page
 ├── boot.html                          # Boot animation after login
+├── index.html                         # Splash screen entry point
 ├── about-505th.html
 ├── about-alpha-company.html
 ├── about-stalker.html
@@ -198,18 +244,41 @@ All 7 webhooks use styled Discord embeds (author block, thumbnail, bullet-point 
 ├── media-videos.html
 ├── resources-discord-rules.html
 ├── resources-handbook.html
+├── resources-hospital-corps-handbook.html
 ├── resources-keybinds.html
-├── resources-order-of-battle.html
-├── resources-roster.html              # Reads from users collection
+├── resources-roster.html
 ├── resources-aar.html
 └── resources-field-lexicon.html
 ```
 
 ---
 
-## Developer
+## 🚧 Planned Features (TBC)
 
-**Website Developer:** SSgt S. "Davy" (RevGamer)
+### Live Chat / Messaging
+- Direct messaging between logged-in members
+- Real-time via Firestore `onSnapshot`
+- Small floating chat widget on public pages and admin panel
+- Message history stored in `messages/{conversationId}/messages` subcollection
+
+### Member Notifications
+- In-app notification system on member profile page
+- Notification types planned:
+  - ⚠ **AT-RISK alert** — notified when flagged as inactive (3+ months no op)
+  - 💬 **Direct message received** — someone sent you a message
+  - 🏅 **Medal/commendation awarded** — staff added a commendation to your record
+  - 📋 **AAR published** — new After Action Report posted
+  - ⬆ **Promotion** — your rank was updated
+  - ⚠ **Warning issued** — a warning was added to your record
+- Stored in `notifications/{uid}/items` subcollection in Firestore
+- Bell icon on profile page with unread badge count
+- Mark as read / clear all
+
+### Cortana Bot (Discord)
+- Full Discord.js bot integration
+- Event signup management
+- Reminder scheduling
+- Persistent embeds
 
 ---
 

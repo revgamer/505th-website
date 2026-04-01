@@ -101,6 +101,101 @@
             return [rankAbbr, name.trim()].filter(Boolean).join(' ');
         }
 
+
+        // ── ONLINE PRESENCE — Dashboard ───────────────────────────────────
+        let _dashPresSession = null, _dashPresUnsub = null, _dashPresHb = null;
+        const _STALE_MS = 90000;
+        const _ROLE_COLORS = {commander:'#f59e0b',developer:'#a78bfa',staff_nco:'#2DD4BF',nco:'#34d399',recruiter:'#fb923c',marine:'#94a3b8',enlistee:'#64748b'};
+
+        async function dashPresJoin() {
+            if (!currentUser || !currentUserData || _dashPresSession) return;
+            try {
+                const ref = await addDoc(collection(db,'presence_sessions'), {
+                    panel:'admin_dashboard', uid:currentUser.uid,
+                    callsign:currentUserData.callsign||'', rank:currentUserData.rank||'',
+                    firstName:currentUserData.firstName||'', lastName:currentUserData.lastName||'',
+                    role:currentUserData.role||'', updatedAt:new Date().toISOString(),
+                });
+                _dashPresSession = ref.id;
+                _dashPresHb = setInterval(async () => {
+                    if (!_dashPresSession) return;
+                    try { await updateDoc(doc(db,'presence_sessions',_dashPresSession),{updatedAt:new Date().toISOString()}); } catch(e) {}
+                }, 30000);
+                _dashPresSubscribe();
+            } catch(e) { console.warn('dashPresJoin:', e); }
+        }
+
+        async function dashPresLeave() {
+            if (_dashPresHb)    { clearInterval(_dashPresHb); _dashPresHb = null; }
+            if (_dashPresUnsub) { _dashPresUnsub(); _dashPresUnsub = null; }
+            if (_dashPresSession) {
+                try { await deleteDoc(doc(db,'presence_sessions',_dashPresSession)); } catch(e) {}
+                _dashPresSession = null;
+            }
+        }
+
+        function _dashPresSubscribe() {
+            if (_dashPresUnsub) { _dashPresUnsub(); _dashPresUnsub = null; }
+            _dashPresUnsub = onSnapshot(
+                query(collection(db,'presence_sessions'), where('panel','==','admin_dashboard')),
+                (snap) => {
+                    const now = Date.now(), online = [];
+                    snap.forEach(d => {
+                        const data = d.data();
+                        if (now - new Date(data.updatedAt).getTime() < _STALE_MS) online.push({id:d.id,...data});
+                    });
+                    _renderOnlineList(online);
+                }
+            );
+        }
+
+        function _renderOnlineList(online) {
+            const list = document.getElementById('dashOnlineList');
+            const countEl = document.getElementById('dashOnlineCount');
+            if (!list) return;
+            if (countEl) {
+                countEl.textContent = online.length + ' ONLINE';
+                countEl.style.background  = online.length ? 'rgba(0,255,65,.12)' : 'rgba(100,100,100,.12)';
+                countEl.style.borderColor = online.length ? '#00FF41' : '#555';
+                countEl.style.color       = online.length ? '#00FF41' : '#555';
+            }
+            if (!online.length) { list.innerHTML = '<div class="empty-state">NO MEMBERS ONLINE</div>'; return; }
+            const roleOrder = ['commander','developer','staff_nco','nco','recruiter','marine','enlistee'];
+            online.sort((a,b) => {
+                if (a.uid === currentUser?.uid) return -1;
+                if (b.uid === currentUser?.uid) return 1;
+                return roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role);
+            });
+            // Inject pulse keyframe once
+            if (!document.getElementById('_dashOnlineStyle')) {
+                const s = document.createElement('style'); s.id='_dashOnlineStyle';
+                s.textContent='@keyframes _onlinePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}';
+                document.head.appendChild(s);
+            }
+            list.innerHTML = online.map(u => {
+                const isSelf = u.uid === currentUser?.uid;
+                const roleColor = _ROLE_COLORS[u.role] || '#94a3b8';
+                const name = formatMemberName(u) || u.callsign || 'Unknown';
+                const roleLabel = (u.role||'').replace(/_/g,' ').toUpperCase();
+                return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04)">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#00FF41;flex-shrink:0;box-shadow:0 0 6px rgba(0,255,65,.6);animation:_onlinePulse 2s ease-in-out infinite"></span>
+                    <div style="flex:1">
+                        <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:#e0e0e0">${esc(name)}${isSelf?' <span style="font-size:9px;color:#555;letter-spacing:1px">(YOU)</span>':''}</div>
+                        <div style="font-size:9px;letter-spacing:2px;color:${roleColor};margin-top:1px">${esc(roleLabel)}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.addEventListener('beforeunload', dashPresLeave);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) { dashPresLeave(); }
+            else {
+                const dash = document.getElementById('panel-dashboard');
+                if (dash && !dash.classList.contains('hidden')) dashPresJoin();
+            }
+        });
+
         async function logAction(a, d) { /* disabled for performance */ }
 
         const PAGE_SLOTS = {
@@ -847,7 +942,7 @@
             if (link) link.classList.add('active');
             // Lazy loaders
             if (id==='panel-active' || id==='panel-register') loadAllUsers();
-            if (id==='panel-dashboard')   loadDashboard();
+            if (id==='panel-dashboard')   { loadDashboard(); dashPresJoin(); }
             if (id==='panel-gallery')     loadMedia('image');
             if (id==='panel-videos')      loadMedia('video');
             if (id==='panel-comms-library') loadCommsLibrary();
@@ -1616,7 +1711,7 @@
             if (!eventDoc.exists()) { notify('EVENT NOT FOUND',1); return; }
             const ev = eventDoc.data();
             if (ev.locked) { notify('CANNOT DELETE — EVENT IS LOCKED. LOCKED EVENTS ARE PERMANENT RECORD.',1); return; }
-            if (!confirm('DELETE EVENT: "'+title+'"?\n\nMember attendance rates will be recalculated automatically.')) return;
+            if (!confirm('DELETE EVENT: "'+title+'"?\n\nMember monthly rates will be recalculated automatically.')) return;
             try {
                 const evDoc  = await getDoc(doc(db,'attendance_events',eventId));
                 const evData = evDoc.exists() ? evDoc.data() : null;
@@ -1641,7 +1736,7 @@
                     _attUnsubscribe();
                     attClearForm();
                 }
-                notify('EVENT DELETED — ATTENDANCE RATES UPDATED');
+                notify('EVENT DELETED — MONTHLY RATES UPDATED');
                 logAction('ATT_DELETE', title);
                 await loadAttendancePanel();
             } catch(e) { notify('DELETE FAILED: ' + e.message, 1); }
@@ -1674,10 +1769,10 @@
             const body  = document.getElementById('qaBody');
             modal._action = 'monthly_rate';
             modal._uid    = uid;
-            title.textContent = '⊞ EDIT ATTENDANCE RATE — ' + name.toUpperCase();
+            title.textContent = '⊞ EDIT MONTHLY RATE — ' + name.toUpperCase();
             body.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:14px">
-                    <div style="font-size:10px;letter-spacing:2px;color:#aaa">CORRECT ATTENDANCE RATE IN CASE OF MISTAKE</div>
+                    <div style="font-size:10px;letter-spacing:2px;color:#aaa">CORRECT MONTHLY ATTENDANCE RATE IN CASE OF MISTAKE</div>
                     <div style="display:flex;gap:16px">
                         <div style="display:flex;flex-direction:column;gap:4px;flex:1">
                             <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">OPS ATTENDED</label>
@@ -1739,7 +1834,7 @@
                 const rowBg=isPresent?'rgba(0,217,255,.025)':isExcused?'rgba(255,212,0,.02)':'';
                 return `<div style="display:grid;grid-template-columns:1fr 120px 130px 70px;gap:0;border-bottom:1px solid rgba(255,255,255,.04);padding:10px 14px;align-items:center;background:${rowBg}" onmouseover="this.style.background='rgba(0,217,255,.03)'" onmouseout="this.style.background='${rowBg}'">
                     <div>
-                        <div class="att-name-clickable" data-uid="${u.id}" data-name="${esc(formatMemberName(u)||u.callsign)}" data-ops-att="${opsAtt}" data-ops-elig="${opsElig}" style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:#e0e0e0;cursor:pointer;text-decoration:underline dotted rgba(0,217,255,.3)" title="Click to correct attendance rate">${esc(formatMemberName(u)||u.callsign)}</div>
+                        <div class="att-name-clickable" data-uid="${u.id}" data-name="${esc(formatMemberName(u)||u.callsign)}" data-ops-att="${opsAtt}" data-ops-elig="${opsElig}" style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:#e0e0e0;cursor:pointer;text-decoration:underline dotted rgba(0,217,255,.3)" title="Click to correct monthly rate">${esc(formatMemberName(u)||u.callsign)}</div>
                         <div style="font-size:9px;color:#666;letter-spacing:1px;margin-top:1px">${esc(u.rank||'—')}</div>
                     </div>
                     <div style="text-align:center">
@@ -1760,10 +1855,36 @@
         }
         // ── END ATTENDANCE TRACKER ────────────────────────────────────────────
 
+
+        // ── Personnel Files Tab System ─────────────────────────────────────
+        let _personnelTab = 'ALL';
+
+        window.setPersonnelTab = function(tab) {
+            _personnelTab = tab;
+            // Update tab active states
+            document.querySelectorAll('.pers-tab').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+            renderUsers();
+        };
+
         window.renderUsers = function() {
             const activeList  = document.getElementById('activeList');
             const registerList = document.getElementById('registerList');
-            const active  = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied');
+            const threeMAgo = new Date(); threeMAgo.setMonth(threeMAgo.getMonth()-3); const threeMAgoStr = threeMAgo.toISOString().slice(0,10);
+            const isInactive = u => u.status==='inactive' || (u.lastAttendedDate && u.lastAttendedDate < threeMAgoStr) || (!u.lastAttendedDate && (u.opsAttended||0)===0 && (u.opsEligible||0)>0);
+            const allActive = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied');
+            let active;
+            if (_personnelTab === 'ALL') {
+                active = allActive;
+            } else if (_personnelTab === 'Inactive') {
+                active = allActive.filter(u => isInactive(u));
+            } else {
+                active = allActive.filter(u => u.platoon === _personnelTab);
+            }
+            // Update count label
+            const countEl = document.getElementById('personnelTabCount');
+            if (countEl) countEl.textContent = active.length + ' MEMBER' + (active.length !== 1 ? 'S' : '');
             const pending = allUsers.filter(u=>u.status==='pending');
             const denied  = allUsers.filter(u=>u.status==='denied');
             updateEnlistmentBadge();
@@ -2583,7 +2704,7 @@
                             </div>
                         </div>
                         <div style="border-top:1px solid rgba(0,217,255,.1);padding-top:10px">
-                            <div style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.6);margin-bottom:8px">ATTENDANCE RATE CORRECTION</div>
+                            <div style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.6);margin-bottom:8px">MONTHLY RATE CORRECTION</div>
                             <div style="display:flex;gap:16px">
                                 <div style="display:flex;flex-direction:column;gap:4px;flex:1">
                                     <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">OPS ATTENDED</label>
@@ -2713,7 +2834,7 @@
                     await updateDoc(doc(db,'users',uid), {opsAttended:opsAtt, opsEligible:opsElig, updatedAt:new Date().toISOString()});
                     const u = allUsers.find(x=>x.id===uid);
                     if(u){ u.opsAttended=opsAtt; u.opsEligible=opsElig; }
-                    notify(`ATTENDANCE RATE UPDATED — ${memberName}: ${opsAtt}/${opsElig}`);
+                    notify(`MONTHLY RATE UPDATED — ${memberName}: ${opsAtt}/${opsElig}`);
                     renderAttRoster();
                 }
 
@@ -3969,10 +4090,10 @@
             <div class="sidebar" id="sidebar">
                 <div class="dash-link" onclick="showPanel('panel-dashboard')"><span class="nav-icon">&#9632;</span> DASHBOARD</div>
                 <hr class="sidebar-divider">
-                <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> MANPOWER <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">MANPOWER</div><div class="nav-tip-body">Manage all unit personnel. Review active member files, edit ranks &amp; roles, and process new enlistment applications.</div></div></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 2px 8px">EXISTING MEMBERS</div><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">&#9998; Personnel Files</div><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:8px 0 2px 8px;border-top:1px solid rgba(0,217,255,.08);margin-top:4px">NEW MEMBERS</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')" style="display:flex;align-items:center;justify-content:space-between">&#9993; Enlistment Queue<span id="enlistmentBadge" style="display:none;background:#f59e0b;color:#000;font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;padding:1px 6px;letter-spacing:1px;flex-shrink:0">0</span></div></div></div>
+                <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> MANPOWER <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">MANPOWER</div><div class="nav-tip-body">Manage all unit personnel. Review active member files, edit ranks &amp; roles, and process new enlistment applications.</div></div></div><div class="sub-links"><div style="color:rgba(0,217,255,.7);font-size:8px;letter-spacing:2px;padding:6px 0 2px 8px">EXISTING MEMBERS</div><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">&#9998; Personnel Files</div><div style="color:rgba(0,217,255,.7);font-size:8px;letter-spacing:2px;padding:8px 0 2px 8px;border-top:1px solid rgba(0,217,255,.08);margin-top:4px">NEW MEMBERS</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')" style="display:flex;align-items:center;justify-content:space-between">&#9993; Enlistment Queue<span id="enlistmentBadge" style="display:none;background:#f59e0b;color:#000;font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;padding:1px 6px;letter-spacing:1px;flex-shrink:0">0</span></div></div></div>
                 <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> BATTALION OPS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">BATTALION OPS</div><div class="nav-tip-body">Operational records for the unit. Submit After Action Reports, manage Battalion Roster strength, and maintain Unit Cards on the Order of Battle.</div></div></div><div class="sub-links"><div id="navlink-attendance" class="sub-link" data-panel="panel-attendance" onclick="showPanel('panel-attendance')">&#9635; Attendance Tracker<span id="attNavBadge" style="display:none;margin-left:6px;background:#00D9FF;color:#000;font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;padding:1px 5px;letter-spacing:1px;vertical-align:middle"></span></div><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div><div class="sub-link" data-panel="panel-unitcards" onclick="showPanel('panel-unitcards')">Unit Cards</div><div class="sub-link" data-panel="panel-recruit-source" onclick="showPanel('panel-recruit-source')">&#9650; Recruitment Source</div></div></div>
                 <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> INTEL ARCHIVE <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
-                <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PUBLIC COMMS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">PUBLIC COMMS</div><div class="nav-tip-body">Edit content displayed on public-facing unit pages — photos, sliders, descriptions and section headers visible to recruits and visitors.</div></div></div><div class="sub-links"><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">ABOUT US</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div><div style="color:rgba(0,217,255,.3);font-size:8px;letter-spacing:2px;padding:10px 0 3px 4px">MEDIA</div><div class="sub-link" data-panel="panel-comms-library" onclick="showPanel('panel-comms-library')">&#9776; Comms Library</div></div></div>
+                <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PUBLIC COMMS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">PUBLIC COMMS</div><div class="nav-tip-body">Edit content displayed on public-facing unit pages — photos, sliders, descriptions and section headers visible to recruits and visitors.</div></div></div><div class="sub-links"><div style="color:rgba(0,217,255,.7);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">CAREER PATHS</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div><div style="color:rgba(0,217,255,.7);font-size:8px;letter-spacing:2px;padding:10px 0 3px 4px">MEDIA</div><div class="sub-link" data-panel="panel-comms-library" onclick="showPanel('panel-comms-library')">&#9776; Comms Library</div></div></div>
                 <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> DISCORD &amp; NETWORK <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">DISCORD &amp; NETWORK</div><div class="nav-tip-body">Configure Discord invite link, webhook notifications, and Cortana bot integration for the unit.</div></div></div><div class="sub-links"><div id="navlink-discord" class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div id="navlink-webhooks" class="sub-link" data-panel="panel-webhooks" onclick="showPanel('panel-webhooks')">Discord Webhooks</div><div id="navlink-discord-tracking" class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Cortana Bot Integration</div></div></div>
                 <hr class="sidebar-divider">
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
@@ -3990,6 +4111,13 @@
                     </div>
 
                     <!-- Row 2: Discord -->
+                    <div class="dash-section" style="margin-bottom:16px" id="dashOnlineSection">
+                        <div class="dash-section-title" style="display:flex;align-items:center;gap:10px">
+                            WHO'S ONLINE
+                            <span id="dashOnlineCount" style="background:rgba(100,100,100,.12);border:1px solid #555;color:#555;font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;padding:2px 8px">0 ONLINE</span>
+                        </div>
+                        <div id="dashOnlineList"><div class="empty-state">LOADING...</div></div>
+                    </div>
                     <div class="dash-section" style="margin-bottom:16px" id="dashDiscordSection">
                         <div class="dash-section-title">DISCORD INVITE LINK STATUS</div>
                         <div id="dashDiscordStatus"><div class="empty-state">LOADING...</div></div>
@@ -4115,7 +4243,7 @@
 
                     <!-- Member table -->
                     <div style="background:rgba(0,217,255,.04);border:1px solid rgba(0,217,255,.2);border-bottom:2px solid rgba(0,217,255,.35);display:grid;grid-template-columns:1fr 120px 130px 70px;padding:8px 14px;font-size:9px;letter-spacing:2px;color:rgba(0,217,255,.7);margin-bottom:1px">
-                        <div>NAME</div><div style="text-align:center">PLATOON</div><div style="text-align:center">ATTENDANCE RATE</div><div style="text-align:center">PRESENT</div>
+                        <div>NAME</div><div style="text-align:center">PLATOON</div><div style="text-align:center">MONTHLY RATE</div><div style="text-align:center">PRESENT</div>
                     </div>
                     <div id="attRosterList"><div class="empty-state">LOADING...</div></div>
 
@@ -4130,7 +4258,30 @@
                         <button class="action-btn remove-btn" onclick="resetAllAttendanceCounters()" style="padding:6px 12px;font-size:9px;letter-spacing:2px;opacity:.6" title="Reset all member attendance counters to 0 — use only to clear test data">&#9888; RESET ALL COUNTERS</button>
                     </div>
                 </div>
-                <div class="panel hidden" id="panel-active"><div class="panel-title">PERSONNEL FILES</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">VIEW, EDIT AND MANAGE RANK &amp; ROLE FOR ALL ACTIVE MEMBERS — USE DROPDOWNS PER ROW</p><div id="activeList"><div class="empty-state">LOADING...</div></div></div>
+                <div class="panel hidden" id="panel-active">
+                    <div class="panel-title">PERSONNEL FILES</div>
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">VIEW, EDIT AND MANAGE RANK &amp; ROLE FOR ALL ACTIVE MEMBERS — USE DROPDOWNS PER ROW</p>
+
+                    <!-- Platoon Tabs -->
+                    <div id="personnelTabs" style="margin-bottom:16px">
+                        <button class="pers-tab active" data-tab="ALL"         onclick="setPersonnelTab('ALL')">ALL</button>
+                        <button class="pers-tab"        data-tab="Command"     onclick="setPersonnelTab('Command')">COMMAND</button>
+                        <button class="pers-tab"        data-tab="1st Platoon" onclick="setPersonnelTab('1st Platoon')">1ST PLT</button>
+                        <button class="pers-tab"        data-tab="2nd Platoon" onclick="setPersonnelTab('2nd Platoon')">2ND PLT</button>
+                        <button class="pers-tab"        data-tab="3rd Platoon" onclick="setPersonnelTab('3rd Platoon')">3RD PLT</button>
+                        <button class="pers-tab"        data-tab="Force Recon" onclick="setPersonnelTab('Force Recon')">FORCE RECON</button>
+                        <button class="pers-tab"        data-tab="Corpsmen"    onclick="setPersonnelTab('Corpsmen')">CORPSMEN</button>
+                        <button class="pers-tab"        data-tab="Pilot"       onclick="setPersonnelTab('Pilot')">PILOT</button>
+                        <button class="pers-tab"        data-tab="Awaiting BCT" onclick="setPersonnelTab('Awaiting BCT')">AWAITING BCT</button>
+                        <button class="pers-tab"        data-tab="Reserves"    onclick="setPersonnelTab('Reserves')">RESERVES</button>
+                        <button class="pers-tab pers-tab-inactive" data-tab="Inactive" onclick="setPersonnelTab('Inactive')">INACTIVE</button>
+                    </div>
+
+                    <!-- Tab count label -->
+                    <div id="personnelTabCount" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,217,255,.5);letter-spacing:2px;margin-bottom:12px"></div>
+
+                    <div id="activeList"><div class="empty-state">LOADING...</div></div>
+                </div>
                 <div class="panel hidden" id="panel-register"><div class="panel-title">ENLISTMENT QUEUE</div><p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PENDING APPLICANTS AWAITING APPROVAL — APPROVE TO GRANT ENLISTEE ACCESS, DENY TO REJECT</p><div id="registerList"><div class="empty-state">LOADING...</div></div></div>
                 <div class="panel hidden" id="panel-promote">
                     <div class="panel-title">PROMOTE RANKS</div>

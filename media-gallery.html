@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gallery - 505th EF</title>
+    <title>Videos - 505th EF</title>
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,27 +23,19 @@
         .media-count { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; margin-bottom: 1.5rem; }
         .media-count span { color: var(--accent); }
 
-        .dyn-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-        .dyn-gallery-item { background: var(--bg-card); border: 2px solid transparent; overflow: hidden; transition: all 0.3s ease; cursor: pointer; }
-        .dyn-gallery-item:hover { border-color: var(--accent); box-shadow: 0 0 25px var(--accent-glow); transform: translateY(-4px); }
-        .dyn-gallery-img { width: 100%; height: 220px; overflow: hidden; background: var(--bg-elevated); }
-        .dyn-gallery-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
-        .dyn-gallery-item:hover .dyn-gallery-img img { transform: scale(1.05); }
+        .dyn-video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 2rem; }
+        .dyn-video-item { background: var(--bg-card); border: 2px solid transparent; overflow: hidden; transition: all 0.3s ease; }
+        .dyn-video-item:hover { border-color: var(--accent); box-shadow: 0 0 25px var(--accent-glow); }
+        .dyn-video-embed { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: var(--bg-elevated); }
+        .dyn-video-embed iframe, .dyn-video-embed video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         .dyn-gallery-info { padding: 12px 16px; border-top: 1px solid rgba(0,217,255,0.1); }
         .dyn-gallery-name { color: var(--text-primary); font-size: 1rem; font-weight: 600; letter-spacing: 1px; }
         .dyn-gallery-meta { color: var(--text-muted); font-size: 0.75rem; letter-spacing: 2px; margin-top: 4px; }
         .dyn-gallery-desc { color: var(--text-secondary, #999); font-size: 0.85rem; margin-top: 4px; line-height: 1.4; letter-spacing: 0.5px; }
         .no-media-msg { text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-size: 1rem; letter-spacing: 3px; }
 
-        /* Lightbox */
-        .lightbox { position: fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.92); z-index:3000; display:none; align-items:center; justify-content:center; cursor:pointer; }
-        .lightbox.active { display:flex; }
-        .lightbox img { max-width:90vw; max-height:85vh; object-fit:contain; box-shadow:0 0 40px rgba(0,217,255,0.3); }
-        .lightbox-close { position:absolute; top:20px; right:30px; color:#fff; font-size:2rem; cursor:pointer; z-index:3001; }
-
         @media (max-width: 768px) {
-            .dyn-gallery-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
-            .dyn-gallery-img { height: 160px; }
+            .dyn-video-grid { grid-template-columns: 1fr; }
             .page-intro h1 { font-size: 1.8rem; letter-spacing: 3px; }
         }
     </style>
@@ -323,9 +315,116 @@
         .rail-btn.acct-active { background: rgba(0,217,255,0.06); border-left-color: var(--accent,#00D9FF); }
 
     } /* end @media >=1024px */
+/* ── Settings icon ── */
+        .rail-settings-btn {
+            width: 52px; height: 48px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: none; background: none;
+            padding: 0; position: relative;
+            transition: background 0.2s; border-left: 2px solid transparent;
+            flex-shrink: 0;
+        }
+        .rail-settings-btn svg {
+            width: 20px; height: 20px;
+            transition: transform 0.4s ease, opacity 0.2s;
+            opacity: 0.45;
+        }
+        .rail-settings-btn:hover svg,
+        .rail-settings-btn.active svg {
+            opacity: 1;
+            transform: rotate(60deg);
+            filter: drop-shadow(0 0 4px rgba(0,217,255,0.7));
+        }
+        .rail-settings-btn:hover,
+        .rail-settings-btn.active {
+            background: rgba(0,217,255,0.06);
+            border-left-color: var(--accent,#00D9FF);
+        }
+        .rail-settings-btn::after {
+            content: 'SETTINGS';
+            position: absolute; left: 58px; top: 50%; transform: translateY(-50%);
+            background: rgba(8,10,14,0.95); border: 1px solid rgba(0,217,255,0.3);
+            color: var(--accent,#00D9FF); font-family: 'Rajdhani',sans-serif;
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 2px;
+            padding: 4px 10px; white-space: nowrap;
+            pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 500;
+        }
+        .rail-settings-btn:hover::after { opacity: 1; }
+        /* Hidden when logged out */
+        .rail-settings-btn.hidden-guest { display: none; }
+
+        /* ── Settings popup panel ── */
+        .desktop-settings-panel {
+            display: block !important;
+            position: fixed;
+            bottom: 110px; left: 52px;
+            width: 240px;
+            background: rgba(10,13,17,0.98);
+            border: 1px solid rgba(0,217,255,0.25);
+            box-shadow: 4px 0 30px rgba(0,0,0,0.6), 0 0 20px rgba(0,217,255,0.06);
+            z-index: 250;
+            transform: translateX(-110%) scale(0.95);
+            transform-origin: left bottom;
+            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.22s;
+            opacity: 0; pointer-events: none;
+        }
+        .desktop-settings-panel.open {
+            transform: translateX(0) scale(1);
+            opacity: 1; pointer-events: auto;
+        }
+        .settings-panel-inner { padding: 14px 16px; }
+        .settings-panel-title {
+            font-family: 'Rajdhani',sans-serif;
+            font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 3px; color: rgba(0,217,255,0.5);
+            margin-bottom: 14px;
+        }
+        .settings-row {
+            margin-bottom: 16px;
+        }
+        .settings-label {
+            font-family: 'Rajdhani',sans-serif;
+            font-size: 0.72rem; font-weight: 700;
+            letter-spacing: 2px; color: #a0a0a0;
+            display: flex; justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .settings-label span { color: var(--accent,#00D9FF); }
+        .settings-slider {
+            -webkit-appearance: none;
+            width: 100%; height: 3px;
+            background: rgba(0,217,255,0.15);
+            border-radius: 2px; outline: none; cursor: pointer;
+        }
+        .settings-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: var(--accent,#00D9FF);
+            box-shadow: 0 0 6px rgba(0,217,255,0.6);
+            cursor: pointer;
+        }
+        .settings-slider::-moz-range-thumb {
+            width: 14px; height: 14px;
+            border-radius: 50%; border: none;
+            background: var(--accent,#00D9FF);
+            box-shadow: 0 0 6px rgba(0,217,255,0.6);
+            cursor: pointer;
+        }
+        .settings-reset {
+            display: block; width: 100%; margin-top: 4px;
+            padding: 7px; text-align: center;
+            background: transparent;
+            border: 1px solid rgba(0,217,255,0.15);
+            color: #666; font-family: 'Rajdhani',sans-serif;
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
+            cursor: pointer; transition: all 0.18s;
+        }
+        .settings-reset:hover { border-color: #ef4444; color: #ef4444; }
+
     </style>
 </head>
-<body data-cms-media="image">
+<body data-cms-media="video">
     <!-- DESKTOP SIDEBAR (hidden on mobile via inline CSS) -->
     <a href="home.html" class="desktop-logo-header">
         <img src="images/logo.png" alt="505th Logo">
@@ -370,6 +469,12 @@
         </div>
         <div class="rail-bottom">
             <hr class="rail-divider">
+            <button class="rail-settings-btn hidden-guest" id="rail-settings" title="Settings">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="3" stroke="#00D9FF" stroke-width="1.5"/>
+                    <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#00D9FF" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </button>
             <button class="rail-btn" id="rail-account" data-tip="ACCOUNT">
                 <img src="images/icons/Account.png" alt="Account">
             </button>
@@ -390,6 +495,23 @@
                     <button class="acct-link logout" id="acctLogoutBtn">&#x23FB; LOGOUT</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="desktop-settings-panel" id="desktopSettingsPanel">
+        <div class="settings-panel-inner">
+            <div class="settings-panel-title">&#9881; DISPLAY SETTINGS</div>
+            <div class="settings-row">
+                <div class="settings-label">FONT SIZE <span id="settingsFontLabel">100%</span></div>
+                <input type="range" class="settings-slider" id="settingsFontSlider"
+                    min="80" max="130" step="5" value="100">
+            </div>
+            <div class="settings-row">
+                <div class="settings-label">BRIGHTNESS <span id="settingsBrightLabel">100%</span></div>
+                <input type="range" class="settings-slider" id="settingsBrightSlider"
+                    min="50" max="150" step="5" value="100">
+            </div>
+            <button class="settings-reset" id="settingsResetBtn">RESET DEFAULTS</button>
         </div>
     </div>
 
@@ -458,12 +580,15 @@
                     <div class="section-title" data-submenu="account">
                         <span class="section-icon"><img src="images/icons/Account.png" alt="" style="width:24px;height:24px;"></span>
                         <span>ACCOUNT</span>
+                        <span class="submenu-arrow">▼</span>
                     </div>
-                    <div id="menuAuthSection">
-                        <a href="login.html" class="submenu-item">
-                            <span class="submenu-bullet">&#x25B8;</span>
-                            System Login
-                        </a>
+                    <div class="submenu" id="submenu-account">
+                        <div id="menuAuthSection">
+                            <a href="login.html" class="submenu-item">
+                                <span class="submenu-bullet">&#x25B8;</span>
+                                Login
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -471,20 +596,14 @@
         </div>
     </div>
 
-    <!-- Lightbox -->
-    <div class="lightbox" id="lightbox" onclick="this.classList.remove('active')">
-        <span class="lightbox-close">&times;</span>
-        <img id="lightboxImg" src="" alt="">
-    </div>
-
     <main class="media-page-content">
         <div class="container">
             <div class="page-intro">
-                <h1>GALLERY</h1>
-                <p>505TH EXPEDITIONARY FORCE — OPERATIONS & EVENTS</p>
+                <h1>VIDEOS</h1>
+                <p>505TH EXPEDITIONARY FORCE — GAMEPLAY & OPERATIONS FOOTAGE</p>
             </div>
-            <div class="media-count">IMAGES: <span id="mediaItemCount">0</span></div>
-            <div class="dyn-gallery-grid" id="dynamicMediaGrid">
+            <div class="media-count">VIDEOS: <span id="mediaItemCount">0</span></div>
+            <div class="dyn-video-grid" id="dynamicMediaGrid">
                 <div class="no-media-msg">LOADING...</div>
             </div>
         </div>
@@ -505,17 +624,28 @@
         const db = getFirestore(app);
         const grid = document.getElementById('dynamicMediaGrid');
         const countEl = document.getElementById('mediaItemCount');
+
+        function getVideoEmbed(url) {
+            if(!url) return null;
+            let m;
+            if((m=url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/))) return `https://www.youtube-nocookie.com/embed/${m[1]}`;
+            if((m=url.match(/youtube\.com\/embed\/([\w-]+)/))) return `https://www.youtube-nocookie.com/embed/${m[1]}`;
+            if((m=url.match(/twitch\.tv\/videos\/(\d+)/))) return `https://player.twitch.tv/?video=${m[1]}&parent=${location.hostname}`;
+            return null;
+        }
+
         try {
             const snap = await getDocs(query(collection(db,'media'),orderBy('uploadedAt','desc')));
             const items = [];
-            snap.forEach(d => { const data = d.data(); if(data.type==='image' && data.enabled!==false) items.push(data); });
+            snap.forEach(d => { const data = d.data(); if(data.type==='video' && data.enabled!==false) items.push(data); });
             countEl.textContent = items.length;
-            if(!items.length) { grid.innerHTML = '<div class="no-media-msg">NO IMAGES AVAILABLE</div>'; }
+            if(!items.length) { grid.innerHTML = '<div class="no-media-msg">NO VIDEOS AVAILABLE</div>'; }
             else {
+                const esc = s => { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; };
                 grid.innerHTML = items.map(m => {
-                    const esc = s => { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; };
-                    return `<div class="dyn-gallery-item">
-                        <div class="dyn-gallery-img"><img src="${m.url}" alt="${esc(m.name||'')}" loading="lazy"></div>
+                    const embedUrl = getVideoEmbed(m.url);
+                    return `<div class="dyn-video-item">
+                        <div class="dyn-video-embed">${embedUrl?`<iframe src="${embedUrl}" frameborder="0" allowfullscreen loading="lazy"></iframe>`:`<video src="${m.url}" controls style="width:100%;height:100%"></video>`}</div>
                         <div class="dyn-gallery-info">
                             <div class="dyn-gallery-name">${esc(m.name||'')}</div>
                             ${m.description?`<div class="dyn-gallery-desc">${esc(m.description)}</div>`:''}
@@ -524,17 +654,7 @@
                     </div>`;
                 }).join('');
             }
-        } catch(e) { grid.innerHTML = '<div class="no-media-msg">ERROR LOADING GALLERY</div>'; console.error(e); }
-    </script>
-    <script>
-        // Lightbox for gallery images
-        document.addEventListener('click', function(e) {
-            const img = e.target.closest('.dyn-gallery-img img');
-            if (img) {
-                document.getElementById('lightboxImg').src = img.src;
-                document.getElementById('lightbox').classList.add('active');
-            }
-        });
+        } catch(e) { grid.innerHTML = '<div class="no-media-msg">ERROR LOADING VIDEOS</div>'; console.error(e); }
     </script>
     
     <!-- Vercel Speed Insights -->
@@ -547,7 +667,7 @@
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg",
@@ -704,6 +824,93 @@
             if (acctOpen) toggleAcct();
         });
 
+        // ── DISPLAY SETTINGS ──────────────────────────────────────────────
+        let settingsOpen = false;
+
+        function applyPrefs(prefs) {
+            const fs = prefs.fontSize || 100;
+            const br = prefs.brightness || 100;
+            document.documentElement.style.fontSize = (fs / 100) + 'rem';
+            document.body.style.filter = 'brightness(' + br + '%)';
+            const fsLbl = document.getElementById('settingsFontLabel');
+            const brLbl = document.getElementById('settingsBrightLabel');
+            const fsSlider = document.getElementById('settingsFontSlider');
+            const brSlider = document.getElementById('settingsBrightSlider');
+            if (fsLbl) fsLbl.textContent = fs + '%';
+            if (brLbl) brLbl.textContent = br + '%';
+            if (fsSlider) fsSlider.value = fs;
+            if (brSlider) brSlider.value = br;
+        }
+
+        function restoreDefaults() {
+            document.documentElement.style.fontSize = '';
+            document.body.style.filter = '';
+        }
+
+        async function loadPrefs(uid) {
+            try {
+                const snap = await getDoc(doc(db, 'users', uid));
+                if (snap.exists()) {
+                    const prefs = snap.data().displayPrefs || {};
+                    if (prefs.fontSize || prefs.brightness) applyPrefs(prefs);
+                }
+            } catch(e) { console.warn('loadPrefs:', e); }
+        }
+
+        async function savePrefs(uid, prefs) {
+            try {
+                await updateDoc(doc(db, 'users', uid), { displayPrefs: prefs });
+            } catch(e) { console.warn('savePrefs:', e); }
+        }
+
+        function toggleSettings() {
+            const panel = document.getElementById('desktopSettingsPanel');
+            const btn   = document.getElementById('rail-settings');
+            if (!panel) return;
+            settingsOpen = !settingsOpen;
+            panel.classList.toggle('open', settingsOpen);
+            if (btn) btn.classList.toggle('active', settingsOpen);
+        }
+
+        // Wire settings button
+        const settingsBtn = document.getElementById('rail-settings');
+        settingsBtn && settingsBtn.addEventListener('click', toggleSettings);
+
+        // Close settings on outside click
+        document.addEventListener('click', e => {
+            if (!settingsOpen) return;
+            const panel = document.getElementById('desktopSettingsPanel');
+            const btn   = document.getElementById('rail-settings');
+            if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+                settingsOpen = false;
+                panel.classList.remove('open');
+                btn && btn.classList.remove('active');
+            }
+        });
+
+        // Slider events — apply live and debounce Firestore save
+        let _prefSaveTimer = null;
+        function onSliderChange() {
+            const fs = parseInt(document.getElementById('settingsFontSlider').value);
+            const br = parseInt(document.getElementById('settingsBrightSlider').value);
+            applyPrefs({ fontSize: fs, brightness: br });
+            clearTimeout(_prefSaveTimer);
+            _prefSaveTimer = setTimeout(() => {
+                if (_settingsUid) savePrefs(_settingsUid, { fontSize: fs, brightness: br });
+            }, 600);
+        }
+        document.getElementById('settingsFontSlider')  && document.getElementById('settingsFontSlider').addEventListener('input', onSliderChange);
+        document.getElementById('settingsBrightSlider') && document.getElementById('settingsBrightSlider').addEventListener('input', onSliderChange);
+
+        // Reset button
+        document.getElementById('settingsResetBtn') && document.getElementById('settingsResetBtn').addEventListener('click', async () => {
+            applyPrefs({ fontSize: 100, brightness: 100 });
+            restoreDefaults();
+            if (_settingsUid) await savePrefs(_settingsUid, { fontSize: 100, brightness: 100 });
+        });
+
+        let _settingsUid = null;
+
         // Auth
         onAuthStateChanged(auth, async user => {
             const loginBtn  = document.getElementById('acctLoginBtn');
@@ -723,6 +930,10 @@
                         userRole.textContent  = (d.role||'').replace(/_/g,' ').toUpperCase();
                         userRole.className    = 'acct-user-role acct-role-' + (d.role||'marine');
                         if (ADMIN_ROLES.includes(d.role)) panelLink.style.display = '';
+                        _settingsUid = user.uid;
+                        const settingsIcon = document.getElementById('rail-settings');
+                        if (settingsIcon) settingsIcon.classList.remove('hidden-guest');
+                        loadPrefs(user.uid);
                         logoutBtn.addEventListener('click', async () => {
                             await signOut(auth);
                             window.location.href = 'home.html';
@@ -732,6 +943,11 @@
             } else {
                 loginBtn.style.display = '';
                 userDisp.classList.remove('visible');
+                _settingsUid = null;
+                const settingsIcon = document.getElementById('rail-settings');
+                if (settingsIcon) settingsIcon.classList.add('hidden-guest');
+                restoreDefaults();
+                applyPrefs({ fontSize: 100, brightness: 100 });
             }
         });
     </script>
