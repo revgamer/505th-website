@@ -1616,7 +1616,7 @@
             if (!eventDoc.exists()) { notify('EVENT NOT FOUND',1); return; }
             const ev = eventDoc.data();
             if (ev.locked) { notify('CANNOT DELETE — EVENT IS LOCKED. LOCKED EVENTS ARE PERMANENT RECORD.',1); return; }
-            if (!confirm('DELETE EVENT: "'+title+'"?\n\nMember monthly rates will be recalculated automatically.')) return;
+            if (!confirm('DELETE EVENT: "'+title+'"?\n\nMember attendance rates will be recalculated automatically.')) return;
             try {
                 const evDoc  = await getDoc(doc(db,'attendance_events',eventId));
                 const evData = evDoc.exists() ? evDoc.data() : null;
@@ -1641,7 +1641,7 @@
                     _attUnsubscribe();
                     attClearForm();
                 }
-                notify('EVENT DELETED — MONTHLY RATES UPDATED');
+                notify('EVENT DELETED — ATTENDANCE RATES UPDATED');
                 logAction('ATT_DELETE', title);
                 await loadAttendancePanel();
             } catch(e) { notify('DELETE FAILED: ' + e.message, 1); }
@@ -1674,10 +1674,10 @@
             const body  = document.getElementById('qaBody');
             modal._action = 'monthly_rate';
             modal._uid    = uid;
-            title.textContent = '⊞ EDIT MONTHLY RATE — ' + name.toUpperCase();
+            title.textContent = '⊞ EDIT ATTENDANCE RATE — ' + name.toUpperCase();
             body.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:14px">
-                    <div style="font-size:10px;letter-spacing:2px;color:#aaa">CORRECT MONTHLY ATTENDANCE RATE IN CASE OF MISTAKE</div>
+                    <div style="font-size:10px;letter-spacing:2px;color:#aaa">CORRECT ATTENDANCE RATE IN CASE OF MISTAKE</div>
                     <div style="display:flex;gap:16px">
                         <div style="display:flex;flex-direction:column;gap:4px;flex:1">
                             <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">OPS ATTENDED</label>
@@ -1739,7 +1739,7 @@
                 const rowBg=isPresent?'rgba(0,217,255,.025)':isExcused?'rgba(255,212,0,.02)':'';
                 return `<div style="display:grid;grid-template-columns:1fr 120px 130px 70px;gap:0;border-bottom:1px solid rgba(255,255,255,.04);padding:10px 14px;align-items:center;background:${rowBg}" onmouseover="this.style.background='rgba(0,217,255,.03)'" onmouseout="this.style.background='${rowBg}'">
                     <div>
-                        <div class="att-name-clickable" data-uid="${u.id}" data-name="${esc(formatMemberName(u)||u.callsign)}" data-ops-att="${opsAtt}" data-ops-elig="${opsElig}" style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:#e0e0e0;cursor:pointer;text-decoration:underline dotted rgba(0,217,255,.3)" title="Click to correct monthly rate">${esc(formatMemberName(u)||u.callsign)}</div>
+                        <div class="att-name-clickable" data-uid="${u.id}" data-name="${esc(formatMemberName(u)||u.callsign)}" data-ops-att="${opsAtt}" data-ops-elig="${opsElig}" style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:#e0e0e0;cursor:pointer;text-decoration:underline dotted rgba(0,217,255,.3)" title="Click to correct attendance rate">${esc(formatMemberName(u)||u.callsign)}</div>
                         <div style="font-size:9px;color:#666;letter-spacing:1px;margin-top:1px">${esc(u.rank||'—')}</div>
                     </div>
                     <div style="text-align:center">
@@ -2583,7 +2583,7 @@
                             </div>
                         </div>
                         <div style="border-top:1px solid rgba(0,217,255,.1);padding-top:10px">
-                            <div style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.6);margin-bottom:8px">MONTHLY RATE CORRECTION</div>
+                            <div style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.6);margin-bottom:8px">ATTENDANCE RATE CORRECTION</div>
                             <div style="display:flex;gap:16px">
                                 <div style="display:flex;flex-direction:column;gap:4px;flex:1">
                                     <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">OPS ATTENDED</label>
@@ -2713,7 +2713,7 @@
                     await updateDoc(doc(db,'users',uid), {opsAttended:opsAtt, opsEligible:opsElig, updatedAt:new Date().toISOString()});
                     const u = allUsers.find(x=>x.id===uid);
                     if(u){ u.opsAttended=opsAtt; u.opsEligible=opsElig; }
-                    notify(`MONTHLY RATE UPDATED — ${memberName}: ${opsAtt}/${opsElig}`);
+                    notify(`ATTENDANCE RATE UPDATED — ${memberName}: ${opsAtt}/${opsElig}`);
                     renderAttRoster();
                 }
 
@@ -4115,7 +4115,7 @@
 
                     <!-- Member table -->
                     <div style="background:rgba(0,217,255,.04);border:1px solid rgba(0,217,255,.2);border-bottom:2px solid rgba(0,217,255,.35);display:grid;grid-template-columns:1fr 120px 130px 70px;padding:8px 14px;font-size:9px;letter-spacing:2px;color:rgba(0,217,255,.7);margin-bottom:1px">
-                        <div>NAME</div><div style="text-align:center">PLATOON</div><div style="text-align:center">MONTHLY RATE</div><div style="text-align:center">PRESENT</div>
+                        <div>NAME</div><div style="text-align:center">PLATOON</div><div style="text-align:center">ATTENDANCE RATE</div><div style="text-align:center">PRESENT</div>
                     </div>
                     <div id="attRosterList"><div class="empty-state">LOADING...</div></div>
 
