@@ -270,6 +270,21 @@ Access via `/admin.html` → `/boot.html` after login. Role-gated — admin role
 - Bell icon on profile page with unread badge count
 - Mark as read / clear all
 
+### Mobile Push Notifications
+- Web Push via **Firebase Cloud Messaging (FCM)**
+- Member grants notification permission on first visit — subscription saved to `users/{uid}/pushSubscription` in Firestore
+- **Firebase Cloud Functions** trigger on Firestore document changes and send push via FCM
+- Works on Android and desktop Chrome natively; iOS requires site added to home screen (PWA)
+- Planned notification triggers:
+  - ⬆ Promotion — rank updated
+  - ⚠ Warning issued
+  - 🏅 Medal/commendation awarded
+  - 📋 New AAR published
+  - ⏰ Op reminder — "Op starts in 1 hour"
+  - 🔴 AT-RISK flag — inactive 3+ months
+  - 💬 DM received (when chat is built)
+- Requires Firebase Blaze plan (pay-as-you-go) for Cloud Functions
+
 ### Cortana Bot (Discord)
 - Full Discord.js bot integration
 - Event signup management

@@ -11,7 +11,7 @@
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, orderBy, addDoc, limit, onSnapshot, where } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, orderBy, addDoc, limit, onSnapshot, where, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
         const firebaseConfig = { apiKey:"AIzaSyCYWrWE8-xBJsvh228xzcg5VOD7dIn48fg", authDomain:"th-website-91533.firebaseapp.com", projectId:"th-website-91533", storageBucket:"th-website-91533.firebasestorage.app", messagingSenderId:"1046139150142", appId:"1:1046139150142:web:01f409ae4a38c4f79d966f" };
         const CLOUD_NAME='dwugtsdsx', UPLOAD_PRESET='505th_uploads', CLOUDINARY_API_KEY='143672934239445';
         const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -193,6 +193,420 @@
             else {
                 const dash = document.getElementById('panel-dashboard');
                 if (dash && !dash.classList.contains('hidden')) dashPresJoin();
+            }
+        });
+
+
+        // ═══════════════════════════════════════════════════════════════
+        // LIVE CHAT SYSTEM
+        // ═══════════════════════════════════════════════════════════════
+        let _msgOpen = false;
+        let _msgActiveConvId = null;
+        let _msgConvUnsub = null;
+        let _msgMsgUnsub = null;
+        let _msgAllUsers = [];
+        let _msgSelectedUids = [];
+        let _msgConversations = [];
+
+        const ADMIN_ROLES_CHAT = ['commander','developer','staff_nco','nco','recruiter'];
+
+        // Toggle panel open/close
+        window.toggleMsgPanel = function() {
+            const panel = document.getElementById('msgPanel');
+            _msgOpen = !_msgOpen;
+            panel.style.display = _msgOpen ? 'flex' : 'none';
+            if (_msgOpen) { msgLoadConversations(); clearMsgBadge(); }
+            else { if (_msgConvUnsub) { _msgConvUnsub(); _msgConvUnsub = null; } }
+        };
+
+        function clearMsgBadge() {
+            const badge = document.getElementById('msgUnreadBadge');
+            if (badge) badge.style.display = 'none';
+        }
+
+        function updateMsgBadge(count) {
+            const badge = document.getElementById('msgUnreadBadge');
+            if (!badge) return;
+            if (count > 0) { badge.textContent = count > 9 ? '9+' : count; badge.style.display = 'block'; }
+            else { badge.style.display = 'none'; }
+        }
+
+        // ── Conversation list ──────────────────────────────────────────
+        function msgLoadConversations() {
+            if (_msgConvUnsub) _msgConvUnsub();
+            if (!currentUser) return;
+            _msgConvUnsub = onSnapshot(
+                query(collection(db, 'conversations'), where('participants', 'array-contains', currentUser.uid), orderBy('lastMessageAt', 'desc')),
+                snap => {
+                    _msgConversations = [];
+                    snap.forEach(d => _msgConversations.push({ id: d.id, ...d.data() }));
+                    renderConvList();
+                    // Update unread badge
+                    const totalUnread = _msgConversations.reduce((sum, c) => sum + (c.unreadCounts?.[currentUser.uid] || 0), 0);
+                    if (!_msgOpen) updateMsgBadge(totalUnread);
+                }
+            );
+        }
+
+        function renderConvList() {
+            const el = document.getElementById('msgConvItems');
+            if (!el) return;
+            if (!_msgConversations.length) {
+                el.innerHTML = '<div style="padding:20px;text-align:center;color:#555;font-size:10px;letter-spacing:2px">NO CONVERSATIONS YET<br><br>CLICK + NEW TO START</div>';
+                return;
+            }
+            el.innerHTML = _msgConversations.map(c => {
+                const unread = c.unreadCounts?.[currentUser.uid] || 0;
+                const name = msgConvName(c);
+                const last = c.lastMessage ? c.lastMessage.substring(0, 40) + (c.lastMessage.length > 40 ? '…' : '') : 'No messages yet';
+                const time = c.lastMessageAt ? new Date(c.lastMessageAt.toDate ? c.lastMessageAt.toDate() : c.lastMessageAt).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '';
+                return `<div onclick="msgOpenConv('${c.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;transition:background .15s;${c.id===_msgActiveConvId?'background:rgba(0,217,255,.06);':''}" onmouseover="this.style.background='rgba(0,217,255,.04)'" onmouseout="this.style.background='${c.id===_msgActiveConvId?'rgba(0,217,255,.06)':'transparent'}'">
+                    <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,217,255,.12);border:1px solid rgba(0,217,255,.25);display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0">${name.charAt(0).toUpperCase()}</div>
+                    <div style="flex:1;min-width:0">
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:${unread?'#e0e0e0':'#aaa'};letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${esc(name)}</div>
+                            <div style="font-size:8px;color:#555;flex-shrink:0;margin-left:4px">${time}</div>
+                        </div>
+                        <div style="font-size:9px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px">${esc(last)}</div>
+                    </div>
+                    ${unread ? `<div style="background:#ef4444;color:#fff;font-size:8px;font-weight:700;padding:2px 5px;border-radius:50%;min-width:16px;text-align:center;flex-shrink:0">${unread}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function msgConvName(c) {
+            if (c.name) return c.name;
+            // 1-on-1: show the other person's name
+            if (c.participants && c.participants.length === 2) {
+                const otherUid = c.participants.find(u => u !== currentUser.uid);
+                const other = allUsers.find(u => u.id === otherUid);
+                return other ? (formatMemberName(other) || other.callsign || 'Unknown') : 'Unknown';
+            }
+            return 'Group Chat';
+        }
+
+        // ── Open conversation ──────────────────────────────────────────
+        window.msgOpenConv = async function(convId) {
+            _msgActiveConvId = convId;
+            const conv = _msgConversations.find(c => c.id === convId);
+            if (!conv) return;
+
+            // Switch views
+            document.getElementById('msgConvList').style.display = 'none';
+            const view = document.getElementById('msgConvView');
+            view.style.display = 'flex';
+            document.getElementById('msgConvTitle').textContent = msgConvName(conv);
+
+            // Show participants
+            if (conv.participants) {
+                const names = conv.participants
+                    .filter(u => u !== currentUser.uid)
+                    .map(uid => { const u = allUsers.find(x => x.id === uid); return u ? (formatMemberName(u)||u.callsign) : 'Unknown'; });
+                document.getElementById('msgConvMembers').textContent = names.join(', ');
+            }
+
+            // Mark as read
+            if (conv.unreadCounts?.[currentUser.uid] > 0) {
+                try {
+                    await updateDoc(doc(db, 'conversations', convId), { [`unreadCounts.${currentUser.uid}`]: 0 });
+                } catch(e) {}
+            }
+
+            // Subscribe to messages
+            if (_msgMsgUnsub) { _msgMsgUnsub(); _msgMsgUnsub = null; }
+            _msgMsgUnsub = onSnapshot(
+                query(collection(db, 'conversations', convId, 'messages'), orderBy('timestamp', 'asc'), limit(100)),
+                snap => renderMessages(snap, conv)
+            );
+
+            renderConvList();
+            document.getElementById('msgInput')?.focus();
+        };
+
+        function renderMessages(snap, conv) {
+            const el = document.getElementById('msgMessages');
+            if (!el) return;
+            const msgs = [];
+            snap.forEach(d => msgs.push({ id: d.id, ...d.data() }));
+
+            if (!msgs.length) {
+                el.innerHTML = '<div style="text-align:center;color:#555;font-size:9px;letter-spacing:2px;margin-top:20px">NO MESSAGES YET — SAY SOMETHING</div>';
+                return;
+            }
+
+            el.innerHTML = msgs.map((m, i) => {
+                const isMine = m.senderUid === currentUser.uid;
+                const sender = allUsers.find(u => u.id === m.senderUid);
+                const senderName = sender ? (formatMemberName(sender)||sender.callsign) : 'Unknown';
+                const time = m.timestamp ? new Date(m.timestamp.toDate ? m.timestamp.toDate() : m.timestamp).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '';
+                const isLast = i === msgs.length - 1;
+                const readBy = m.readBy || [];
+                const allRead = conv.participants?.every(uid => uid === m.senderUid || readBy.includes(uid));
+                const seenLabel = isMine && isLast ? (allRead ? '<span style="color:var(--accent);font-size:8px">✓✓ SEEN</span>' : '<span style="color:#555;font-size:8px">✓ SENT</span>') : '';
+
+                return `<div style="display:flex;flex-direction:column;align-items:${isMine?'flex-end':'flex-start'};gap:2px">
+                    ${!isMine ? `<div style="font-size:8px;letter-spacing:1px;color:rgba(0,217,255,.5);padding:0 4px">${esc(senderName)}</div>` : ''}
+                    <div style="max-width:80%;padding:8px 12px;background:${isMine?'rgba(0,217,255,.12)':'rgba(255,255,255,.06)'};border:1px solid ${isMine?'rgba(0,217,255,.25)':'rgba(255,255,255,.08)'};border-radius:${isMine?'8px 8px 0 8px':'8px 8px 8px 0'}">
+                        <div style="font-size:11px;color:#e0e0e0;line-height:1.5;word-break:break-word">${esc(m.text||'')}</div>
+                    </div>
+                    <div style="font-size:8px;color:#444;padding:0 4px;display:flex;gap:6px;align-items:center">${time} ${seenLabel}</div>
+                </div>`;
+            }).join('');
+
+            // Mark messages as read
+            msgs.forEach(async m => {
+                if (m.senderUid !== currentUser.uid && !(m.readBy||[]).includes(currentUser.uid)) {
+                    try {
+                        await updateDoc(doc(db, 'conversations', _msgActiveConvId, 'messages', m.id), {
+                            readBy: [...(m.readBy||[]), currentUser.uid]
+                        });
+                    } catch(e) {}
+                }
+            });
+
+            // Scroll to bottom
+            el.scrollTop = el.scrollHeight;
+        }
+
+        // ── Send message ───────────────────────────────────────────────
+        window.msgSend = async function() {
+            const input = document.getElementById('msgInput');
+            const text = input?.value.trim();
+            if (!text || !_msgActiveConvId || !currentUser) return;
+            input.value = '';
+            msgAutoResize(input);
+            const now = serverTimestamp();
+            try {
+                await addDoc(collection(db, 'conversations', _msgActiveConvId, 'messages'), {
+                    senderUid: currentUser.uid,
+                    text,
+                    timestamp: now,
+                    readBy: [currentUser.uid]
+                });
+                // Update conversation last message + unread counts for others
+                const conv = _msgConversations.find(c => c.id === _msgActiveConvId);
+                const unreadUpdate = {};
+                (conv?.participants || []).forEach(uid => {
+                    if (uid !== currentUser.uid) unreadUpdate[`unreadCounts.${uid}`] = increment(1);
+                });
+                await updateDoc(doc(db, 'conversations', _msgActiveConvId), {
+                    lastMessage: text,
+                    lastMessageAt: now,
+                    ...unreadUpdate
+                });
+                // Write notification to each recipient
+                const conv2 = _msgConversations.find(c => c.id === _msgActiveConvId);
+                (conv2?.participants || []).forEach(async uid => {
+                    if (uid === currentUser.uid) return;
+                    try {
+                        const senderName = formatMemberName(currentUserData) || currentUserData?.callsign || 'Someone';
+                        await addDoc(collection(db, 'notifications', uid, 'items'), {
+                            type: 'message', read: false,
+                            title: senderName + ' sent you a message',
+                            body: text.substring(0, 60) + (text.length > 60 ? '…' : ''),
+                            fromUid: currentUser.uid,
+                            convId: _msgActiveConvId,
+                            createdAt: now
+                        });
+                    } catch(e) {}
+                });
+            } catch(e) { console.warn('msgSend:', e); }
+        };
+
+        window.msgHandleKey = function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); msgSend(); }
+        };
+
+        window.msgAutoResize = function(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+        };
+
+        // ── Back to list ───────────────────────────────────────────────
+        window.msgBackToList = function() {
+            _msgActiveConvId = null;
+            if (_msgMsgUnsub) { _msgMsgUnsub(); _msgMsgUnsub = null; }
+            document.getElementById('msgConvView').style.display = 'none';
+            document.getElementById('msgConvList').style.display = 'flex';
+            renderConvList();
+        };
+
+        // ── New conversation ───────────────────────────────────────────
+        window.msgStartNew = function() {
+            _msgSelectedUids = [];
+            document.getElementById('msgNewModal').style.display = 'flex';
+            document.getElementById('msgMemberSearch').value = '';
+            document.getElementById('msgGroupName').value = '';
+            msgRenderMemberList('');
+        };
+
+        window.msgCloseNew = function() {
+            document.getElementById('msgNewModal').style.display = 'none';
+            _msgSelectedUids = [];
+        };
+
+        window.msgFilterMembers = function() {
+            msgRenderMemberList(document.getElementById('msgMemberSearch').value);
+        };
+
+        function msgRenderMemberList(search) {
+            const el = document.getElementById('msgMemberList');
+            const members = allUsers.filter(u =>
+                u.id !== currentUser.uid &&
+                u.status !== 'pending' && u.status !== 'denied' &&
+                (formatMemberName(u)||u.callsign||'').toLowerCase().includes(search.toLowerCase())
+            );
+            el.innerHTML = members.map(u => {
+                const name = formatMemberName(u) || u.callsign;
+                const selected = _msgSelectedUids.includes(u.id);
+                return `<div onclick="msgToggleMember('${u.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;background:${selected?'rgba(0,217,255,.08)':'transparent'};border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s">
+                    <div style="width:16px;height:16px;border:1px solid ${selected?'var(--accent)':'rgba(255,255,255,.2)'};background:${selected?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        ${selected?'<span style="color:#000;font-size:10px;font-weight:700">✓</span>':''}
+                    </div>
+                    <div>
+                        <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:#e0e0e0">${esc(name)}</div>
+                        <div style="font-size:8px;letter-spacing:1px;color:rgba(0,217,255,.5)">${(u.role||'').replace(/_/g,' ').toUpperCase()}</div>
+                    </div>
+                </div>`;
+            }).join('') || '<div style="padding:16px;text-align:center;color:#555;font-size:9px;letter-spacing:1px">NO MEMBERS FOUND</div>';
+        }
+
+        window.msgToggleMember = function(uid) {
+            if (_msgSelectedUids.includes(uid)) {
+                _msgSelectedUids = _msgSelectedUids.filter(u => u !== uid);
+            } else {
+                _msgSelectedUids.push(uid);
+            }
+            msgRenderMemberList(document.getElementById('msgMemberSearch').value);
+            // Show selected chips
+            const el = document.getElementById('msgSelectedList');
+            el.innerHTML = _msgSelectedUids.map(uid => {
+                const u = allUsers.find(x => x.id === uid);
+                const name = u ? (formatMemberName(u)||u.callsign) : uid;
+                return `<span style="background:rgba(0,217,255,.1);border:1px solid rgba(0,217,255,.3);color:var(--accent);font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;padding:2px 8px;letter-spacing:1px">${esc(name)}</span>`;
+            }).join('');
+        };
+
+        window.msgCreateConv = async function() {
+            if (!_msgSelectedUids.length) { notify('SELECT AT LEAST ONE MEMBER', true); return; }
+            const participants = [currentUser.uid, ..._msgSelectedUids];
+            const groupName = document.getElementById('msgGroupName').value.trim();
+            const is1on1 = participants.length === 2;
+
+            // Check if 1-on-1 already exists
+            if (is1on1) {
+                const existing = _msgConversations.find(c =>
+                    c.participants?.length === 2 &&
+                    c.participants.includes(_msgSelectedUids[0]) &&
+                    c.participants.includes(currentUser.uid)
+                );
+                if (existing) {
+                    msgCloseNew();
+                    msgOpenConv(existing.id);
+                    return;
+                }
+            }
+
+            try {
+                const unreadCounts = {};
+                participants.forEach(uid => unreadCounts[uid] = 0);
+                const ref = await addDoc(collection(db, 'conversations'), {
+                    participants,
+                    name: is1on1 ? null : (groupName || 'Group Chat'),
+                    lastMessage: null,
+                    lastMessageAt: serverTimestamp(),
+                    unreadCounts,
+                    createdBy: currentUser.uid,
+                    createdAt: serverTimestamp()
+                });
+                msgCloseNew();
+                // Wait a tick for onSnapshot to pick it up
+                setTimeout(() => msgOpenConv(ref.id), 300);
+            } catch(e) { console.warn('msgCreateConv:', e); notify('ERROR CREATING CONVERSATION', true); }
+        };
+
+        // Start listening for unread counts on load (for badge)
+        function msgInitUnreadListener() {
+            if (!currentUser) return;
+            onSnapshot(
+                query(collection(db, 'conversations'), where('participants', 'array-contains', currentUser.uid)),
+                snap => {
+                    if (_msgOpen) return; // panel open, badge not needed
+                    let total = 0;
+                    snap.forEach(d => { total += d.data().unreadCounts?.[currentUser.uid] || 0; });
+                    updateMsgBadge(total);
+                }
+            );
+        }
+
+
+        // ═══════════════════════════════════════════════════
+        // ADMIN ALERTS / NOTIFICATIONS
+        // ═══════════════════════════════════════════════════
+        let _adminNotifUnsub = null, _adminNotifOpen = false;
+
+        function initAdminNotifications(uid) {
+            if (_adminNotifUnsub) _adminNotifUnsub();
+            _adminNotifUnsub = onSnapshot(
+                query(collection(db, 'notifications', uid, 'items'), orderBy('createdAt', 'desc'), limit(30)),
+                snap => {
+                    const notifs = []; snap.forEach(d => notifs.push({id:d.id,...d.data()}));
+                    renderAdminNotifs(notifs);
+                    const unread = notifs.filter(n=>!n.read).length;
+                    const badge = document.getElementById('adminNotifBadge');
+                    if (badge) {
+                        if (unread>0) { badge.textContent=unread>9?'9+':unread; badge.style.display='flex'; }
+                        else { badge.style.display='none'; }
+                    }
+                }
+            );
+        }
+
+        function renderAdminNotifs(notifs) {
+            const list = document.getElementById('adminNotifList');
+            if (!list) return;
+            if (!notifs.length) {
+                list.innerHTML = '<div style="padding:20px;text-align:center;color:#555;font-size:9px;letter-spacing:2px">NO ALERTS</div>';
+                return;
+            }
+            list.innerHTML = notifs.map(n => {
+                const isUnread = !n.read;
+                const time = n.createdAt ? new Date(n.createdAt.toDate?n.createdAt.toDate():n.createdAt).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+                const icon = n.type==='message'?'&#9993;':n.type==='promotion'?'&#9650;':n.type==='warning'?'&#9888;':n.type==='transfer'?'&#8644;':n.type==='medal'?'&#9733;':'&#9679;';
+                return `<div onclick="adminNotifClick('${n.id}')" style="display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;background:${isUnread?'rgba(0,217,255,.04)':'transparent'};transition:background .15s" onmouseover="this.style.background='rgba(0,217,255,.06)'" onmouseout="this.style.background='${isUnread?'rgba(0,217,255,.04)':'transparent'}'">
+                    <div style="width:28px;height:28px;border-radius:50%;background:rgba(0,217,255,.1);border:1px solid rgba(0,217,255,.2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;color:var(--accent)">${icon}</div>
+                    <div style="flex:1;min-width:0">
+                        <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:${isUnread?'#e0e0e0':'#888'}">${esc(n.title||'Alert')}</div>
+                        <div style="font-size:9px;color:#666;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(n.body||'')}</div>
+                        <div style="font-size:8px;color:#444;margin-top:3px;letter-spacing:1px">${time}</div>
+                    </div>
+                    ${isUnread?'<div style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:4px"></div>':''}
+                </div>`;
+            }).join('');
+        }
+
+        window.adminNotifClick = async function(id) {
+            try { await updateDoc(doc(db,'notifications',currentUser.uid,'items',id),{read:true}); } catch(e) {}
+        };
+
+        window.adminMarkAllRead = async function() {
+            const snap = await getDocs(query(collection(db,'notifications',currentUser.uid,'items'), where('read','==',false)));
+            snap.forEach(async d => { try { await updateDoc(d.ref,{read:true}); } catch(e) {} });
+        };
+
+        window.toggleAdminNotifPanel = function() {
+            const panel = document.getElementById('adminNotifPanel');
+            _adminNotifOpen = !_adminNotifOpen;
+            panel.style.display = _adminNotifOpen ? 'flex' : 'none';
+        };
+
+        document.addEventListener('click', e => {
+            if (!_adminNotifOpen) return;
+            const panel = document.getElementById('adminNotifPanel');
+            const btn   = document.getElementById('adminNotifBtn');
+            if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
+                _adminNotifOpen = false;
+                panel.style.display = 'none';
             }
         });
 
@@ -1078,10 +1492,20 @@
                 const attWidget=document.getElementById('dashAttendanceHealth');
                 if(attWidget && P().dash_stats){
                     try {
-                        const evSnap=await getDocs(query(collection(db,'attendance_events'),orderBy('date','desc'),limit(10)));
-                        const events=[]; evSnap.forEach(d=>events.push({id:d.id,...d.data()}));
-                        const thisMonth=new Date().toISOString().slice(0,7);
-                        const monthEvents=events.filter(e=>(e.date||'').startsWith(thisMonth));
+                        // Use local date (not UTC) to avoid timezone mismatch
+                        const _now=new Date();
+                        const _y=_now.getFullYear();
+                        const _m=String(_now.getMonth()+1).padStart(2,'0');
+                        const thisMonth=_y+'-'+_m;
+                        const monthStart=thisMonth+'-01';
+                        const _nextM=new Date(_y,_now.getMonth()+1,1);
+                        const monthEnd=_nextM.getFullYear()+'-'+String(_nextM.getMonth()+1).padStart(2,'0')+'-01';
+                        // Query this month's events directly — no limit, uses local month boundaries
+                        const evSnap=await getDocs(query(collection(db,'attendance_events'),where('date','>=',monthStart),where('date','<',monthEnd)));
+                        const monthEvents=[]; evSnap.forEach(d=>monthEvents.push({id:d.id,...d.data()}));
+                        // All-time locked count
+                        const lockedSnap=await getDocs(query(collection(db,'attendance_events'),where('locked','==',true)));
+                        const allLockedOps=lockedSnap.size;
                         const fullAtt=roster.filter(u=>u.platoon!=='Reserves'&&u.platoon!=='Awaiting BCT'&&(u.attendance||0)>=3);
                         const threeMonthsAgo=new Date(); threeMonthsAgo.setMonth(threeMonthsAgo.getMonth()-3); const threeMonthsAgoStr=threeMonthsAgo.toISOString().slice(0,10);
                         const atRisk=roster.filter(u=>{
@@ -1104,6 +1528,7 @@
                             <div title="Unit-wide all-time rate — total ops attended ÷ total ops eligible, excused and reserves excluded." style="background:rgba(0,0,0,.4);border:1px solid rgba(${overallRate2>=75?'127,255,127':overallRate2>=50?'255,215,0':'255,68,68'},.15);padding:10px 14px;flex:1;min-width:70px;text-align:center;cursor:help"><div style="font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700;color:${overallColor2}">${totalElig2>0?overallRate2+'%':'—'}</div><div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">OVERALL ATT %</div></div>
                             <div title="Members whose all-time attendance rate is under 50%. May require command attention." style="background:rgba(0,0,0,.4);border:1px solid rgba(${below50>0?'255,68,68':'0,217,255'},.15);padding:10px 14px;flex:1;min-width:70px;text-align:center;cursor:help"><div style="font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700;color:${below50>0?'#FF4444':'#7FFF7F'}">${below50}</div><div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">BELOW 50%</div></div>
                             <div title="Members with 100% all-time attendance — never missed an eligible op." style="background:rgba(0,0,0,.4);border:1px solid rgba(127,255,127,.15);padding:10px 14px;flex:1;min-width:70px;text-align:center;cursor:help"><div style="font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700;color:#7FFF7F">${perfect}</div><div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">PERFECT ATT</div></div>
+                            <div title="Total number of locked operations ever recorded in the system." style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);padding:10px 14px;flex:1;min-width:70px;text-align:center;cursor:help"><div style="font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700;color:var(--accent)">${allLockedOps}</div><div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">TOTAL OPS</div></div>
                         </div>
                         ${atRisk.length?`<div style="font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:2px;color:#FF4444;margin-bottom:6px">⚠ AT-RISK MEMBERS (${atRisk.length})</div><div style="max-height:200px;overflow-y:auto;margin-bottom:10px;border:1px solid rgba(255,68,68,.15);">${atRisk.map(u=>{
                             const lastD=u.lastAttendedDate?new Date(u.lastAttendedDate):null;
@@ -1466,7 +1891,7 @@
             const c = document.getElementById('attEventList');
             if (c) c.innerHTML = '<div class="empty-state">LOADING...</div>';
             if (!allUsers.length) await loadAllUsers();
-                loadAttGlobalStats();
+            loadAttGlobalStats();
             try {
                 const snap = await getDocs(query(collection(db,'attendance_events'), orderBy('date','desc'), limit(20)));
                 const events = []; snap.forEach(d => events.push({id:d.id,...d.data()}));
@@ -1832,6 +2257,24 @@
             });
             renderAttRoster();
         };
+
+        async function loadAttGlobalStats() {
+            try {
+                const snap = await getDocs(query(collection(db, 'attendance_events'), where('locked', '==', true)));
+                const totalOps = snap.size;
+                const totalEl = document.getElementById('attStatTotalOps');
+                if (totalEl) totalEl.textContent = totalOps;
+
+                const activeUsers = allUsers.filter(u => u.status !== 'pending' && u.status !== 'denied' && u.platoon !== 'Reserves');
+                let totalAtt = 0, totalElig = 0;
+                activeUsers.forEach(u => { totalAtt += (u.opsAttended||0); totalElig += (u.opsEligible||0); });
+                const overallRate = totalElig > 0 ? Math.round((totalAtt / totalElig) * 100) : 0;
+                const overallEl  = document.getElementById('attStatOverall');
+                const overallBar = document.getElementById('attStatOverallBar');
+                if (overallEl) { overallEl.textContent = overallRate + '%'; overallEl.style.color = overallRate>=75?'#7FFF7F':overallRate>=50?'#FFD700':'#FF4444'; }
+                if (overallBar) { overallBar.style.width = overallRate + '%'; overallBar.style.background = overallRate>=75?'#7FFF7F':overallRate>=50?'#FFD700':'#FF4444'; }
+            } catch(e) { console.warn('loadAttGlobalStats:', e); }
+        }
 
         function renderAttRoster() {
             const c = document.getElementById('attRosterList'); if (!c) return;
@@ -2339,6 +2782,7 @@
                 logAction('RANK_CHANGE',uid+' → '+rank);
                 if(!updateData.graduation) notify('RANK UPDATED: '+(rank||'CLEARED'));
                 if(u){ u.rank=rank; if(updateData.promotionHistory) u.promotionHistory=updateData.promotionHistory; if(updateData.graduation) u.graduation=updateData.graduation; }
+                if(updateData.promotionHistory) { try { await addDoc(collection(db,'notifications',uid,'items'),{type:'promotion',read:false,title:'You have been promoted!',body:'New rank: '+rank,createdAt:serverTimestamp()}); } catch(_e){} }
             } catch(e){notify('ERROR',1);}
         };
         function updateEnlistmentBadge() {
@@ -2500,6 +2944,11 @@
                 if(type==='promo')   fireWebhook('promote',  {name:memberName, fromRank:entry.fromRank||'—', toRank:entry.toRank||'—', note:entry.note||'—', by});
                 if(type==='warn')    fireWebhook('warning',  {name:memberName, severity:entry.severity||'—', reason:entry.note||'—', by});
                 if(type==='platoon') fireWebhook('platoon',  {name:memberName, from:entry.from||'—', to:entry.to||'—', note:entry.note||'—', by});
+                // Notifications
+                if(type==='warn')    try{await addDoc(collection(db,'notifications',uid,'items'),{type:'warning',read:false,title:'A warning has been issued on your record',body:(entry.severity||'Minor').toUpperCase()+(entry.note?' — '+entry.note.substring(0,60):''),createdAt:serverTimestamp()});}catch(_e){}
+                if(type==='promo')   try{await addDoc(collection(db,'notifications',uid,'items'),{type:'promotion',read:false,title:'Your promotion record has been updated',body:(entry.fromRank||'—')+' → '+(entry.toRank||'—'),createdAt:serverTimestamp()});}catch(_e){}
+                if(type==='platoon') try{await addDoc(collection(db,'notifications',uid,'items'),{type:'transfer',read:false,title:'You have been transferred to a new platoon',body:(entry.from||'—')+' → '+(entry.to||'—'),createdAt:serverTimestamp()});}catch(_e){}
+                if(type==='commend')  try{await addDoc(collection(db,'notifications',uid,'items'),{type:'medal',read:false,title:'You have received a commendation',body:entry.title+(entry.note?' — '+entry.note.substring(0,50):''),createdAt:serverTimestamp()});}catch(_e){}
                 if(type==='platoon'){document.getElementById('histPlatoonFrom').value='';document.getElementById('histPlatoonTo').value='';document.getElementById('histPlatoonNote').value='';}
                 else if(type==='promo'){document.getElementById('histPromoFrom').value='';document.getElementById('histPromoTo').value='';document.getElementById('histPromoNote').value='';}
                 else if(type==='warn'){document.getElementById('histWarnNote').value='';}
@@ -2892,6 +3341,7 @@
                     u.promotionHistory = updateData.promotionHistory;
                     fireWebhook('promote', {name:memberName, fromRank:u.rank||'—', toRank:newRank, note:entry.note, by});
                     notify('PROMOTED: ' + memberName);
+                    try{await addDoc(collection(db,'notifications',uid,'items'),{type:'promotion',read:false,title:'You have been promoted!',body:'New rank: '+newRank,createdAt:serverTimestamp()});}catch(_e){}
                 }
 
                 else if(action === 'transfer') {
@@ -2904,6 +3354,7 @@
                     u.platoon = toPlatoon; u.joinedPlatoon = today; u.platoonHistory = updateData.platoonHistory;
                     fireWebhook('platoon', {name:memberName, from:entry.from, to:toPlatoon, note:entry.note, by});
                     notify('TRANSFERRED: ' + memberName + ' → ' + toPlatoon);
+                    try{await addDoc(collection(db,'notifications',uid,'items'),{type:'transfer',read:false,title:'You have been transferred to a new platoon',body:(entry.from||'—')+' → '+toPlatoon,createdAt:serverTimestamp()});}catch(_e){}
                 }
 
                 else if(action === 'warn') {
@@ -3484,6 +3935,8 @@
 
             // Start real-time registration webhook listener
             startRegistrationListener();
+            initAdminNotifications(user.uid);
+            msgInitUnreadListener();
 
             // Load Discord link and default panel
             loadDiscordLink();
@@ -4116,7 +4569,7 @@
     </div>
 
     <div id="adminApp" class="hidden">
-        <div class="top-bar"><div class="top-bar-left"><button class="hamburger" onclick="toggleSidebar()">&#9776;</button><img src="images/logo.png" alt="505th"><span class="top-bar-title">COMMAND TERMINAL_</span></div><div class="top-bar-right"><div class="user-identity"><div id="topbarName">---</div><div id="topbarRole">---</div></div><a href="profile.html" class="top-btn">&#9823; PROFILE</a><a href="home.html" class="top-btn">&#8962; HOME</a><button class="top-btn logout-btn" onclick="handleLogout()">&#9211; LOGOUT</button></div></div>
+        <div class="top-bar"><div class="top-bar-left"><button class="hamburger" onclick="toggleSidebar()">&#9776;</button><img src="images/logo.png" alt="505th"><span class="top-bar-title">COMMAND TERMINAL_</span></div><div class="top-bar-right"><div class="user-identity"><div id="topbarName">---</div><div id="topbarRole">---</div></div><a href="profile.html" class="top-btn">&#9823; PROFILE</a><button class="top-btn" id="adminNotifBtn" onclick="toggleAdminNotifPanel()" style="position:relative">&#9776; ALERTS<span id="adminNotifBadge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:#fff;font-size:8px;font-weight:700;width:16px;height:16px;border-radius:50%;display:none;align-items:center;justify-content:center;line-height:1">0</span></button><button class="top-btn" id="msgToggleBtn" onclick="toggleMsgPanel()" style="position:relative">&#9993; MESSAGES<span id="msgUnreadBadge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:50%;min-width:14px;text-align:center;line-height:14px">0</span></button><a href="home.html" class="top-btn">&#8962; HOME</a><button class="top-btn logout-btn" onclick="handleLogout()">&#9211; LOGOUT</button></div></div>
         <div class="app-layout">
             <div class="sidebar" id="sidebar">
                 <div class="dash-link" onclick="showPanel('panel-dashboard')"><span class="nav-icon">&#9632;</span> DASHBOARD</div>
@@ -4776,5 +5229,75 @@
     </script>
     <script defer src="/_vercel/speed-insights/script.js"></script>
     <script type="module" src="js/speed-insights.js"></script>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         LIVE CHAT PANEL
+    ═══════════════════════════════════════════════════════════════ -->
+    <div id="msgPanel" style="display:none;position:fixed;top:52px;right:0;width:340px;height:calc(100vh - 52px);background:rgba(8,10,14,0.99);border-left:1px solid rgba(0,217,255,0.25);z-index:400;display:none;flex-direction:column;font-family:'Share Tech Mono',monospace;">
+
+        <!-- Panel header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(0,217,255,0.15);flex-shrink:0">
+            <div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;color:var(--accent)">&#9993; COMMS</div>
+            <div style="display:flex;gap:8px;align-items:center">
+                <button id="msgNewBtn" onclick="msgStartNew()" style="background:rgba(0,217,255,.1);border:1px solid rgba(0,217,255,.3);color:var(--accent);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 10px;cursor:pointer" title="New conversation">+ NEW</button>
+                <button onclick="toggleMsgPanel()" style="background:none;border:none;color:#666;font-size:16px;cursor:pointer;padding:0 4px;line-height:1">&times;</button>
+            </div>
+        </div>
+
+        <!-- Conversation list view -->
+        <div id="msgConvList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
+            <div style="padding:8px 12px;font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.4)">CONVERSATIONS</div>
+            <div id="msgConvItems" style="flex:1"></div>
+        </div>
+
+        <!-- Active conversation view (hidden until conv selected) -->
+        <div id="msgConvView" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+            <!-- Conv header -->
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(0,217,255,.1);flex-shrink:0">
+                <button onclick="msgBackToList()" style="background:none;border:none;color:rgba(0,217,255,.6);cursor:pointer;font-size:14px;padding:0;line-height:1">&#8592;</button>
+                <div style="flex:1">
+                    <div id="msgConvTitle" style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:#e0e0e0;letter-spacing:1px"></div>
+                    <div id="msgConvMembers" style="font-size:8px;letter-spacing:1px;color:rgba(0,217,255,.4);margin-top:1px"></div>
+                </div>
+            </div>
+            <!-- Messages -->
+            <div id="msgMessages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>
+            <!-- Input -->
+            <div style="padding:10px 12px;border-top:1px solid rgba(0,217,255,.1);display:flex;gap:8px;align-items:flex-end;flex-shrink:0">
+                <textarea id="msgInput" placeholder="TYPE MESSAGE..." rows="1" onkeydown="msgHandleKey(event)" oninput="msgAutoResize(this)" style="flex:1;background:rgba(0,0,0,.5);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;resize:none;outline:none;max-height:80px;line-height:1.4;overflow-y:auto"></textarea>
+                <button onclick="msgSend()" style="background:rgba(0,217,255,.1);border:1px solid rgba(0,217,255,.35);color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:8px 12px;cursor:pointer;flex-shrink:0;align-self:flex-end">SEND</button>
+            </div>
+        </div>
+
+        <!-- New conversation modal overlay -->
+        <div id="msgNewModal" style="display:none;position:absolute;inset:0;background:rgba(8,10,14,.97);z-index:10;flex-direction:column">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(0,217,255,.15)">
+                <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;color:var(--accent)">NEW CONVERSATION</div>
+                <button onclick="msgCloseNew()" style="background:none;border:none;color:#666;font-size:16px;cursor:pointer">&times;</button>
+            </div>
+            <div style="padding:12px">
+                <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.4);margin-bottom:8px">SELECT MEMBERS</div>
+                <input id="msgMemberSearch" type="text" placeholder="SEARCH..." oninput="msgFilterMembers()" style="width:100%;background:rgba(0,0,0,.5);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:7px 10px;outline:none;margin-bottom:8px">
+                <div id="msgMemberList" style="max-height:300px;overflow-y:auto;border:1px solid rgba(0,217,255,.1)"></div>
+                <div id="msgSelectedList" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;min-height:24px"></div>
+                <div style="margin-top:8px">
+                    <div style="font-size:8px;letter-spacing:2px;color:rgba(0,217,255,.4);margin-bottom:4px">GROUP NAME (optional)</div>
+                    <input id="msgGroupName" type="text" placeholder="LEAVE BLANK FOR 1-ON-1" style="width:100%;background:rgba(0,0,0,.5);border:1px solid rgba(0,217,255,.2);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:10px;padding:7px 10px;outline:none">
+                </div>
+                <button onclick="msgCreateConv()" style="width:100%;margin-top:10px;background:rgba(0,217,255,.1);border:1px solid rgba(0,217,255,.35);color:var(--accent);font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:9px;cursor:pointer">START CONVERSATION</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ADMIN ALERTS PANEL -->
+    <div id="adminNotifPanel" style="display:none;position:fixed;top:52px;right:0;width:320px;max-height:calc(100vh - 52px);background:rgba(8,10,14,.99);border-left:1px solid rgba(0,217,255,.2);z-index:600;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.5)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(0,217,255,.15);flex-shrink:0">
+            <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:var(--accent)">&#9776; ALERTS</div>
+            <button onclick="adminMarkAllRead()" style="background:none;border:1px solid rgba(0,217,255,.2);color:rgba(0,217,255,.6);font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;cursor:pointer">MARK ALL READ</button>
+        </div>
+        <div id="adminNotifList" style="flex:1;overflow-y:auto"></div>
+    </div>
+
 </body>
 </html>
