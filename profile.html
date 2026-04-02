@@ -287,10 +287,22 @@
         const ADMIN_ROLES_CHAT = ['commander','developer','staff_nco','nco','recruiter'];
 
         function initChat(uid) {
-            // Load all users for name display
-            getDocs(query(collection(db,'users'), orderBy('callsign','asc'))).then(snap => {
+            // Load all users for name display — no orderBy to avoid missing-field issues
+            getDocs(collection(db,'users')).then(snap => {
                 _chatAllUsers = [];
-                snap.forEach(d => _chatAllUsers.push({id:d.id,...d.data()}));
+                snap.forEach(d => {
+                    const data = d.data();
+                    if (data.status !== 'pending' && data.status !== 'denied') {
+                        _chatAllUsers.push({id:d.id,...data});
+                    }
+                });
+                // Sort client-side by callsign/firstName
+                _chatAllUsers.sort((a,b) => (a.callsign||a.firstName||'').localeCompare(b.callsign||b.firstName||''));
+                // If new conv modal already open, re-render the list
+                const modal = document.getElementById('chatNewModal');
+                if (modal && modal.style.display === 'flex') {
+                    chatRenderMemberList(document.getElementById('chatMemberSearch')?.value || '');
+                }
             });
 
             // Subscribe to conversations
@@ -459,7 +471,11 @@
             _chatSelectedUids=[];
             document.getElementById('chatNewModal').style.display='flex';
             document.getElementById('chatMemberSearch').value='';
-            chatRenderMemberList('');
+            if (_chatAllUsers.length === 0) {
+                document.getElementById('chatMemberList').innerHTML = '<div style="padding:16px;text-align:center;color:#555;font-size:9px;letter-spacing:1px">LOADING MEMBERS...</div>';
+            } else {
+                chatRenderMemberList('');
+            }
         };
         window.chatCloseNew = function() {
             document.getElementById('chatNewModal').style.display='none';

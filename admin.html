@@ -432,11 +432,15 @@
         };
 
         // ── New conversation ───────────────────────────────────────────
-        window.msgStartNew = function() {
+        window.msgStartNew = async function() {
             _msgSelectedUids = [];
             document.getElementById('msgNewModal').style.display = 'flex';
             document.getElementById('msgMemberSearch').value = '';
             document.getElementById('msgGroupName').value = '';
+            if (!allUsers.length) {
+                document.getElementById('msgMemberList').innerHTML = '<div style="padding:16px;text-align:center;color:#555;font-size:9px;letter-spacing:2px">LOADING MEMBERS...</div>';
+                await loadAllUsers();
+            }
             msgRenderMemberList('');
         };
 
@@ -456,6 +460,7 @@
                 u.status !== 'pending' && u.status !== 'denied' &&
                 (formatMemberName(u)||u.callsign||'').toLowerCase().includes(search.toLowerCase())
             );
+            if (!members.length) { el.innerHTML = '<div style="padding:16px;text-align:center;color:#555;font-size:9px;letter-spacing:1px">NO MEMBERS FOUND</div>'; return; }
             el.innerHTML = members.map(u => {
                 const name = formatMemberName(u) || u.callsign;
                 const selected = _msgSelectedUids.includes(u.id);
