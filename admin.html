@@ -217,7 +217,7 @@
             _msgOpen = !_msgOpen;
             panel.style.display = _msgOpen ? 'flex' : 'none';
             if (overlay) overlay.style.display = _msgOpen ? 'block' : 'none';
-            if (_msgOpen) { msgLoadConversations(); clearMsgBadge(); }
+            if (_msgOpen) { msgLoadConversations(); clearMsgBadge(); if (!allUsers.length) { loadAllUsers().then(() => renderConvList()); } }
             else { if (_msgConvUnsub) { _msgConvUnsub(); _msgConvUnsub = null; } }
         };
         window.closeAdminPanelOverlay = function() {
@@ -271,7 +271,7 @@
                 const time = c.lastMessageAt ? new Date(c.lastMessageAt.toDate ? c.lastMessageAt.toDate() : c.lastMessageAt).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '';
                 return `<div style="display:flex;align-items:center;gap:0;border-bottom:1px solid rgba(255,255,255,.04)">
                     <div onclick="msgOpenConv('${c.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;flex:1;min-width:0;cursor:pointer;transition:background .15s;${c.id===_msgActiveConvId?'background:rgba(0,217,255,.06);':''}" onmouseover="this.style.background='rgba(0,217,255,.04)'" onmouseout="this.style.background='${c.id===_msgActiveConvId?'rgba(0,217,255,.06)':'transparent'}'">
-                        <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,217,255,.12);border:1px solid rgba(0,217,255,.25);display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0">${name.charAt(0).toUpperCase()}</div>
+                        <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,217,255,.12);border:1px solid rgba(0,217,255,.25);display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0">${name && name!=='Unknown' ? name.charAt(0).toUpperCase() : '?'}</div>
                         <div style="flex:1;min-width:0">
                             <div style="display:flex;justify-content:space-between;align-items:center">
                                 <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:${unread?'#e0e0e0':'#aaa'};letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">${esc(name)}</div>
@@ -292,7 +292,9 @@
             if (c.participants && c.participants.length === 2) {
                 const otherUid = c.participants.find(u => u !== currentUser.uid);
                 const other = allUsers.find(u => u.id === otherUid);
-                return other ? (formatMemberName(other) || other.callsign || 'Unknown') : 'Unknown';
+                if (other) return formatMemberName(other) || other.callsign || 'Unknown';
+                // allUsers not loaded yet — show uid shortened as placeholder
+                return otherUid ? otherUid.substring(0,8)+'...' : 'Unknown';
             }
             return 'Group Chat';
         }
