@@ -266,8 +266,15 @@
 
         window.toggleNotifPanel = function() {
             const panel = document.getElementById('notifPanel');
+            const overlay = document.getElementById('panelTapOverlay');
             const isOpen = panel.style.display === 'block';
             panel.style.display = isOpen ? 'none' : 'block';
+            if (overlay) overlay.style.display = isOpen ? 'none' : 'block';
+        };
+        window.closePanelOverlay = function() {
+            document.getElementById('notifPanel').style.display = 'none';
+            document.getElementById('chatPanel').style.display = 'none';
+            document.getElementById('panelTapOverlay').style.display = 'none';
         };
 
         // Close notif panel on outside click
@@ -618,6 +625,26 @@
         .edit-field input:focus{border-color:var(--accent);box-shadow:0 0 8px rgba(0,217,255,.1)}
         .name-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
         @media(max-width:500px){.name-row{grid-template-columns:1fr}}
+        @media (max-width: 600px) {
+            #chatPanel, #notifPanel {
+                width: 100vw !important;
+                left: 0 !important;
+                right: 0 !important;
+                border-left: none !important;
+                top: 52px !important;
+            }
+            #chatPanel { height: calc(100vh - 52px) !important; }
+            #notifPanel { max-height: calc(100vh - 52px) !important; }
+            .top-bar { padding: 8px 12px !important; flex-wrap: wrap; gap: 6px; }
+            .top-bar-right { gap: 6px !important; flex-wrap: wrap; }
+            .top-btn { padding: 5px 8px !important; font-size: 9px !important; letter-spacing: 1px !important; }
+            /* Hide text labels, keep icons on very small screens */
+            .top-bar-title { font-size: 13px !important; letter-spacing: 2px !important; }
+        }
+        @media (max-width: 400px) {
+            #notifBtn .btn-label, #chatBtn .btn-label { display: none; }
+        }
+
         .save-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;padding:10px 24px;cursor:pointer;transition:all .2s;margin-top:6px;text-shadow:0 0 8px var(--accent-glow)}
         .save-btn:hover{background:rgba(0,217,255,.08);box-shadow:0 0 16px rgba(0,217,255,.15)}
 
@@ -753,6 +780,10 @@
     </script>
     <script defer src="/_vercel/speed-insights/script.js"></script>
     <script type="module" src="js/speed-insights.js"></script>
+
+
+    <!-- Tap outside overlay for mobile panels -->
+    <div id="panelTapOverlay" onclick="closePanelOverlay()" style="display:none;position:fixed;inset:0;z-index:488;background:rgba(0,0,0,.4)"></div>
 
     <!-- NOTIFICATION PANEL -->
     <div id="notifPanel" style="display:none;position:fixed;top:52px;right:0;width:320px;background:rgba(8,10,14,.99);border-left:1px solid rgba(0,217,255,.2);z-index:500;max-height:calc(100vh - 52px);display:none;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.5)">

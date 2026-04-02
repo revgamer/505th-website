@@ -213,10 +213,19 @@
         // Toggle panel open/close
         window.toggleMsgPanel = function() {
             const panel = document.getElementById('msgPanel');
+            const overlay = document.getElementById('adminPanelOverlay');
             _msgOpen = !_msgOpen;
             panel.style.display = _msgOpen ? 'flex' : 'none';
+            if (overlay) overlay.style.display = _msgOpen ? 'block' : 'none';
             if (_msgOpen) { msgLoadConversations(); clearMsgBadge(); }
             else { if (_msgConvUnsub) { _msgConvUnsub(); _msgConvUnsub = null; } }
+        };
+        window.closeAdminPanelOverlay = function() {
+            document.getElementById('msgPanel').style.display = 'none';
+            document.getElementById('adminNotifPanel').style.display = 'none';
+            const overlay = document.getElementById('adminPanelOverlay');
+            if (overlay) overlay.style.display = 'none';
+            _msgOpen = false; _adminNotifOpen = false;
         };
 
         function clearMsgBadge() {
@@ -260,16 +269,19 @@
                 const name = msgConvName(c);
                 const last = c.lastMessage ? c.lastMessage.substring(0, 40) + (c.lastMessage.length > 40 ? '…' : '') : 'No messages yet';
                 const time = c.lastMessageAt ? new Date(c.lastMessageAt.toDate ? c.lastMessageAt.toDate() : c.lastMessageAt).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '';
-                return `<div onclick="msgOpenConv('${c.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;transition:background .15s;${c.id===_msgActiveConvId?'background:rgba(0,217,255,.06);':''}" onmouseover="this.style.background='rgba(0,217,255,.04)'" onmouseout="this.style.background='${c.id===_msgActiveConvId?'rgba(0,217,255,.06)':'transparent'}'">
-                    <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,217,255,.12);border:1px solid rgba(0,217,255,.25);display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0">${name.charAt(0).toUpperCase()}</div>
-                    <div style="flex:1;min-width:0">
-                        <div style="display:flex;justify-content:space-between;align-items:center">
-                            <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:${unread?'#e0e0e0':'#aaa'};letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${esc(name)}</div>
-                            <div style="font-size:8px;color:#555;flex-shrink:0;margin-left:4px">${time}</div>
+                return `<div style="display:flex;align-items:center;gap:0;border-bottom:1px solid rgba(255,255,255,.04)">
+                    <div onclick="msgOpenConv('${c.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;flex:1;min-width:0;cursor:pointer;transition:background .15s;${c.id===_msgActiveConvId?'background:rgba(0,217,255,.06);':''}" onmouseover="this.style.background='rgba(0,217,255,.04)'" onmouseout="this.style.background='${c.id===_msgActiveConvId?'rgba(0,217,255,.06)':'transparent'}'">
+                        <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,217,255,.12);border:1px solid rgba(0,217,255,.25);display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0">${name.charAt(0).toUpperCase()}</div>
+                        <div style="flex:1;min-width:0">
+                            <div style="display:flex;justify-content:space-between;align-items:center">
+                                <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:${unread?'#e0e0e0':'#aaa'};letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">${esc(name)}</div>
+                                <div style="font-size:8px;color:#555;flex-shrink:0;margin-left:4px">${time}</div>
+                            </div>
+                            <div style="font-size:9px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px">${esc(last)}</div>
                         </div>
-                        <div style="font-size:9px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px">${esc(last)}</div>
+                        ${unread ? `<div style="background:#ef4444;color:#fff;font-size:8px;font-weight:700;padding:2px 5px;border-radius:50%;min-width:16px;text-align:center;flex-shrink:0">${unread}</div>` : ''}
                     </div>
-                    ${unread ? `<div style="background:#ef4444;color:#fff;font-size:8px;font-weight:700;padding:2px 5px;border-radius:50%;min-width:16px;text-align:center;flex-shrink:0">${unread}</div>` : ''}
+                    <button onclick="msgDeleteConv('${c.id}', event)" title="Delete conversation" style="flex-shrink:0;width:32px;height:100%;min-height:52px;background:none;border:none;border-left:1px solid rgba(255,255,255,.04);color:#444;font-size:14px;cursor:pointer;transition:all .15s;padding:0" onmouseover="this.style.color='#ef4444';this.style.background='rgba(239,68,68,.06)'" onmouseout="this.style.color='#444';this.style.background='none'">&#x2715;</button>
                 </div>`;
             }).join('');
         }
@@ -288,8 +300,16 @@
         // ── Open conversation ──────────────────────────────────────────
         window.msgOpenConv = async function(convId) {
             _msgActiveConvId = convId;
-            const conv = _msgConversations.find(c => c.id === convId);
-            if (!conv) return;
+            let conv = _msgConversations.find(c => c.id === convId);
+            // Fallback: fetch directly if not in local cache yet
+            if (!conv) {
+                try {
+                    const snap = await getDoc(doc(db, 'conversations', convId));
+                    if (!snap.exists()) return;
+                    conv = { id: snap.id, ...snap.data() };
+                    _msgConversations.unshift(conv);
+                } catch(e) { return; }
+            }
 
             // Switch views
             document.getElementById('msgConvList').style.display = 'none';
@@ -525,9 +545,45 @@
                     createdAt: serverTimestamp()
                 });
                 msgCloseNew();
-                // Wait a tick for onSnapshot to pick it up
-                setTimeout(() => msgOpenConv(ref.id), 300);
+                // Add to local conversations immediately so msgOpenConv can find it
+                const newConv = {
+                    id: ref.id, participants, unreadCounts,
+                    name: is1on1 ? null : (groupName || 'Group Chat'),
+                    lastMessage: null, lastMessageAt: null,
+                    createdBy: currentUser.uid
+                };
+                _msgConversations.unshift(newConv);
+                msgOpenConv(ref.id);
             } catch(e) { console.warn('msgCreateConv:', e); notify('ERROR CREATING CONVERSATION', true); }
+        };
+
+
+        window.msgDeleteConv = async function(convId, e) {
+            e.stopPropagation();
+            if (!confirm('DELETE THIS CONVERSATION? This only removes it from your view.')) return;
+            try {
+                // Remove participant from conversation (soft delete — others keep it)
+                const conv = _msgConversations.find(c => c.id === convId);
+                if (!conv) return;
+                const remaining = (conv.participants || []).filter(u => u !== currentUser.uid);
+                if (remaining.length === 0) {
+                    // Last person — delete the whole conversation
+                    await deleteDoc(doc(db, 'conversations', convId));
+                } else {
+                    await updateDoc(doc(db, 'conversations', convId), {
+                        participants: remaining
+                    });
+                }
+                // Remove from local cache and re-render
+                _msgConversations = _msgConversations.filter(c => c.id !== convId);
+                if (_msgActiveConvId === convId) {
+                    _msgActiveConvId = null;
+                    if (_msgMsgUnsub) { _msgMsgUnsub(); _msgMsgUnsub = null; }
+                    document.getElementById('msgConvView').style.display = 'none';
+                    document.getElementById('msgConvList').style.display = 'flex';
+                }
+                renderConvList();
+            } catch(e2) { console.warn('msgDeleteConv:', e2); }
         };
 
         // Start listening for unread counts on load (for badge)
@@ -601,8 +657,10 @@
 
         window.toggleAdminNotifPanel = function() {
             const panel = document.getElementById('adminNotifPanel');
+            const overlay = document.getElementById('adminPanelOverlay');
             _adminNotifOpen = !_adminNotifOpen;
             panel.style.display = _adminNotifOpen ? 'flex' : 'none';
+            if (overlay) overlay.style.display = _adminNotifOpen ? 'block' : 'none';
         };
 
         document.addEventListener('click', e => {

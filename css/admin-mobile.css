@@ -549,3 +549,22 @@ html {
         gap: 6px;
     }
 }
+
+    /* ═══════════════════════════════════════════════
+       CHAT & NOTIFICATION PANELS — MOBILE
+    ═══════════════════════════════════════════════ */
+    @media (max-width: 600px) {
+        #msgPanel, #adminNotifPanel {
+            width: 100vw !important;
+            left: 0 !important;
+            right: 0 !important;
+            border-left: none !important;
+            top: 52px !important;
+            height: calc(100vh - 52px) !important;
+        }
+        /* Top bar buttons — icon only on small screens */
+        #msgToggleBtn span:not([id]),
+        #adminNotifBtn span:not([id]) { display: none; }
+        /* Shrink top bar buttons */
+        .top-btn { padding: 6px 10px !important; font-size: 9px !important; letter-spacing: 1px !important; }
+    }
