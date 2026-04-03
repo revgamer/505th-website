@@ -103,13 +103,18 @@
 
 
         // ── ONLINE PRESENCE — Dashboard ───────────────────────────────────
-        let _dashPresSession = null, _dashPresUnsub = null, _dashPresHb = null;
-        const _STALE_MS = 90000;
+        let _dashPresSession = null, _dashPresUnsub = null, _dashPresHb = null, _dashPresJoining = false;
+        const _STALE_MS = 120000; // 2 min — heartbeat every 30s, allows 4 missed beats
         const _ROLE_COLORS = {commander:'#f59e0b',developer:'#a78bfa',staff_nco:'#2DD4BF',nco:'#34d399',recruiter:'#fb923c',marine:'#94a3b8',enlistee:'#64748b'};
 
         async function dashPresJoin() {
-            if (!currentUser || !currentUserData || _dashPresSession) return;
+            if (!currentUser || !currentUserData || _dashPresSession || _dashPresJoining) return;
+            _dashPresJoining = true;
             try {
+                // Clean up any stale sessions from this user first
+                const stale = await getDocs(query(collection(db,'presence_sessions'),
+                    where('uid','==',currentUser.uid), where('panel','==','admin_dashboard')));
+                stale.forEach(async d => { try { await deleteDoc(d.ref); } catch(_e){} });
                 const ref = await addDoc(collection(db,'presence_sessions'), {
                     panel:'admin_dashboard', uid:currentUser.uid,
                     callsign:currentUserData.callsign||'', rank:currentUserData.rank||'',
@@ -117,12 +122,14 @@
                     role:currentUserData.role||'', updatedAt:new Date().toISOString(),
                 });
                 _dashPresSession = ref.id;
+                _dashPresJoining = false;
                 _dashPresHb = setInterval(async () => {
                     if (!_dashPresSession) return;
                     try { await updateDoc(doc(db,'presence_sessions',_dashPresSession),{updatedAt:new Date().toISOString()}); } catch(e) {}
                 }, 30000);
                 _dashPresSubscribe();
             } catch(e) { console.warn('dashPresJoin:', e); }
+            finally { _dashPresJoining = false; }
         }
 
         async function dashPresLeave() {
@@ -139,12 +146,19 @@
             _dashPresUnsub = onSnapshot(
                 query(collection(db,'presence_sessions'), where('panel','==','admin_dashboard')),
                 (snap) => {
-                    const now = Date.now(), online = [];
+                    const now = Date.now();
+                    const byUid = {};
                     snap.forEach(d => {
                         const data = d.data();
-                        if (now - new Date(data.updatedAt).getTime() < _STALE_MS) online.push({id:d.id,...data});
+                        const age = now - new Date(data.updatedAt).getTime();
+                        if (age < _STALE_MS) {
+                            // Keep newest session per uid
+                            if (!byUid[data.uid] || new Date(data.updatedAt) > new Date(byUid[data.uid].updatedAt)) {
+                                byUid[data.uid] = {id:d.id,...data};
+                            }
+                        }
                     });
-                    _renderOnlineList(online);
+                    _renderOnlineList(Object.values(byUid));
                 }
             );
         }
