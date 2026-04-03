@@ -2137,31 +2137,17 @@
             if (!attEventData) attEventData = {title:'', date:new Date().toISOString().split('T')[0], type:'main_op', attendees:[], excused:[]};
             if (attEventData.locked) { notify('EVENT IS LOCKED — CANNOT EDIT', 1); return; }
             const att = [...(attEventData.attendees||[])];
-            const exc = [...(attEventData.excused||[])];
             const isPresent = att.includes(uid);
-            const isExcused = exc.includes(uid);
-            if (!isPresent && !isExcused) { att.push(uid); }
-            else if (isPresent) { att.splice(att.indexOf(uid),1); exc.push(uid); }
-            else { exc.splice(exc.indexOf(uid),1); }
+            // Toggle: Absent → Present → Absent
+            if (!isPresent) { att.push(uid); }
+            else { att.splice(att.indexOf(uid), 1); }
             attEventData.attendees = att;
-            attEventData.excused   = exc;
+            attEventData.excused   = []; // no excused
             renderAttRoster();
             await _attPersistState();
         };
 
-        window.attMarkAllExcused = async function() {
-            if (!attEventData) attEventData = {title:'', date:new Date().toISOString().split('T')[0], type:'main_op', attendees:[], excused:[]};
-            if (attEventData.locked) { notify('EVENT IS LOCKED — CANNOT EDIT', 1); return; }
-            let members = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied'&&u.platoon!=='Reserves');
-            if (attFilter !== 'ALL') members = members.filter(u=>u.platoon===attFilter);
-            const att = [...(attEventData.attendees||[])];
-            const exc = [...(attEventData.excused||[])];
-            members.forEach(u => { if (!att.includes(u.id) && !exc.includes(u.id)) exc.push(u.id); });
-            attEventData.excused = exc;
-            renderAttRoster();
-            await _attPersistState();
-            notify('ABSENT MEMBERS MARKED EXCUSED');
-        };
+
 
         // ── Save & Lock ───────────────────────────────────────────────────────
 
@@ -2175,9 +2161,8 @@
             if (btn) { btn.disabled=true; btn.textContent='SAVING...'; }
             try {
                 const attendees    = attEventData?.attendees || [];
-                const excused      = attEventData?.excused   || [];
                 const eventPayload = {
-                    title, date, type, attendees, excused, locked: lock,
+                    title, date, type, attendees, locked: lock,
                     updatedAt: new Date().toISOString(),
                     updatedBy: currentUserData?.callsign || 'Staff',
                 };
@@ -2199,17 +2184,27 @@
                     const allActiveMembers = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied'&&u.platoon!=='Reserves');
                     for (const u of allActiveMembers) {
                         const wasPresent  = attendees.includes(u.id);
-                        const wasExcused  = excused.includes(u.id);
-                        const opsEligible = (u.opsEligible||0) + (wasExcused?0:1);
-                        const opsAttended = (u.opsAttended||0) + (wasPresent?1:0);
-                        const att = wasPresent ? Math.min((u.attendance||0)+1, 3) : (u.attendance||0);
-                        const lastAttUpdate = wasPresent ? { lastAttendedDate: date } : {};
-                        await updateDoc(doc(db,'users',u.id), {attendance:att, opsAttended, opsEligible, updatedAt:new Date().toISOString(), ...lastAttUpdate});
+                        const opsEligible = (u.opsEligible||0) + 1;          // everyone eligible
+                        const opsAttended = (u.opsAttended||0) + (wasPresent ? 1 : 0);
+                        const att         = wasPresent ? Math.min((u.attendance||0)+1, 3) : (u.attendance||0);
+                        const updates     = { attendance:att, opsAttended, opsEligible, updatedAt:new Date().toISOString() };
+                        if (wasPresent) updates.lastAttendedDate = date;
+                        await updateDoc(doc(db,'users',u.id), updates);
                         const local = allUsers.find(x=>x.id===u.id);
                         if (local) { local.attendance=att; local.opsAttended=opsAttended; local.opsEligible=opsEligible; if(wasPresent) local.lastAttendedDate=date; }
                     }
                     notify('EVENT LOCKED & ATTENDANCE SAVED — ' + attendees.length + ' PRESENT');
-                        loadAttGlobalStats();
+                    loadAttGlobalStats();
+                    // Sync battalion roster if it's loaded — update rosterData from allUsers
+                    if (typeof rosterData !== 'undefined' && rosterData.length) {
+                        rosterData.forEach(r => {
+                            const updated = allUsers.find(u => u.id === r.id);
+                            if (updated) { r.attendance=updated.attendance; r.opsAttended=updated.opsAttended; r.opsEligible=updated.opsEligible; r.lastAttendedDate=updated.lastAttendedDate; }
+                        });
+                        if (document.getElementById('panel-roster') && !document.getElementById('panel-roster').classList.contains('hidden')) {
+                            renderRosterTable();
+                        }
+                    }
                     fireWebhook('attendance', {
                         title, date,
                         type:    {main_op:'Main Op',patrol:'Patrol',training:'Training',fun_op:'Fun Op'}[type] || type,
@@ -2370,7 +2365,7 @@
                 const monthRate=opsElig>0?Math.round((opsAtt/opsElig)*100):null;
                 const mrColor=monthRate===null?'#555':monthRate>=75?'#7FFF7F':monthRate>=50?'#FFD700':'#FF4444';
                 const platColor=platoonColors[u.platoon]||'var(--accent)';
-                const rowBg=isPresent?'rgba(0,217,255,.025)':isExcused?'rgba(255,212,0,.02)':'';
+                const rowBg=isPresent?'rgba(0,217,255,.025)':'';
                 return `<div style="display:grid;grid-template-columns:1fr 120px 130px 70px;gap:0;border-bottom:1px solid rgba(255,255,255,.04);padding:10px 14px;align-items:center;background:${rowBg}" onmouseover="this.style.background='rgba(0,217,255,.03)'" onmouseout="this.style.background='${rowBg}'">
                     <div>
                         <div class="att-name-clickable" data-uid="${u.id}" data-name="${esc(formatMemberName(u)||u.callsign)}" data-ops-att="${opsAtt}" data-ops-elig="${opsElig}" style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:#e0e0e0;cursor:pointer;text-decoration:underline dotted rgba(0,217,255,.3)" title="Click to correct monthly rate">${esc(formatMemberName(u)||u.callsign)}</div>
@@ -2385,8 +2380,8 @@
                     </div>
                     <div style="text-align:center">
                         ${locked
-                            ?`<span style="font-size:14px;color:${isPresent?'#7FFF7F':isExcused?'#FFD700':'#FF4444'}">${isPresent?'✓':isExcused?'⊘':'✗'}</span>`
-                            :`<button onclick="attCycleState('${u.id}')" style="background:${isPresent?'rgba(0,217,255,.12)':isExcused?'rgba(255,212,0,.12)':'rgba(255,255,255,.04)'};border:1px solid ${isPresent?'var(--accent)':isExcused?'#FFD700':'#555'};color:${isPresent?'#7FFF7F':isExcused?'#FFD700':'#FF4444'};font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 8px;cursor:pointer;min-width:64px;transition:all .15s" title="Click to cycle: Absent → Present → Excused">${isPresent?'✓ PRESENT':isExcused?'⊘ EXCUSED':'✗ ABSENT'}</button>`
+                            ?`<span style="font-size:14px;color:${isPresent?'#7FFF7F':'#FF4444'}">${isPresent?'✓':'✗'}</span>`
+                            :`<button onclick="attCycleState('${u.id}')" style="background:${isPresent?'rgba(0,217,255,.12)':'rgba(255,255,255,.04)'};border:1px solid ${isPresent?'var(--accent)':'#555'};color:${isPresent?'#7FFF7F':'#FF4444'};font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 8px;cursor:pointer;min-width:64px;transition:all .15s" title="Toggle attendance">${isPresent?'✓ PRESENT':'✗ ABSENT'}</button>`
                         }
                     </div>
                 </div>`;
@@ -2871,6 +2866,9 @@
             const gEl = document.getElementById('editGraduation');
             if(gEl) gEl.value = u.graduation ? u.graduation.split('T')[0] : '';
             document.getElementById('editPlatoon').value    = u.platoon||'';
+            // Pre-fill FROM platoon with current platoon
+            const fromEl = document.getElementById('histPlatoonFrom');
+            if (fromEl) fromEl.value = u.platoon||'';
             // Role dropdown — hide commander option if no canDemoteCommander
             const roleSelect = document.getElementById('editRoleSelect');
             Array.from(roleSelect.options).forEach(o => {
@@ -3014,6 +3012,8 @@
                 if(type==='promo')   try{await addDoc(collection(db,'notifications',uid,'items'),{type:'promotion',read:false,title:'Your promotion record has been updated',body:(entry.fromRank||'—')+' → '+(entry.toRank||'—'),createdAt:serverTimestamp()});}catch(_e){}
                 if(type==='platoon') try{await addDoc(collection(db,'notifications',uid,'items'),{type:'transfer',read:false,title:'You have been transferred to a new platoon',body:(entry.from||'—')+' → '+(entry.to||'—'),createdAt:serverTimestamp()});}catch(_e){}
                 if(type==='commend')  try{await addDoc(collection(db,'notifications',uid,'items'),{type:'medal',read:false,title:'You have received a commendation',body:entry.title+(entry.note?' — '+entry.note.substring(0,50):''),createdAt:serverTimestamp()});}catch(_e){}
+                const listId = type==='platoon'?'histPlatoonList':type==='promo'?'histPromoList':type==='warn'?'histWarnList':'histCommendList';
+                renderHistoryList(listId, updated, type);
                 if(type==='platoon'){document.getElementById('histPlatoonFrom').value='';document.getElementById('histPlatoonTo').value='';document.getElementById('histPlatoonNote').value='';}
                 else if(type==='promo'){document.getElementById('histPromoFrom').value='';document.getElementById('histPromoTo').value='';document.getElementById('histPromoNote').value='';}
                 else if(type==='warn'){document.getElementById('histWarnNote').value='';}
@@ -4398,8 +4398,30 @@
                         <div id="histPlatoonList"></div>
                         <div class="history-add-row">
                             <input type="date" id="histPlatoonDate">
-                            <input type="text" id="histPlatoonFrom" placeholder="From (e.g. Stalker 1-0)..." style="max-width:160px">
-                            <input type="text" id="histPlatoonTo" placeholder="To (e.g. Killjoy 1-0)..." style="max-width:160px">
+                            <select id="histPlatoonFrom" style="max-width:160px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.15);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:7px 10px;outline:none;cursor:pointer">
+                                <option value="">— FROM —</option>
+                                <option value="Command">Command</option>
+                                <option value="1st Platoon">1st Platoon</option>
+                                <option value="2nd Platoon">2nd Platoon</option>
+                                <option value="3rd Platoon">3rd Platoon</option>
+                                <option value="Force Recon">Force Recon</option>
+                                <option value="Corpsmen">Corpsmen</option>
+                                <option value="Pilot">Pilot</option>
+                                <option value="Awaiting BCT">Awaiting BCT</option>
+                                <option value="Reserves">Reserves</option>
+                            </select>
+                            <select id="histPlatoonTo" style="max-width:160px;background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.15);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:7px 10px;outline:none;cursor:pointer">
+                                <option value="">— TO —</option>
+                                <option value="Command">Command</option>
+                                <option value="1st Platoon">1st Platoon</option>
+                                <option value="2nd Platoon">2nd Platoon</option>
+                                <option value="3rd Platoon">3rd Platoon</option>
+                                <option value="Force Recon">Force Recon</option>
+                                <option value="Corpsmen">Corpsmen</option>
+                                <option value="Pilot">Pilot</option>
+                                <option value="Awaiting BCT">Awaiting BCT</option>
+                                <option value="Reserves">Reserves</option>
+                            </select>
                             <input type="text" id="histPlatoonNote" placeholder="Reason (optional)...">
                             <button class="history-add-btn" onclick="addHistoryEntry('platoon')">+ ADD</button>
                         </div>
