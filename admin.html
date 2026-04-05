@@ -1510,17 +1510,6 @@
                         </div>` : '<div class="empty-state">NO PENDING REGISTRATIONS</div>';
                 }
 
-                // Recent joins
-                const rj = document.getElementById('dashRecentJoins');
-                if(rj) {
-                    const recent=[...roster];
-                    recent.sort((a,b)=>(b.joinedAt||'').localeCompare(a.joinedAt||''));
-                    rj.innerHTML = recent.slice(0,5).map(u=>`
-                        <div class="user-card">
-                            <div class="user-info"><div class="user-callsign">${esc(formatMemberName(u)||u.callsign)}</div><div class="user-role">${(u.role||'').toUpperCase()}</div></div>
-                        </div>`).join('') || '<div class="empty-state">NO RECENT JOINS</div>';
-                }
-
                 // Roster Strength by Platoon (reads users)
                 const rsWidget=document.getElementById('dashRosterStrength');
                 if(rsWidget){
@@ -4097,7 +4086,7 @@
             if(dashRosterGrid)   dashRosterGrid.style.display   = (p.dash_roster||p.dash_inactive||p.dash_reserve)?'grid':'none';
             if(dashInactiveSect) dashInactiveSect.style.display = p.dash_inactive?'':'none';
             if(dashReserveSect)  dashReserveSect.style.display  = p.dash_reserve?'':'none';
-            if(dashBottomGrid)   dashBottomGrid.style.display   = (p.dash_pending||p.dash_recent)?'':'none';
+            if(dashBottomGrid)   dashBottomGrid.style.display   = (p.dash_pending)?'':'none';
 
             // Topbar user info
             const tn=document.getElementById('topbarName');
@@ -4833,9 +4822,6 @@
                                 <div class="dash-section-title">PENDING REGISTRATIONS</div>
                                 <div id="dashPendingList"><div class="empty-state">LOADING...</div></div>
                             </div>
-                            <div class="dash-section">
-                                <div class="dash-section-title">RECENT JOINS</div>
-                                <div id="dashRecentJoins"><div class="empty-state">LOADING...</div></div>
                             </div>
                         </div>
                     </div>
