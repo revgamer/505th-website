@@ -144,7 +144,7 @@
         function _dashPresSubscribe() {
             if (_dashPresUnsub) { _dashPresUnsub(); _dashPresUnsub = null; }
             _dashPresUnsub = onSnapshot(
-                query(collection(db,'presence_sessions'), where('panel','==','admin_dashboard')),
+                query(collection(db,'presence_sessions')), // all panels — unified presence
                 (snap) => {
                     const now = Date.now();
                     const byUid = {};
@@ -190,12 +190,14 @@
                 const isSelf = u.uid === currentUser?.uid;
                 const roleColor = _ROLE_COLORS[u.role] || '#94a3b8';
                 const name = formatMemberName(u) || u.callsign || 'Unknown';
+                const panelLabels = {'admin_dashboard':'Dashboard','panel-attendance':'Attendance','panel-active':'Personnel','panel-roster':'Roster','panel-aar':'AAR','panel-register':'Enlistment','panel-gallery':'Gallery','panel-videos':'Videos','attendance_tracker':'Attendance'};
+                const panelLabel = panelLabels[u.panel] || (u.panel ? u.panel.replace('panel-','').replace(/-/g,' ').toUpperCase() : 'Admin');
                 const roleLabel = (u.role||'').replace(/_/g,' ').toUpperCase();
                 return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04)">
                     <span style="width:8px;height:8px;border-radius:50%;background:#00FF41;flex-shrink:0;box-shadow:0 0 6px rgba(0,255,65,.6);animation:_onlinePulse 2s ease-in-out infinite"></span>
                     <div style="flex:1">
                         <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:#e0e0e0">${esc(name)}${isSelf?' <span style="font-size:9px;color:#555;letter-spacing:1px">(YOU)</span>':''}</div>
-                        <div style="font-size:9px;letter-spacing:2px;color:${roleColor};margin-top:1px">${esc(roleLabel)}</div>
+                        <div style="font-size:9px;letter-spacing:2px;color:${roleColor};margin-top:1px">${esc(roleLabel)} <span style="color:#444;font-size:7px;letter-spacing:1px">· ${panelLabel}</span></div>
                     </div>
                 </div>`;
             }).join('');
@@ -1427,6 +1429,10 @@
 
         // ── CORE UI ───────────────────────────────────────────────────────────
         window.showPanel = function(id) {
+            // Update presence with current panel
+            if (_dashPresSession) {
+                updateDoc(doc(db,'presence_sessions',_dashPresSession), {panel:id, updatedAt:new Date().toISOString()}).catch(()=>{});
+            }
             document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
             document.querySelectorAll('.sub-link').forEach(l => l.classList.remove('active'));
             const panel = document.getElementById(id);
@@ -1934,20 +1940,38 @@
             const badge = document.getElementById('attLiveBadge');
             if (lbl) lbl.textContent = evData.title ? '— ' + evData.title : '';
             if (!badge) return;
-            badge.style.display = 'inline';
+
+            const lockBtn   = document.getElementById('attLockBtn');
+            const unlockBtn = document.getElementById('attUnlockBtn');
+            const saveBtn   = document.getElementById('attSaveBtn');
+            const canLock   = ['staff_nco','developer','commander'].includes(currentUserData?.role);
+
             if (evData.locked) {
-                badge.textContent  = '🔒 LOCKED';
-                badge.style.color  = '#FFD700';
-                badge.style.border = '1px solid rgba(255,215,0,.4)';
-            } else if (evData.updatedBy) {
-                const ts = evData.updatedAt ? new Date(evData.updatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
-                badge.textContent  = '● LIVE · ' + evData.updatedBy.toUpperCase() + (ts ? ' ' + ts : '');
-                badge.style.color  = 'rgba(0,217,255,.7)';
-                badge.style.border = '1px solid rgba(0,217,255,.3)';
+                // ── LOCKED STATE ──────────────────────────────────────
+                badge.style.display = 'inline';
+                badge.textContent   = '🔒 LOCKED';
+                badge.style.color   = '#FFD700';
+                badge.style.border  = '1px solid rgba(255,215,0,.4)';
+                if (saveBtn)   saveBtn.style.display   = 'none';
+                if (lockBtn)   lockBtn.style.display   = 'none';
+                if (unlockBtn) unlockBtn.style.display = canLock ? '' : 'none';
             } else {
-                badge.textContent  = '● LIVE';
-                badge.style.color  = 'rgba(0,217,255,.5)';
-                badge.style.border = '1px solid rgba(0,217,255,.2)';
+                // ── UNLOCKED / LIVE / NEW STATE ───────────────────────
+                if (evData.updatedBy) {
+                    const ts = evData.updatedAt ? new Date(evData.updatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+                    badge.style.display = 'inline';
+                    badge.textContent   = '● LIVE · ' + evData.updatedBy.toUpperCase() + (ts ? ' · ' + ts : '');
+                    badge.style.color   = 'rgba(0,217,255,.7)';
+                    badge.style.border  = '1px solid rgba(0,217,255,.3)';
+                } else {
+                    badge.style.display = 'inline';
+                    badge.textContent   = '● LIVE';
+                    badge.style.color   = 'rgba(0,217,255,.5)';
+                    badge.style.border  = '1px solid rgba(0,217,255,.2)';
+                }
+                if (saveBtn)   saveBtn.style.display   = '';
+                if (lockBtn)   lockBtn.style.display   = canLock ? '' : 'none';
+                if (unlockBtn) unlockBtn.style.display = 'none';
             }
         }
 
@@ -2165,6 +2189,79 @@
 
         // ── Save & Lock ───────────────────────────────────────────────────────
 
+
+        // Recalculate ALL member stats from scratch across ALL locked events
+        // Called on every lock/re-lock to guarantee accuracy
+        async function recalcAllStats() {
+            notify('RECALCULATING STATS...', 0);
+
+            // Fetch all locked events from Firestore
+            const evSnap = await getDocs(query(collection(db,'attendance_events'), where('locked','==',true)));
+            const allEvents = [];
+            evSnap.forEach(d => allEvents.push({id:d.id,...d.data()}));
+
+            // Always fetch members fresh from Firestore — don't rely on allUsers cache
+            const memberSnap = await getDocs(collection(db,'users'));
+            const freshMembers = [];
+            memberSnap.forEach(d => {
+                const u = {id:d.id,...d.data()};
+                if (u.status!=='pending' && u.status!=='denied' && u.platoon!=='Reserves') {
+                    freshMembers.push(u);
+                }
+            });
+            // Also update allUsers cache while we're at it
+            freshMembers.forEach(fm => {
+                const cached = allUsers.find(u=>u.id===fm.id);
+                if (cached) Object.assign(cached, fm);
+                else allUsers.push(fm);
+            });
+
+            for (const u of freshMembers) {
+                let opsAttended = 0, opsEligible = 0, lastAttendedDate = null;
+                let att = 0; // attendance pip — count of present in last 3 events (monthly)
+
+                allEvents.forEach(ev => {
+                    const present = (ev.attendees||[]).includes(u.id);
+                    opsEligible++;
+                    if (present) {
+                        opsAttended++;
+                        if (!lastAttendedDate || ev.date > lastAttendedDate) lastAttendedDate = ev.date;
+                    }
+                });
+
+                // attendance pip = count of present in most recent 3 locked events
+                const sorted = [...allEvents].sort((a,b) => (b.date||'').localeCompare(a.date||''));
+                const recent3 = sorted.slice(0,3);
+                att = recent3.filter(ev => (ev.attendees||[]).includes(u.id)).length;
+
+                const updates = { opsAttended, opsEligible, attendance:att, updatedAt:new Date().toISOString() };
+                if (lastAttendedDate) updates.lastAttendedDate = lastAttendedDate;
+                else updates.lastAttendedDate = null;
+
+                await updateDoc(doc(db,'users',u.id), updates);
+
+                // Update local cache
+                const local = allUsers.find(x=>x.id===u.id);
+                if (local) { local.opsAttended=opsAttended; local.opsEligible=opsEligible; local.attendance=att; local.lastAttendedDate=lastAttendedDate; }
+            }
+
+            // Sync battalion roster
+            if (typeof rosterData !== 'undefined' && rosterData.length) {
+                rosterData.forEach(r => {
+                    const updated = allUsers.find(u => u.id === r.id);
+                    if (updated) { r.attendance=updated.attendance; r.opsAttended=updated.opsAttended; r.opsEligible=updated.opsEligible; r.lastAttendedDate=updated.lastAttendedDate; }
+                });
+                if (document.getElementById('panel-roster') && !document.getElementById('panel-roster').classList.contains('hidden')) {
+                    renderRosterTable();
+                }
+            }
+            // Refresh Personnel Files if open — so INACTIVE tab reflects updated lastAttendedDate
+            if (document.getElementById('panel-active') && !document.getElementById('panel-active').classList.contains('hidden')) {
+                renderUsers();
+            }
+            loadAttGlobalStats();
+        }
+
         window.saveAttendance = async function(lock=false) {
             const title = document.getElementById('attEventTitle').value.trim();
             const date  = document.getElementById('attEventDate').value;
@@ -2195,35 +2292,14 @@
                 if (lbl) lbl.textContent = title;
                 if (lock) {
                     _attUnsubscribe();
-                    const allActiveMembers = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied'&&u.platoon!=='Reserves');
-                    for (const u of allActiveMembers) {
-                        const wasPresent  = attendees.includes(u.id);
-                        const opsEligible = (u.opsEligible||0) + 1;          // everyone eligible
-                        const opsAttended = (u.opsAttended||0) + (wasPresent ? 1 : 0);
-                        const att         = wasPresent ? Math.min((u.attendance||0)+1, 3) : (u.attendance||0);
-                        const updates     = { attendance:att, opsAttended, opsEligible, updatedAt:new Date().toISOString() };
-                        if (wasPresent) updates.lastAttendedDate = date;
-                        await updateDoc(doc(db,'users',u.id), updates);
-                        const local = allUsers.find(x=>x.id===u.id);
-                        if (local) { local.attendance=att; local.opsAttended=opsAttended; local.opsEligible=opsEligible; if(wasPresent) local.lastAttendedDate=date; }
-                    }
-                    notify('EVENT LOCKED & ATTENDANCE SAVED — ' + attendees.length + ' PRESENT');
-                    loadAttGlobalStats();
-                    // Sync battalion roster if it's loaded — update rosterData from allUsers
-                    if (typeof rosterData !== 'undefined' && rosterData.length) {
-                        rosterData.forEach(r => {
-                            const updated = allUsers.find(u => u.id === r.id);
-                            if (updated) { r.attendance=updated.attendance; r.opsAttended=updated.opsAttended; r.opsEligible=updated.opsEligible; r.lastAttendedDate=updated.lastAttendedDate; }
-                        });
-                        if (document.getElementById('panel-roster') && !document.getElementById('panel-roster').classList.contains('hidden')) {
-                            renderRosterTable();
-                        }
-                    }
+                    // Recalculate ALL members from scratch — guaranteed accurate, no double counting
+                    await recalcAllStats();
+                    notify('EVENT LOCKED — ' + attendees.length + ' PRESENT — STATS RECALCULATED');
                     fireWebhook('attendance', {
                         title, date,
-                        type:    {main_op:'Main Op',patrol:'Patrol',training:'Training',fun_op:'Fun Op'}[type] || type,
+                        type: {main_op:'Main Op',patrol:'Patrol',training:'Training',fun_op:'Fun Op'}[type] || type,
                         present: attendees.length,
-                        by:      currentUserData?.callsign || 'Staff',
+                        by: currentUserData?.callsign || 'Staff',
                     });
                 } else {
                     notify('EVENT SAVED — ' + attendees.length + ' MARKED PRESENT');
@@ -2231,6 +2307,33 @@
                 await loadAttendancePanel();
             } catch(e) { notify('SAVE FAILED: ' + e.message, 1); }
             if (btn) { btn.disabled=false; btn.textContent='LOG ATTENDANCE'; }
+        };
+
+
+        window.unlockEvent = async function() {
+            if (!attEventData?.id) { notify('NO EVENT LOADED', 1); return; }
+            if (!attEventData.locked) { notify('EVENT IS NOT LOCKED', 1); return; }
+            if (!confirm('UNLOCK THIS EVENT?\n\nThis allows you to correct attendance.\nYou must RE-LOCK after corrections to recalculate all stats.')) return;
+            try {
+                await updateDoc(doc(db,'attendance_events',attEventData.id), {
+                    locked: false,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: currentUserData?.callsign || 'Staff',
+                    unlockedBy: currentUserData?.callsign || 'Staff',
+                    unlockedAt: new Date().toISOString(),
+                });
+                attEventData.locked = false;
+                notify('EVENT UNLOCKED — MAKE CORRECTIONS THEN RE-LOCK');
+                // Show edit controls, hide unlock button
+                renderAttRoster();
+                const lockBtn   = document.getElementById('attLockBtn');
+                const unlockBtn = document.getElementById('attUnlockBtn');
+                const saveBtn   = document.getElementById('attSaveBtn');
+                if (lockBtn)   lockBtn.style.display   = '';
+                if (unlockBtn) unlockBtn.style.display  = 'none';
+                if (saveBtn)   saveBtn.style.display    = '';
+                _attSubscribe(attEventData.id);
+            } catch(e) { notify('UNLOCK FAILED: ' + e.message, 1); }
         };
 
         // ── Delete ────────────────────────────────────────────────────────────
@@ -2241,46 +2344,33 @@
             if (!eventDoc.exists()) { notify('EVENT NOT FOUND',1); return; }
             const ev = eventDoc.data();
             if (ev.locked) { notify('CANNOT DELETE — EVENT IS LOCKED. LOCKED EVENTS ARE PERMANENT RECORD.',1); return; }
-            if (!confirm('DELETE EVENT: "'+title+'"?\n\nMember monthly rates will be recalculated automatically.')) return;
+            if (!confirm('DELETE EVENT: "'+title+'"?\n\nAll member stats will be recalculated automatically.')) return;
             try {
-                const evDoc  = await getDoc(doc(db,'attendance_events',eventId));
-                const evData = evDoc.exists() ? evDoc.data() : null;
                 await deleteDoc(doc(db,'attendance_events',eventId));
-                if (evData && ((evData.attendees||[]).length || (evData.excused||[]).length)) {
-                    const remaining     = await getDocs(query(collection(db,'attendance_events'), orderBy('date','desc')));
-                    const remainingDocs = remaining.docs.map(d=>({id:d.id,...d.data()}));
-                    const allActiveMembers = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied');
-                    for (const u of allActiveMembers) {
-                        let opsAtt=0, opsElig=0;
-                        remainingDocs.forEach(ev2 => {
-                            const att2=ev2.attendees||[], exc2=ev2.excused||[];
-                            if (!exc2.includes(u.id)) { opsElig++; if (att2.includes(u.id)) opsAtt++; }
-                        });
-                        try {
-                            await updateDoc(doc(db,'users',u.id),{opsAttended:opsAtt, opsEligible:opsElig, updatedAt:new Date().toISOString()});
-                            u.opsAttended=opsAtt; u.opsEligible=opsElig;
-                        } catch(e){ console.warn('Rate update failed for '+u.id); }
-                    }
-                }
+                // Recalculate ALL stats from scratch now this event is gone
+                await recalcAllStats();
                 if (attEventData?.id === eventId) {
                     _attUnsubscribe();
                     attClearForm();
                 }
-                notify('EVENT DELETED — MONTHLY RATES UPDATED');
-                logAction('ATT_DELETE', title);
+                notify('EVENT DELETED — ALL STATS RECALCULATED');
                 await loadAttendancePanel();
             } catch(e) { notify('DELETE FAILED: ' + e.message, 1); }
         };
 
         window.resetAllAttendanceCounters = async function() {
-            if (!confirm('RESET ALL ATTENDANCE COUNTERS?\n\nThis will set opsAttended, opsEligible, and attendance to 0 for ALL active members.\n\nOnly use this to clear mock/test data.')) return;
+            if (!confirm('RESET ALL ATTENDANCE COUNTERS?\n\nThis will set opsAttended, opsEligible, attendance and lastAttendedDate to 0/null for ALL active members.\n\nOnly use this to clear mock/test data.')) return;
             try {
                 const activeMembers = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied');
                 for (const u of activeMembers) {
-                    await updateDoc(doc(db,'users',u.id),{opsAttended:0,opsEligible:0,attendance:0,updatedAt:new Date().toISOString()});
-                    u.opsAttended=0; u.opsEligible=0; u.attendance=0;
+                    await updateDoc(doc(db,'users',u.id),{opsAttended:0,opsEligible:0,attendance:0,lastAttendedDate:null,updatedAt:new Date().toISOString()});
+                    u.opsAttended=0; u.opsEligible=0; u.attendance=0; u.lastAttendedDate=null;
                 }
                 notify('COUNTERS RESET FOR '+activeMembers.length+' MEMBERS');
+                if (typeof rosterData !== 'undefined' && rosterData.length) {
+                    rosterData.forEach(r => { r.opsAttended=0; r.opsEligible=0; r.attendance=0; r.lastAttendedDate=null; });
+                    if (!document.getElementById('panel-roster')?.classList.contains('hidden')) renderRosterTable();
+                }
                 renderAttRoster();
             } catch(e) { notify('RESET FAILED: '+e.message,1); }
         };
@@ -2420,7 +2510,13 @@
             const activeList  = document.getElementById('activeList');
             const registerList = document.getElementById('registerList');
             const threeMAgo = new Date(); threeMAgo.setMonth(threeMAgo.getMonth()-3); const threeMAgoStr = threeMAgo.toISOString().slice(0,10);
-            const isInactive = u => u.status==='inactive' || (u.lastAttendedDate && u.lastAttendedDate < threeMAgoStr) || (!u.lastAttendedDate && (u.opsAttended||0)===0 && (u.opsEligible||0)>0);
+            const isInactive = u => {
+                if (u.platoon==='Reserves' || u.platoon==='Awaiting BCT') return false; // excluded
+                if (u.status==='inactive') return true;
+                if (u.lastAttendedDate) return u.lastAttendedDate < threeMAgoStr;
+                // No lastAttendedDate — only flag if they've never attended any eligible op
+                return (u.opsAttended||0)===0 && (u.opsEligible||0)>0;
+            };
             const allActive = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied');
             let active;
             if (_personnelTab === 'ALL') {
@@ -3983,10 +4079,10 @@
 
             // Attendance — LOCK & FINALISE only for Staff NCO+
             const attLockBtn  = document.getElementById('attLockBtn');
-            const attLockHint = document.getElementById('attLockHint');
+            const attUnlockBtn= document.getElementById('attUnlockBtn');
             const canLock = ['staff_nco','developer','commander'].includes(currentUserData?.role);
-            if(attLockBtn)  attLockBtn.style.display  = canLock ? '' : 'none';
-            if(attLockHint) attLockHint.style.display = canLock ? '' : 'none';
+            if(attLockBtn)   attLockBtn.style.display   = canLock ? '' : 'none';
+            if(attUnlockBtn) attUnlockBtn.style.display = 'none'; // hidden until locked event loaded
 
             // Attendance tracker save button text already set in static HTML
 
@@ -4840,7 +4936,7 @@
                         <button class="action-btn" onclick="attClearForm()" style="padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:#555;color:#aaa">&#10005; CLEAR</button>
                         <button id="attSaveBtn" class="upload-btn" onclick="saveAttendance(false)" style="padding:8px 20px;font-size:11px;letter-spacing:2px">&#10003; LOG ATTENDANCE</button>
                         <button id="attLockBtn" class="action-btn" onclick="saveAttendance(true)" style="display:none;padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:rgba(0,217,255,.3);color:var(--accent)">&#128274; LOCK &amp; FINALISE</button>
-                        <span id="attLockHint" style="display:none;font-size:9px;color:#555;letter-spacing:1px;font-family:Rajdhani,sans-serif">&#9432; Unlock: load locked event → LOG ATTENDANCE to edit → re-lock</span>
+                        <button id="attUnlockBtn" class="action-btn" onclick="unlockEvent()" style="display:none;padding:8px 18px;font-size:11px;letter-spacing:2px;border-color:#FFD700;color:#FFD700">&#128275; UNLOCK EVENT</button>
                         <div style="flex:1"></div>
                         <button class="action-btn remove-btn" onclick="resetAllAttendanceCounters()" style="padding:6px 12px;font-size:9px;letter-spacing:2px;opacity:.6" title="Reset all member attendance counters to 0 — use only to clear test data">&#9888; RESET ALL COUNTERS</button>
                     </div>
