@@ -1502,7 +1502,7 @@
                         <div class="user-card status-pending" style="cursor:default">
                             <div class="user-info">
                                 <div class="user-callsign">${esc([u.firstName,u.middleName?u.middleName+'.':'',u.lastName].filter(Boolean).join(' ')||'Unknown')}</div>
-                                <div class="user-email">${esc(u.email)}</div>
+                                
                             </div>
                         </div>`).join('')}
                         <div style="margin-top:10px">
@@ -2541,7 +2541,7 @@
                     <div class="user-card status-active">
                         <div class="user-info">
                             <div class="user-callsign">${esc(displayName)}</div>
-                            <div class="user-email">${esc(u.email)}</div>
+                            
                             <div class="user-role">${(u.role||'').toUpperCase()}${u.platoon?' — '+esc(u.platoon):''}</div>
                         </div>
                         <div class="user-actions" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
@@ -2602,7 +2602,7 @@
                 let h='';
                 if(pending.length) { h+='<div class="section-label">PENDING</div>'+pending.map(u=>`
                     <div class="user-card status-pending">
-                        <div class="user-info"><div class="user-callsign">${esc(formatMemberName(u)||u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
+                        <div class="user-info"><div class="user-callsign">${esc(formatMemberName(u)||u.callsign)}</div></div>
                         <div class="user-actions">
                             <button class="action-btn approve-btn small" onclick="approveUser('${u.id}','${esc(u.callsign)}')">APPROVE</button>
                             <button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">DENY</button>
@@ -2610,7 +2610,7 @@
                     </div>`).join(''); }
                 if(denied.length) { h+='<div class="section-label" style="margin-top:20px">DENIED</div>'+denied.map(u=>`
                     <div class="user-card status-denied">
-                        <div class="user-info"><div class="user-callsign">${esc(formatMemberName(u)||u.callsign)}</div><div class="user-email">${esc(u.email)}</div></div>
+                        <div class="user-info"><div class="user-callsign">${esc(formatMemberName(u)||u.callsign)}</div></div>
                         <div class="user-actions">
                             <button class="action-btn approve-btn small" onclick="approveUser('${u.id}','${esc(u.callsign)}')">RE-APPROVE</button>
                             ${P().canDeleteUsers?`<button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>`:''}\n                        </div>
