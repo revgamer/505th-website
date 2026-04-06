@@ -737,29 +737,31 @@
             if (!c) return;
             c.innerHTML = '<div class="empty-state">LOADING...</div>';
             try {
+                // No orderBy — avoids composite index requirement. Sort client-side instead.
                 const snap = await getDocs(query(
                     collection(db, 'audit_logs'),
-                    where('section', '==', section),
-                    orderBy('createdAtISO', 'desc'),
-                    limit(200)
+                    where('section', '==', section)
                 ));
                 if (snap.empty) { c.innerHTML = '<div class="empty-state">NO LOG ENTRIES</div>'; return; }
                 const entries = [];
                 snap.forEach(d => entries.push({id:d.id,...d.data()}));
+                // Sort newest first client-side
+                entries.sort((a,b) => (b.createdAtISO||'').localeCompare(a.createdAtISO||''));
+                const top200 = entries.slice(0, 200);
                 const sectionColors = {manpower:'#a78bfa',battalion_ops:'var(--accent)',public_comms:'#34d399',discord_network:'#fb923c'};
                 const col = sectionColors[section] || 'var(--accent)';
-                c.innerHTML = entries.map(e => {
+                c.innerHTML = top200.map(e => {
                     const dt = e.createdAtISO ? new Date(e.createdAtISO).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
                     const roleColor = _ROLE_COLORS[e.role] || '#94a3b8';
-                    return `<div style="display:grid;grid-template-columns:140px 160px 1fr;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);align-items:start">
-                        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;letter-spacing:1px">${dt}</div>
+                    return `<div style="display:grid;grid-template-columns:160px 200px 1fr;gap:16px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.07);align-items:start;transition:background .15s" onmouseover="this.style.background='rgba(0,217,255,.03)'" onmouseout="this.style.background='transparent'">
+                        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#aaa;letter-spacing:1px;padding-top:2px">${dt}</div>
                         <div>
-                            <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:#e0e0e0">${esc(e.by||'—')}</div>
-                            <div style="font-size:8px;letter-spacing:1px;color:${roleColor};margin-top:1px">${(e.role||'').replace(/_/g,' ').toUpperCase()}</div>
+                            <div style="font-family:Rajdhani,sans-serif;font-size:15px;font-weight:700;color:#fff">${esc(e.by||'—')}</div>
+                            <div style="font-size:10px;letter-spacing:2px;color:${roleColor};margin-top:2px;font-weight:700">${(e.role||'').replace(/_/g,' ').toUpperCase()}</div>
                         </div>
                         <div>
-                            <div style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:${col};letter-spacing:1px">${esc(e.action||'—')}</div>
-                            <div style="font-size:10px;color:#888;margin-top:2px">${esc(e.details||'—')}</div>
+                            <div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:${col};letter-spacing:2px;margin-bottom:4px">${esc(e.action||'—')}</div>
+                            <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#ccc;line-height:1.5">${esc(e.details||'—')}</div>
                         </div>
                     </div>`;
                 }).join('');
@@ -1302,6 +1304,7 @@
             try {
                 const snap = await getDoc(doc(db,'settings','unit_cards'));
                 unitCardData = snap.exists() ? snap.data() : {};
+            window._ucSnapshot = JSON.parse(JSON.stringify(unitCardData)); // baseline for audit diff
             } catch(e) { unitCardData = {}; }
             renderUnitCards();
         }
@@ -1489,7 +1492,27 @@
             if(btn) { btn.disabled=true; btn.textContent='SAVING...'; }
             try {
                 await setDoc(doc(db,'settings','unit_cards'), unitCardData);
-                writeAuditLog('public_comms','UNIT CARDS SAVED','All unit card data updated across career path pages');
+                // Diff unitCardData vs saved snapshot to log exactly what changed
+                const _changes = [];
+                if(window._ucSnapshot) {
+                    for(const key of Object.keys(unitCardData||{})) {
+                        const newVal = JSON.stringify(unitCardData[key]||{});
+                        const oldVal = JSON.stringify(window._ucSnapshot[key]||{});
+                        if(newVal !== oldVal) {
+                            const parts = key.split('__');
+                            const page = parts[0]||key;
+                            const slot = parts[1]||'';
+                            const nd = unitCardData[key]||{};
+                            const od = window._ucSnapshot[key]||{};
+                            if(nd.name !== od.name) _changes.push(`${page}/${slot}: ${od.name||'empty'} → ${nd.name||'empty'}`);
+                            else if(nd.status !== od.status) _changes.push(`${page}/${slot}: status ${od.status||'?'} → ${nd.status||'?'}`);
+                            else _changes.push(`${page}/${slot} updated`);
+                        }
+                    }
+                }
+                const _auditDetail = _changes.length ? _changes.join(' | ') : 'Unit cards saved';
+                writeAuditLog('public_comms','UNIT CARDS SAVED',_auditDetail);
+                window._ucSnapshot = JSON.parse(JSON.stringify(unitCardData||{}));
                 notify('UNIT CARDS SAVED — CAREER PATH PAGES WILL SHOW UPDATED DATA ON REFRESH');
                 if(btn) { btn.textContent='SAVED ✓'; btn.style.borderColor='var(--success)'; btn.style.color='var(--success)'; }
                 setTimeout(()=>{ if(btn){btn.textContent='SAVE CHANGES';btn.style.borderColor='';btn.style.color='';btn.disabled=false;} }, 3000);
@@ -2920,7 +2943,7 @@
                 const updateData = {status:'active', role:'enlistee'};
                 if(src) updateData.recruitSource = src;
                 await updateDoc(doc(db,'users',uid), updateData);
-                logAction('APPROVE', displayName);
+                writeAuditLog('manpower','ENLISTMENT APPROVED',`${displayName} approved as Enlistee${src?' — Source: '+src:''}`);
                 notify('APPROVED: '+displayName+(src?' — SOURCE: '+src:''));
                 // Fire approved webhook
                 fireWebhook('approved', {
@@ -2987,8 +3010,9 @@
                         deniedBy: currentUserData?.callsign||'Staff'
                     });
                 }
+                const _rmUser = allUsers.find(x=>x.id===uid);
                 await deleteDoc(doc(db,'users',uid));
-                logAction('REMOVE',callsign);
+                writeAuditLog('manpower','MEMBER REMOVED',`${_rmUser?formatMemberName(_rmUser)||callsign:callsign} removed from unit`);
                 notify('REMOVED: '+callsign);
                 allUsers=[];
                 loadAllUsers();
@@ -3002,7 +3026,13 @@
                 if (target?.role === 'commander') { notify('CANNOT MODIFY COMMANDER ROLE',1); return; }
                 if (role === 'commander') { notify('CANNOT ASSIGN COMMANDER ROLE',1); return; }
             }
-            try { await updateDoc(doc(db,'users',uid),{role}); logAction('ROLE_CHANGE',uid+' → '+role); notify('ROLE UPDATED'); allUsers=[]; loadAllUsers(); } catch(e){notify('ERROR',1);}
+            try {
+                const _roleUser = allUsers.find(u=>u.id===uid);
+                const _oldRole = _roleUser?.role||'—';
+                await updateDoc(doc(db,'users',uid),{role});
+                writeAuditLog('manpower','ROLE CHANGE',`${formatMemberName(_roleUser)||_roleUser?.callsign||uid}: ${_oldRole} → ${role}`);
+                notify('ROLE UPDATED'); allUsers=[]; loadAllUsers();
+            } catch(e){notify('ERROR',1);}
         };
         window.changeRank = async function(uid, rank) {
             const u = allUsers.find(x=>x.id===uid);
@@ -3282,8 +3312,18 @@
             }
             try {
                 await updateDoc(doc(db,'users',uid),data);
+                // Build audit detail string
+                const _auditParts = [];
+                const _newFirst = document.getElementById('editFirstName')?.value?.trim()||'';
+                const _newLast  = document.getElementById('editLastName')?.value?.trim()||'';
+                const _newCs    = document.getElementById('editCallsign')?.value?.trim()||'';
+                if(oldUser && newRank && newRank!==(oldUser.rank||'')) _auditParts.push(`rank: ${oldUser.rank||'—'} → ${newRank}`);
+                if(oldUser && newRole && newRole!==(oldUser.role||'')) _auditParts.push(`role: ${oldUser.role||'—'} → ${newRole}`);
+                if(oldUser && newPlatoon && newPlatoon!==(oldUser.platoon||'')) _auditParts.push(`platoon: ${oldUser.platoon||'—'} → ${newPlatoon}`);
+                if(oldUser && _newCs && _newCs!==(oldUser.callsign||'')) _auditParts.push(`callsign: ${oldUser.callsign||'—'} → ${_newCs}`);
+                if(oldUser && (_newFirst!==(oldUser.firstName||'') || _newLast!==(oldUser.lastName||''))) _auditParts.push(`name: ${oldUser.firstName||''} ${oldUser.lastName||''} → ${_newFirst} ${_newLast}`.trim());
+                writeAuditLog('manpower','PERSONNEL FILE EDITED',`${formatMemberName(oldUser)||oldUser?.callsign||uid}${_auditParts.length?' — '+_auditParts.join(', '):''}`);
                 notify('SAVED');
-                logAction('EDIT_USER',uid);
                 closeEditModal();
                 allUsers=[];
                 loadAllUsers();
@@ -5447,10 +5487,65 @@
                         </div>
                     </div>
                 </div>
+            
+                <!-- AUDIT LOG PANELS -->
+                <div class="panel hidden" id="panel-audit-manpower">
+                    <div class="panel-title">AUDIT LOG — MANPOWER</div>
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">PERSONNEL CHANGES — RANK, ROLE, TRANSFERS, WARNINGS, ENLISTMENTS · AUTO-PURGE AFTER 7 DAYS</p>
+                    <div style="display:flex;gap:10px;margin-bottom:14px"><button class="action-btn approve-btn" onclick="loadAuditLog('manpower')" style="padding:6px 16px;font-size:10px;letter-spacing:2px">&#8635; REFRESH</button></div>
+                    <div style="background:rgba(0,0,0,.3);border:1px solid rgba(167,139,250,.15)">
+                        <div style="display:grid;grid-template-columns:160px 200px 1fr;gap:16px;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,.1);background:rgba(167,139,250,.06)">
+                            <div style="font-size:9px;letter-spacing:2px;color:rgba(167,139,250,.9);font-weight:700">TIMESTAMP</div>
+                            <div style="font-size:9px;letter-spacing:2px;color:rgba(167,139,250,.9);font-weight:700">OPERATOR</div>
+                            <div style="font-size:9px;letter-spacing:2px;color:rgba(167,139,250,.9);font-weight:700">ACTION / DETAILS</div>
+                        </div>
+                        <div id="auditLog-manpower"><div class="empty-state">LOADING...</div></div>
+                    </div>
+                </div>
+                <div class="panel hidden" id="panel-audit-battalion">
+                    <div class="panel-title">AUDIT LOG — BATTALION OPS</div>
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">ATTENDANCE EVENTS, LOCKS, UNLOCKS, ROSTER CHANGES · AUTO-PURGE AFTER 7 DAYS</p>
+                    <div style="display:flex;gap:10px;margin-bottom:14px"><button class="action-btn approve-btn" onclick="loadAuditLog('battalion_ops')" style="padding:6px 16px;font-size:10px;letter-spacing:2px">&#8635; REFRESH</button></div>
+                    <div style="background:rgba(0,0,0,.3);border:1px solid rgba(0,217,255,.15)">
+                        <div style="display:grid;grid-template-columns:160px 200px 1fr;gap:16px;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,.1);background:rgba(0,217,255,.06)">
+                            <div style="font-size:9px;letter-spacing:2px;color:rgba(0,217,255,.9);font-weight:700">TIMESTAMP</div>
+                            <div style="font-size:9px;letter-spacing:2px;color:rgba(0,217,255,.9);font-weight:700">OPERATOR</div>
+                            <div style="font-size:9px;letter-spacing:2px;color:rgba(0,217,255,.9);font-weight:700">ACTION / DETAILS</div>
+                        </div>
+                        <div id="auditLog-battalion_ops"><div class="empty-state">LOADING...</div></div>
+                    </div>
+                </div>
+                <div class="panel hidden" id="panel-audit-comms">
+                    <div class="panel-title">AUDIT LOG — PUBLIC COMMS</div>
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">CMS CONTENT, UNIT CARDS, PAGE EDITS · AUTO-PURGE AFTER 7 DAYS</p>
+                    <div style="display:flex;gap:10px;margin-bottom:14px"><button class="action-btn approve-btn" onclick="loadAuditLog('public_comms')" style="padding:6px 16px;font-size:10px;letter-spacing:2px">&#8635; REFRESH</button></div>
+                    <div style="background:rgba(0,0,0,.3);border:1px solid rgba(52,211,153,.15)">
+                        <div style="display:grid;grid-template-columns:160px 200px 1fr;gap:16px;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,.1);background:rgba(52,211,153,.06)">
+                            <div style="font-size:9px;letter-spacing:2px;color:rgba(52,211,153,.9);font-weight:700">TIMESTAMP</div>
+                            <div style="font-size:9px;letter-spacing:2px;color:rgba(52,211,153,.9);font-weight:700">OPERATOR</div>
+                            <div style="font-size:9px;letter-spacing:2px;color:rgba(52,211,153,.9);font-weight:700">ACTION / DETAILS</div>
+                        </div>
+                        <div id="auditLog-public_comms"><div class="empty-state">LOADING...</div></div>
+                    </div>
+                </div>
+                <div class="panel hidden" id="panel-audit-discord">
+                    <div class="panel-title">AUDIT LOG — DISCORD &amp; NETWORK</div>
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">WEBHOOK CHANGES, DISCORD LINKS, BOT CONFIG · AUTO-PURGE AFTER 7 DAYS</p>
+                    <div style="display:flex;gap:10px;margin-bottom:14px"><button class="action-btn approve-btn" onclick="loadAuditLog('discord_network')" style="padding:6px 16px;font-size:10px;letter-spacing:2px">&#8635; REFRESH</button></div>
+                    <div style="background:rgba(0,0,0,.3);border:1px solid rgba(251,146,60,.15)">
+                        <div style="display:grid;grid-template-columns:160px 200px 1fr;gap:16px;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,.1);background:rgba(251,146,60,.06)">
+                            <div style="font-size:9px;letter-spacing:2px;color:rgba(251,146,60,.9);font-weight:700">TIMESTAMP</div>
+                            <div style="font-size:9px;letter-spacing:2px;color:rgba(251,146,60,.9);font-weight:700">OPERATOR</div>
+                            <div style="font-size:9px;letter-spacing:2px;color:rgba(251,146,60,.9);font-weight:700">ACTION / DETAILS</div>
+                        </div>
+                        <div id="auditLog-discord_network"><div class="empty-state">LOADING...</div></div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
-    
+
     <!-- Mobile sidebar helpers -->
     <script>
         function toggleSidebar() {
