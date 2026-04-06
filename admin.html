@@ -19,12 +19,13 @@
         let currentUser=null, currentUserData=null, allUsers=[], allMedia=[], pageContentData={};
         let rosterData=[], rosterSort='name-asc';
 
-        const ADMIN_ROLES = ['commander','developer','staff_nco','nco','recruiter'];
+        const ADMIN_ROLES = ['commander','officer','developer','staff_nco','nco','recruiter'];
         const ROLE_PERMISSIONS = {
             // Full access. Can demote/assign anyone including other commanders.
             'commander': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,canDeleteUsers:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:1,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Same as commander but CANNOT touch commander role assignments.
-            'developer': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,canDeleteUsers:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
+            'officer':   {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,canDeleteUsers:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
+            'developer':   {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,canDeleteUsers:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Personnel (active+register, NO promote) + Media + Unit Management + Page Content + Discord setting.
             'staff_nco': {personnel:1,activePersonnel:1,registerPanel:1,promote:1,media:1,content:1,pages:1,settings:1,canChangeRoles:1,canApprove:1,canEditProfiles:1,canDeleteUsers:1,auditLog:1,aar:1,discordLink:1,roster:1,unitcards:1,canDemoteCommander:0,dash_stats:1,dash_discord:1,dash_roster:1,dash_inactive:1,dash_pending:1,dash_recent:1,dash_reserve:1},
             // Register Panel only + Media Gallery + AAR + Battalion Roster. NO Unit Cards.
@@ -105,7 +106,7 @@
         // ── ONLINE PRESENCE — Dashboard ───────────────────────────────────
         let _dashPresSession = null, _dashPresUnsub = null, _dashPresHb = null, _dashPresJoining = false;
         const _STALE_MS = 120000; // 2 min — heartbeat every 30s, allows 4 missed beats
-        const _ROLE_COLORS = {commander:'#f59e0b',developer:'#a78bfa',staff_nco:'#2DD4BF',nco:'#34d399',recruiter:'#fb923c',marine:'#94a3b8',enlistee:'#64748b'};
+        const _ROLE_COLORS = {commander:'#f59e0b',officer:'#d97706',developer:'#a78bfa',staff_nco:'#2DD4BF',nco:'#34d399',recruiter:'#fb923c',marine:'#94a3b8',enlistee:'#64748b'};
 
         async function dashPresJoin() {
             if (!currentUser || !currentUserData || _dashPresSession || _dashPresJoining) return;
@@ -174,7 +175,7 @@
                 countEl.style.color       = online.length ? '#00FF41' : '#555';
             }
             if (!online.length) { list.innerHTML = '<div class="empty-state">NO MEMBERS ONLINE</div>'; return; }
-            const roleOrder = ['commander','developer','staff_nco','nco','recruiter','marine','enlistee'];
+            const roleOrder = ['commander','officer','developer','staff_nco','nco','recruiter','marine','enlistee'];
             online.sort((a,b) => {
                 if (a.uid === currentUser?.uid) return -1;
                 if (b.uid === currentUser?.uid) return 1;
@@ -224,7 +225,7 @@
         let _msgSelectedUids = [];
         let _msgConversations = [];
 
-        const ADMIN_ROLES_CHAT = ['commander','developer','staff_nco','nco','recruiter'];
+        const ADMIN_ROLES_CHAT = ['commander','officer','developer','staff_nco','nco','recruiter'];
 
         // Toggle panel open/close
         window.toggleMsgPanel = function() {
@@ -691,6 +692,80 @@
             }
         });
 
+
+        // ═══════════════════════════════════════════════════════════
+        // AUDIT LOG SYSTEM
+        // ═══════════════════════════════════════════════════════════
+        async function writeAuditLog(section, action, details) {
+            if (!currentUser || !currentUserData) return;
+            try {
+                await addDoc(collection(db, 'audit_logs'), {
+                    section,   // 'manpower' | 'battalion_ops' | 'public_comms' | 'discord_network'
+                    action,    // e.g. 'RANK_CHANGE', 'EVENT_LOCKED', 'CMS_SAVED'
+                    details,   // human-readable string
+                    uid:       currentUser.uid,
+                    by:        formatMemberName(currentUserData) || currentUserData.callsign || 'Unknown',
+                    role:      currentUserData.role || '—',
+                    createdAt: serverTimestamp(),
+                    createdAtISO: new Date().toISOString(),
+                });
+            } catch(e) { console.warn('auditLog write failed:', e); }
+        }
+
+        // Auto-delete entries older than 7 days (runs on audit panel load)
+        async function purgeOldAuditLogs() {
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - 7);
+            const cutoffISO = cutoff.toISOString();
+            try {
+                const old = await getDocs(query(
+                    collection(db, 'audit_logs'),
+                    where('createdAtISO', '<', cutoffISO)
+                ));
+                old.forEach(async d => { try { await deleteDoc(d.ref); } catch(e) {} });
+                console.log(`Purged ${old.size} old audit log entries`);
+            } catch(e) { console.warn('auditLog purge failed:', e); }
+        }
+
+        // Load & render audit log panel
+        window.loadAuditLog = async function(section) {
+            const canView = ['commander','officer','developer'].includes(currentUserData?.role);
+            if (!canView) return;
+            await purgeOldAuditLogs();
+            const panelId = 'auditLog-' + section;
+            const c = document.getElementById(panelId);
+            if (!c) return;
+            c.innerHTML = '<div class="empty-state">LOADING...</div>';
+            try {
+                const snap = await getDocs(query(
+                    collection(db, 'audit_logs'),
+                    where('section', '==', section),
+                    orderBy('createdAtISO', 'desc'),
+                    limit(200)
+                ));
+                if (snap.empty) { c.innerHTML = '<div class="empty-state">NO LOG ENTRIES</div>'; return; }
+                const entries = [];
+                snap.forEach(d => entries.push({id:d.id,...d.data()}));
+                const sectionColors = {manpower:'#a78bfa',battalion_ops:'var(--accent)',public_comms:'#34d399',discord_network:'#fb923c'};
+                const col = sectionColors[section] || 'var(--accent)';
+                c.innerHTML = entries.map(e => {
+                    const dt = e.createdAtISO ? new Date(e.createdAtISO).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+                    const roleColor = _ROLE_COLORS[e.role] || '#94a3b8';
+                    return `<div style="display:grid;grid-template-columns:140px 160px 1fr;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);align-items:start">
+                        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#555;letter-spacing:1px">${dt}</div>
+                        <div>
+                            <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:#e0e0e0">${esc(e.by||'—')}</div>
+                            <div style="font-size:8px;letter-spacing:1px;color:${roleColor};margin-top:1px">${(e.role||'').replace(/_/g,' ').toUpperCase()}</div>
+                        </div>
+                        <div>
+                            <div style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:${col};letter-spacing:1px">${esc(e.action||'—')}</div>
+                            <div style="font-size:10px;color:#888;margin-top:2px">${esc(e.details||'—')}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch(e) { c.innerHTML = `<div class="empty-state">ERROR: ${esc(e.message)}</div>`; }
+        };
+
         async function logAction(a, d) { /* disabled for performance */ }
 
         const PAGE_SLOTS = {
@@ -971,6 +1046,7 @@
             if(att>3)att=3;
             r.attendance=att;
             await updateDoc(doc(db,'users',id),{attendance:att,updatedAt:new Date().toISOString()});
+            writeAuditLog('battalion_ops','ATTENDANCE PIP',`Manual +1 pip for ${formatMemberName(r)||r.callsign} (now ${att}/3)`);
             if(att>=3) notify(formatMemberName(r)+' — 3/3 ATTENDANCE — READY FOR PT PROMOTION');
             else notify(formatMemberName(r)+' — ATTENDANCE: '+att+'/3');
             renderRosterTable();
@@ -982,6 +1058,7 @@
             r.promotionTracker=pt;
             r.attendance=0;
             await updateDoc(doc(db,'users',id),{promotionTracker:pt,attendance:0,updatedAt:new Date().toISOString()});
+            writeAuditLog('battalion_ops','PT AWARDED',`+1 PT for ${formatMemberName(r)||r.callsign} (now ${pt} PT), attendance reset`);
             notify(formatMemberName(r)+' — PT +1 (NOW '+pt+') — ATTENDANCE RESET');
             renderRosterTable();
         };
@@ -1087,7 +1164,8 @@
                 updatedAt:new Date().toISOString()
             };
             await updateDoc(doc(db,'users',id),data);
-            logAction('ROSTER_EDIT','Edited user '+id);
+            const _rMember = rosterData.find(r=>r.id===id);
+            writeAuditLog('battalion_ops','ROSTER ENTRY EDITED',`${_rMember?formatMemberName(_rMember)||_rMember.callsign:id}: platoon=${platoon}, rank=${rank||'—'}, att=${data.attendance}, PT=${data.promotionTracker}`);
             notify('ROSTER ENTRY UPDATED');
             closeRosterModal();
             await loadRosterPanel();
@@ -1411,7 +1489,7 @@
             if(btn) { btn.disabled=true; btn.textContent='SAVING...'; }
             try {
                 await setDoc(doc(db,'settings','unit_cards'), unitCardData);
-                logAction('UNIT_CARDS_SAVE','Saved all unit card data');
+                writeAuditLog('public_comms','UNIT CARDS SAVED','All unit card data updated across career path pages');
                 notify('UNIT CARDS SAVED — CAREER PATH PAGES WILL SHOW UPDATED DATA ON REFRESH');
                 if(btn) { btn.textContent='SAVED ✓'; btn.style.borderColor='var(--success)'; btn.style.color='var(--success)'; }
                 setTimeout(()=>{ if(btn){btn.textContent='SAVE CHANGES';btn.style.borderColor='';btn.style.color='';btn.disabled=false;} }, 3000);
@@ -1460,6 +1538,10 @@
                 loadPageContent(resolvedPageId);
             }
             if (id==='panel-promote') loadPromotePanel();
+            if (id==='panel-audit-manpower')  loadAuditLog('manpower');
+            if (id==='panel-audit-battalion') loadAuditLog('battalion_ops');
+            if (id==='panel-audit-comms')     loadAuditLog('public_comms');
+            if (id==='panel-audit-discord')   loadAuditLog('discord_network');
         }
 
         window.toggleDropdown = function(navId) {
@@ -1933,7 +2015,7 @@
             const lockBtn   = document.getElementById('attLockBtn');
             const unlockBtn = document.getElementById('attUnlockBtn');
             const saveBtn   = document.getElementById('attSaveBtn');
-            const canLock   = ['staff_nco','developer','commander'].includes(currentUserData?.role);
+            const canLock   = ['staff_nco','officer','developer','commander'].includes(currentUserData?.role);
 
             if (evData.locked) {
                 // ── LOCKED STATE ──────────────────────────────────────
@@ -2135,6 +2217,7 @@
                 if (arrow) arrow.style.transform = 'rotate(0deg)';
 
                 notify('EVENT CREATED — ' + title + ' — READY TO LOG ATTENDANCE');
+                writeAuditLog('battalion_ops','EVENT CREATED',`${title} (${date}) — Type: ${type}`);
             } catch(e) { notify('CREATE FAILED: ' + e.message, 1); }
             if (btn) { btn.disabled=false; btn.textContent='+ ADD NEW EVENT'; }
         };
@@ -2286,6 +2369,7 @@
                     // Recalculate ALL members from scratch — guaranteed accurate, no double counting
                     await recalcAllStats();
                     notify('EVENT LOCKED — ' + attendees.length + ' PRESENT — STATS RECALCULATED');
+                    writeAuditLog('battalion_ops','EVENT LOCKED',`${title} (${date}) — ${attendees.length} present, stats recalculated`);
                     fireWebhook('attendance', {
                         title, date,
                         type: {main_op:'Main Op',patrol:'Patrol',training:'Training',fun_op:'Fun Op'}[type] || type,
@@ -2294,6 +2378,7 @@
                     });
                 } else {
                     notify('EVENT SAVED — ' + attendees.length + ' MARKED PRESENT');
+                    writeAuditLog('battalion_ops','ATTENDANCE SAVED',`${title} (${date}) — ${attendees.length} present`);
                 }
                 await loadAttendancePanel();
             } catch(e) { notify('SAVE FAILED: ' + e.message, 1); }
@@ -2315,6 +2400,7 @@
                 });
                 attEventData.locked = false;
                 notify('EVENT UNLOCKED — MAKE CORRECTIONS THEN RE-LOCK');
+                writeAuditLog('battalion_ops','EVENT UNLOCKED',`${attEventData.title||'—'} (${attEventData.date||'—'}) unlocked for corrections`);
                 // Show edit controls, hide unlock button
                 renderAttRoster();
                 const lockBtn   = document.getElementById('attLockBtn');
@@ -2541,7 +2627,7 @@
                             ${P().canChangeRoles && !isLockedCommander?`<div style="display:flex;flex-direction:column;gap:3px">
                                 <div style="color:rgba(0,217,255,.5);font-size:8px;letter-spacing:1px">ROLE</div>
                                 <select onchange="changeRole('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace">
-                                    ${['enlistee','marine','recruiter','nco','staff_nco','commander','developer'].filter(r=>P().canDemoteCommander?true:r!=='commander').map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+                                    ${['enlistee','marine','recruiter','nco','staff_nco','officer','developer','commander'].filter(r=>P().canDemoteCommander?true:r!=='commander').map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
                                 </select>
                             </div>
                             <div style="display:flex;flex-direction:column;gap:3px">
@@ -2737,6 +2823,7 @@
                 await setDoc(doc(db,'settings','webhooks'), data, {merge:true});
                 webhookConfig = data;
                 notify('WEBHOOKS SAVED');
+            writeAuditLog('discord_network','WEBHOOKS SAVED','Discord webhook URLs updated');
             } catch(e){ notify('SAVE FAILED: '+e.message,1); }
         };
 
@@ -2942,6 +3029,7 @@
                 await updateDoc(doc(db,'users',uid),updateData);
                 logAction('RANK_CHANGE',uid+' → '+rank);
                 if(!updateData.graduation) notify('RANK UPDATED: '+(rank||'CLEARED'));
+                writeAuditLog('manpower','RANK CHANGE',`${formatMemberName(u)||u.callsign}: ${u.rank||'—'} → ${rank||'cleared'}`);
                 if(u){ u.rank=rank; if(updateData.promotionHistory) u.promotionHistory=updateData.promotionHistory; if(updateData.graduation) u.graduation=updateData.graduation; }
                 if(updateData.promotionHistory) { try { await addDoc(collection(db,'notifications',uid,'items'),{type:'promotion',read:false,title:'You have been promoted!',body:'New rank: '+rank,createdAt:serverTimestamp()}); } catch(_e){} }
             } catch(e){notify('ERROR',1);}
@@ -2980,7 +3068,7 @@
             const rsEl = document.getElementById('editRecruitSource');
             if(rsEl) rsEl.value = u.recruitSource||'';
             // Callsign — locked for roles below staff_nco
-            const canEditCallsign = ['staff_nco','developer','commander'].includes(currentUserData?.role);
+            const canEditCallsign = ['staff_nco','officer','developer','commander'].includes(currentUserData?.role);
             const csInput = document.getElementById('editCallsign');
             const csLock  = document.getElementById('editCallsignLock');
             const csLabel = document.getElementById('editCallsignLockLabel');
@@ -3105,6 +3193,9 @@
                 notify('ENTRY ADDED');
                 const memberName = formatMemberName(u)||u.callsign||'Unknown';
                 const by = currentUserData?.callsign||'Staff';
+                const _auditDetails = type==='promo'?`Promotion: ${entry.fromRank||'—'} → ${entry.toRank||'—'} for ${memberName}`:type==='warn'?`Warning (${entry.severity||'Minor'}) for ${memberName}: ${entry.note||'—'}`:type==='platoon'?`Transfer: ${entry.from||'—'} → ${entry.to||'—'} for ${memberName}`:`Commendation: ${entry.title||'—'} for ${memberName}`;
+                const _auditAction = type==='promo'?'PROMOTION':type==='warn'?'WARNING':type==='platoon'?'TRANSFER':'COMMENDATION';
+                writeAuditLog('manpower', _auditAction, _auditDetails);
                 if(type==='promo')   fireWebhook('promote',  {name:memberName, fromRank:entry.fromRank||'—', toRank:entry.toRank||'—', note:entry.note||'—', by});
                 if(type==='warn')    fireWebhook('warning',  {name:memberName, severity:entry.severity||'—', reason:entry.note||'—', by});
                 if(type==='platoon') fireWebhook('platoon',  {name:memberName, from:entry.from||'—', to:entry.to||'—', note:entry.note||'—', by});
@@ -3139,7 +3230,7 @@
         window.saveUserEdit = async function() {
             const uid     = document.getElementById('editUserId').value;
             const oldUser = allUsers.find(x=>x.id===uid);
-            const canEditCallsign = ['staff_nco','developer','commander'].includes(currentUserData?.role);
+            const canEditCallsign = ['staff_nco','officer','developer','commander'].includes(currentUserData?.role);
             const newRank = document.getElementById('editRankSelect').value;
             const newRole = document.getElementById('editRoleSelect').value;
             // Block commander role change if not permitted
@@ -3481,6 +3572,7 @@
                     const u = allUsers.find(x=>x.id===uid);
                     if(u){ u.opsAttended=opsAtt; u.opsEligible=opsElig; }
                     notify(`MONTHLY RATE UPDATED — ${memberName}: ${opsAtt}/${opsElig}`);
+                    writeAuditLog('battalion_ops','OPS RATE CORRECTED',`${memberName}: ops attended=${opsAtt}, eligible=${opsElig} (manual correction)`);
                     renderAttRoster();
                 }
 
@@ -3492,6 +3584,7 @@
                     await updateDoc(doc(db,'users',uid), {attendance:att, promotionTracker:pt, opsAttended:opsAtt, opsEligible:opsElig, updatedAt:new Date().toISOString()});
                     u.attendance=att; u.promotionTracker=pt; u.opsAttended=opsAtt; u.opsEligible=opsElig;
                     notify('ROSTER STATS UPDATED — ' + memberName);
+                    writeAuditLog('battalion_ops','ROSTER STATS EDITED',`${memberName}: att=${att}/3, PT=${pt}, ops=${opsAtt}/${opsElig}`);
                 }
 
                 else if(action === 'promote') {
@@ -3507,6 +3600,7 @@
                     u.promotionHistory = updateData.promotionHistory;
                     fireWebhook('promote', {name:memberName, fromRank:u.rank||'—', toRank:newRank, note:entry.note, by});
                     notify('PROMOTED: ' + memberName);
+                    writeAuditLog('manpower','QUICK PROMOTE',`${memberName}: ${u.rank||'—'} → ${newRank}${note?' ('+note+')':''} via Battalion Roster`);
                     try{await addDoc(collection(db,'notifications',uid,'items'),{type:'promotion',read:false,title:'You have been promoted!',body:'New rank: '+newRank,createdAt:serverTimestamp()});}catch(_e){}
                 }
 
@@ -3520,6 +3614,7 @@
                     u.platoon = toPlatoon; u.joinedPlatoon = today; u.platoonHistory = updateData.platoonHistory;
                     fireWebhook('platoon', {name:memberName, from:entry.from, to:toPlatoon, note:entry.note, by});
                     notify('TRANSFERRED: ' + memberName + ' → ' + toPlatoon);
+                    writeAuditLog('manpower','QUICK TRANSFER',`${memberName}: ${entry.from||'—'} → ${toPlatoon}${note?' ('+note+')':''} via Battalion Roster`);
                     try{await addDoc(collection(db,'notifications',uid,'items'),{type:'transfer',read:false,title:'You have been transferred to a new platoon',body:(entry.from||'—')+' → '+toPlatoon,createdAt:serverTimestamp()});}catch(_e){}
                 }
 
@@ -3533,6 +3628,7 @@
                     u.warningHistory = updateData.warningHistory;
                     fireWebhook('warning', {name:memberName, severity, reason, by});
                     notify('WARNING FILED: ' + memberName);
+                    writeAuditLog('manpower','QUICK WARNING',`${memberName}: ${severity} warning — ${reason} via Battalion Roster`);
                 }
 
                 closeQuickAction();
@@ -3550,7 +3646,7 @@
                     <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-role">${(u.role||'').toUpperCase()}</div></div>
                     <div class="user-actions">
                         <select onchange="changeRole('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace">
-                            ${['enlistee','marine','recruiter','nco','staff_nco','commander','developer'].filter(r=>P().canDemoteCommander?true:r!=='commander').map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+                            ${['enlistee','marine','recruiter','nco','staff_nco','officer','developer','commander'].filter(r=>P().canDemoteCommander?true:r!=='commander').map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
                         </select>
                     </div>
                 </div>`).join('') || '<div class="empty-state">NO PERSONNEL</div>';
@@ -3632,7 +3728,7 @@
             const el=document.getElementById('input-'+key); if(!el) return;
             if(!pageContentData[key]) pageContentData[key]={};
             pageContentData[key].value=el.value;
-            try { await setDoc(doc(db,'settings','page_content'),pageContentData); notify('SAVED: '+key.split('__')[1].toUpperCase()); } catch(e){notify('SAVE FAILED',1);}
+            try { await setDoc(doc(db,'settings','page_content'),pageContentData); writeAuditLog('public_comms','CMS SLOT SAVED',`Page: ${pageId||key.split('__')[0]}, Slot: ${key.split('__')[1]||key}`); notify('SAVED: '+key.split('__')[1].toUpperCase()); } catch(e){notify('SAVE FAILED',1);}
         };
 
         window.clearSlot = async function(key, pageId) {
@@ -4057,6 +4153,8 @@
             if(subRegister) subRegister.style.display = p.registerPanel?'':'none';
 
             // Unit Management — show if ANY sub-item is accessible
+            const navAuditEl = document.getElementById('nav-auditlog');
+            if (navAuditEl) navAuditEl.style.display = ['commander','officer','developer'].includes(currentUserData?.role) ? '' : 'none';
             const navAarEl = document.getElementById('nav-aar');
             if(navAarEl) navAarEl.style.display = (p.aar||p.roster||p.unitcards)?'':'none';
             const aarLink      = document.getElementById('navlink-aar');
@@ -4071,7 +4169,7 @@
             // Attendance — LOCK & FINALISE only for Staff NCO+
             const attLockBtn  = document.getElementById('attLockBtn');
             const attUnlockBtn= document.getElementById('attUnlockBtn');
-            const canLock = ['staff_nco','developer','commander'].includes(currentUserData?.role);
+            const canLock = ['staff_nco','officer','developer','commander'].includes(currentUserData?.role);
             if(attLockBtn)   attLockBtn.style.display   = canLock ? '' : 'none';
             if(attUnlockBtn) attUnlockBtn.style.display = 'none'; // hidden until locked event loaded
 
@@ -4768,6 +4866,8 @@
                 <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PUBLIC COMMS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">PUBLIC COMMS</div><div class="nav-tip-body">Edit content displayed on public-facing unit pages — photos, sliders, descriptions and section headers visible to recruits and visitors.</div></div></div><div class="sub-links"><div style="color:rgba(0,217,255,.7);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">CAREER PATHS</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div><div style="color:rgba(0,217,255,.7);font-size:8px;letter-spacing:2px;padding:10px 0 3px 4px">MEDIA</div><div class="sub-link" data-panel="panel-comms-library" onclick="showPanel('panel-comms-library')">&#9776; Comms Library</div></div></div>
                 <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> DISCORD &amp; NETWORK <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">DISCORD &amp; NETWORK</div><div class="nav-tip-body">Configure Discord invite link, webhook notifications, and Cortana bot integration for the unit.</div></div></div><div class="sub-links"><div id="navlink-discord" class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div id="navlink-webhooks" class="sub-link" data-panel="panel-webhooks" onclick="showPanel('panel-webhooks')">Discord Webhooks</div><div id="navlink-discord-tracking" class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Cortana Bot Integration</div></div></div>
                 <hr class="sidebar-divider">
+                <div class="nav-item" id="nav-auditlog"><div class="nav-header" onclick="toggleDropdown('nav-auditlog')"><span class="nav-icon">&#9741;</span> AUDIT LOG <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-audit-manpower" onclick="showPanel('panel-audit-manpower')">&#9823; Manpower</div><div class="sub-link" data-panel="panel-audit-battalion" onclick="showPanel('panel-audit-battalion')">&#9881; Battalion Ops</div><div class="sub-link" data-panel="panel-audit-comms" onclick="showPanel('panel-audit-comms')">&#9998; Public Comms</div><div class="sub-link" data-panel="panel-audit-discord" onclick="showPanel('panel-audit-discord')">&#9670; Discord &amp; Network</div></div></div>
+                <hr class="sidebar-divider">
                 <a href="home.html" class="quick-link"><span class="nav-icon">&#8962;</span> VIEW SITE</a>
             </div>
             <div class="main-content">
@@ -4964,6 +5064,7 @@
                             <span class="role-badge role-recruiter" style="align-self:center">RECRUITER</span><span style="color:#b0b0b0">Register Panel only — approve &amp; deny registrations.</span>
                             <span class="role-badge role-nco" style="align-self:center">NCO</span><span style="color:#b0b0b0">Register Panel + Media Gallery + After Action Reports + Battalion Roster.</span>
                             <span class="role-badge role-staff_nco" style="align-self:center">STAFF NCO</span><span style="color:#b0b0b0">Personnel (Active + Register) + Media + Unit Management + Page Content + Discord Invite Link.</span>
+                            <span class="role-badge role-officer" style="align-self:center">OFFICER</span><span style="color:#b0b0b0">Full access to all panels including Settings. Cannot assign/remove Commander role.</span>
                             <span class="role-badge role-developer" style="align-self:center">DEVELOPER</span><span style="color:#b0b0b0">Full access to all panels including Settings. Cannot assign/remove Commander role.</span>
                             <span class="role-badge role-commander" style="align-self:center">COMMANDER</span><span style="color:#b0b0b0">Full access including all role assignments. Highest authority.</span>
                         </div>
