@@ -909,8 +909,8 @@
             if(!rosterData.length){c.innerHTML='<div class="empty-state">NO ROSTER ENTRIES</div>';return;}
             c.innerHTML=sorted.map(r=>{
                 const att=r.attendance||0;
-                const pt=r.promotionTracker||0;
                 const attColor=att>=3?'#7FFF7F':att>=2?'#FFD700':'var(--accent)';
+                const pt=r.promotionTracker||0;
                 const ptReady=att>=3;
                 const ptStyle=ptReady?'color:#7FFF7F;font-weight:700;font-size:14px;text-shadow:0 0 8px rgba(127,255,127,.6);animation:ptGlow 1s ease-in-out infinite':'color:var(--accent);font-weight:700;font-size:14px';
                 return`<div class="roster-row">
@@ -926,7 +926,7 @@
                     <div class="roster-cell">
                         <div style="display:flex;align-items:center;gap:6px">
                             <span style="color:${attColor};font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;min-width:22px">${att}/3</span>
-                            ${att<3?`<input type="checkbox" onchange="markAttendance('${r.id}',this)" title="Mark attendance (+1)" style="cursor:pointer;width:15px;height:15px;accent-color:var(--accent)">`:'<span style="color:#7FFF7F;font-size:8px;letter-spacing:1px">FULL</span>'}
+                            ${att<3?`<input type="checkbox" onchange="markAttendance('${r.id}',this)" title="Mark attendance pip (+1)" style="cursor:pointer;width:15px;height:15px;accent-color:var(--accent)">`:'<span style="color:#7FFF7F;font-size:8px;letter-spacing:1px">FULL</span>'}
                         </div>
                     </div>
                     <div class="roster-cell" style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:500;color:#ccc">${calcPeriod(r.graduation)}</div>
@@ -2218,10 +2218,11 @@
                     }
                 });
 
-                // attendance pip = count of present in most recent 3 locked events
-                const sorted = [...allEvents].sort((a,b) => (b.date||'').localeCompare(a.date||''));
-                const recent3 = sorted.slice(0,3);
-                att = recent3.filter(ev => (ev.attendees||[]).includes(u.id)).length;
+                // attendance pip = count of present in current month's locked events (capped at 3)
+                const now = new Date();
+                const thisMonth = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+                const monthEvents = allEvents.filter(ev => (ev.date||'').startsWith(thisMonth));
+                att = Math.min(monthEvents.filter(ev => (ev.attendees||[]).includes(u.id)).length, 3);
 
                 const updates = { opsAttended, opsEligible, attendance:att, updatedAt:new Date().toISOString() };
                 if (lastAttendedDate) updates.lastAttendedDate = lastAttendedDate;
@@ -2240,6 +2241,7 @@
                     const updated = allUsers.find(u => u.id === r.id);
                     if (updated) { r.attendance=updated.attendance; r.opsAttended=updated.opsAttended; r.opsEligible=updated.opsEligible; r.lastAttendedDate=updated.lastAttendedDate; }
                 });
+
                 if (document.getElementById('panel-roster') && !document.getElementById('panel-roster').classList.contains('hidden')) {
                     renderRosterTable();
                 }
