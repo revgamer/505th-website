@@ -262,10 +262,15 @@
             if (_msgConvUnsub) _msgConvUnsub();
             if (!currentUser) return;
             _msgConvUnsub = onSnapshot(
-                query(collection(db, 'conversations'), where('participants', 'array-contains', currentUser.uid), orderBy('lastMessageAt', 'desc')),
+                query(collection(db, 'conversations'), where('participants', 'array-contains', currentUser.uid)),
                 snap => {
                     _msgConversations = [];
                     snap.forEach(d => _msgConversations.push({ id: d.id, ...d.data() }));
+                    _msgConversations.sort((a,b)=>{
+                        const ta = a.lastMessageAt?.toDate?a.lastMessageAt.toDate():new Date(a.lastMessageAt||0);
+                        const tb = b.lastMessageAt?.toDate?b.lastMessageAt.toDate():new Date(b.lastMessageAt||0);
+                        return tb-ta;
+                    });
                     renderConvList();
                     // Update unread badge
                     const totalUnread = _msgConversations.reduce((sum, c) => sum + (c.unreadCounts?.[currentUser.uid] || 0), 0);

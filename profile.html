@@ -314,10 +314,15 @@
 
             // Subscribe to conversations
             _chatConvUnsub = onSnapshot(
-                query(collection(db,'conversations'), where('participants','array-contains', uid), orderBy('lastMessageAt','desc')),
+                query(collection(db,'conversations'), where('participants','array-contains', uid)),
                 snap => {
                     _chatConversations = [];
                     snap.forEach(d => _chatConversations.push({id:d.id,...d.data()}));
+                    _chatConversations.sort((a,b)=>{
+                        const ta = a.lastMessageAt?.toDate?a.lastMessageAt.toDate():new Date(a.lastMessageAt||0);
+                        const tb = b.lastMessageAt?.toDate?b.lastMessageAt.toDate():new Date(b.lastMessageAt||0);
+                        return tb-ta;
+                    });
                     renderChatConvList();
                     // Update chat badge
                     const unread = _chatConversations.reduce((s,c) => s+(c.unreadCounts?.[uid]||0),0);
@@ -338,13 +343,11 @@
             if (c.participants?.length === 2) {
                 const otherUid = c.participants.find(u => u !== currentUser.uid);
                 const other = _chatAllUsers.find(u => u.id === otherUid);
-                if (other) {
-                    const rank = other.rank ? other.rank.split('/').pop().trim() : '';
-                    const cs = other.callsign || other.firstName || 'Unknown';
-                    return rank ? rank + ' ' + cs : cs;
-                }
+                if (other) return formatMemberName(other) || other.callsign || 'Unknown';
+                return otherUid ? otherUid.substring(0,8)+'...' : 'Unknown';
             }
-            return 'Group Chat';
+            if (c.participants?.length > 2) return c.name || 'Group Chat';
+            return 'Unknown';
         }
 
         function renderChatConvList() {
@@ -375,8 +378,15 @@
 
         window.chatOpenConv = async function(convId) {
             _chatActiveConvId = convId;
-            const conv = _chatConversations.find(c => c.id === convId);
-            if (!conv) return;
+            let conv = _chatConversations.find(c => c.id === convId);
+            if (!conv) {
+                try {
+                    const snap = await getDoc(doc(db,'conversations',convId));
+                    if (!snap.exists()) return;
+                    conv = {id:snap.id,...snap.data()};
+                    _chatConversations.unshift(conv);
+                } catch(e) { return; }
+            }
             document.getElementById('chatConvList').style.display = 'none';
             document.getElementById('chatConvView').style.display = 'flex';
             document.getElementById('chatConvTitle').textContent = chatConvName(conv);
@@ -543,7 +553,10 @@
                     unreadCounts, createdBy:currentUser.uid, createdAt:serverTimestamp()
                 });
                 chatCloseNew();
-                setTimeout(()=>chatOpenConv(ref.id),300);
+                // Add to local cache immediately so chatOpenConv can find it
+                const newConv={id:ref.id,participants,name:is1on1?null:'Group Chat',lastMessage:null,lastMessageAt:null,unreadCounts,createdBy:currentUser.uid};
+                _chatConversations.unshift(newConv);
+                chatOpenConv(ref.id);
             } catch(e){console.warn('chatCreateConv:',e);}
         };
 
