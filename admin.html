@@ -34,6 +34,32 @@
             'recruiter': {personnel:1,activePersonnel:0,registerPanel:1,promote:0,media:0,content:0,pages:0,settings:0,canChangeRoles:0,canApprove:1,canEditProfiles:0,canDeleteUsers:0,auditLog:0,aar:0,discordLink:0,roster:0,unitcards:0,canDemoteCommander:0,dash_stats:0,dash_discord:0,dash_roster:0,dash_inactive:0,dash_pending:1,dash_recent:0,dash_reserve:0},
         };
         function P() { return ROLE_PERMISSIONS[currentUserData?.role] || {}; }
+
+        function renderRoleOptions(currentRole) {
+            const assignable = getAssignableRoles();
+            const allRoles = ['enlistee','marine','recruiter','nco','staff_nco','officer','developer','commander'];
+            return allRoles.map(r => {
+                const selected = currentRole === r ? 'selected' : '';
+                const canAssign = assignable.includes(r);
+                const isCurrent = currentRole === r;
+                const disabled = (!canAssign && !isCurrent) ? 'disabled' : '';
+                const style = (!canAssign && !isCurrent) ? ' style="color:#444"' : '';
+                return `<option value="${r}" ${selected} ${disabled}${style}>${r.toUpperCase()}</option>`;
+            }).join('');
+        }
+
+
+        // Returns which roles the current user is allowed to assign
+        function getAssignableRoles() {
+            const r = currentUserData?.role;
+            if (r === 'commander')  return ['enlistee','marine','recruiter','nco','staff_nco','officer','developer','commander'];
+            if (r === 'officer')    return ['enlistee','marine','recruiter','nco','staff_nco'];
+            if (r === 'developer')  return ['enlistee','marine','recruiter','nco','staff_nco'];
+            if (r === 'staff_nco')  return ['enlistee','marine','recruiter','nco'];
+            if (r === 'nco')        return ['enlistee','marine','recruiter'];
+            return []; // recruiter and below cannot change roles
+        }
+
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
         // ── Rank abbreviation map ─────────────────────────────────────────
@@ -2655,7 +2681,7 @@
                             ${P().canChangeRoles && !isLockedCommander?`<div style="display:flex;flex-direction:column;gap:3px">
                                 <div style="color:rgba(0,217,255,.5);font-size:8px;letter-spacing:1px">ROLE</div>
                                 <select onchange="changeRole('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace">
-                                    ${['enlistee','marine','recruiter','nco','staff_nco','officer','developer','commander'].filter(r=>P().canDemoteCommander?true:r!=='commander').map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+                                    ${renderRoleOptions(u.role||'enlistee')}
                                 </select>
                             </div>
                             <div style="display:flex;flex-direction:column;gap:3px">
@@ -3025,11 +3051,15 @@
             } catch(e){notify('ERROR',1);}
         };
         window.changeRole = async function(uid, role) {
-            // Developers cannot assign or remove the commander role
-            if (!P().canDemoteCommander) {
-                const target = allUsers.find(u=>u.id===uid);
-                if (target?.role === 'commander') { notify('CANNOT MODIFY COMMANDER ROLE',1); return; }
-                if (role === 'commander') { notify('CANNOT ASSIGN COMMANDER ROLE',1); return; }
+            const _assignable = getAssignableRoles();
+            const target = allUsers.find(u=>u.id===uid);
+            // Block if target's current role is above what we can assign
+            if (target?.role && !_assignable.includes(target.role)) {
+                notify('INSUFFICIENT AUTHORITY TO MODIFY THIS MEMBERS ROLE',1); return;
+            }
+            // Block if the new role is above what we can assign
+            if (!_assignable.includes(role)) {
+                notify('INSUFFICIENT AUTHORITY TO ASSIGN ROLE: '+role.toUpperCase(),1); return;
             }
             try {
                 const _roleUser = allUsers.find(u=>u.id===uid);
@@ -3093,11 +3123,17 @@
             // Pre-fill FROM platoon with current platoon
             const fromEl = document.getElementById('histPlatoonFrom');
             if (fromEl) fromEl.value = u.platoon||'';
-            // Role dropdown — hide commander option if no canDemoteCommander
+            // Role dropdown — only show roles current user can assign
             const roleSelect = document.getElementById('editRoleSelect');
+            const _assignable = getAssignableRoles();
             Array.from(roleSelect.options).forEach(o => {
-                o.hidden = (o.value==='commander' && !P().canDemoteCommander);
+                o.hidden = !_assignable.includes(o.value);
             });
+            // If current value is not assignable, don't change it — just show as disabled
+            if (!_assignable.includes(u.role||'enlistee')) {
+                const opt = Array.from(roleSelect.options).find(o => o.value === (u.role||'enlistee'));
+                if (opt) { opt.hidden = false; opt.disabled = true; }
+            }
             roleSelect.value = u.role||'enlistee';
             // Recruit source
             const rsEl = document.getElementById('editRecruitSource');
@@ -3268,10 +3304,11 @@
             const canEditCallsign = ['staff_nco','officer','developer','commander'].includes(currentUserData?.role);
             const newRank = document.getElementById('editRankSelect').value;
             const newRole = document.getElementById('editRoleSelect').value;
-            // Block commander role change if not permitted
-            if(!P().canDemoteCommander){
-                if(oldUser?.role==='commander'){notify('CANNOT MODIFY COMMANDER ROLE',1);return;}
-                if(newRole==='commander'){notify('CANNOT ASSIGN COMMANDER ROLE',1);return;}
+            // Block role change if outside assignable range
+            const _editAssignable = getAssignableRoles();
+            if(newRole !== (oldUser?.role||'enlistee')) {
+                if(oldUser?.role && !_editAssignable.includes(oldUser.role)){notify('INSUFFICIENT AUTHORITY TO MODIFY THIS MEMBERS ROLE',1);return;}
+                if(!_editAssignable.includes(newRole)){notify('INSUFFICIENT AUTHORITY TO ASSIGN ROLE: '+newRole.toUpperCase(),1);return;}
             }
             const data = {
                 firstName: document.getElementById('editFirstName').value.trim(),
@@ -3691,7 +3728,7 @@
                     <div class="user-info"><div class="user-callsign">${esc(u.callsign)}</div><div class="user-role">${(u.role||'').toUpperCase()}</div></div>
                     <div class="user-actions">
                         <select onchange="changeRole('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace">
-                            ${['enlistee','marine','recruiter','nco','staff_nco','officer','developer','commander'].filter(r=>P().canDemoteCommander?true:r!=='commander').map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+                            ${renderRoleOptions(u.role||'enlistee')}
                         </select>
                     </div>
                 </div>`).join('') || '<div class="empty-state">NO PERSONNEL</div>';
