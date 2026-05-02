@@ -1097,6 +1097,58 @@
         };
 
         // ── Monthly attendance reset — now reads/writes users ───────────────
+
+        async function snapshotAttendanceHistory(monthStr, memberDocs) {
+            try {
+                // Count locked events for this month
+                const now = new Date();
+                const mStart = monthStr + '-01';
+                const nextM = new Date(now.getFullYear(), now.getMonth(), 1); // first of current month = end of prev
+                const mEnd = nextM.getFullYear() + '-' + String(nextM.getMonth() + 1).padStart(2,'0') + '-01';
+                const evSnap = await getDocs(query(
+                    collection(db, 'attendance_events'),
+                    where('locked','==',true),
+                    where('date','>=',mStart),
+                    where('date','<',mEnd)
+                ));
+                const totalOps = evSnap.size;
+                const evList = [];
+                evSnap.forEach(d => evList.push({id:d.id,...d.data()}));
+
+                const members = [];
+                memberDocs.forEach(d => {
+                    const u = d.data ? d.data() : d;
+                    const uid = d.id || u.id;
+                    if (u.status==='pending'||u.status==='denied'||u.platoon==='Reserves') return;
+                    // Count this member's attendance in this month's events
+                    const attended = evList.filter(ev=>(ev.attendees||[]).includes(uid)).length;
+                    const eligible = totalOps;
+                    const missed   = eligible - attended;
+                    const rate     = eligible > 0 ? Math.round((attended/eligible)*100) : 0;
+                    members.push({
+                        uid,
+                        name:     formatMemberName(u) || u.callsign || 'Unknown',
+                        rank:     u.rank || '—',
+                        platoon:  u.platoon || '—',
+                        role:     u.role || '—',
+                        attended, eligible, missed, rate,
+                        pip:      u.attendance || 0,
+                    });
+                });
+
+                members.sort((a,b) => b.rate - a.rate || a.name.localeCompare(b.name));
+
+                await setDoc(doc(db,'attendance_history',monthStr), {
+                    month:     monthStr,
+                    totalOps,
+                    memberCount: members.length,
+                    snapshotAt: new Date().toISOString(),
+                    members,
+                });
+                console.log(`Attendance history snapshot saved for ${monthStr}`);
+            } catch(e) { console.warn('snapshotAttendanceHistory failed:', e); }
+        }
+
         async function checkMonthlyReset(){
             try{
                 const settingsSnap=await getDoc(doc(db,'settings','roster_meta'));
@@ -1106,6 +1158,10 @@
                 const currentMonth=now.getFullYear()+'-'+(now.getMonth()+1).toString().padStart(2,'0');
                 if(lastReset===currentMonth) return;
                 const snap=await getDocs(collection(db,'users'));
+                // Snapshot BEFORE reset so we preserve last month's data
+                const prevMonth = new Date(now.getFullYear(), now.getMonth()-1, 1);
+                const prevMonthStr = prevMonth.getFullYear()+'-'+String(prevMonth.getMonth()+1).padStart(2,'0');
+                await snapshotAttendanceHistory(prevMonthStr, snap.docs);
                 const batch=[];
                 snap.forEach(d=>{
                     const data=d.data();
@@ -1144,6 +1200,8 @@
                 const now=new Date();
                 const currentMonth=now.getFullYear()+'-'+(now.getMonth()+1).toString().padStart(2,'0');
                 const snap=await getDocs(collection(db,'users'));
+                // Snapshot current month before clearing
+                await snapshotAttendanceHistory(currentMonth, snap.docs);
                 let promoted=0;
                 for(const d of snap.docs){
                     const data=d.data();
@@ -1160,6 +1218,7 @@
                 // Update the last-reset stamp so auto-reset won't double-fire this month
                 await setDoc(doc(db,'settings','roster_meta'),{lastAttendanceReset:currentMonth},{merge:true});
                 notify('MONTH-END RESET COMPLETE — '+promoted+' MEMBER(S) PROMOTED, ALL ATTENDANCE CLEARED');
+                writeAuditLog('battalion_ops','MONTH-END RESET',`Reset for ${currentMonth} — ${promoted} promoted, history snapshot saved`);
                 await loadRosterPanel();
             }catch(e){
                 notify('RESET FAILED: '+e.message,1);
@@ -1592,6 +1651,7 @@
                 loadPageContent(resolvedPageId);
             }
             if (id==='panel-promote') loadPromotePanel();
+            if (id==='panel-att-history')      loadAttendanceHistory();
             if (id==='panel-audit-manpower')  loadAuditLog('manpower');
             if (id==='panel-audit-battalion') loadAuditLog('battalion_ops');
             if (id==='panel-audit-comms')     loadAuditLog('public_comms');
@@ -1846,6 +1906,96 @@
                 renderUsers();
             } catch(e) { console.error('loadAllUsers error:',e); }
         }
+
+
+        window.loadAttendanceHistory = async function(selectedMonth) {
+            const c = document.getElementById('attHistoryContent');
+            if (!c) return;
+            c.innerHTML = '<div class="empty-state">LOADING...</div>';
+
+            try {
+                // Load available months
+                const allSnaps = await getDocs(collection(db,'attendance_history'));
+                const months = [];
+                allSnaps.forEach(d => months.push(d.id));
+                months.sort((a,b) => b.localeCompare(a));
+
+                if (!months.length) { c.innerHTML = '<div class="empty-state">NO HISTORY YET — HISTORY IS SAVED ON MONTH-END RESET</div>'; return; }
+
+                const activeMonth = selectedMonth || months[0];
+
+                // Month picker
+                const pickerHtml = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+                    <div style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--accent)">SELECT MONTH:</div>
+                    <select onchange="loadAttendanceHistory(this.value)" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.3);color:#e0e0e0;font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;padding:6px 12px;letter-spacing:1px;cursor:pointer;outline:none">
+                        ${months.map(m => `<option value="${m}" ${m===activeMonth?'selected':''}>${m}</option>`).join('')}
+                    </select>
+                </div>`;
+
+                // Load selected month data
+                const snap = await getDoc(doc(db,'attendance_history',activeMonth));
+                if (!snap.exists()) { c.innerHTML = pickerHtml + '<div class="empty-state">NO DATA FOR THIS MONTH</div>'; return; }
+
+                const data = snap.data();
+                const members = data.members || [];
+                const totalOps = data.totalOps || 0;
+                const attended100 = members.filter(m=>m.rate===100).length;
+                const attended0   = members.filter(m=>m.attended===0).length;
+                const avgRate     = members.length ? Math.round(members.reduce((s,m)=>s+m.rate,0)/members.length) : 0;
+                const unitColor   = avgRate>=75?'#7FFF7F':avgRate>=50?'#FFD700':'#FF4444';
+
+                const summaryHtml = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px">
+                    <div style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);padding:12px;text-align:center">
+                        <div style="font-family:Rajdhani,sans-serif;font-size:28px;font-weight:700;color:var(--accent)">${totalOps}</div>
+                        <div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">TOTAL OPS</div>
+                    </div>
+                    <div style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);padding:12px;text-align:center">
+                        <div style="font-family:Rajdhani,sans-serif;font-size:28px;font-weight:700;color:${unitColor}">${avgRate}%</div>
+                        <div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">UNIT AVG RATE</div>
+                    </div>
+                    <div style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);padding:12px;text-align:center">
+                        <div style="font-family:Rajdhani,sans-serif;font-size:28px;font-weight:700;color:#7FFF7F">${attended100}</div>
+                        <div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">FULL ATTEND</div>
+                    </div>
+                    <div style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);padding:12px;text-align:center">
+                        <div style="font-family:Rajdhani,sans-serif;font-size:28px;font-weight:700;color:#FF4444">${attended0}</div>
+                        <div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">ZERO ATTEND</div>
+                    </div>
+                    <div style="background:rgba(0,0,0,.4);border:1px solid rgba(0,217,255,.15);padding:12px;text-align:center">
+                        <div style="font-family:Rajdhani,sans-serif;font-size:28px;font-weight:700;color:#e0e0e0">${members.length}</div>
+                        <div style="font-size:9px;letter-spacing:2px;color:#888;margin-top:4px">TOTAL MEMBERS</div>
+                    </div>
+                </div>`;
+
+                // Member table
+                const tableHtml = `<div style="background:rgba(0,0,0,.3);border:1px solid rgba(0,217,255,.15)">
+                    <div style="display:grid;grid-template-columns:1fr 140px 80px 80px 80px 80px;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.1);background:rgba(0,217,255,.05)">
+                        <div style="font-size:9px;letter-spacing:2px;color:var(--accent);font-weight:700">NAME</div>
+                        <div style="font-size:9px;letter-spacing:2px;color:var(--accent);font-weight:700">PLATOON</div>
+                        <div style="font-size:9px;letter-spacing:2px;color:var(--accent);font-weight:700;text-align:center">ATTENDED</div>
+                        <div style="font-size:9px;letter-spacing:2px;color:var(--accent);font-weight:700;text-align:center">MISSED</div>
+                        <div style="font-size:9px;letter-spacing:2px;color:var(--accent);font-weight:700;text-align:center">TOTAL OPS</div>
+                        <div style="font-size:9px;letter-spacing:2px;color:var(--accent);font-weight:700;text-align:center">RATE</div>
+                    </div>
+                    ${members.map(m => {
+                        const rateColor = m.rate===100?'#7FFF7F':m.rate>=50?'#FFD700':'#FF4444';
+                        const rowBg = m.attended===0?'rgba(255,68,68,.04)':m.rate<50?'rgba(255,212,0,.02)':'transparent';
+                        const zeroTag = m.attended===0?'<span style="font-size:8px;background:rgba(255,68,68,.2);color:#FF4444;padding:1px 5px;border-radius:2px;margin-left:6px;letter-spacing:1px">NO SHOW</span>':'';
+                        return `<div style="display:grid;grid-template-columns:1fr 140px 80px 80px 80px 80px;gap:8px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);background:${rowBg};align-items:center">
+                            <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:#e0e0e0">${esc(m.name)}${zeroTag}</div>
+                            <div style="font-size:10px;color:#aaa">${esc(m.platoon)}</div>
+                            <div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:#7FFF7F;text-align:center">${m.attended}</div>
+                            <div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:${m.missed>0?'#FF4444':'#555'};text-align:center">${m.missed}</div>
+                            <div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:#888;text-align:center">${m.eligible}</div>
+                            <div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:${rateColor};text-align:center">${m.rate}%</div>
+                        </div>`;
+                    }).join('')}
+                </div>`;
+
+                c.innerHTML = pickerHtml + summaryHtml + tableHtml;
+
+            } catch(e) { c.innerHTML = `<div class="empty-state">ERROR: ${esc(e.message)}</div>`; }
+        };
 
         // ── ATTENDANCE TRACKER ────────────────────────────────────────────────
         let attEventData = null;   // current event (local mirror)
@@ -4943,7 +5093,7 @@
                 <div class="dash-link" onclick="showPanel('panel-dashboard')"><span class="nav-icon">&#9632;</span> DASHBOARD</div>
                 <hr class="sidebar-divider">
                 <div class="nav-item" id="nav-personnel"><div class="nav-header" onclick="toggleDropdown('nav-personnel')"><span class="nav-icon">&#9823;</span> MANPOWER <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">MANPOWER</div><div class="nav-tip-body">Manage all unit personnel. Review active member files, edit ranks &amp; roles, and process new enlistment applications.</div></div></div><div class="sub-links"><div style="color:rgba(0,217,255,.7);font-size:8px;letter-spacing:2px;padding:6px 0 2px 8px">EXISTING MEMBERS</div><div class="sub-link" data-panel="panel-active" onclick="showPanel('panel-active')">&#9998; Personnel Files</div><div style="color:rgba(0,217,255,.7);font-size:8px;letter-spacing:2px;padding:8px 0 2px 8px;border-top:1px solid rgba(0,217,255,.08);margin-top:4px">NEW MEMBERS</div><div class="sub-link" data-panel="panel-register" onclick="showPanel('panel-register')" style="display:flex;align-items:center;justify-content:space-between">&#9993; Enlistment Queue<span id="enlistmentBadge" style="display:none;background:#f59e0b;color:#000;font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;padding:1px 6px;letter-spacing:1px;flex-shrink:0">0</span></div></div></div>
-                <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> BATTALION OPS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">BATTALION OPS</div><div class="nav-tip-body">Operational records for the unit. Submit After Action Reports, manage Battalion Roster strength, and maintain Unit Cards on the Order of Battle.</div></div></div><div class="sub-links"><div id="navlink-attendance" class="sub-link" data-panel="panel-attendance" onclick="showPanel('panel-attendance')">&#9635; Attendance Tracker<span id="attNavBadge" style="display:none;margin-left:6px;background:#00D9FF;color:#000;font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;padding:1px 5px;letter-spacing:1px;vertical-align:middle"></span></div><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div><div class="sub-link" data-panel="panel-unitcards" onclick="showPanel('panel-unitcards')">Unit Cards</div><div class="sub-link" data-panel="panel-recruit-source" onclick="showPanel('panel-recruit-source')">&#9650; Recruitment Source</div></div></div>
+                <div class="nav-item" id="nav-aar"><div class="nav-header" onclick="toggleDropdown('nav-aar')"><span class="nav-icon">&#9881;</span> BATTALION OPS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">BATTALION OPS</div><div class="nav-tip-body">Operational records for the unit. Submit After Action Reports, manage Battalion Roster strength, and maintain Unit Cards on the Order of Battle.</div></div></div><div class="sub-links"><div id="navlink-attendance" class="sub-link" data-panel="panel-attendance" onclick="showPanel('panel-attendance')">&#9635; Attendance Tracker<span id="attNavBadge" style="display:none;margin-left:6px;background:#00D9FF;color:#000;font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;padding:1px 5px;letter-spacing:1px;vertical-align:middle"></span></div><div id="navlink-aar" class="sub-link" data-panel="panel-aar" onclick="showPanel('panel-aar')">After Action Reports</div><div id="navlink-roster" class="sub-link" data-panel="panel-roster" onclick="showPanel('panel-roster')">Battalion Roster</div><div class="sub-link" data-panel="panel-att-history" onclick="showPanel('panel-att-history')">&#9776; Attendance History</div><div class="sub-link" data-panel="panel-unitcards" onclick="showPanel('panel-unitcards')">Unit Cards</div><div class="sub-link" data-panel="panel-recruit-source" onclick="showPanel('panel-recruit-source')">&#9650; Recruitment Source</div></div></div>
                 <div class="nav-item" id="nav-media"><div class="nav-header" onclick="toggleDropdown('nav-media')"><span class="nav-icon">&#9881;</span> INTEL ARCHIVE <span class="arrow">&#9654;</span></div><div class="sub-links"><div class="sub-link" data-panel="panel-gallery" onclick="showPanel('panel-gallery')">Gallery</div><div class="sub-link" data-panel="panel-videos" onclick="showPanel('panel-videos')">Videos</div></div></div>
                 <div class="nav-item" id="nav-content"><div class="nav-header" onclick="toggleDropdown('nav-content')"><span class="nav-icon">&#9998;</span> PUBLIC COMMS <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">PUBLIC COMMS</div><div class="nav-tip-body">Edit content displayed on public-facing unit pages — photos, sliders, descriptions and section headers visible to recruits and visitors.</div></div></div><div class="sub-links"><div style="color:rgba(0,217,255,.7);font-size:8px;letter-spacing:2px;padding:6px 0 3px 4px">CAREER PATHS</div><div class="sub-link" data-panel="panel-page-home" onclick="showPanel('panel-page-home')">Home Page</div><div class="sub-link" data-panel="panel-page-505th" onclick="showPanel('panel-page-505th')">505th Expeditionary Force</div><div class="sub-link" data-panel="panel-page-alpha" onclick="showPanel('panel-page-alpha')">Alpha Company</div><div class="sub-link" data-panel="panel-page-stalker" onclick="showPanel('panel-page-stalker')">JTF Force Recon</div><div class="sub-link" data-panel="panel-page-corpsman" onclick="showPanel('panel-page-corpsman')">Hospital Corpsman</div><div class="sub-link" data-panel="panel-page-54th" onclick="showPanel('panel-page-54th')">54th Air Wing</div><div style="color:rgba(0,217,255,.7);font-size:8px;letter-spacing:2px;padding:10px 0 3px 4px">MEDIA</div><div class="sub-link" data-panel="panel-comms-library" onclick="showPanel('panel-comms-library')">&#9776; Comms Library</div></div></div>
                 <div class="nav-item" id="nav-settings"><div class="nav-header" onclick="toggleDropdown('nav-settings')"><span class="nav-icon">&#9881;</span> DISCORD &amp; NETWORK <span class="arrow">&#9654;</span><div class="nav-tip"><div class="nav-tip-title">DISCORD &amp; NETWORK</div><div class="nav-tip-body">Configure Discord invite link, webhook notifications, and Cortana bot integration for the unit.</div></div></div><div class="sub-links"><div id="navlink-discord" class="sub-link" data-panel="panel-discord" onclick="showPanel('panel-discord')">Discord Invite Link</div><div id="navlink-webhooks" class="sub-link" data-panel="panel-webhooks" onclick="showPanel('panel-webhooks')">Discord Webhooks</div><div id="navlink-discord-tracking" class="sub-link" data-panel="panel-discord-tracking" onclick="showPanel('panel-discord-tracking')">Cortana Bot Integration</div></div></div>
@@ -5530,6 +5680,17 @@
                     </div>
                 </div>
             
+
+                <!-- BATTALION ATTENDANCE HISTORY PANEL -->
+                <div class="panel hidden" id="panel-att-history">
+                    <div class="panel-title">BATTALION ATTENDANCE HISTORY</div>
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">MONTHLY ATTENDANCE RECORDS — SAVED AUTOMATICALLY ON MONTH-END RESET</p>
+                    <div style="display:flex;gap:10px;margin-bottom:20px">
+                        <button class="action-btn approve-btn" onclick="loadAttendanceHistory()" style="padding:6px 16px;font-size:10px;letter-spacing:2px">&#8635; REFRESH</button>
+                    </div>
+                    <div id="attHistoryContent"><div class="empty-state">LOADING...</div></div>
+                </div>
+
                 <!-- AUDIT LOG PANELS -->
                 <div class="panel hidden" id="panel-audit-manpower">
                     <div class="panel-title">AUDIT LOG — MANPOWER</div>
