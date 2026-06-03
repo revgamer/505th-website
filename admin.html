@@ -1098,29 +1098,28 @@
 
         // ── Monthly attendance reset — now reads/writes users ───────────────
 
-        async function snapshotAttendanceHistory(monthStr, memberDocs) {
+        // snapshotAttendanceHistory — accepts optional pre-loaded evList to avoid compound Firestore query
+        async function snapshotAttendanceHistory(monthStr, memberDocs, preloadedEvents) {
             try {
-                // Count locked events for this month
-                const now = new Date();
-                const mStart = monthStr + '-01';
-                const nextM = new Date(now.getFullYear(), now.getMonth(), 1); // first of current month = end of prev
-                const mEnd = nextM.getFullYear() + '-' + String(nextM.getMonth() + 1).padStart(2,'0') + '-01';
-                const evSnap = await getDocs(query(
-                    collection(db, 'attendance_events'),
-                    where('locked','==',true),
-                    where('date','>=',mStart),
-                    where('date','<',mEnd)
-                ));
-                const totalOps = evSnap.size;
-                const evList = [];
-                evSnap.forEach(d => evList.push({id:d.id,...d.data()}));
+                let evList = [];
+                if (preloadedEvents) {
+                    // Use pre-loaded events — no Firestore query needed
+                    evList = preloadedEvents.filter(ev => ev.locked && ev.date && ev.date.startsWith(monthStr));
+                } else {
+                    // Fallback: fetch all locked events and filter client-side — no compound query, no index needed
+                    const evSnap = await getDocs(query(collection(db, 'attendance_events'), where('locked','==',true)));
+                    evSnap.forEach(d => {
+                        const ev = {id:d.id,...d.data()};
+                        if (ev.date && ev.date.startsWith(monthStr)) evList.push(ev);
+                    });
+                }
+                const totalOps = evList.length;
 
                 const members = [];
                 memberDocs.forEach(d => {
                     const u = d.data ? d.data() : d;
                     const uid = d.id || u.id;
                     if (u.status==='pending'||u.status==='denied'||u.platoon==='Reserves') return;
-                    // Count this member's attendance in this month's events
                     const attended = evList.filter(ev=>(ev.attendees||[]).includes(uid)).length;
                     const eligible = totalOps;
                     const missed   = eligible - attended;
@@ -1907,6 +1906,80 @@
             } catch(e) { console.error('loadAllUsers error:',e); }
         }
 
+
+        // ── Snapshot current month manually ────────────────────────────────────
+        window.snapshotCurrentMonth = async function() {
+            const btn    = document.getElementById('attSnapshotBtn');
+            const status = document.getElementById('attSnapshotStatus');
+            if (btn) { btn.disabled = true; btn.textContent = 'SAVING...'; }
+            if (status) { status.style.color = 'var(--accent)'; status.textContent = 'SNAPSHOTTING...'; }
+            try {
+                const now = new Date();
+                const monthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+                if (!allUsers.length) await loadAllUsers();
+                // Fetch all locked events once, pass them in — no compound query needed
+                const evSnap = await getDocs(query(collection(db, 'attendance_events'), where('locked','==',true)));
+                const allLocked = [];
+                evSnap.forEach(d => allLocked.push({id:d.id,...d.data()}));
+                const userDocs = allUsers.map(u => ({ id: u.id, data: () => u, ...u }));
+                await snapshotAttendanceHistory(monthStr, userDocs, allLocked);
+                if (status) { status.style.color = '#7FFF7F'; status.textContent = '\u2713 SNAPSHOT SAVED FOR ' + monthStr; }
+                notify('ATTENDANCE SNAPSHOT SAVED FOR ' + monthStr);
+                await loadAttendanceHistory(monthStr);
+            } catch(e) {
+                if (status) { status.style.color = '#FF4444'; status.textContent = 'FAILED: ' + e.message; }
+                notify('SNAPSHOT FAILED: ' + e.message, 1);
+            }
+            if (btn) { btn.disabled = false; btn.textContent = '\u25b2 SNAPSHOT CURRENT MONTH'; }
+        };
+
+        // ── Backfill all missing months from existing attendance_events ───────
+        window.backfillAttendanceHistory = async function() {
+            if (!confirm('BACKFILL ALL MISSING MONTHS?\n\nThis will scan all locked attendance events and build history records for every month that has no snapshot yet.\n\nSafe to run — will not overwrite existing snapshots.')) return;
+            const btn    = document.getElementById('attBackfillBtn');
+            const status = document.getElementById('attSnapshotStatus');
+            if (btn) { btn.disabled = true; btn.textContent = 'BACKFILLING...'; }
+            if (status) { status.style.color = 'var(--accent)'; status.textContent = 'SCANNING EVENTS...'; }
+            try {
+                if (!allUsers.length) await loadAllUsers();
+                // Fetch ALL locked events once — no compound query, no index needed
+                const evSnap = await getDocs(query(collection(db, 'attendance_events'), where('locked', '==', true)));
+                if (evSnap.empty) { notify('NO LOCKED EVENTS FOUND TO BACKFILL', 1); return; }
+                const allLocked = [];
+                evSnap.forEach(d => allLocked.push({id:d.id,...d.data()}));
+                // Group by month
+                const byMonth = {};
+                allLocked.forEach(ev => {
+                    if (!ev.date) return;
+                    const month = ev.date.substring(0, 7);
+                    if (!byMonth[month]) byMonth[month] = [];
+                    byMonth[month].push(ev);
+                });
+                // Get already-existing snapshots
+                const existingSnap = await getDocs(collection(db, 'attendance_history'));
+                const existing = new Set();
+                existingSnap.forEach(d => existing.add(d.id));
+                const months = Object.keys(byMonth).sort();
+                const missing = months.filter(m => !existing.has(m));
+                if (!missing.length) { notify('ALL MONTHS ALREADY HAVE SNAPSHOTS — NOTHING TO BACKFILL'); if (status) { status.style.color = '#7FFF7F'; status.textContent = '\u2713 ALL UP TO DATE'; } return; }
+                if (status) status.textContent = 'BUILDING ' + missing.length + ' MONTH(S)...';
+                const userDocs = allUsers.map(u => ({ id: u.id, data: () => u, ...u }));
+                let done = 0;
+                for (const month of missing) {
+                    // Pass allLocked — snapshotAttendanceHistory filters by month internally
+                    await snapshotAttendanceHistory(month, userDocs, allLocked);
+                    done++;
+                    if (status) status.textContent = 'SAVED ' + done + ' / ' + missing.length + ' MONTHS...';
+                }
+                if (status) { status.style.color = '#7FFF7F'; status.textContent = '\u2713 BACKFILLED ' + done + ' MONTH(S)'; }
+                notify('BACKFILL COMPLETE — ' + done + ' MONTH(S) SAVED');
+                await loadAttendanceHistory();
+            } catch(e) {
+                if (status) { status.style.color = '#FF4444'; status.textContent = 'FAILED: ' + e.message; }
+                notify('BACKFILL FAILED: ' + e.message, 1);
+            }
+            if (btn) { btn.disabled = false; btn.textContent = '\u25ba BACKFILL ALL MISSING MONTHS'; }
+        };
 
         window.loadAttendanceHistory = async function(selectedMonth) {
             const c = document.getElementById('attHistoryContent');
@@ -5684,9 +5757,12 @@
                 <!-- BATTALION ATTENDANCE HISTORY PANEL -->
                 <div class="panel hidden" id="panel-att-history">
                     <div class="panel-title">BATTALION ATTENDANCE HISTORY</div>
-                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">MONTHLY ATTENDANCE RECORDS — SAVED AUTOMATICALLY ON MONTH-END RESET</p>
-                    <div style="display:flex;gap:10px;margin-bottom:20px">
+                    <p style="color:#aaa;font-size:10px;letter-spacing:2px;margin-bottom:16px">MONTHLY ATTENDANCE RECORDS — SNAPSHOT CURRENT MONTH MANUALLY OR LET MONTH-END RESET DO IT AUTOMATICALLY</p>
+                    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
                         <button class="action-btn approve-btn" onclick="loadAttendanceHistory()" style="padding:6px 16px;font-size:10px;letter-spacing:2px">&#8635; REFRESH</button>
+                        <button id="attSnapshotBtn" class="action-btn" onclick="snapshotCurrentMonth()" style="padding:6px 16px;font-size:10px;letter-spacing:2px;border-color:rgba(255,212,0,.6);color:#FFD700">&#9650; SNAPSHOT CURRENT MONTH</button>
+                        <button id="attBackfillBtn" class="action-btn" onclick="backfillAttendanceHistory()" style="padding:6px 16px;font-size:10px;letter-spacing:2px;border-color:rgba(167,139,250,.6);color:#a78bfa">&#9654; BACKFILL ALL MISSING MONTHS</button>
+                        <span id="attSnapshotStatus" style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:#aaa"></span>
                     </div>
                     <div id="attHistoryContent"><div class="empty-state">LOADING...</div></div>
                 </div>
