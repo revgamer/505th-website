@@ -14,7 +14,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -190,6 +190,38 @@
         };
 
         // Boot animation after successful login
+
+        // FORGOT PASSWORD
+        window.handleForgotPassword = async function(event) {
+            event.preventDefault();
+            const btn = document.getElementById('forgotBtn');
+            const errorMsg = document.getElementById('forgotError');
+            const successMsg = document.getElementById('forgotSuccess');
+
+            const email = document.getElementById('forgotEmail').value.trim();
+            btn.textContent = 'SENDING...'; btn.disabled = true;
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                successMsg.textContent = 'RESET LINK SENT — CHECK YOUR EMAIL INBOX';
+                successMsg.classList.add('show');
+                errorMsg.classList.remove('show');
+                document.getElementById('forgotEmail').value = '';
+            } catch (error) {
+                let message = 'RESET FAILED — TRY AGAIN';
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
+                    message = 'NO ACCOUNT FOUND WITH THAT EMAIL';
+                } else if (error.code === 'auth/too-many-requests') {
+                    message = 'TOO MANY ATTEMPTS — TRY AGAIN LATER';
+                }
+                errorMsg.textContent = message;
+                errorMsg.classList.add('show');
+                successMsg.classList.remove('show');
+            } finally {
+                btn.textContent = 'SEND RESET LINK'; btn.disabled = false;
+            }
+            return false;
+        };
 
         
 
@@ -617,6 +649,9 @@
                     </div>
                     <button type="submit" class="btn">AUTHENTICATE</button>
                 </form>
+                <div style="text-align:center; margin-top:12px;">
+                    <a href="#" onclick="toggleForm('forgot'); return false;" style="color:#888; font-size:10px; letter-spacing:2px; text-decoration:none;">FORGOT ACCESS CODE?</a>
+                </div>
                 <div class="toggle-link">
                     <a href="#" onclick="toggleForm('register'); return false;">NEW OPERATIVE? REQUEST ACCESS ></a>
                 </div>
@@ -686,6 +721,24 @@
                 </div>
             </div>
 
+            <!-- FORGOT PASSWORD -->
+            <div id="forgotForm" class="hidden">
+                <div class="section-header"><span class="terminal-prompt">></span> RESET ACCESS CODE</div>
+                <div class="error-message" id="forgotError">ERROR</div>
+                <div class="success-message" id="forgotSuccess">RESET LINK SENT</div>
+                <form onsubmit="return handleForgotPassword(event)">
+                    <div class="form-group">
+                        <label class="form-label">REGISTERED EMAIL ADDRESS</label>
+                        <input type="email" class="form-input" id="forgotEmail" placeholder="operative@email.com" required autocomplete="email">
+                    </div>
+                    <button type="submit" class="btn" id="forgotBtn">SEND RESET LINK</button>
+                    <p class="info-note">A password reset link will be sent to your registered email address.</p>
+                </form>
+                <div class="toggle-link">
+                    <a href="#" onclick="toggleForm('login'); return false;">< RETURN TO LOGIN</a>
+                </div>
+            </div>
+
             <div class="footer">SECURE CONNECTION<span class="status-dot"></span>ENCRYPTED</div>
         </div>
     </div>
@@ -714,15 +767,23 @@
         function toggleForm(formType) {
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
+            const forgotForm = document.getElementById('forgotForm');
+
+            loginForm.classList.add('hidden');
+            registerForm.classList.add('hidden');
+            forgotForm.classList.add('hidden');
+
             if (formType === 'register') {
-                loginForm.classList.add('hidden');
                 registerForm.classList.remove('hidden');
                 registerForm.classList.add('fade-in');
+            } else if (formType === 'forgot') {
+                forgotForm.classList.remove('hidden');
+                forgotForm.classList.add('fade-in');
             } else {
-                registerForm.classList.add('hidden');
                 loginForm.classList.remove('hidden');
                 loginForm.classList.add('fade-in');
             }
+
             document.querySelectorAll('.error-message, .success-message').forEach(el => el.classList.remove('show'));
         }
     </script>
