@@ -127,18 +127,21 @@
             }
         }
 
+        let currentMedalAwards = [];
+
         function renderMedals(entries) {
             const c = document.getElementById('medalsGrid');
             const awards = entries.filter(e => e.title);
+            currentMedalAwards = awards;
             if(!awards.length){
                 c.innerHTML = '<div class="empty-state">NO MEDALS OR AWARDS</div>';
                 return;
             }
-            c.innerHTML = awards.map(e => {
+            c.innerHTML = awards.map((e, i) => {
                 const img = e.medalImg
                     ? `<img src="images/medal_emojis/${esc(e.medalImg)}" alt="${esc(e.title)}">`
                     : `<div class="medal-custom-icon">&#9733;</div>`;
-                return `<div class="medal-card">
+                return `<div class="medal-card" onclick="openMedalModal(${i})" title="Click for details">
                     <div class="medal-img-wrap">${img}</div>
                     <div class="medal-title">${esc(e.title)}</div>
                     ${e.note ? `<div class="medal-note">${esc(e.note)}</div>` : ''}
@@ -146,6 +149,27 @@
                 </div>`;
             }).join('');
         }
+
+        window.openMedalModal = function(i) {
+            const e = currentMedalAwards[i];
+            if(!e) return;
+            const img = e.medalImg
+                ? `<img src="images/medal_emojis/${esc(e.medalImg)}" alt="${esc(e.title)}">`
+                : `<div class="medal-modal-icon">&#9733;</div>`;
+            document.getElementById('medalModalHeaderImg').innerHTML = img;
+            document.getElementById('medalModalTitle').textContent = e.title || 'COMMENDATION';
+            document.getElementById('medalModalDate').textContent = e.date || '';
+            document.getElementById('medalModalDesc').textContent = e.note || 'No description provided.';
+            document.getElementById('medalModal').classList.add('active');
+        };
+
+        window.closeMedalModal = function() {
+            document.getElementById('medalModal').classList.remove('active');
+        };
+
+        document.addEventListener('keydown', function(e) {
+            if(e.key === 'Escape') closeMedalModal();
+        });
 
         function renderPromoHistory(entries) {
             const c = document.getElementById('promoTimeline');
@@ -663,13 +687,27 @@
 
         /* ── Medals ── */
         .medals-grid{display:flex;flex-wrap:wrap;gap:10px}
-        .medal-card{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(167,139,250,.2);min-width:72px;max-width:90px;transition:border-color .2s}
+        .medal-card{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(167,139,250,.2);min-width:72px;max-width:90px;transition:border-color .2s;cursor:pointer}
         .medal-card:hover{border-color:rgba(167,139,250,.6);box-shadow:0 0 10px rgba(167,139,250,.1)}
         .medal-img-wrap img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(167,139,250,.5))}
         .medal-custom-icon{font-size:32px;color:#a78bfa;opacity:.8;line-height:1;text-shadow:0 0 10px rgba(167,139,250,.5)}
         .medal-title{font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:.5px;color:#a78bfa;text-align:center;line-height:1.3;text-shadow:0 0 6px rgba(167,139,250,.4)}
         .medal-note{font-size:7px;color:#888;text-align:center;line-height:1.3;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .medal-date{font-size:7px;color:rgba(0,217,255,.4);letter-spacing:1px}
+
+        /* ── Medal History Popup ── */
+        .medal-modal-overlay{display:none;position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);align-items:center;justify-content:center}
+        .medal-modal-overlay.active{display:flex}
+        .medal-modal-box{background:#0d1217;border:1px solid rgba(167,139,250,.4);box-shadow:0 0 40px rgba(167,139,250,.15);padding:32px 36px;min-width:360px;max-width:540px;width:92%;font-family:'Rajdhani',sans-serif}
+        .medal-modal-header{display:flex;align-items:center;gap:18px;border-bottom:1px solid rgba(167,139,250,.15);padding-bottom:18px;margin-bottom:18px}
+        .medal-modal-header img{width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(167,139,250,.5))}
+        .medal-modal-icon{font-size:46px;color:#a78bfa;text-shadow:0 0 10px rgba(167,139,250,.5)}
+        .medal-modal-title{font-size:20px;font-weight:700;letter-spacing:2px;color:#a78bfa;text-shadow:0 0 8px rgba(167,139,250,.4)}
+        .medal-modal-date{font-size:12px;color:rgba(0,217,255,.55);letter-spacing:1px;margin-top:6px}
+        .medal-modal-label{font-size:12px;font-weight:700;letter-spacing:2px;color:#aaa;margin-bottom:10px}
+        .medal-modal-desc{font-size:16px;color:#eee;line-height:1.7;white-space:pre-wrap}
+        .medal-modal-close{width:100%;margin-top:20px;background:transparent;border:1px solid rgba(167,139,250,.5);color:#a78bfa;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:10px;cursor:pointer;transition:all .2s}
+        .medal-modal-close:hover{background:rgba(167,139,250,.08);box-shadow:0 0 16px rgba(167,139,250,.15)}
 
         /* ── Timeline ── */
         .timeline{display:flex;flex-direction:column;gap:0}
@@ -851,6 +889,22 @@
                 <div id="chatSelectedList" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;min-height:20px"></div>
                 <button onclick="chatCreateConv()" style="width:100%;margin-top:10px;background:rgba(0,217,255,.1);border:1px solid rgba(0,217,255,.35);color:var(--accent);font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:9px;cursor:pointer">START CONVERSATION</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ── MEDAL HISTORY POPUP ── -->
+    <div id="medalModal" class="medal-modal-overlay" onclick="if(event.target===this) closeMedalModal()">
+        <div class="medal-modal-box">
+            <div class="medal-modal-header">
+                <div id="medalModalHeaderImg"></div>
+                <div>
+                    <div class="medal-modal-title" id="medalModalTitle"></div>
+                    <div class="medal-modal-date" id="medalModalDate"></div>
+                </div>
+            </div>
+            <div class="medal-modal-label">DESCRIPTION</div>
+            <div class="medal-modal-desc" id="medalModalDesc"></div>
+            <button class="medal-modal-close" onclick="closeMedalModal()">CLOSE</button>
         </div>
     </div>
 

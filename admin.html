@@ -3409,7 +3409,39 @@
             });
             const ct=document.getElementById('histCommendTitle'); if(ct) ct.value='';
             document.querySelectorAll('#medalPickerGrid .medal-opt').forEach((o,i)=>o.classList.toggle('selected',i===0));
+            // Reset medal-edit mode whenever a member's history is (re)loaded
+            editingCommendIndex = null;
+            const addBtn = document.getElementById('histCommendAddBtn'); if(addBtn) addBtn.textContent = '+ ADD';
+            const cancelBtn = document.getElementById('histCommendCancelEditBtn'); if(cancelBtn) cancelBtn.style.display = 'none';
         }
+
+        let editingCommendIndex = null;
+
+        window.editCommendEntry = function(index) {
+            const uid = document.getElementById('editUserId').value;
+            const u = allUsers.find(x=>x.id===uid); if(!u) return;
+            const entry = (u.commendationHistory||[])[index]; if(!entry) return;
+            editingCommendIndex = index;
+            document.getElementById('histCommendDate').value  = entry.date  || '';
+            document.getElementById('histCommendTitle').value = entry.title || '';
+            document.getElementById('histCommendNote').value  = entry.note  || '';
+            document.querySelectorAll('#medalPickerGrid .medal-opt').forEach(o=>{
+                o.classList.toggle('selected', !!entry.medalImg && o.dataset.medal === entry.medalImg);
+            });
+            document.getElementById('histCommendAddBtn').textContent = 'UPDATE';
+            document.getElementById('histCommendCancelEditBtn').style.display = '';
+            notify('EDITING MEDAL ENTRY — MAKE CHANGES BELOW');
+        };
+
+        window.cancelCommendEdit = function() {
+            editingCommendIndex = null;
+            document.getElementById('histCommendDate').value  = new Date().toISOString().split('T')[0];
+            document.getElementById('histCommendTitle').value = '';
+            document.getElementById('histCommendNote').value  = '';
+            document.querySelectorAll('#medalPickerGrid .medal-opt').forEach((o,i)=>o.classList.toggle('selected',i===0));
+            document.getElementById('histCommendAddBtn').textContent = '+ ADD';
+            document.getElementById('histCommendCancelEditBtn').style.display = 'none';
+        };
 
         function renderHistoryList(containerId, entries, type) {
             const c = document.getElementById(containerId); if(!c) return;
@@ -3435,10 +3467,11 @@
                     detail = `<div>${esc(e.note||'—')}</div>`;
                 }
                 const addedBy = e.addedBy ? `<div style="color:#555;font-size:8px;margin-top:2px">BY ${esc(e.addedBy)}</div>` : '';
+                const editBtn = type==='commend' ? `<button class="history-entry-edit" onclick="editCommendEntry(${i})" title="Edit medal entry">&#9998;</button>` : '';
                 return `<div class="history-entry">
                     <div class="history-entry-date">${e.date||'—'}</div>
                     <div class="history-entry-body">${badge}<div style="margin-top:4px">${detail}${addedBy}</div></div>
-                    <button class="history-entry-del" onclick="deleteHistoryEntry('${type}',${i})" title="Remove entry">✕</button>
+                    <div class="history-entry-actions">${editBtn}<button class="history-entry-del" onclick="deleteHistoryEntry('${type}',${i})" title="Remove entry">✕</button></div>
                 </div>`;
             }).join('');
         }
@@ -3481,8 +3514,22 @@
                 const medalImg = selectedMedalEl?.dataset?.medal || '';
                 entry={date:document.getElementById('histCommendDate').value||today,title:document.getElementById('histCommendTitle').value.trim(),note:document.getElementById('histCommendNote').value.trim(),medalImg,addedBy:currentUserData?.callsign||'Staff',addedAt:new Date().toISOString()};
                 if(!entry.title){notify('AWARD TITLE IS REQUIRED',1);return;}
+                if(editingCommendIndex !== null){
+                    const original = (u.commendationHistory||[])[editingCommendIndex] || {};
+                    entry.addedBy = original.addedBy || entry.addedBy;
+                    entry.addedAt = original.addedAt || entry.addedAt;
+                    entry.editedBy = currentUserData?.callsign || 'Staff';
+                    entry.editedAt = new Date().toISOString();
+                }
             }
-            const updated = [...(u[fieldKey]||[]), entry];
+            const isCommendEdit = type==='commend' && editingCommendIndex !== null;
+            let updated;
+            if(isCommendEdit){
+                updated = [...(u[fieldKey]||[])];
+                updated[editingCommendIndex] = entry;
+            } else {
+                updated = [...(u[fieldKey]||[]), entry];
+            }
             try {
                 const updatePayload = {[fieldKey]:updated};
                 // When a platoon transfer is logged, update joinedPlatoon so Battalion
@@ -3494,11 +3541,11 @@
                 }
                 await updateDoc(doc(db,'users',uid), updatePayload);
                 u[fieldKey]=updated;
-                notify('ENTRY ADDED');
+                notify(isCommendEdit ? 'MEDAL ENTRY UPDATED' : 'ENTRY ADDED');
                 const memberName = formatMemberName(u)||u.callsign||'Unknown';
                 const by = currentUserData?.callsign||'Staff';
-                const _auditDetails = type==='promo'?`Promotion: ${entry.fromRank||'—'} → ${entry.toRank||'—'} for ${memberName}`:type==='warn'?`Warning (${entry.severity||'Minor'}) for ${memberName}: ${entry.note||'—'}`:type==='platoon'?`Transfer: ${entry.from||'—'} → ${entry.to||'—'} for ${memberName}`:`Commendation: ${entry.title||'—'} for ${memberName}`;
-                const _auditAction = type==='promo'?'PROMOTION':type==='warn'?'WARNING':type==='platoon'?'TRANSFER':'COMMENDATION';
+                const _auditDetails = type==='promo'?`Promotion: ${entry.fromRank||'—'} → ${entry.toRank||'—'} for ${memberName}`:type==='warn'?`Warning (${entry.severity||'Minor'}) for ${memberName}: ${entry.note||'—'}`:type==='platoon'?`Transfer: ${entry.from||'—'} → ${entry.to||'—'} for ${memberName}`:isCommendEdit?`Commendation edited: ${entry.title||'—'} for ${memberName}`:`Commendation: ${entry.title||'—'} for ${memberName}`;
+                const _auditAction = type==='promo'?'PROMOTION':type==='warn'?'WARNING':type==='platoon'?'TRANSFER':isCommendEdit?'COMMENDATION EDITED':'COMMENDATION';
                 writeAuditLog('manpower', _auditAction, _auditDetails);
                 if(type==='promo')   fireWebhook('promote',  {name:memberName, fromRank:entry.fromRank||'—', toRank:entry.toRank||'—', note:entry.note||'—', by});
                 if(type==='warn')    fireWebhook('warning',  {name:memberName, severity:entry.severity||'—', reason:entry.note||'—', by});
@@ -3507,13 +3554,20 @@
                 if(type==='warn')    try{await addDoc(collection(db,'notifications',uid,'items'),{type:'warning',read:false,title:'A warning has been issued on your record',body:(entry.severity||'Minor').toUpperCase()+(entry.note?' — '+entry.note.substring(0,60):''),createdAt:serverTimestamp()});}catch(_e){}
                 if(type==='promo')   try{await addDoc(collection(db,'notifications',uid,'items'),{type:'promotion',read:false,title:'Your promotion record has been updated',body:(entry.fromRank||'—')+' → '+(entry.toRank||'—'),createdAt:serverTimestamp()});}catch(_e){}
                 if(type==='platoon') try{await addDoc(collection(db,'notifications',uid,'items'),{type:'transfer',read:false,title:'You have been transferred to a new platoon',body:(entry.from||'—')+' → '+(entry.to||'—'),createdAt:serverTimestamp()});}catch(_e){}
-                if(type==='commend')  try{await addDoc(collection(db,'notifications',uid,'items'),{type:'medal',read:false,title:'You have received a commendation',body:entry.title+(entry.note?' — '+entry.note.substring(0,50):''),createdAt:serverTimestamp()});}catch(_e){}
+                if(type==='commend' && !isCommendEdit) try{await addDoc(collection(db,'notifications',uid,'items'),{type:'medal',read:false,title:'You have received a commendation',body:entry.title+(entry.note?' — '+entry.note.substring(0,50):''),createdAt:serverTimestamp()});}catch(_e){}
                 const listId = type==='platoon'?'histPlatoonList':type==='promo'?'histPromoList':type==='warn'?'histWarnList':'histCommendList';
                 renderHistoryList(listId, updated, type);
                 if(type==='platoon'){document.getElementById('histPlatoonFrom').value='';document.getElementById('histPlatoonTo').value='';document.getElementById('histPlatoonNote').value='';}
                 else if(type==='promo'){document.getElementById('histPromoFrom').value='';document.getElementById('histPromoTo').value='';document.getElementById('histPromoNote').value='';}
                 else if(type==='warn'){document.getElementById('histWarnNote').value='';}
-                else{document.getElementById('histCommendTitle').value='';document.getElementById('histCommendNote').value='';document.querySelectorAll('#medalPickerGrid .medal-opt').forEach((o,i)=>o.classList.toggle('selected',i===0));}
+                else{
+                    document.getElementById('histCommendTitle').value='';
+                    document.getElementById('histCommendNote').value='';
+                    document.querySelectorAll('#medalPickerGrid .medal-opt').forEach((o,i)=>o.classList.toggle('selected',i===0));
+                    editingCommendIndex = null;
+                    document.getElementById('histCommendAddBtn').textContent = '+ ADD';
+                    document.getElementById('histCommendCancelEditBtn').style.display = 'none';
+                }
             } catch(e){notify('ERROR: '+e.message,1);}
         };
 
@@ -3528,6 +3582,8 @@
                 u[fieldKey]=updated;
                 renderHistoryList(type==='platoon'?'histPlatoonList':type==='promo'?'histPromoList':type==='warn'?'histWarnList':'histCommendList', updated, type);
                 notify('ENTRY REMOVED');
+                // Deleting an entry shifts indexes — bail out of medal-edit mode to avoid editing the wrong entry
+                if(type==='commend' && editingCommendIndex !== null) cancelCommendEdit();
             } catch(e){notify('ERROR: '+e.message,1);}
         };
 
@@ -3737,6 +3793,38 @@
             const body  = document.getElementById('qaBody');
             modal._action = action;
             modal._uid    = uid;
+            // Reset footer to default confirm/cancel state (medals view overrides this below)
+            const qaSubmitBtn = document.getElementById('qaSubmit');
+            const qaCancelBtn = document.getElementById('qaCancelBtn');
+            if(qaSubmitBtn) qaSubmitBtn.style.display = '';
+            if(qaCancelBtn) qaCancelBtn.textContent    = 'CANCEL';
+
+            if(action === 'medals') {
+                title.style.color = '#a78bfa';
+                title.textContent = '★ MEDAL HISTORY — ' + name.toUpperCase();
+                const medals = u.commendationHistory || [];
+                if(!medals.length){
+                    body.innerHTML = '<div class="empty-state">NO MEDALS OR AWARDS ON RECORD</div>';
+                } else {
+                    body.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px;max-height:360px;overflow-y:auto">${[...medals].reverse().map(e => {
+                        const img = e.medalImg
+                            ? `<img src="images/medal_emojis/${esc(e.medalImg)}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 4px rgba(167,139,250,.4))">`
+                            : `<div style="font-size:24px;flex-shrink:0">&#9733;</div>`;
+                        return `<div style="display:flex;gap:12px;padding:10px;border:1px solid rgba(167,139,250,.25);background:rgba(167,139,250,.05)">
+                            ${img}
+                            <div style="flex:1;min-width:0">
+                                <div style="font-size:13px;font-weight:700;letter-spacing:1px;color:#a78bfa">${esc(e.title || 'COMMENDATION')}</div>
+                                <div style="font-size:11px;color:#ccc;margin-top:4px">${esc(e.note || 'No description provided.')}</div>
+                                <div style="font-size:9px;color:#777;margin-top:6px">${e.date || '—'}${e.addedBy ? ' &nbsp;|&nbsp; AWARDED BY ' + esc(e.addedBy) : ''}</div>
+                            </div>
+                        </div>`;
+                    }).join('')}</div>`;
+                }
+                if(qaSubmitBtn) qaSubmitBtn.style.display = 'none';
+                if(qaCancelBtn) qaCancelBtn.textContent    = 'CLOSE';
+                modal.style.display = 'flex';
+                return;
+            }
 
             if(action === 'stats') {
                 title.textContent = '⊞ EDIT ROSTER STATS — ' + name.toUpperCase();
@@ -4752,6 +4840,7 @@
     <div id="rosterCtxMenu" style="display:none;position:fixed;z-index:4000;background:#0d1217;border:1px solid rgba(0,217,255,.35);box-shadow:0 8px 32px rgba(0,0,0,.7),0 0 20px rgba(0,217,255,.15);min-width:200px;font-family:Rajdhani,sans-serif">
         <div id="rosterCtxName" style="padding:10px 14px;font-size:13px;font-weight:700;letter-spacing:1px;color:var(--accent);border-bottom:1px solid rgba(0,217,255,.15);background:rgba(0,217,255,.05)"></div>
         <div id="rosterCtxEdit"     class="ctx-item" onclick="ctxAction('edit')"       >&#9998; Edit Personnel File</div>
+        <div id="rosterCtxMedals"   class="ctx-item" onclick="ctxAction('medals')"     style="color:#a78bfa">&#9733; View Medal History</div>
         <div id="rosterCtxStats"    class="ctx-item" onclick="ctxAction('stats')"      >&#9635; Edit Roster Stats</div>
         <div id="rosterCtxPromote"  class="ctx-item" onclick="ctxAction('promote')"    >&#8679; Promote</div>
         <div id="rosterCtxTransfer" class="ctx-item" onclick="ctxAction('transfer')"   >&#8644; Transfer Platoon</div>
@@ -4765,7 +4854,7 @@
             <div id="qaBody"></div>
             <div style="display:flex;gap:10px;margin-top:18px">
                 <button id="qaSubmit" class="upload-btn" onclick="quickActionSubmit()" style="flex:1;font-size:12px;letter-spacing:2px">CONFIRM</button>
-                <button class="action-btn remove-btn" onclick="closeQuickAction()" style="font-size:12px;letter-spacing:2px">CANCEL</button>
+                <button id="qaCancelBtn" class="action-btn remove-btn" onclick="closeQuickAction()" style="font-size:12px;letter-spacing:2px">CANCEL</button>
             </div>
         </div>
     </div>
@@ -5028,7 +5117,8 @@
                                 <option value="POW Medal">POW Medal</option>
                             </select>
                             <input type="text" id="histCommendNote" placeholder="Reason / citation...">
-                            <button class="history-add-btn" onclick="addHistoryEntry('commend')">+ ADD</button>
+                            <button id="histCommendAddBtn" class="history-add-btn" onclick="addHistoryEntry('commend')">+ ADD</button>
+                            <button id="histCommendCancelEditBtn" class="history-add-btn" style="display:none;background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.2);color:#999" onclick="cancelCommendEdit()">CANCEL EDIT</button>
                         </div>
                     </div>
                 </div>
