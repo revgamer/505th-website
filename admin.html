@@ -1101,6 +1101,9 @@
         // snapshotAttendanceHistory — accepts optional pre-loaded evList to avoid compound Firestore query
         async function snapshotAttendanceHistory(monthStr, memberDocs, preloadedEvents) {
             try {
+                // NOTE: TOTAL OPS / ATTENDED / RATE count ALL locked events (Op, Patrol, FTX, Fun Op).
+                // MISSED counts only OP-tagged (main_op) events missed (per Drake, 2026-07-24) —
+                // missing a Patrol, FTX, or Fun Op does NOT add to the MISSED number.
                 let evList = [];
                 if (preloadedEvents) {
                     // Use pre-loaded events — no Firestore query needed
@@ -1114,6 +1117,8 @@
                     });
                 }
                 const totalOps = evList.length;
+                const opEvents = evList.filter(ev => ev.type === 'main_op');
+                const totalOpTagOps = opEvents.length;
 
                 const members = [];
                 memberDocs.forEach(d => {
@@ -1122,8 +1127,10 @@
                     if (u.status==='pending'||u.status==='denied'||u.platoon==='Reserves') return;
                     const attended = evList.filter(ev=>(ev.attendees||[]).includes(uid)).length;
                     const eligible = totalOps;
-                    const missed   = eligible - attended;
                     const rate     = eligible > 0 ? Math.round((attended/eligible)*100) : 0;
+                    // MISSED — Op tag only: how many OP-tagged events this member did not attend
+                    const opAttended = opEvents.filter(ev=>(ev.attendees||[]).includes(uid)).length;
+                    const missed     = totalOpTagOps - opAttended;
                     members.push({
                         uid,
                         name:     formatMemberName(u) || u.callsign || 'Unknown',
@@ -2548,6 +2555,9 @@
             const evSnap = await getDocs(query(collection(db,'attendance_events'), where('locked','==',true)));
             const allEvents = [];
             evSnap.forEach(d => allEvents.push({id:d.id,...d.data()}));
+            // NOTE: opsEligible/opsAttended count ALL locked event tags (Op, Patrol, FTX, Fun Op).
+            // The Op-only "MISSED" rule (per Drake, 2026-07-24) lives in snapshotAttendanceHistory(),
+            // not here — this feeds the general roster attendance %, which stays all-tag.
 
             // Always fetch members fresh from Firestore — don't rely on allUsers cache
             const memberSnap = await getDocs(collection(db,'users'));
