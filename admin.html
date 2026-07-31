@@ -684,7 +684,7 @@
                 const isUnread = !n.read;
                 const time = n.createdAt ? new Date(n.createdAt.toDate?n.createdAt.toDate():n.createdAt).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
                 const icon = n.type==='message'?'&#9993;':n.type==='promotion'?'&#9650;':n.type==='warning'?'&#9888;':n.type==='transfer'?'&#8644;':n.type==='medal'?'&#9733;':'&#9679;';
-                return `<div onclick="adminNotifClick('${n.id}')" style="display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;background:${isUnread?'rgba(0,217,255,.04)':'transparent'};transition:background .15s" onmouseover="this.style.background='rgba(0,217,255,.06)'" onmouseout="this.style.background='${isUnread?'rgba(0,217,255,.04)':'transparent'}'">
+                return `<div onclick="adminNotifClick('${n.id}','${(n.title||'').replace(/'/g,"\\'")}','${(n.body||'').replace(/'/g,"\\'")}' )" style="display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;background:${isUnread?'rgba(0,217,255,.04)':'transparent'};transition:background .15s" onmouseover="this.style.background='rgba(0,217,255,.06)'" onmouseout="this.style.background='${isUnread?'rgba(0,217,255,.04)':'transparent'}'">
                     <div style="width:28px;height:28px;border-radius:50%;background:rgba(0,217,255,.1);border:1px solid rgba(0,217,255,.2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;color:var(--accent)">${icon}</div>
                     <div style="flex:1;min-width:0">
                         <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:${isUnread?'#e0e0e0':'#888'}">${esc(n.title||'Alert')}</div>
@@ -696,13 +696,37 @@
             }).join('');
         }
 
-        window.adminNotifClick = async function(id) {
+        window.adminNotifClick = async function(id, title, body) {
             try { await updateDoc(doc(db,'notifications',currentUser.uid,'items',id),{read:true}); } catch(e) {}
+            // Show popup
+            const existing = document.getElementById('adminNotifPopup');
+            if (existing) existing.remove();
+            const popup = document.createElement('div');
+            popup.id = 'adminNotifPopup';
+            popup.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;display:flex;align-items:center;justify-content:center';
+            popup.innerHTML = `<div style="background:#0a0c10;border:1px solid rgba(0,217,255,.3);width:min(480px,90vw);padding:24px;box-shadow:0 0 40px rgba(0,0,0,.6)">
+                <div style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;color:var(--accent);margin-bottom:12px">&#9888; ALERT</div>
+                <div style="font-family:Rajdhani,sans-serif;font-size:15px;font-weight:700;letter-spacing:2px;color:#e0e0e0;margin-bottom:10px">${esc(title||'')}</div>
+                <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#aaa;white-space:pre-wrap;line-height:1.6;margin-bottom:20px">${esc(body||'')}</div>
+                <button onclick="document.getElementById('adminNotifPopup').remove()" style="background:rgba(0,217,255,.1);border:1px solid rgba(0,217,255,.35);color:var(--accent);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:9px 24px;cursor:pointer">OK</button>
+            </div>`;
+            popup.addEventListener('click', e => { if(e.target===popup) popup.remove(); });
+            document.body.appendChild(popup);
         };
 
         window.adminMarkAllRead = async function() {
-            const snap = await getDocs(query(collection(db,'notifications',currentUser.uid,'items'), where('read','==',false)));
-            snap.forEach(async d => { try { await updateDoc(d.ref,{read:true}); } catch(e) {} });
+            try {
+                const snap = await getDocs(query(collection(db,'notifications',currentUser.uid,'items'), where('read','==',false)));
+                await Promise.all(snap.docs.map(d => updateDoc(d.ref,{read:true})));
+            } catch(e){ console.error('adminMarkAllRead:',e); }
+        };
+
+        window.adminClearAll = async function() {
+            if(!confirm('Clear all alerts?')) return;
+            try {
+                const snap = await getDocs(collection(db,'notifications',currentUser.uid,'items'));
+                await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+            } catch(e){ console.error('adminClearAll:',e); }
         };
 
         window.toggleAdminNotifPanel = function() {
@@ -6363,7 +6387,10 @@
     <div id="adminNotifPanel" style="display:none;position:fixed;top:52px;right:0;width:320px;max-height:calc(100vh - 52px);background:rgba(8,10,14,.99);border-left:1px solid rgba(0,217,255,.2);z-index:600;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.5)">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(0,217,255,.15);flex-shrink:0">
             <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:var(--accent)">&#9776; ALERTS</div>
-            <button onclick="adminMarkAllRead()" style="background:none;border:1px solid rgba(0,217,255,.2);color:rgba(0,217,255,.6);font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;cursor:pointer">MARK ALL READ</button>
+            <div style="display:flex;gap:6px">
+                <button onclick="adminMarkAllRead()" style="background:none;border:1px solid rgba(0,217,255,.2);color:rgba(0,217,255,.6);font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;cursor:pointer">MARK ALL READ</button>
+                <button onclick="adminClearAll()" style="background:none;border:1px solid rgba(255,68,68,.2);color:rgba(255,68,68,.6);font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;cursor:pointer">CLEAR ALL</button>
+            </div>
         </div>
         <div id="adminNotifList" style="flex:1;overflow-y:auto"></div>
     </div>
