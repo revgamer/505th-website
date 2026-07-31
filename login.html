@@ -167,7 +167,8 @@
                 if (!userDoc.exists()) { await signOut(auth); showError(errorMsg, 'USER PROFILE NOT FOUND \u2022 CONTACT ADMIN'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
                 const userData = userDoc.data();
                 if (userData.status === 'pending') { await signOut(auth); showError(errorMsg, 'AWAITING COMMANDER APPROVAL'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
-                if (userData.status === 'denied') { await signOut(auth); showError(errorMsg, 'ACCESS DENIED BY COMMAND'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
+                if (userData.status === 'denied')  { await signOut(auth); showError(errorMsg, 'ACCESS DENIED BY COMMAND'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
+                if (userData.suspended === true)   { await signOut(auth); showError(errorMsg, 'ACCOUNT SUSPENDED — CONTACT COMMAND'); btn.textContent = 'AUTHENTICATE'; btn.disabled = false; return false; }
 
                 // Redirect — return to previous page if set, otherwise boot animation
                 const returnTo = sessionStorage.getItem('loginReturnTo');

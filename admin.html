@@ -4610,6 +4610,7 @@
             // Load Discord link and default panel
             loadDiscordLink();
             showPanel('panel-dashboard');
+            window.loadDashSitrep();
 
             // If attendance panel somehow already visible, join presence now that auth is ready
             const attPanelEl = document.getElementById('panel-attendance');
@@ -4814,12 +4815,37 @@
             const msgEl=document.getElementById('cmdStatusSaveMsg');
             try {
                 const opStatus=document.getElementById('cmdUnitOpStatus').value;
-                const statusMessage=document.getElementById('cmdStatusMsg').value.trim();
-                await setDoc(doc(db,'unit_config','status'),{opStatus,statusMessage,updatedAt:serverTimestamp(),updatedBy:currentUser.uid},{merge:true});
+                await setDoc(doc(db,'unit_config','status'),{opStatus,updatedAt:serverTimestamp(),updatedBy:currentUser.uid},{merge:true});
                 if(msgEl){msgEl.textContent='SAVED';setTimeout(()=>{if(msgEl)msgEl.textContent='';},2500);}
                 window.cmdLoadUnitStatus();
-                await addDoc(collection(db,'audit_log'),{category:'commander',action:'UNIT STATUS UPDATED',detail:opStatus+(statusMessage?' — '+statusMessage:''),operatorUid:currentUser.uid,operatorName:formatMemberName(currentUserData),timestamp:serverTimestamp()});
+                await addDoc(collection(db,'audit_log'),{category:'commander',action:'UNIT STATUS UPDATED',detail:opStatus,operatorUid:currentUser.uid,operatorName:formatMemberName(currentUserData),timestamp:serverTimestamp()});
+                await addDoc(collection(db,'admin_notifications'),{
+                    type:'unit_status',
+                    message:`UNIT STATUS: ${opStatus} — set by ${formatMemberName(currentUserData)}.`,
+                    targetRoles:['commander','officer','developer','staff_nco','nco','recruiter','marine','enlistee'],
+                    createdAt:serverTimestamp(),
+                    read:[],
+                });
             } catch(e){if(msgEl) msgEl.textContent='ERROR: '+e.message;}
+        };
+
+        // Load latest SITREP into dashboard banner
+        window.loadDashSitrep = async function() {
+            try {
+                const snap = await getDocs(query(collection(db,'fragos'), orderBy('createdAt','desc'), limit(1)));
+                const banner = document.getElementById('dashSitrepBanner');
+                if(!banner) return;
+                if(snap.empty){ banner.style.display='none'; return; }
+                const f = snap.docs[0].data();
+                const role = currentUserData?.role||'';
+                if(f.visibility==='commander_only' && !['commander','developer'].includes(role)) { banner.style.display='none'; return; }
+                if(f.visibility==='officers_only' && !['commander','developer','officer'].includes(role)) { banner.style.display='none'; return; }
+                document.getElementById('dashSitrepTitle').textContent = f.title||'';
+                document.getElementById('dashSitrepBody').textContent  = f.body||'';
+                const ts = f.createdAt?.toDate ? f.createdAt.toDate().toLocaleString() : '';
+                document.getElementById('dashSitrepTime').textContent  = ts + (f.authorName ? ' · ' + f.authorName : '');
+                banner.style.display = 'block';
+            } catch(e){ console.error('loadDashSitrep:',e); }
         };
 
         window.cmdLoadFragos = async function() {
@@ -4858,6 +4884,7 @@
                 document.getElementById('cmdFragoBody').value='';
                 if(msgEl){msgEl.textContent='POSTED.';setTimeout(()=>{if(msgEl)msgEl.textContent='';},2500);}
                 window.cmdLoadFragos();
+                window.loadDashSitrep();
             } catch(e){if(msgEl) msgEl.textContent='ERROR: '+e.message;}
         };
 
@@ -5004,6 +5031,16 @@
             try {
                 await updateDoc(doc(db,'users',uid),{suspended:!currentlySuspended});
                 await addDoc(collection(db,'audit_log'),{category:'manpower',action:'ACCOUNT '+action,detail:u?formatMemberName(u):uid,operatorUid:currentUser.uid,operatorName:formatMemberName(currentUserData),timestamp:serverTimestamp()});
+                // Fire alert notification to all staff
+                if(!currentlySuspended) {
+                    await addDoc(collection(db,'admin_notifications'),{
+                        type:'account_suspended',
+                        message:`ACCOUNT SUSPENDED: ${u?formatMemberName(u):uid} has been suspended by ${formatMemberName(currentUserData)}.`,
+                        targetRoles:['commander','officer','developer','staff_nco','nco'],
+                        createdAt:serverTimestamp(),
+                        read:[],
+                    });
+                }
                 if(msgEl){msgEl.textContent=action+' APPLIED.';setTimeout(()=>{if(msgEl)msgEl.textContent='';},2500);}
                 window.cmdLoadSuspendUsers();
             } catch(e){if(msgEl) msgEl.textContent='ERROR: '+e.message;}
@@ -5535,6 +5572,17 @@
             <div class="main-content">
                 <div class="panel hidden" id="panel-dashboard">
                     <div class="panel-title">DASHBOARD</div>
+
+                    <!-- SITREP BANNER -->
+                    <div id="dashSitrepBanner" style="display:none;margin-bottom:16px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.06);padding:14px 18px">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                            <span style="color:#f59e0b;font-size:13px">&#9993;</span>
+                            <div style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;color:#f59e0b">COMMAND SITREP</div>
+                            <span id="dashSitrepTime" style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(245,158,11,.4);margin-left:auto"></span>
+                        </div>
+                        <div id="dashSitrepTitle" style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;color:#e0e0e0;margin-bottom:4px"></div>
+                        <div id="dashSitrepBody" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#bbb;white-space:pre-wrap"></div>
+                    </div>
 
                     <!-- Row 1: Stats -->
                     <div class="stats-row" id="dashStatsRow" style="grid-template-columns:repeat(4,1fr)">
@@ -6334,9 +6382,7 @@
             <!-- Tab bar -->
             <div style="display:flex;border-bottom:1px solid rgba(245,158,11,.2);flex-shrink:0;overflow-x:auto">
                 <button class="cmd-tab active" onclick="cmdSwitchTab('unit-status')" id="cmdtab-unit-status">&#9673; UNIT STATUS</button>
-                <button class="cmd-tab" onclick="cmdSwitchTab('frago')"   id="cmdtab-frago">&#9993; SITREP</button>
                 <button class="cmd-tab" onclick="cmdSwitchTab('staff')"   id="cmdtab-staff">&#9823; CMD STAFF</button>
-                <button class="cmd-tab" onclick="cmdSwitchTab('audit')"   id="cmdtab-audit">&#9741; AUDIT LOG</button>
                 <button class="cmd-tab" onclick="cmdSwitchTab('promote')" id="cmdtab-promote">&#9650; PROMOTE</button>
                 <button class="cmd-tab" onclick="cmdSwitchTab('suspend')" id="cmdtab-suspend">&#9940; SUSPEND</button>
             </div>
@@ -6366,10 +6412,6 @@
                             </div>
                             <button onclick="cmdToggleRecruitment()" style="width:100%;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);color:#f59e0b;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:8px;cursor:pointer">TOGGLE</button>
                         </div>
-                    </div>
-                    <div style="margin-top:12px">
-                        <div style="font-size:9px;color:rgba(255,255,255,.35);font-family:'Share Tech Mono',monospace;margin-bottom:6px">STATUS MESSAGE (optional)</div>
-                        <input type="text" id="cmdStatusMsg" placeholder="e.g. Recruiting open — applications reviewed weekly" maxlength="120" style="width:100%;background:rgba(0,0,0,.6);border:1px solid rgba(245,158,11,.25);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none;box-sizing:border-box">
                     </div>
                     <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
                         <button onclick="cmdSaveUnitStatus()" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#f59e0b;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:9px 20px;cursor:pointer">SAVE STATUS</button>
