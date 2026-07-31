@@ -6334,7 +6334,7 @@
             <!-- Tab bar -->
             <div style="display:flex;border-bottom:1px solid rgba(245,158,11,.2);flex-shrink:0;overflow-x:auto">
                 <button class="cmd-tab active" onclick="cmdSwitchTab('unit-status')" id="cmdtab-unit-status">&#9673; UNIT STATUS</button>
-                <button class="cmd-tab" onclick="cmdSwitchTab('frago')"   id="cmdtab-frago">&#9993; FRAGO</button>
+                <button class="cmd-tab" onclick="cmdSwitchTab('frago')"   id="cmdtab-frago">&#9993; SITREP</button>
                 <button class="cmd-tab" onclick="cmdSwitchTab('staff')"   id="cmdtab-staff">&#9823; CMD STAFF</button>
                 <button class="cmd-tab" onclick="cmdSwitchTab('audit')"   id="cmdtab-audit">&#9741; AUDIT LOG</button>
                 <button class="cmd-tab" onclick="cmdSwitchTab('promote')" id="cmdtab-promote">&#9650; PROMOTE</button>
@@ -6377,13 +6377,13 @@
                     </div>
                 </div>
 
-                <!-- FRAGO -->
+                <!-- SITREP -->
                 <div class="cmd-panel-tab hidden" id="cmdpanel-frago">
-                    <div style="font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:3px;color:rgba(245,158,11,.6);margin-bottom:16px">FRAGMENTARY ORDERS — INTERNAL COMMAND CHANNEL</div>
+                    <div style="font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:3px;color:rgba(245,158,11,.6);margin-bottom:16px">SITUATION REPORT — INTERNAL COMMAND CHANNEL</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
                         <div>
-                            <div style="font-size:9px;color:rgba(255,255,255,.4);font-family:'Share Tech Mono',monospace;margin-bottom:6px">FRAGO TITLE</div>
-                            <input type="text" id="cmdFragoTitle" placeholder="e.g. Op Ironveil — Phase 2 Orders" maxlength="80" style="width:100%;background:rgba(0,0,0,.6);border:1px solid rgba(245,158,11,.25);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none;box-sizing:border-box">
+                            <div style="font-size:9px;color:rgba(255,255,255,.4);font-family:'Share Tech Mono',monospace;margin-bottom:6px">SITREP TITLE</div>
+                            <input type="text" id="cmdFragoTitle" placeholder="e.g. Op Ironveil — Phase 2 Status" maxlength="80" style="width:100%;background:rgba(0,0,0,.6);border:1px solid rgba(245,158,11,.25);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none;box-sizing:border-box">
                         </div>
                         <div>
                             <div style="font-size:9px;color:rgba(255,255,255,.4);font-family:'Share Tech Mono',monospace;margin-bottom:6px">VISIBILITY</div>
@@ -6394,14 +6394,14 @@
                             </select>
                         </div>
                     </div>
-                    <div style="font-size:9px;color:rgba(255,255,255,.4);font-family:'Share Tech Mono',monospace;margin-bottom:6px">ORDER BODY</div>
-                    <textarea id="cmdFragoBody" placeholder="Enter order text..." rows="5" style="width:100%;background:rgba(0,0,0,.6);border:1px solid rgba(245,158,11,.25);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none;resize:vertical;box-sizing:border-box"></textarea>
+                    <div style="font-size:9px;color:rgba(255,255,255,.4);font-family:'Share Tech Mono',monospace;margin-bottom:6px">REPORT BODY</div>
+                    <textarea id="cmdFragoBody" placeholder="Enter situation report..." rows="5" style="width:100%;background:rgba(0,0,0,.6);border:1px solid rgba(245,158,11,.25);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none;resize:vertical;box-sizing:border-box"></textarea>
                     <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
-                        <button onclick="cmdPostFrago()" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#f59e0b;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:9px 20px;cursor:pointer">POST FRAGO</button>
+                        <button onclick="cmdPostFrago()" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#f59e0b;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:9px 20px;cursor:pointer">TRANSMIT SITREP</button>
                         <div id="cmdFragoSaveMsg" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(245,158,11,.6)"></div>
                     </div>
                     <hr style="border-color:rgba(245,158,11,.15);margin:16px 0">
-                    <div style="font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:2px;color:rgba(245,158,11,.5);margin-bottom:10px">POSTED ORDERS</div>
+                    <div style="font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:2px;color:rgba(245,158,11,.5);margin-bottom:10px">TRANSMITTED REPORTS</div>
                     <div id="cmdFragoList"><div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#555">LOADING...</div></div>
                 </div>
 
