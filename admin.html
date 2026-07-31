@@ -4599,7 +4599,8 @@
 
             // Reveal admin
             document.getElementById('adminApp').classList.remove('hidden');
-            cmdShowSidebarBtn();
+            const _cmdBtn = document.getElementById('nav-commander-btn');
+            if (_cmdBtn) _cmdBtn.style.display = ['commander','developer'].includes(currentUserData?.role) ? 'block' : 'none';
 
             // Start real-time registration webhook listener
             startRegistrationListener();
