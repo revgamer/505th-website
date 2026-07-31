@@ -4815,13 +4815,14 @@
             const msgEl=document.getElementById('cmdStatusSaveMsg');
             try {
                 const opStatus=document.getElementById('cmdUnitOpStatus').value;
-                await setDoc(doc(db,'unit_config','status'),{opStatus,updatedAt:serverTimestamp(),updatedBy:currentUser.uid},{merge:true});
+                const statusMessage=(document.getElementById('cmdStatusMsg')?.value||'').trim();
+                await setDoc(doc(db,'unit_config','status'),{opStatus,statusMessage,updatedAt:serverTimestamp(),updatedBy:currentUser.uid},{merge:true});
                 if(msgEl){msgEl.textContent='SAVED';setTimeout(()=>{if(msgEl)msgEl.textContent='';},2500);}
                 window.cmdLoadUnitStatus();
-                await addDoc(collection(db,'audit_log'),{category:'commander',action:'UNIT STATUS UPDATED',detail:opStatus,operatorUid:currentUser.uid,operatorName:formatMemberName(currentUserData),timestamp:serverTimestamp()});
+                await addDoc(collection(db,'audit_log'),{category:'commander',action:'UNIT STATUS UPDATED',detail:opStatus+(statusMessage?' — '+statusMessage:''),operatorUid:currentUser.uid,operatorName:formatMemberName(currentUserData),timestamp:serverTimestamp()});
                 await addDoc(collection(db,'admin_notifications'),{
                     type:'unit_status',
-                    message:`UNIT STATUS: ${opStatus} — set by ${formatMemberName(currentUserData)}.`,
+                    message:`UNIT STATUS: ${opStatus}${statusMessage?' — '+statusMessage:''} · by ${formatMemberName(currentUserData)}`,
                     targetRoles:['commander','officer','developer','staff_nco','nco','recruiter','marine','enlistee'],
                     createdAt:serverTimestamp(),
                     read:[],
@@ -6382,6 +6383,7 @@
             <!-- Tab bar -->
             <div style="display:flex;border-bottom:1px solid rgba(245,158,11,.2);flex-shrink:0;overflow-x:auto">
                 <button class="cmd-tab active" onclick="cmdSwitchTab('unit-status')" id="cmdtab-unit-status">&#9673; UNIT STATUS</button>
+                <button class="cmd-tab" onclick="cmdSwitchTab('frago')"   id="cmdtab-frago">&#9993; SITREP</button>
                 <button class="cmd-tab" onclick="cmdSwitchTab('staff')"   id="cmdtab-staff">&#9823; CMD STAFF</button>
                 <button class="cmd-tab" onclick="cmdSwitchTab('promote')" id="cmdtab-promote">&#9650; PROMOTE</button>
                 <button class="cmd-tab" onclick="cmdSwitchTab('suspend')" id="cmdtab-suspend">&#9940; SUSPEND</button>
@@ -6412,6 +6414,10 @@
                             </div>
                             <button onclick="cmdToggleRecruitment()" style="width:100%;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);color:#f59e0b;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:8px;cursor:pointer">TOGGLE</button>
                         </div>
+                    </div>
+                    <div style="margin-top:12px">
+                        <div style="font-size:9px;color:rgba(255,255,255,.35);font-family:'Share Tech Mono',monospace;margin-bottom:6px">STATUS MESSAGE — broadcasts to all via ALERTS</div>
+                        <input type="text" id="cmdStatusMsg" placeholder="e.g. Stand down this weekend, ops resume Monday" maxlength="120" style="width:100%;background:rgba(0,0,0,.6);border:1px solid rgba(245,158,11,.25);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 10px;outline:none;box-sizing:border-box">
                     </div>
                     <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
                         <button onclick="cmdSaveUnitStatus()" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#f59e0b;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:9px 20px;cursor:pointer">SAVE STATUS</button>
