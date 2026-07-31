@@ -4784,6 +4784,23 @@
             if(e.key==='Escape' && document.getElementById('cmdPanelOverlay')?.style.display==='flex') window.closeCommanderPanel();
         });
 
+        // Fan-out a notification to all users matching target roles
+        window.cmdBroadcastNotif = async function(type, title, body, targetRoles) {
+            try {
+                const snap = await getDocs(collection(db,'users'));
+                const batch = [];
+                snap.forEach(d => {
+                    const u = d.data();
+                    if (targetRoles.includes(u.role)) {
+                        batch.push(addDoc(collection(db,'notifications',d.id,'items'), {
+                            type, title, body, read:false, createdAt:serverTimestamp()
+                        }));
+                    }
+                });
+                await Promise.all(batch);
+            } catch(e){ console.error('cmdBroadcastNotif:',e); }
+        };
+
         window.cmdLoadUnitStatus = async function() {
             try {
                 const snap=await getDoc(doc(db,'unit_config','status'));
@@ -4820,13 +4837,7 @@
                 if(msgEl){msgEl.textContent='SAVED';setTimeout(()=>{if(msgEl)msgEl.textContent='';},2500);}
                 window.cmdLoadUnitStatus();
                 await addDoc(collection(db,'audit_log'),{category:'commander',action:'UNIT STATUS UPDATED',detail:opStatus+(statusMessage?' — '+statusMessage:''),operatorUid:currentUser.uid,operatorName:formatMemberName(currentUserData),timestamp:serverTimestamp()});
-                await addDoc(collection(db,'admin_notifications'),{
-                    type:'unit_status',
-                    message:`UNIT STATUS: ${opStatus}${statusMessage?' — '+statusMessage:''} · by ${formatMemberName(currentUserData)}`,
-                    targetRoles:['commander','officer','developer','staff_nco','nco','recruiter','marine','enlistee'],
-                    createdAt:serverTimestamp(),
-                    read:[],
-                });
+                await window.cmdBroadcastNotif('warning','COMMAND STATUS UPDATE',`${opStatus}${statusMessage?' — '+statusMessage:''} · ${formatMemberName(currentUserData)}`,['commander','officer','developer','staff_nco','nco','recruiter','marine','enlistee']);
             } catch(e){if(msgEl) msgEl.textContent='ERROR: '+e.message;}
         };
 
@@ -5032,15 +5043,8 @@
             try {
                 await updateDoc(doc(db,'users',uid),{suspended:!currentlySuspended});
                 await addDoc(collection(db,'audit_log'),{category:'manpower',action:'ACCOUNT '+action,detail:u?formatMemberName(u):uid,operatorUid:currentUser.uid,operatorName:formatMemberName(currentUserData),timestamp:serverTimestamp()});
-                // Fire alert notification to all staff
                 if(!currentlySuspended) {
-                    await addDoc(collection(db,'admin_notifications'),{
-                        type:'account_suspended',
-                        message:`ACCOUNT SUSPENDED: ${u?formatMemberName(u):uid} has been suspended by ${formatMemberName(currentUserData)}.`,
-                        targetRoles:['commander','officer','developer','staff_nco','nco'],
-                        createdAt:serverTimestamp(),
-                        read:[],
-                    });
+                    await window.cmdBroadcastNotif('warning','ACCOUNT SUSPENDED',`${u?formatMemberName(u):uid} has been suspended by ${formatMemberName(currentUserData)}.`,['commander','officer','developer','staff_nco','nco']);
                 }
                 if(msgEl){msgEl.textContent=action+' APPLIED.';setTimeout(()=>{if(msgEl)msgEl.textContent='';},2500);}
                 window.cmdLoadSuspendUsers();
