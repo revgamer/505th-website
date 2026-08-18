@@ -60,6 +60,19 @@
             return []; // recruiter and below cannot change roles
         }
 
+        // ── DELETE AUTHORITY ─────────────────────────────────────────────
+        // Returns true if the current user may delete this personnel file.
+        // Mirrors getAssignableRoles(): you can only remove accounts at or
+        // below the roles you are allowed to assign. Stops a Staff NCO from
+        // deleting an Officer / Developer / Commander file.
+        function canDeleteTarget(target) {
+            if (!P().canDeleteUsers) return false;
+            const role = target?.role || 'enlistee';
+            if (role === 'commander' && !P().canDemoteCommander) return false;
+            return getAssignableRoles().includes(role);
+        }
+        window.canDeleteTarget = canDeleteTarget;
+
         function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
         // ── Rank abbreviation map ─────────────────────────────────────────
@@ -1072,6 +1085,7 @@
                         <span style="${ptStyle}">${pt}</span>
                         ${ptReady?`<button class="action-btn approve-btn small" onclick="promotePT('${r.id}')" style="font-size:8px;padding:2px 8px;letter-spacing:1px;animation:ptGlow 1s ease-in-out infinite" title="Award +1 PT &amp; reset attendance">+1 PT</button>`:''}
                     </div>
+                    <div class="roster-cell" title="Total ribbons awarded"><span style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:${(r.ribbonHistory||[]).length?'#2DD4BF':'#555'}">${(r.ribbonHistory||[]).length}</span></div>
                 </div>`;
             }).join('');
             // Ensure scroll-wrap is applied after data renders
@@ -2986,7 +3000,7 @@
                                     </optgroup>
                                 </select>
                             </div>`:''}
-                            ${P().canDeleteUsers && !isLockedCommander?`<button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')">REMOVE</button>`:''}
+                            ${canDeleteTarget(u) && !isLockedCommander?`<button class="action-btn remove-btn small" onclick="removeUser('${u.id}','${esc(u.callsign)}')" title="Delete this personnel file (use for duplicate accounts)">REMOVE</button>`:''}
                         </div>
                     </div>`;
                 }).join('') : '<div class="empty-state">NO ACTIVE PERSONNEL</div>';
@@ -3289,7 +3303,25 @@
         // ── END REAL-TIME REGISTRATION WEBHOOK ───────────────────────────────
 
         window.removeUser = async function(uid, callsign) {
-            if(!confirm('REMOVE '+callsign+'?')) return;
+            const _target = allUsers.find(x=>x.id===uid);
+            const _isRegistration = _target?.status === 'pending' || _target?.status === 'denied';
+
+            // Live personnel file — check authority, then require typed confirmation
+            if (_target && !_isRegistration) {
+                if (!canDeleteTarget(_target)) { notify('INSUFFICIENT AUTHORITY',1); return; }
+                const typed = prompt(
+                    'DELETE PERSONNEL FILE — THIS CANNOT BE UNDONE.\n\n' +
+                    'Only remove duplicate or erroneous accounts.\n\n' +
+                    'Type the callsign exactly to confirm:\n' + (callsign||'')
+                );
+                if (typed === null) return;
+                if (typed.trim().toLowerCase() !== (callsign||'').trim().toLowerCase()) {
+                    notify('CONFIRMATION FAILED',1); return;
+                }
+            } else {
+                if(!confirm('REMOVE '+callsign+'?')) return;
+            }
+
             try {
                 const u = allUsers.find(x=>x.id===uid);
                 // Fire denied webhook if this was a pending registration
@@ -3425,16 +3457,143 @@
             if(pane) pane.classList.add('active');
         };
 
+        // ══ RIBBONS ══════════════════════════════════════════════════════
+        // EDIT THIS ARRAY TO ADD / RENAME / REMOVE RIBBONS.
+        // img  = filename inside images/ribbons/ — leave '' to use the colour bar placeholder.
+        // color = placeholder bar colour (also used for the ribbon accent).
+        const RIBBON_TYPES = [
+            { name:'Training Ribbon',     img:'', color:'#2DD4BF' },
+            { name:'Commendation Ribbon', img:'', color:'#F59E0B' },
+            { name:'Ribbon C',            img:'', color:'#A78BFA' }
+        ];
+
+        function ribbonDef(name) {
+            return RIBBON_TYPES.find(r => r.name === name) || { name, img:'', color:'#2DD4BF' };
+        }
+
+        // Small visual for a ribbon — real image if present, else a coloured bar with initials
+        function ribbonIcon(name, size) {
+            const d = ribbonDef(name);
+            const w = size || 34;
+            if(d.img) return `<img src="images/ribbons/${esc(d.img)}" alt="${esc(name)}" style="width:${w}px;height:${Math.round(w*0.42)}px;object-fit:cover;flex-shrink:0;border:1px solid rgba(0,0,0,.5)">`;
+            const initials = name.replace(/ribbon/ig,'').trim().split(/\s+/).map(x=>x[0]||'').join('').substring(0,2).toUpperCase();
+            return `<div style="width:${w}px;height:${Math.round(w*0.42)}px;flex-shrink:0;background:linear-gradient(180deg,${d.color} 0%,${d.color} 38%,rgba(0,0,0,.55) 38%,rgba(0,0,0,.55) 62%,${d.color} 62%);border:1px solid rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;color:#0b0f14;text-shadow:0 0 2px rgba(255,255,255,.5)">${esc(initials)}</div>`;
+        }
+
+        // Populate the ribbon <select> from RIBBON_TYPES
+        function populateRibbonSelect() {
+            const sel = document.getElementById('histRibbonTitle'); if(!sel) return;
+            sel.innerHTML = '<option value="">— SELECT RIBBON —</option>' +
+                RIBBON_TYPES.map(r => `<option value="${esc(r.name)}">${esc(r.name)}</option>`).join('');
+        }
+
+        // Group a flat ribbonHistory array into [{name, count, entries:[{entry, index}]}]
+        function groupRibbons(entries) {
+            const map = new Map();
+            (entries||[]).forEach((e, index) => {
+                const key = e.title || 'Unknown Ribbon';
+                if(!map.has(key)) map.set(key, { name:key, count:0, entries:[] });
+                const g = map.get(key);
+                g.count++;
+                g.entries.push({ entry:e, index });
+            });
+            return [...map.values()].sort((a,b) => b.count - a.count || a.name.localeCompare(b.name));
+        }
+
+        // Total ribbons for a member — used by the roster columns
+        window.ribbonTotal = function(u) { return (u && u.ribbonHistory ? u.ribbonHistory.length : 0); };
+
+        function renderRibbonList(entries) {
+            const c = document.getElementById('histRibbonList'); if(!c) return;
+            const groups = groupRibbons(entries);
+            if(!groups.length){ c.innerHTML = '<div class="history-empty">NO RIBBONS AWARDED YET</div>'; return; }
+            c.innerHTML = groups.map((g, gi) => {
+                const d = ribbonDef(g.name);
+                const awards = [...g.entries].reverse().map(({entry, index}) => `
+                    <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 8px 6px 14px;border-top:1px solid rgba(255,255,255,.04)">
+                        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#888;min-width:74px;flex-shrink:0">${entry.date||'—'}</div>
+                        <div style="flex:1;min-width:0">
+                            <div style="font-size:10px;color:#ccc">${esc(entry.note||'No citation provided.')}</div>
+                            ${entry.addedBy?`<div style="color:#555;font-size:8px;margin-top:2px">BY ${esc(entry.addedBy)}</div>`:''}
+                        </div>
+                        <button class="history-entry-del" onclick="deleteRibbonEntry(${index})" title="Remove this award">✕</button>
+                    </div>`).join('');
+                return `<div style="border:1px solid rgba(45,212,191,.18);background:rgba(45,212,191,.03);margin-bottom:6px">
+                    <div onclick="toggleRibbonGroup(${gi})" style="display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer;user-select:none">
+                        ${ribbonIcon(g.name, 34)}
+                        <span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:${d.color}">${esc(g.name)}</span>
+                        <span style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:#fff;background:rgba(45,212,191,.18);border:1px solid rgba(45,212,191,.45);padding:1px 8px;letter-spacing:1px">&times;${g.count}</span>
+                        <span id="ribbonCaret-${gi}" style="margin-left:auto;color:#666;font-size:11px">&#9660;</span>
+                    </div>
+                    <div id="ribbonGroup-${gi}" style="display:none">${awards}</div>
+                </div>`;
+            }).join('');
+        }
+
+        window.toggleRibbonGroup = function(gi) {
+            const box   = document.getElementById('ribbonGroup-'+gi);
+            const caret = document.getElementById('ribbonCaret-'+gi);
+            if(!box) return;
+            const open = box.style.display !== 'none';
+            box.style.display = open ? 'none' : 'block';
+            if(caret) caret.innerHTML = open ? '&#9660;' : '&#9650;';
+        };
+
+        window.addRibbonEntry = async function() {
+            const uid = document.getElementById('editUserId').value;
+            const u   = allUsers.find(x=>x.id===uid); if(!u) return;
+            const today = new Date().toISOString().split('T')[0];
+            const title = document.getElementById('histRibbonTitle').value.trim();
+            if(!title){ notify('SELECT A RIBBON',1); return; }
+            const entry = {
+                date:    document.getElementById('histRibbonDate').value || today,
+                title:   title,
+                note:    document.getElementById('histRibbonNote').value.trim(),
+                addedBy: currentUserData?.callsign || 'Staff',
+                addedAt: new Date().toISOString()
+            };
+            const updated = [...(u.ribbonHistory||[]), entry];
+            try {
+                await updateDoc(doc(db,'users',uid), {ribbonHistory: updated});
+                u.ribbonHistory = updated;
+                const memberName = formatMemberName(u)||u.callsign||'Unknown';
+                notify('RIBBON AWARDED');
+                writeAuditLog('manpower','RIBBON AWARDED', `${entry.title} for ${memberName}`);
+                try{ await addDoc(collection(db,'notifications',uid,'items'),{type:'medal',read:false,title:'You have been awarded a ribbon',body:entry.title+(entry.note?' — '+entry.note.substring(0,50):''),createdAt:serverTimestamp()}); }catch(_e){}
+                renderRibbonList(updated);
+                document.getElementById('histRibbonTitle').value = '';
+                document.getElementById('histRibbonNote').value  = '';
+                // Keep roster columns in sync without a full reload
+                const rd = rosterData.find(x=>x.id===uid); if(rd) rd.ribbonHistory = updated;
+            } catch(e){ notify('ERROR: '+e.message,1); }
+        };
+
+        window.deleteRibbonEntry = async function(index) {
+            if(!confirm('REMOVE THIS RIBBON AWARD?')) return;
+            const uid = document.getElementById('editUserId').value;
+            const u   = allUsers.find(x=>x.id===uid); if(!u) return;
+            const updated = (u.ribbonHistory||[]).filter((_,i)=>i!==index);
+            try {
+                await updateDoc(doc(db,'users',uid), {ribbonHistory: updated});
+                u.ribbonHistory = updated;
+                renderRibbonList(updated);
+                notify('RIBBON AWARD REMOVED');
+                const rd = rosterData.find(x=>x.id===uid); if(rd) rd.ribbonHistory = updated;
+            } catch(e){ notify('ERROR: '+e.message,1); }
+        };
+
         function loadEditHistory(u) {
             renderHistoryList('histPlatoonList',  u.platoonHistory||[],    'platoon');
             renderHistoryList('histPromoList',    u.promotionHistory||[],  'promo');
             renderHistoryList('histWarnList',     u.warningHistory||[],    'warn');
             renderHistoryList('histCommendList',  u.commendationHistory||[],'commend');
+            populateRibbonSelect();
+            renderRibbonList(u.ribbonHistory||[]);
             const today = new Date().toISOString().split('T')[0];
-            ['histPlatoonDate','histPromoDate','histWarnDate','histCommendDate'].forEach(id=>{
+            ['histPlatoonDate','histPromoDate','histWarnDate','histCommendDate','histRibbonDate'].forEach(id=>{
                 const el=document.getElementById(id); if(el) el.value=today;
             });
-            ['histPlatoonFrom','histPlatoonTo','histPlatoonNote','histPromoFrom','histPromoTo','histPromoNote','histWarnNote','histCommendNote'].forEach(id=>{
+            ['histPlatoonFrom','histPlatoonTo','histPlatoonNote','histPromoFrom','histPromoTo','histPromoNote','histWarnNote','histCommendNote','histRibbonNote'].forEach(id=>{
                 const el=document.getElementById(id); if(el) el.value='';
             });
             const ct=document.getElementById('histCommendTitle'); if(ct) ct.value='';
@@ -3759,6 +3918,77 @@
             }
             notify(`&#9733; MEDAL AWARDED TO ${awarded} MARINE${awarded!==1?'S':''}`);
             closeBulkMedalModal();
+        };
+
+        // ── BULK RIBBON AWARD ──
+        let brSelectedRibbon = '';
+
+        window.openBulkRibbonModal = function() {
+            const modal = document.getElementById('bulkRibbonModal');
+            document.getElementById('brCitation').value = '';
+            // Build ribbon picker from RIBBON_TYPES
+            brSelectedRibbon = RIBBON_TYPES.length ? RIBBON_TYPES[0].name : '';
+            document.getElementById('brRibbonGrid').innerHTML = RIBBON_TYPES.map((r,i) => `
+                <div class="br-ribbon-opt" data-name="${esc(r.name)}" onclick="selectBrRibbon(this)" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px;border:2px solid ${i===0?'#2DD4BF':'rgba(255,255,255,.1)'};background:${i===0?'rgba(45,212,191,.12)':'transparent'};cursor:pointer;min-width:74px;transition:all .15s">
+                    ${ribbonIcon(r.name, 40)}
+                    <span style="font-size:9px;letter-spacing:1px;color:#ccc;text-align:center">${esc(r.name.toUpperCase())}</span>
+                </div>`).join('');
+            // Build personnel list
+            const list = document.getElementById('brPersonnelList');
+            const sorted = [...rosterData].sort((a,b) => (formatMemberName(a)||'').localeCompare(formatMemberName(b)||''));
+            list.innerHTML = sorted.map(r => `
+                <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.03);font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;color:#ccc">
+                    <input type="checkbox" data-uid="${r.id}" style="accent-color:#2DD4BF;width:14px;height:14px;cursor:pointer">
+                    <span>${esc(formatMemberName(r)||r.callsign)}</span>
+                    <span style="margin-left:auto;font-size:10px;color:#555">${esc(r.platoon||'')}</span>
+                </label>`).join('');
+            modal.style.display = 'flex';
+        };
+
+        window.closeBulkRibbonModal = function() {
+            document.getElementById('bulkRibbonModal').style.display = 'none';
+        };
+
+        window.selectBrRibbon = function(el) {
+            document.querySelectorAll('.br-ribbon-opt').forEach(o => {
+                o.style.borderColor = 'rgba(255,255,255,.1)';
+                o.style.background  = 'transparent';
+            });
+            el.style.borderColor = '#2DD4BF';
+            el.style.background  = 'rgba(45,212,191,.12)';
+            brSelectedRibbon = el.dataset.name || '';
+        };
+
+        window.brSelectAll = function(state) {
+            document.querySelectorAll('#brPersonnelList input[type="checkbox"]').forEach(cb => cb.checked = state);
+        };
+
+        window.submitBulkRibbon = async function() {
+            if(!brSelectedRibbon) { notify('SELECT A RIBBON', 1); return; }
+            const citation = document.getElementById('brCitation').value.trim();
+            const checked  = [...document.querySelectorAll('#brPersonnelList input[type="checkbox"]:checked')];
+            if(!checked.length) { notify('SELECT AT LEAST ONE RECIPIENT', 1); return; }
+            const today = new Date().toISOString().split('T')[0];
+            const by    = currentUserData?.callsign || 'Staff';
+            let awarded = 0;
+            for(const cb of checked) {
+                const uid = cb.dataset.uid;
+                const u   = rosterData.find(x => x.id === uid); if(!u) continue;
+                const entry = {date:today, title:brSelectedRibbon, note:citation, addedBy:by, addedAt:new Date().toISOString()};
+                const updated = [...(u.ribbonHistory||[]), entry];
+                try {
+                    await updateDoc(doc(db,'users',uid), {ribbonHistory: updated});
+                    u.ribbonHistory = updated;
+                    // Keep the Personnel Files cache in sync too
+                    const au = allUsers.find(x => x.id === uid); if(au) au.ribbonHistory = updated;
+                    try{ await addDoc(collection(db,'notifications',uid,'items'),{type:'medal',read:false,title:'You have been awarded a ribbon',body:brSelectedRibbon+(citation?' — '+citation.substring(0,50):''),createdAt:serverTimestamp()}); }catch(_e){}
+                    awarded++;
+                } catch(e) { console.warn('Ribbon award failed for '+uid, e.message); }
+            }
+            writeAuditLog('manpower','RIBBON AWARDED (BULK)', `${brSelectedRibbon} awarded to ${awarded} member(s)`);
+            notify(`&#9644; RIBBON AWARDED TO ${awarded} MARINE${awarded!==1?'S':''}`);
+            closeBulkRibbonModal();
+            renderRosterTable();
         };
 
         // ── BATTALION ROSTER CONTEXT MENU ──
@@ -5163,6 +5393,38 @@
         </div>
     </div>
 
+    <!-- ── BULK RIBBON AWARD MODAL ── -->
+    <div id="bulkRibbonModal" style="display:none;position:fixed;inset:0;z-index:5500;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+        <div style="background:#0d1217;border:1px solid rgba(45,212,191,.5);box-shadow:0 0 40px rgba(45,212,191,.15);padding:24px 28px;width:90%;max-width:560px;max-height:85vh;overflow-y:auto;font-family:Rajdhani,sans-serif">
+            <div style="font-size:16px;font-weight:700;letter-spacing:3px;color:#2DD4BF;margin-bottom:18px;border-bottom:1px solid rgba(45,212,191,.2);padding-bottom:10px">&#9644; BULK RIBBON AWARD</div>
+
+            <!-- Ribbon picker (built from RIBBON_TYPES) -->
+            <div style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7);margin-bottom:8px">SELECT RIBBON</div>
+            <div id="brRibbonGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
+
+            <!-- Citation -->
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px">
+                <label style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">CITATION / REASON (OPTIONAL)</label>
+                <input id="brCitation" type="text" placeholder="Reason for award..." style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.25);color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:11px;padding:7px 10px;outline:none">
+            </div>
+
+            <!-- Personnel selector -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <div style="font-size:10px;letter-spacing:2px;color:rgba(0,217,255,.7)">SELECT RECIPIENTS</div>
+                <div style="display:flex;gap:8px">
+                    <span onclick="brSelectAll(true)" style="font-size:10px;letter-spacing:1px;color:var(--accent);cursor:pointer;text-decoration:underline">SELECT ALL</span>
+                    <span onclick="brSelectAll(false)" style="font-size:10px;letter-spacing:1px;color:#888;cursor:pointer;text-decoration:underline">CLEAR</span>
+                </div>
+            </div>
+            <div id="brPersonnelList" style="max-height:200px;overflow-y:auto;border:1px solid rgba(0,217,255,.12);background:rgba(0,0,0,.3);padding:4px"></div>
+
+            <div style="display:flex;gap:10px;margin-top:16px">
+                <button onclick="submitBulkRibbon()" class="upload-btn" style="flex:1;font-size:12px;letter-spacing:2px">&#9644; AWARD TO SELECTED</button>
+                <button onclick="closeBulkRibbonModal()" class="action-btn remove-btn" style="font-size:12px;letter-spacing:2px">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ── BATTALION ROSTER CONTEXT MENU ── -->
     <div id="rosterCtxMenu" style="display:none;position:fixed;z-index:4000;background:#0d1217;border:1px solid rgba(0,217,255,.35);box-shadow:0 8px 32px rgba(0,0,0,.7),0 0 20px rgba(0,217,255,.15);min-width:200px;font-family:Rajdhani,sans-serif">
         <div id="rosterCtxName" style="padding:10px 14px;font-size:13px;font-weight:700;letter-spacing:1px;color:var(--accent);border-bottom:1px solid rgba(0,217,255,.15);background:rgba(0,217,255,.05)"></div>
@@ -5193,7 +5455,7 @@
             <!-- Tabs -->
             <div class="edit-tabs">
                 <button class="edit-tab active" onclick="switchEditTab('details')">&#9998; DETAILS</button>
-                <button class="edit-tab" onclick="switchEditTab('history')">&#9776; HISTORY</button>
+                <button class="edit-tab" onclick="switchEditTab('history')">&#9776; SERVICE RECORD</button>
             </div>
             <div class="edit-modal-scroll">
                 <!-- DETAILS TAB -->
@@ -5446,6 +5708,20 @@
                             <input type="text" id="histCommendNote" placeholder="Reason / citation...">
                             <button id="histCommendAddBtn" class="history-add-btn" onclick="addHistoryEntry('commend')">+ ADD</button>
                             <button id="histCommendCancelEditBtn" class="history-add-btn" style="display:none;background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.2);color:#999" onclick="cancelCommendEdit()">CANCEL EDIT</button>
+                        </div>
+                    </div>
+                    <!-- RIBBON HISTORY -->
+                    <div class="history-section">
+                        <div class="history-section-hd">
+                            <span class="history-section-title" style="color:#2DD4BF">&#9644; RIBBON HISTORY</span>
+                            <span style="font-size:8px;letter-spacing:1px;color:#555">GROUPED &mdash; CLICK A RIBBON TO EXPAND AWARDS</span>
+                        </div>
+                        <div id="histRibbonList"></div>
+                        <div class="history-add-row">
+                            <input type="date" id="histRibbonDate">
+                            <select id="histRibbonTitle" style="background:rgba(0,0,0,.6);border:1px solid rgba(0,217,255,.2);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:9px;padding:5px 7px;outline:none;max-width:200px"></select>
+                            <input type="text" id="histRibbonNote" placeholder="Reason / citation...">
+                            <button id="histRibbonAddBtn" class="history-add-btn" onclick="addRibbonEntry()">+ ADD</button>
                         </div>
                     </div>
                 </div>
@@ -6051,6 +6327,7 @@
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
                         <button id="forceResetBtn" class="action-btn" onclick="forceMonthlyReset()" style="border:1px solid rgba(255,200,0,.45);color:#FFD700;background:rgba(255,200,0,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer" title="Award +1 PT to all 3/3 members then wipe attendance — same as month-end auto-reset">&#9654; MONTH-END RESET</button>
                         <button class="action-btn" onclick="openBulkMedalModal()" style="border:1px solid rgba(185,150,50,.6);color:#C9A227;background:rgba(185,150,50,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer">&#9733; AWARD MEDAL</button>
+                        <button class="action-btn" onclick="openBulkRibbonModal()" style="border:1px solid rgba(45,212,191,.6);color:#2DD4BF;background:rgba(45,212,191,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer">&#9644; AWARD RIBBON</button>
                         <div style="display:flex;align-items:center;gap:6px;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.25);padding:4px 10px">
                             <span style="color:#aaa;font-family:Rajdhani,sans-serif;font-size:10px;letter-spacing:2px;white-space:nowrap">&#9998; EDIT MEMBER:</span>
                             <input id="rosterEditSearch" type="text" placeholder="TYPE TO FILTER..." autocomplete="off"
@@ -6073,7 +6350,7 @@
                     <div class="roster-header">
                         <div>NAME</div><div>PLATOON</div><div>JOINED</div><div>PLATOON SERVICE</div>
                         <div>RANK / GRADE</div><div>GRADUATION</div><div>ATT.</div>
-                        <div>TIME IN UNIT</div><div>PT</div>
+                        <div>TIME IN UNIT</div><div>PT</div><div>RIBBONS</div>
                     </div>
                     <div id="rosterList"><div class="empty-state">LOADING...</div></div>
                 </div>
