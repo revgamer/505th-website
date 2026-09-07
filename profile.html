@@ -83,23 +83,28 @@
 
         function fillProfile() {
             const d = currentUserData;
+            const isRetired = d.role==='retired_veteran';
 
             // ── Dossier Header ──
             document.getElementById('hdrCallsign').textContent  = formatMemberName(d) || d.callsign || 'UNKNOWN';
-            document.getElementById('hdrRank').textContent      = d.rank ? getRankAbbr(d.rank)+' — '+d.rank.split('/').pop().trim() : 'Unranked';
+            document.getElementById('hdrRank').textContent      = (d.rank ? getRankAbbr(d.rank)+' — '+d.rank.split('/').pop().trim() : 'Unranked') + (isRetired ? ' (Ret.)' : '');
             document.getElementById('hdrPlatoon').textContent   = d.platoon || '—';
             document.getElementById('hdrTimeUnit').textContent  = calcTimeInUnit(d.joinedAt);
             document.getElementById('hdrJoinDate').textContent  = d.joinedAt ? new Date(d.joinedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : 'Not Set';
 
             const roleEl = document.getElementById('hdrRole');
-            roleEl.textContent  = (d.role || 'N/A').toUpperCase().replace('_',' ');
-            roleEl.className    = 'role-badge role-' + (d.role||'');
+            if (isRetired) {
+                roleEl.style.display = 'none';
+            } else {
+                roleEl.style.display = '';
+                roleEl.textContent  = (d.role || 'N/A').toUpperCase().replace('_',' ');
+                roleEl.className    = 'role-badge role-' + (d.role||'');
+            }
 
             // Status dot
             const statusEl = document.getElementById('hdrStatus');
             const isReserve = d.platoon==='Reserves';
             const isInactive = d.status==='inactive';
-            const isRetired = d.role==='retired_veteran';
             statusEl.textContent  = isRetired ? '● RETIRED' : isInactive ? '● INACTIVE' : isReserve ? '● RESERVE' : '● ACTIVE';
             statusEl.style.color  = isRetired ? '#888' : isInactive ? '#ef4444' : isReserve ? '#FFD700' : '#00FF41';
 

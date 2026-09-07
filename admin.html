@@ -2953,7 +2953,7 @@
                         <div class="user-info">
                             <div class="user-callsign">${esc(displayName)}</div>
                             
-                            <div class="user-role">${(u.role||'').toUpperCase()}${u.platoon?' — '+esc(u.platoon):''}</div>
+                            <div class="user-role">${isRetired ? esc((u.rank||'—')+' (Ret.)') : (u.role||'').toUpperCase()+(u.platoon?' — '+esc(u.platoon):'')}</div>
                         </div>
                         <div class="user-actions" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
                             ${P().canEditProfiles && !isLockedCommander?`<button class="action-btn approve-btn small" onclick="openEditUser('${u.id}')">EDIT</button>`:''}
@@ -6123,7 +6123,7 @@
                             <span class="role-badge role-officer" style="align-self:center">OFFICER</span><span style="color:#b0b0b0">Full access to all panels including Settings. Cannot assign/remove Commander role.</span>
                             <span class="role-badge role-developer" style="align-self:center">DEVELOPER</span><span style="color:#b0b0b0">Full access to all panels including Settings. Cannot assign/remove Commander role.</span>
                             <span class="role-badge role-commander" style="align-self:center">COMMANDER</span><span style="color:#b0b0b0">Full access including all role assignments. Highest authority.</span>
-                            <span class="role-badge role-retired_veteran" style="align-self:center">RETIRED VETERAN</span><span style="color:#b0b0b0">No admin access. Hidden from Battalion Roster, Attendance Tracker, and awards. Personnel file frozen. Assignable by Staff NCO and above — reassign role to reactivate.</span>
+                            <span class="role-badge role-retired_veteran" style="align-self:center">RETIRED VETERAN</span><span style="color:#b0b0b0">No admin access. Hidden from Battalion Roster, Attendance Tracker, and awards. Displayed as rank + "(Ret.)" instead of a role tag (e.g. "O6 / Colonel (Ret.)"). Personnel file frozen. Assignable by Staff NCO and above — reassign role to reactivate.</span>
                         </div>
                     </div>
                     <div id="promoteList"><div class="empty-state">LOADING...</div></div>
