@@ -37,7 +37,7 @@
 
         function renderRoleOptions(currentRole) {
             const assignable = getAssignableRoles();
-            const allRoles = ['enlistee','marine','recruiter','nco','staff_nco','officer','developer','commander'];
+            const allRoles = ['enlistee','marine','recruiter','nco','staff_nco','officer','developer','commander','retired_veteran'];
             return allRoles.map(r => {
                 const selected = currentRole === r ? 'selected' : '';
                 const canAssign = assignable.includes(r);
@@ -52,10 +52,10 @@
         // Returns which roles the current user is allowed to assign
         function getAssignableRoles() {
             const r = currentUserData?.role;
-            if (r === 'commander')  return ['enlistee','marine','recruiter','nco','staff_nco','officer','developer','commander'];
-            if (r === 'officer')    return ['enlistee','marine','recruiter','nco','staff_nco'];
-            if (r === 'developer')  return ['enlistee','marine','recruiter','nco','staff_nco'];
-            if (r === 'staff_nco')  return ['enlistee','marine','recruiter','nco'];
+            if (r === 'commander')  return ['enlistee','marine','recruiter','nco','staff_nco','officer','developer','commander','retired_veteran'];
+            if (r === 'officer')    return ['enlistee','marine','recruiter','nco','staff_nco','retired_veteran'];
+            if (r === 'developer')  return ['enlistee','marine','recruiter','nco','staff_nco','retired_veteran'];
+            if (r === 'staff_nco')  return ['enlistee','marine','recruiter','nco','retired_veteran'];
             if (r === 'nco')        return ['enlistee','marine','recruiter'];
             return []; // recruiter and below cannot change roles
         }
@@ -1027,7 +1027,7 @@
                 rosterData=[];
                 s.forEach(d=>{
                     const u={id:d.id,...d.data()};
-                    if(u.status!=='pending'&&u.status!=='denied') rosterData.push(u);
+                    if(u.status!=='pending'&&u.status!=='denied'&&u.role!=='retired_veteran') rosterData.push(u);
                 });
                 renderRosterTable();
             }catch(e){if(c)c.innerHTML='<div class="empty-state">ERROR: '+e.message+'</div>';}
@@ -1726,7 +1726,7 @@
                     if(u.status==='pending') pending++;
                     else { active++; allActive.push(u); }
                 });
-                const roster = allActive.filter(u=>u.status!=='denied');
+                const roster = allActive.filter(u=>u.status!=='denied'&&u.role!=='retired_veteran');
 
                 // Stats row
                 const pEl=document.getElementById('dashPending');
@@ -2837,7 +2837,7 @@
                 const totalEl = document.getElementById('attStatTotalOps');
                 if (totalEl) totalEl.textContent = totalOps;
 
-                const activeUsers = allUsers.filter(u => u.status !== 'pending' && u.status !== 'denied' && u.platoon !== 'Reserves');
+                const activeUsers = allUsers.filter(u => u.status !== 'pending' && u.status !== 'denied' && u.platoon !== 'Reserves' && u.role !== 'retired_veteran');
                 let totalAtt = 0, totalElig = 0;
                 activeUsers.forEach(u => { totalAtt += (u.opsAttended||0); totalElig += (u.opsEligible||0); });
                 const overallRate = totalElig > 0 ? Math.round((totalAtt / totalElig) * 100) : 0;
@@ -2853,7 +2853,7 @@
             const attendees = attEventData?.attendees || [];
             const excused   = attEventData?.excused   || [];
             const locked    = attEventData?.locked    || false;
-            let members = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied'&&u.platoon!=='Reserves');
+            let members = allUsers.filter(u=>u.status!=='pending'&&u.status!=='denied'&&u.platoon!=='Reserves'&&u.role!=='retired_veteran');
             if (attFilter !== 'ALL') members = members.filter(u=>u.platoon===attFilter);
             members.sort((a,b)=>(a.platoon||'').localeCompare(b.platoon||'')||(a.callsign||'').localeCompare(b.callsign||''));
             let present=0,exc=0,absent=0;
@@ -2931,6 +2931,8 @@
                 active = allActive;
             } else if (_personnelTab === 'Inactive') {
                 active = allActive.filter(u => isInactive(u));
+            } else if (_personnelTab === 'Retired') {
+                active = allActive.filter(u => u.role === 'retired_veteran');
             } else {
                 active = allActive.filter(u => u.platoon === _personnelTab);
             }
@@ -2944,6 +2946,7 @@
             if(activeList) {
                 activeList.innerHTML = active.length ? active.map(u=>{
                     const isLockedCommander = u.role==='commander' && !P().canDemoteCommander;
+                    const isRetired = u.role==='retired_veteran';
                     const displayName = formatMemberName(u);
                     return `
                     <div class="user-card status-active">
@@ -2955,6 +2958,7 @@
                         <div class="user-actions" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
                             ${P().canEditProfiles && !isLockedCommander?`<button class="action-btn approve-btn small" onclick="openEditUser('${u.id}')">EDIT</button>`:''}
                             ${isLockedCommander?`<span style="font-family:Rajdhani,sans-serif;font-size:9px;letter-spacing:2px;color:#f59e0b;border:1px solid #f59e0b44;padding:3px 8px">&#128274; COMMANDER — LOCKED</span>`:''}
+                            ${isRetired?`<span style="font-family:Rajdhani,sans-serif;font-size:9px;letter-spacing:2px;color:#888;border:1px solid #88888844;padding:3px 8px" title="Personnel file frozen. Change ROLE to reactivate.">&#128274; RETIRED — FROZEN</span>`:''}
                             ${P().canChangeRoles && !isLockedCommander?`<div style="display:flex;flex-direction:column;gap:3px">
                                 <div style="color:rgba(0,217,255,.5);font-size:8px;letter-spacing:1px">ROLE</div>
                                 <select onchange="changeRole('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace">
@@ -2963,7 +2967,7 @@
                             </div>
                             <div style="display:flex;flex-direction:column;gap:3px">
                                 <div style="color:rgba(0,217,255,.5);font-size:8px;letter-spacing:1px">RANK</div>
-                                <select onchange="changeRank('${u.id}',this.value)" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace;max-width:200px">
+                                <select onchange="changeRank('${u.id}',this.value)" ${isRetired?'disabled':''} style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-size:9px;padding:4px;font-family:'Share Tech Mono',monospace;max-width:200px">
                                     <option value="" ${!u.rank?'selected':''}>— RANK —</option>
                                     <optgroup label="── OFFICER ──">
                                         ${['O9 / Lieutenant General','O8 / Major General','O7 / Brigadier General','O6 / Colonel','O5 / Lieutenant Colonel','O4 / Major','O3 / Captain','O2 / First Lieutenant','O1 / Second Lieutenant'].map(r=>`<option value="${r}" ${u.rank===r?'selected':''}>${r}</option>`).join('')}
@@ -3439,11 +3443,27 @@
             const csLock  = document.getElementById('editCallsignLock');
             const csLabel = document.getElementById('editCallsignLockLabel');
             csInput.value    = u.callsign||'';
-            csInput.readOnly = !canEditCallsign;
-            csInput.style.opacity     = canEditCallsign ? '1' : '0.55';
-            csInput.style.cursor      = canEditCallsign ? '' : 'not-allowed';
-            csLock.style.display      = canEditCallsign ? 'none' : 'inline';
-            csLabel.style.display     = canEditCallsign ? 'none' : 'inline';
+            csInput.readOnly = !canEditCallsign || (u.role==='retired_veteran');
+            csInput.style.opacity     = (canEditCallsign && u.role!=='retired_veteran') ? '1' : '0.55';
+            csInput.style.cursor      = (canEditCallsign && u.role!=='retired_veteran') ? '' : 'not-allowed';
+            csLock.style.display      = (canEditCallsign && u.role!=='retired_veteran') ? 'none' : 'inline';
+            csLabel.style.display     = (canEditCallsign && u.role!=='retired_veteran') ? 'none' : 'inline';
+            // ── RETIRED VETERAN — freeze personnel file (all fields except ROLE, so staff can reactivate) ──
+            const _frozen = u.role === 'retired_veteran';
+            ['editRankSelect','editFirstName','editLastName','editJoinedAt','editGraduation','editPlatoon','editRecruitSource'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.disabled = _frozen;
+                el.style.opacity = _frozen ? '0.5' : '';
+                el.style.cursor  = _frozen ? 'not-allowed' : '';
+            });
+            document.querySelectorAll('.history-add-btn').forEach(btn => {
+                btn.disabled = _frozen;
+                btn.style.opacity = _frozen ? '0.4' : '';
+                btn.style.cursor  = _frozen ? 'not-allowed' : '';
+            });
+            const _frozenBanner = document.getElementById('editFrozenBanner');
+            if (_frozenBanner) _frozenBanner.style.display = _frozen ? 'block' : 'none';
             // Switch to details tab, load history
             switchEditTab('details');
             loadEditHistory(u);
@@ -3542,6 +3562,7 @@
         window.addRibbonEntry = async function() {
             const uid = document.getElementById('editUserId').value;
             const u   = allUsers.find(x=>x.id===uid); if(!u) return;
+            if (u.role === 'retired_veteran') { notify('PERSONNEL FILE FROZEN — MEMBER IS RETIRED',1); return; }
             const today = new Date().toISOString().split('T')[0];
             const title = document.getElementById('histRibbonTitle').value.trim();
             if(!title){ notify('SELECT A RIBBON',1); return; }
@@ -3683,6 +3704,7 @@
         window.addHistoryEntry = async function(type) {
             const uid = document.getElementById('editUserId').value;
             const u   = allUsers.find(x=>x.id===uid); if(!u) return;
+            if (u.role === 'retired_veteran') { notify('PERSONNEL FILE FROZEN — MEMBER IS RETIRED',1); return; }
             let entry={}, fieldKey='';
             const today = new Date().toISOString().split('T')[0];
             if(type==='platoon'){
@@ -3801,6 +3823,17 @@
             if(jEl && jEl.value) data.joinedAt = jEl.value+'T00:00:00.000Z';
             const gEl = document.getElementById('editGraduation');
             if(gEl && gEl.value) data.graduation = gEl.value; else if(gEl && gEl.value==='') data.graduation = null;
+            // ── RETIRED VETERAN safety net — ignore any tampered field values while member remains retired ──
+            if (oldUser?.role === 'retired_veteran' && newRole === 'retired_veteran') {
+                data.firstName = oldUser.firstName||'';
+                data.lastName  = oldUser.lastName||'';
+                data.rank      = oldUser.rank||'';
+                data.platoon   = oldUser.platoon||'';
+                data.recruitSource = oldUser.recruitSource||'';
+                if (canEditCallsign) data.callsign = oldUser.callsign||'';
+                data.joinedAt  = oldUser.joinedAt;
+                data.graduation = (oldUser.graduation===undefined) ? null : oldUser.graduation;
+            }
             // Auto-log promotion if rank changed
             if(oldUser && newRank && newRank !== (oldUser.rank||'')) {
                 const entry = {date:new Date().toISOString().split('T')[0],fromRank:oldUser.rank||'—',toRank:newRank,note:'Updated via Personnel Files',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
@@ -5451,6 +5484,7 @@
     <div class="edit-modal" id="editUserModal">
         <div class="edit-modal-content">
             <div class="edit-modal-title" id="editModalTitle">EDIT OPERATIVE</div>
+            <div id="editFrozenBanner" style="display:none;margin:-4px 0 12px;padding:8px 12px;background:rgba(136,136,136,.08);border:1px solid rgba(136,136,136,.35);color:#aaa;font-family:Rajdhani,sans-serif;font-size:11px;letter-spacing:1px">&#128274; RETIRED VETERAN — PERSONNEL FILE FROZEN. Change ROLE below to reactivate.</div>
             <input type="hidden" id="editUserId">
             <!-- Tabs -->
             <div class="edit-tabs">
@@ -6066,6 +6100,7 @@
                         <button class="pers-tab"        data-tab="Awaiting BCT" onclick="setPersonnelTab('Awaiting BCT')">AWAITING BCT</button>
                         <button class="pers-tab"        data-tab="Reserves"    onclick="setPersonnelTab('Reserves')">RESERVES</button>
                         <button class="pers-tab pers-tab-inactive" data-tab="Inactive" onclick="setPersonnelTab('Inactive')">INACTIVE</button>
+                        <button class="pers-tab" style="color:#888" data-tab="Retired" onclick="setPersonnelTab('Retired')">RETIRED VETERAN</button>
                     </div>
 
                     <!-- Tab count label -->
@@ -6088,6 +6123,7 @@
                             <span class="role-badge role-officer" style="align-self:center">OFFICER</span><span style="color:#b0b0b0">Full access to all panels including Settings. Cannot assign/remove Commander role.</span>
                             <span class="role-badge role-developer" style="align-self:center">DEVELOPER</span><span style="color:#b0b0b0">Full access to all panels including Settings. Cannot assign/remove Commander role.</span>
                             <span class="role-badge role-commander" style="align-self:center">COMMANDER</span><span style="color:#b0b0b0">Full access including all role assignments. Highest authority.</span>
+                            <span class="role-badge role-retired_veteran" style="align-self:center">RETIRED VETERAN</span><span style="color:#b0b0b0">No admin access. Hidden from Battalion Roster, Attendance Tracker, and awards. Personnel file frozen. Assignable by Staff NCO and above — reassign role to reactivate.</span>
                         </div>
                     </div>
                     <div id="promoteList"><div class="empty-state">LOADING...</div></div>

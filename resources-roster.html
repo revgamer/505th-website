@@ -418,6 +418,7 @@
         .acct-role-recruiter  { color: #fb923c; }
         .acct-role-marine     { color: #94a3b8; }
         .acct-role-enlistee   { color: #64748b; }
+        .acct-role-retired_veteran { color: #888; }
         .acct-links { display: flex; flex-direction: column; gap: 4px; }
         .acct-link {
             display: block; padding: 7px 10px; background: transparent;
@@ -878,7 +879,7 @@
                 s.forEach(d => {
                     const u = {id:d.id,...d.data()};
                     // Only include active members (not pending/denied)
-                    if(u.status!=='pending' && u.status!=='denied') allRoster.push(u);
+                    if(u.status!=='pending' && u.status!=='denied' && u.role!=='retired_veteran') allRoster.push(u);
                 });
                 clearInterval(dotInterval);
                 loadState.style.display = 'none';
