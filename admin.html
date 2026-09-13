@@ -1020,6 +1020,9 @@
         window.loadRosterPanel = async function loadRosterPanel(){
             const c=document.getElementById('rosterList');
             if(c)c.innerHTML='<div class="empty-state">LOADING...</div>';
+            // Backfill tool is staff_nco and above only — same tier that can edit personnel files
+            const _bfBtn=document.getElementById('backfillPlatoonBtn');
+            if(_bfBtn) _bfBtn.style.display=P().canEditProfiles?'':'none';
             try{
                 await checkMonthlyReset();
                 // Read from users collection — single source of truth
@@ -1032,6 +1035,48 @@
                 renderRosterTable();
             }catch(e){if(c)c.innerHTML='<div class="empty-state">ERROR: '+e.message+'</div>';}
         }
+
+        // ── BACKFILL PLATOON SERVICE DATES (staff_nco+ only, gated via backfillPlatoonBtn display) ──
+        window.openBackfillPlatoonModal=function(){
+            if(!P().canEditProfiles){notify('INSUFFICIENT AUTHORITY',1);return;}
+            const missing=rosterData.filter(u=>u.platoon && !u.joinedPlatoon);
+            const list=document.getElementById('backfillPlatoonList');
+            if(!missing.length){
+                list.innerHTML='<div class="empty-state">NO MISSING PLATOON SERVICE DATES — NOTHING TO BACKFILL</div>';
+            } else {
+                const today=new Date().toISOString().split('T')[0];
+                list.innerHTML=missing.map(u=>{
+                    // Best-guess order: graduation date, then unit join date, then today
+                    const guess=(u.graduation?u.graduation.split('T')[0]:null)||(u.joinedAt?u.joinedAt.split('T')[0]:null)||today;
+                    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid rgba(0,217,255,.1)">
+                        <div style="flex:1;font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;color:#ddd">${esc(formatMemberName(u)||u.callsign)}</div>
+                        <div style="width:110px;font-family:Rajdhani,sans-serif;font-size:11px;color:var(--accent)">${esc(u.platoon)}</div>
+                        <input type="date" data-uid="${u.id}" class="backfill-date-input" value="${guess}" style="background:rgba(0,0,0,.7);border:1px solid rgba(0,217,255,.35);color:#ccc;font-family:'Share Tech Mono',monospace;font-size:11px;padding:5px;outline:none">
+                    </div>`;
+                }).join('');
+            }
+            document.getElementById('backfillPlatoonModal').classList.add('active');
+        };
+        window.closeBackfillPlatoonModal=function(){document.getElementById('backfillPlatoonModal').classList.remove('active');};
+        window.saveBackfillPlatoonDates=async function(){
+            if(!P().canEditProfiles){notify('INSUFFICIENT AUTHORITY',1);return;}
+            const inputs=document.querySelectorAll('#backfillPlatoonList .backfill-date-input');
+            if(!inputs.length){closeBackfillPlatoonModal();return;}
+            let count=0;
+            try{
+                for(const inp of inputs){
+                    const uid=inp.dataset.uid;
+                    const val=inp.value;
+                    if(!val) continue; // skip any left blank
+                    await updateDoc(doc(db,'users',uid),{joinedPlatoon:val,updatedAt:new Date().toISOString()});
+                    count++;
+                }
+                writeAuditLog('battalion_ops','PLATOON DATES BACKFILLED',`${count} member(s) — via Backfill tool`);
+                notify('BACKFILLED: '+count+' MEMBER(S)');
+                closeBackfillPlatoonModal();
+                await loadRosterPanel();
+            }catch(e){notify('BACKFILL FAILED: '+e.message,1);}
+        };
 
         function getRankSortOrder(rank) {
             if(!rank) return 999;
@@ -5879,6 +5924,20 @@
             </div>
         </div>
     </div>
+    <!-- Backfill Platoon Service Dates Modal (staff_nco+ only) -->
+    <div class="edit-modal" id="backfillPlatoonModal">
+        <div class="edit-modal-content" style="max-width:700px;width:95%">
+            <div class="edit-modal-title">BACKFILL PLATOON SERVICE DATES</div>
+            <p style="color:#aaa;font-size:10px;letter-spacing:1.5px;margin-bottom:14px">
+                &#9432; MEMBERS BELOW HAVE A PLATOON ASSIGNED BUT NO PLATOON SERVICE DATE ON FILE. DATES ARE PRE-FILLED WITH A BEST GUESS (GRADUATION DATE, THEN UNIT JOIN DATE, THEN TODAY) — REVIEW AND CORRECT BEFORE SAVING.
+            </p>
+            <div id="backfillPlatoonList" style="max-height:400px;overflow-y:auto;margin-bottom:14px"></div>
+            <div class="edit-modal-actions">
+                <button class="action-btn approve-btn" onclick="saveBackfillPlatoonDates()">SAVE ALL</button>
+                <button class="action-btn remove-btn" onclick="closeBackfillPlatoonModal()">CANCEL</button>
+            </div>
+        </div>
+    </div>
     <!-- Recruit Source Picker Modal -->
     <div class="edit-modal" id="recruitSourceModal">
         <div class="edit-modal-content" style="max-width:400px">
@@ -6369,6 +6428,7 @@
                         <button class="action-btn approve-btn" onclick="loadRosterPanel()" style="padding:4px 12px;font-size:10px;letter-spacing:2px">&#8635; REFRESH</button>
                         <a href="resources-roster.html" target="_blank" class="action-btn approve-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">&#8599; VIEW ROSTER PAGE</a>
                         <button id="forceResetBtn" class="action-btn" onclick="forceMonthlyReset()" style="border:1px solid rgba(255,200,0,.45);color:#FFD700;background:rgba(255,200,0,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer" title="Award +1 PT to all 3/3 members then wipe attendance — same as month-end auto-reset">&#9654; MONTH-END RESET</button>
+                        <button id="backfillPlatoonBtn" class="action-btn" onclick="openBackfillPlatoonModal()" style="display:none;border:1px solid rgba(0,217,255,.45);color:var(--accent);background:rgba(0,217,255,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer" title="Stamp Platoon Service date for members who have a platoon but no join date on file">&#9654; BACKFILL PLATOON DATES</button>
                         <button class="action-btn" onclick="openBulkMedalModal()" style="border:1px solid rgba(185,150,50,.6);color:#C9A227;background:rgba(185,150,50,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer">&#9733; AWARD MEDAL</button>
                         <button class="action-btn" onclick="openBulkRibbonModal()" style="border:1px solid rgba(45,212,191,.6);color:#2DD4BF;background:rgba(45,212,191,.07);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;cursor:pointer">&#9644; AWARD RIBBON</button>
                         <div style="display:flex;align-items:center;gap:6px;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.25);padding:4px 10px">
