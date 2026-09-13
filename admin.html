@@ -1296,10 +1296,16 @@
             const platoon=document.getElementById('rosterPlatoon').value;
             if(!platoon){notify('PLATOON REQUIRED',1);return;}
             const rank=document.getElementById('rosterRankGrade').value;
+            const _existingR=rosterData.find(x=>x.id===id);
+            const _platoonChanged=platoon!==(_existingR?.platoon||'');
+            const _manualJoinedPlatoon=document.getElementById('rosterJoinedPlatoon').value;
+            // Auto-stamp today when platoon actually changes; manual date field can still override/backdate;
+            // otherwise preserve whatever was already on file instead of wiping it on unrelated edits.
+            const joinedPlatoon=_manualJoinedPlatoon||(_platoonChanged?new Date().toISOString().split('T')[0]:(_existingR?.joinedPlatoon||null));
             const data={
                 platoon,
                 rank,
-                joinedPlatoon:document.getElementById('rosterJoinedPlatoon').value||null,
+                joinedPlatoon,
                 graduation:document.getElementById('rosterGraduation').value||null,
                 attendance:parseInt(document.getElementById('rosterAttendance').value)||0,
                 promotionTracker:parseInt(document.getElementById('rosterPT').value)||0,
@@ -3855,6 +3861,7 @@
             if(oldUser && newPlatoon && newPlatoon !== (oldUser.platoon||'')) {
                 const entry = {date:new Date().toISOString().split('T')[0],from:oldUser.platoon||'—',to:newPlatoon,note:'Updated via Personnel Files',addedBy:currentUserData?.callsign||'System',addedAt:new Date().toISOString(),auto:true};
                 data.platoonHistory = [...(oldUser.platoonHistory||[]), entry];
+                data.joinedPlatoon = entry.date; // Battalion Roster "Platoon Service" reads this — keep it in sync
                 fireWebhook('platoon', {
                     name: formatMemberName(oldUser)||oldUser.callsign||uid,
                     from: oldUser.platoon||'—',
